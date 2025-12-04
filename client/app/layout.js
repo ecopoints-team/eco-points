@@ -1,3 +1,5 @@
+import '../src/index.css';
+
 export const metadata = {
   title: 'EcoPoints',
   description: 'EcoPoints Application',

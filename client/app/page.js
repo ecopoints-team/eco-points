@@ -1,32 +1,20 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import NavBar from "../src/Components/NavBar";
+import Hero from "../src/Components/Hero";
+import Features from "../src/Components/Features";
+import Services from "../src/Components/Services";
+import Rewards from "../src/Components/Rewards";
+import Footer from "../src/Components/Footer";
 
 export default function Home() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => setUsers(data.users))
-      .catch(err => console.error('Error fetching users:', err));
-  }, []);
-
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>EcoPoints</h1>
-      <h2>Users</h2>
-      {users.length > 0 ? (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {users.map(user => (
-            <li key={user.id} style={{ margin: '10px 0' }}>
-              {user.name}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No users found or backend not connected.</p>
-      )}
+    <div className="min-h-screen bg-gradient-to-l from-lime-900 to-lime-950 text-white overflow-hidden">
+      <NavBar />
+      <Hero />
+      <Features />
+      <Services />
+      <Rewards />
+      <Footer />
     </div>
   );
 }
+
