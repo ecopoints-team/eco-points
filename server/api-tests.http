@@ -1,0 +1,143 @@
+###
+### EcoPoints API REST Client Tests
+### Use this file with VS Code REST Client extension or similar tools
+### Base URL: http://127.0.0.1:5000
+###
+
+### Variables
+@baseUrl = http://127.0.0.1:5000
+@webApi = {{baseUrl}}/api/web
+@rpiApi = {{baseUrl}}/api/rpi
+
+###############################################################################
+### Root & Health Checks
+###############################################################################
+
+### Root endpoint
+GET {{baseUrl}}/
+Content-Type: application/json
+
+### Global health check
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+###############################################################################
+### Web Application API Tests
+###############################################################################
+
+### Web API health check
+GET {{webApi}}/health
+Content-Type: application/json
+
+### Get all users (Web)
+GET {{webApi}}/users
+Content-Type: application/json
+
+### Get specific user by ID (Web)
+GET {{webApi}}/users/1
+Content-Type: application/json
+
+### Create new user (Web)
+POST {{webApi}}/users
+Content-Type: application/json
+
+{
+  "name": "John Doe"
+}
+
+### Create another user (Web)
+POST {{webApi}}/users
+Content-Type: application/json
+
+{
+  "name": "Jane Smith"
+}
+
+###############################################################################
+### Raspberry Pi API Tests
+###############################################################################
+
+### RPI API health check
+GET {{rpiApi}}/health
+Content-Type: application/json
+
+### RPI Status check
+GET {{rpiApi}}/status
+Content-Type: application/json
+
+### Authenticate user via QR code
+POST {{rpiApi}}/authenticate
+Content-Type: application/json
+
+{
+  "qr_code": "USER_QR_12345"
+}
+
+### Handle bottle scan
+POST {{rpiApi}}/scan
+Content-Type: application/json
+
+{
+  "bottle_type": "plastic",
+  "qr_code": "USER_QR_12345",
+  "timestamp": "2025-12-18T10:30:00Z"
+}
+
+### Handle another bottle scan (glass)
+POST {{rpiApi}}/scan
+Content-Type: application/json
+
+{
+  "bottle_type": "glass",
+  "qr_code": "USER_QR_12345"
+}
+
+### Log event from RPI
+POST {{rpiApi}}/log
+Content-Type: application/json
+
+{
+  "event_type": "bottle_detected",
+  "message": "Bottle detected in sensor"
+}
+
+### Log error event
+POST {{rpiApi}}/log
+Content-Type: application/json
+
+{
+  "event_type": "error",
+  "message": "Camera initialization failed"
+}
+
+###############################################################################
+### Error Cases - Testing validation
+###############################################################################
+
+### Missing name in user creation
+POST {{webApi}}/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### Missing QR code in authentication
+POST {{rpiApi}}/authenticate
+Content-Type: application/json
+
+{
+  "user_id": 123
+}
+
+### Missing bottle_type in scan
+POST {{rpiApi}}/scan
+Content-Type: application/json
+
+{
+  "qr_code": "USER_QR_12345"
+}
+
+### Non-existent user
+GET {{webApi}}/users/9999
+Content-Type: application/json

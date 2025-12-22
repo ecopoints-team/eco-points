@@ -10,7 +10,10 @@ const services = [
 ];
 export default function Services() {
   return (
-    <section className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section
+      id="services"
+      className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto text-center relative w-full">
         {/* HEADER TEXT */}
         <div className="max-w-7xl mx-auto flex flex-row lg:grid lg:grid-row-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">

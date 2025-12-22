@@ -1,6 +1,7 @@
-export default function Rewards(){
+export default function Rewards() {
     return (
-        <div></div>
+        <section id="rewards" className="min-h-[200px]">
+            {/* TODO: add rewards content */}
+        </section>
     );
-
 }

@@ -1,5 +1,9 @@
 export default function LogIn() {
-  return <div></div>;
+  return (
+    <section id="login" className="min-h-[200px]">
+      {/* TODO: add login content */}
+    </section>
+  );
   // Toastify
 }
 
