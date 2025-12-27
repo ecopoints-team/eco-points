@@ -14,7 +14,7 @@ migrate = Migrate()
 class Config:
     # kept for backwards-compat in case someone imports from app
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL', 'mysql+pymysql://root:password@localhost:3306/flaskapp'
+        'DATABASE_URL', 'postgresql+psycopg2://postgres:admin@127.0.0.1:5433/ecopoints'
     )
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
