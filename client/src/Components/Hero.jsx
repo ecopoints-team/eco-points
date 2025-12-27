@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   ArrowRight,
@@ -6,6 +6,7 @@ import {
   BottleWineIcon,
   ChevronDown,
   Play,
+  QrCodeIcon,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -28,7 +29,7 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 123, 0, 0.83), transparent 50%)`,
+          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #ff7b00d4, transparent 50%)`,
         }}
       />
       {/* Pulse Background */}
@@ -45,8 +46,8 @@ export default function Hero() {
           <div>
             {/* Introducing EcoPoints */}
             <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border border-orange-700/60 rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
-              <BottleWineIcon className="w-5 h-5 text-white" />
-              <span className="font-medium text-xs sm:text-sm text-white ">
+              <QrCodeIcon className="w-5 h-5 text-white" />
+              <span className="font-medium text-xs sm:text-sm text-white">
                 Introducing EcoPoints
               </span>
             </div>
@@ -88,7 +89,7 @@ export default function Hero() {
 
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="relative order-2 w-full hover:translate-y-2 transition-transform duration-300 hover:scale-102">
-            <div className="relative bg-gradient-to-bl from-orange-500/70 to-orange-300/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
+            <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
               <div className="backdrop-blur-sm rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[450px] border border-white/5">
                 {/* Container */}
                 <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
@@ -106,6 +107,7 @@ export default function Hero() {
               </div>
             </div>
           </div>
+          
 
           {/* Floating Cards */}
         </div>

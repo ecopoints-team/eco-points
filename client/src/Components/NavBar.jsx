@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
 import { Menu, MenuIcon, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import Link from "next/link";
 
 export default function NavBar() {
@@ -22,7 +22,7 @@ export default function NavBar() {
               </div>
               {/* CAPSTONE PROJECT NAME */}
               <span className="text-lg sm:text-xl md:text-2xl">
-                <span className="text-amber-300 font-medium">Eco</span>
+                <span className="text-amber-500 font-medium">Eco</span>
                 <span className="text-green-500 font-bold">Points</span>
               </span>
             </div>
@@ -32,36 +32,36 @@ export default function NavBar() {
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8 font-medium text-white ">
             <Link
               href="/"
-              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-120 hover:font-medium text-sm lg:text-base"
+              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-110 hover:font-medium text-sm lg:text-base"
             >
               Home
             </Link>
             <Link
               href="/features"
-              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-120 hover:font-medium text-sm lg:text-base"
+              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-110 hover:font-medium text-sm lg:text-base"
             >
               Features
             </Link>
             <Link
               href="/services"
-              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-120 hover:font-medium text-sm lg:text-base"
+              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-110 hover:font-medium text-sm lg:text-base"
             >
               Services
             </Link>
             <Link
               href="/rewards"
-              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-120 hover:font-medium text-sm lg:text-base"
+              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-110 hover:font-medium text-sm lg:text-base"
             >
               Rewards
             </Link>
             <Link
               href="/about"
-              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-120 hover:font-medium text-sm lg:text-base"
+              className="hover:text-orange-400 hover:translate-y-2 transition-transform duration-400 hover:scale-110 hover:font-medium text-sm lg:text-base"
             >
               About Us
             </Link>
           </div>
-          <div className="sm:w-auto px-1 sm:px-2 py-1 sm:py-0.8 rounded-lg border border:white/20 font-medium hidden md:flex items-center space-x-6 lg:space-x-8 transition-all duration-300 hover:bg-amber-700/80 hover:rounded-lg hover:font-medium">
+          <div className="sm:w-auto px-1 sm:px-2 py-1 sm:py-0.8 rounded-lg border border:white/20 font-light hidden md:flex items-center space-x-6 lg:space-x-8 transition-all duration-300 hover:bg-amber-700/80 hover:rounded-lg hover:font-medium">
             <Link href="/login">Log In</Link>
           </div>
           {/* MENU FOR SMALL DEVICES (PHONE, TABLET, etc.) */}

@@ -37,22 +37,6 @@ Content-Type: application/json
 GET {{webApi}}/users/1
 Content-Type: application/json
 
-### Create new user (Web)
-POST {{webApi}}/users
-Content-Type: application/json
-
-{
-  "name": "John Doe"
-}
-
-### Create another user (Web)
-POST {{webApi}}/users
-Content-Type: application/json
-
-{
-  "name": "Jane Smith"
-}
-
 ###############################################################################
 ### Raspberry Pi API Tests
 ###############################################################################
