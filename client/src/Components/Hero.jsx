@@ -25,7 +25,10 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex item-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section
+      id="home"
+      className="relative min-h-screen flex item-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28"
+    >
       <div
         className="absolute inset-0 opacity-30"
         style={{

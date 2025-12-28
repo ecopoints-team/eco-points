@@ -40,7 +40,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative"
+      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative scroll-mt-28"
     >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">

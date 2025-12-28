@@ -10,8 +10,13 @@ import { ArrowRight, Play, ChevronDown, ImagePlay } from "lucide-react";
 // ];
 
 export default function Services() {
+  const rewardsDomain =
+    process.env.NEXT_PUBLIC_REWARDS_DOMAIN ?? "https://rewards.ecopoints.com";
   return (
-    <section className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section
+      id="services"
+      className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28"
+    >
       <div className="max-w-7xl mx-auto text-center relative w-full">
         {/* HEADER TEXT */}
         <div className="max-w-7xl mx-auto flex flex-row lg:grid lg:grid-row-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
@@ -42,9 +47,20 @@ export default function Services() {
                 {/* Button */}
                 <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
                   <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
-                    <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border">
-                      <div><a href="#services">Click HERE for Services</a></div>
-                    </button>
+                    <a
+                      href="#about"
+                      className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
+                    >
+                      Learn More About Us
+                    </a>
+                    <a
+                      href={rewardsDomain}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm sm:text-base font-semibold text-amber-200 underline underline-offset-4 hover:text-orange-200"
+                    >
+                      rewards.ecopoints.com
+                    </a>
                   </div>
                 </div>
               </div>
