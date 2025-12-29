@@ -1,43 +1,49 @@
-export default function Rewards() {
-  const features = [
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "left",
-    },
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "left",
-    },
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "right",
-    },
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "right",
-    },
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "right",
-    },
-    {
-      title: "OMNIMAN",
-      description: "",
-      image: "/Omniman.jpg",
-      imagePosition: "right",
-    },
-  ];
+const features = [
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "left",
+  },
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "left",
+  },
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "right",
+  },
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "right",
+  },
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "right",
+  },
+  {
+    title: "OMNIMAN",
+    description:
+    "",
+    image: "/Omniman.jpg",
+    imagePosition: "right",
+  },
+];
 
+export default function Rewards(){
   return (
     <section id="rewards" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 scroll-mt-28">
       <div className="relative max-w-6xl mx-auto">
@@ -72,7 +78,7 @@ export default function Rewards() {
                           <p className="text-white text-base text-xl sm:text-lg leading-relaxed">
                             {feature.description}
                           </p>
-                          <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
+                          {/* <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-5 mb-8 sm:mb-12 ">
                               <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 hover:border hover:border-white/90 flex items-center justify-center space-x-5">
                                 <div>
@@ -80,7 +86,7 @@ export default function Rewards() {
                                 </div>
                               </button>
                             </div>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                     </div>
@@ -93,5 +99,4 @@ export default function Rewards() {
       </div>
     </section>
   );
-}
 }

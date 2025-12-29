@@ -40,7 +40,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative"
+      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative scroll-mt-28"
     >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
@@ -49,7 +49,7 @@ export default function Features() {
               Our Capstone
             </span>
             <br />
-            <span className="bg-gradient-to-br from-orange-300 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-b from-orange-400 via-amber-600 bg-clip-text text-transparent">
               {/* bg-gradient-to-b from-white to-white bg-clip-text text-transparent */}
               Machine Features!
             </span>
@@ -67,7 +67,7 @@ export default function Features() {
         <div className="space-y-16 sm:space-y-20 lg:space-y-32">
           {features.map((feature, key) => (
             <div
-              key={key}
+              key={`${feature.title}-${feature.imagePosition}-${key}`}
               className={`flex flex-col lg:flex-row items-center gap-8 sm:gap-12 ${
                 feature.imagePosition === "right" ? "lg:flex-row-reverse" : ""
               }`}
@@ -76,7 +76,7 @@ export default function Features() {
               <div className="flex-1 w-full hover:translate-y-5 transition-transform duration-300 hover:scale-110">
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-600 to-green-700/40 rounded-xl sm:rounded-2xl transition-all duration-500" />
-                  <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition">
+                  <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:shadow-2xl transition-shadow duration-300">
                     {/* IMAGE CONTAINER */}
                     <div className="bg-gray-900/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm ">
                       <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4">

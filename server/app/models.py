@@ -53,3 +53,63 @@ class QRScan(db.Model):
     
     def __repr__(self):
         return f'<QRScan {self.id} by User {self.user_id}>'
+
+
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    transaction_type = db.Column(db.String(50), nullable=False)  # earn, redeem, transfer, refund, adjustment
+    amount = db.Column(db.Integer, nullable=False)  # positive for earning, negative for spending
+    balance_before = db.Column(db.Integer, nullable=False)
+    balance_after = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.String(255))
+    reference_type = db.Column(db.String(50))  # qr_scan, reward_redemption, manual, transfer
+    reference_id = db.Column(db.Integer)  # ID of related record (scan_id, reward_id, etc.)
+    status = db.Column(db.String(20), default='completed')  # completed, pending, failed, reversed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('transactions', lazy=True))
+    
+    def __repr__(self):
+        return f'<Transaction {self.id}: {self.transaction_type} {self.amount} points>'
+
+
+class Reward(db.Model):
+    __tablename__ = 'rewards'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    points_required = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(100))  # voucher, discount, product, service
+    stock_quantity = db.Column(db.Integer)
+    image_url = db.Column(db.String(500))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    redemptions = db.relationship('RewardRedemption', backref='reward', lazy=True)
+    
+    def __repr__(self):
+        return f'<Reward {self.name}: {self.points_required} points>'
+
+
+class RewardRedemption(db.Model):
+    __tablename__ = 'reward_redemptions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False)
+    points_spent = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, claimed, cancelled, expired
+    redemption_code = db.Column(db.String(50), unique=True)
+    redeemed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    claimed_at = db.Column(db.DateTime)
+    expires_at = db.Column(db.DateTime)
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('redemptions', lazy=True))
+    
+    def __repr__(self):
+        return f'<RewardRedemption {self.id}: User {self.user_id} - Reward {self.reward_id}>'
