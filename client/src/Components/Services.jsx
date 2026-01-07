@@ -55,10 +55,7 @@ export default function Services() {
                     </a>
                     <a
                       href={rewardsDomain}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm sm:text-base font-semibold text-amber-200 underline underline-offset-4 hover:text-orange-200"
-                    >
+                      target="_blank">
                       rewards.ecopoints.com
                     </a>
                   </div>

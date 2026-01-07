@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve eco-points Flask API
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/eco-points/server
+Environment="PATH=/path/to/eco-points/server/venv/bin"
+ExecStart=/path/to/eco-points/server/venv/bin/gunicorn --config gunicorn.conf.py run:app
+
+[Install]
+WantedBy=multi-user.target

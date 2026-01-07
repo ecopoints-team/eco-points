@@ -26,11 +26,25 @@ def create_app():
     app.config.from_object(Config)
     
     # Enable CORS for frontend and Raspberry Pi
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://ecopoints.org",
+        "https://www.ecopoints.org",
+        "https://rewards.ecopoints.org",
+    ]
+    
+    # Add additional origins from environment variable if provided
+    if os.environ.get('CORS_ORIGINS'):
+        allowed_origins.extend(os.environ.get('CORS_ORIGINS').split(','))
+    
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
-            "methods": ["GET", "POST", "PUT", "DELETE"],
-            "allow_headers": ["Content-Type", "Authorization"]
+            "origins": allowed_origins,
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
+            "max_age": 3600
         }
     })
 

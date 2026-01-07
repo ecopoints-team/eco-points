@@ -41,6 +41,7 @@ export default function Rewards() {
   return (
     <section id="rewards" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 scroll-mt-28">
       <div className="relative max-w-6xl mx-auto">
+        <a href="https://www.ecopoints.org">Back to Main Site</a>
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
           <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
             <span className="bg-gradient-to-b from-white to-white bg-clip-text text-transparent">

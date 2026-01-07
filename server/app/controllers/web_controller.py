@@ -16,7 +16,16 @@ def get_users():
         users = User.query.order_by(User.id.asc()).all()
         return jsonify({
             'success': True,
-            'users': [{'id': u.id, 'name': u.name, 'created_at': u.created_at.isoformat()} for u in users]
+            'users': [
+                {
+                    'id': u.id,
+                    'username': u.username,
+                    'full_name': u.full_name,
+                    'points_balance': u.points_balance,
+                    'created_at': u.created_at.isoformat()
+                }
+                for u in users
+            ]
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -27,18 +36,31 @@ def create_user():
     """Create a new user from web application"""
     try:
         data = request.get_json()
-        name = data.get('name')
-        
-        if not name:
-            return jsonify({'success': False, 'error': 'Name is required'}), 400
-        
-        user = User(name=name)
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        full_name = data.get('full_name')
+
+        if not username or not email or not password:
+            return jsonify({'success': False, 'error': 'username, email, and password are required'}), 400
+
+        if User.query.filter((User.username == username) | (User.email == email)).first():
+            return jsonify({'success': False, 'error': 'User with that username or email already exists'}), 409
+
+        user = User(username=username, email=email, full_name=full_name)
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'user': {'id': user.id, 'name': user.name, 'created_at': user.created_at.isoformat()}
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'full_name': user.full_name,
+                'points_balance': user.points_balance,
+                'created_at': user.created_at.isoformat()
+            }
         }), 201
     except Exception as e:
         db.session.rollback()
@@ -55,7 +77,13 @@ def get_user(user_id):
         
         return jsonify({
             'success': True,
-            'user': {'id': user.id, 'name': user.name, 'created_at': user.created_at.isoformat()}
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'full_name': user.full_name,
+                'points_balance': user.points_balance,
+                'created_at': user.created_at.isoformat()
+            }
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
