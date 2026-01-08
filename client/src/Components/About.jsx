@@ -24,10 +24,10 @@ export default function About() {
     >
       <div className="max-w-5xl mx-auto space-y-10 text-center lg:text-left">
         <div className="space-y-4">
-          <p className="text-sm uppercase tracking-[0.3em] text-amber-300">
+          <p className="text-3xl sm:text-5xl font-bold uppercase tracking-[0.3em] text-amber-300 font-['Montserrat']">
             About EcoPoints
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white">
+          <h2 className="text-4xl sm:text-3xl font-bold text-white">
             A circular journey powered by smart rewards.
           </h2>
           <p className="text-white/80 text-lg leading-relaxed">
