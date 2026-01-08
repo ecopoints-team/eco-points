@@ -103,11 +103,11 @@ export default function NavBar({ onLoginClick }) {
                 >
                   {link.label}
                   {/* Underline Animation */}
-                  <span 
-                    className={`absolute left-0 bottom-0 h-0.5 bg-orange-300 transition-all duration-300 ${
-                      isActive ? "w-full" : "w-0 group-hover:w-full"
-                    }`}
-                  ></span>
+                <span 
+                  className={`absolute bottom-0 h-0.5 bg-orange-300 transition-all duration-500 ease-out left-1/2 -translate-x-1/2 ${
+                    isActive ? "w-full" : "w-0"
+                  }`}
+                ></span>
                 </button>
               );
             })}
