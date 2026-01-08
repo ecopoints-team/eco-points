@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, Play, ChevronDown, ImagePlay } from "lucide-react";
 
 // const services = [
@@ -10,8 +11,6 @@ import { ArrowRight, Play, ChevronDown, ImagePlay } from "lucide-react";
 // ];
 
 export default function Services() {
-  const rewardsDomain =
-    process.env.NEXT_PUBLIC_REWARDS_DOMAIN ?? "https://rewards.ecopoints.com";
   return (
     <section
       id="services"
@@ -66,14 +65,12 @@ export default function Services() {
                 {/* Button */}
                 <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
                   <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
-                    <a
-                      href={rewardsDomain}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href="/rewards"
                       className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
                     >
                       Continue to Rewards
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -2,7 +2,7 @@ import NavBar from "../src/Components/NavBar";
 import Hero from "../src/Components/Hero";
 import Features from "../src/Components/Features";
 import Services from "../src/Components/Services";
-import Rewards from "../src/Components/Rewards";
+import Rewards from "../src/Components/Showcase";
 import About from "../src/Components/About";
 import LogIn from "../src/Components/LogIn";
 import Footer from "../src/Components/Footer";

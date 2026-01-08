@@ -14,7 +14,7 @@ export default function NavBar() {
     { label: "Home", target: "home" },
     { label: "Features", target: "features" },
     { label: "Services", target: "services" },
-    { label: "Showcase", target: "rewards" },
+    { label: "Showcase", target: "showcase" },
     { label: "About Us", target: "about" },
   ];
 
