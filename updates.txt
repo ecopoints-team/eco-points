@@ -1,0 +1,49 @@
+# Frontend Update Log - Jan 8, 2026
+
+## Summary
+Refactored authentication flow, corrected project architecture/imports, and implemented a responsive dual-theme (Light/Dark) Admin Dashboard.
+
+## Changes
+
+### 1. Authentication Refactor
+- Removed redundant `app/login` route to prevent redirect loops.
+- Implemented modal-based login triggered from `NavBar.jsx`.
+- State management moved to `app/page.js` to handle modal visibility overlay.
+- Removed legacy "Mock Login" UI artifacts.
+
+### 2. Architecture & Bug Fixes
+- Fixed module resolution errors caused by sibling `app/` and `src/` directory structure.
+- Standardized import paths to explicit relative paths (e.g., `../../src/Components/`).
+- Resolved component naming mismatch (`FuturisticTable` -> `Table.jsx`).
+
+### 3. Dashboard Features
+- **SlotCounter:** Added custom hook/component for numeric rolling animations.
+- **Analytics UI:** Implemented CSS-based bar charts and dynamic Stat Cards.
+- **Live Feed:** Added mock data structure for system alerts (Bin Full, System Online).
+
+### 4. UI/Theming Engine
+- **Dark Mode:** Implemented Tailwind `darkMode: 'class'` strategy.
+    - Default: Cyberpunk/Slate theme.
+    - Light: Standard SaaS/Gray theme.
+- **Responsive Sidebar:**
+    - Desktop: Collapsible state persists.
+    - Mobile: Converted to slide-over drawer with backdrop blur (breakpoint < 1024px).
+- **Animations:** Standardized transition durations to 700ms with custom cubic-bezier easing.
+
+## Files Modified
+
+### Added
+- `src/Components/SlotCounter.jsx`
+
+### Edited
+- `src/app/page.js` (Landing Logic)
+- `src/app/admin/page.js` (Dashboard Content)
+- `src/Components/AdminLayout.jsx` (Theme Wrapper)
+- `src/Components/Sidebar.jsx` (Navigation)
+- `src/Components/NavBar.jsx` (Triggers)
+- `src/Components/LogIn.jsx` (Modal UI)
+- `src/Components/Table.jsx` (Styles)
+- `tailwind.config.js` (Config)
+
+## Configuration Requirements
+- Ensure `darkMode: 'class'` is present in `tailwind.config.js` for the theme toggle to function correctly.
