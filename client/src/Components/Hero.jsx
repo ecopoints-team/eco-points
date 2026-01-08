@@ -47,15 +47,15 @@ export default function Hero() {
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #1 */}
           <div>
-            {/* Introducing EcoPoints */}
+             {/* Introducing EcoPoints */}
             <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border border-orange-700/60 rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
               <QrCodeIcon className="w-5 h-5 text-white" />
-              <span className="font-medium text-xs sm:text-sm text-white">
-                Introducing EcoPoints
+              <span className="font-medium font-lato-bold text-xs sm:text-sm text-white">
+                Introduction of EcoPoints
               </span>
             </div>
             {/* Header Text */}
-            <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="bg-gradient-to-r from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
                 Reduce, Use,
               </span>
@@ -67,7 +67,7 @@ export default function Hero() {
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-md sm:text-base lg:text-lg text-white max-w-2xl mx-auto lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            <p className="text-md sm:text-base lg:text-lg text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
               A SMART RECYCLING SOLUTION. Lorem ipsum, dolor sit amet
               consectetur adipisicing elit. Illo error eos nisi, provident modi
               quidem amet ab eum voluptas numquam debitis, sunt quaerat in

@@ -14,7 +14,7 @@ export default function NavBar() {
     { label: "Home", target: "home" },
     { label: "Features", target: "features" },
     { label: "Services", target: "services" },
-    { label: "Rewards", target: "rewards", external: true, href: rewardsDomain },
+    { label: "Showcase", target: "rewards" },
     { label: "About Us", target: "about" },
   ];
 
@@ -66,24 +66,25 @@ export default function NavBar() {
       <nav className="fixed top-0 w-full z-50 transition-all duration-300 bg-lime-950/90 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16 md:h-20">
-          <Link
-            href="/#home"
-            scroll={false}
-            onClick={() => handleNavClick("home")}
-          >
-            <div className="flex item-center space-x-1 group cursor-pointer hover:translate-y-1 transition-transform duration-400">
+           <Link href="/">
+            <div className="flex items-center space-x-1 group cursor-pointer hover:translate-y-1 transition-transform duration-400">
               <div>
                 {/* LOGO HERE */}
                 <img
-                  src="/logo-removebg-preview.png"
-                  alt="EcoPoints"
-                  className="w-8 h-8 sm:w-10 sm:h-10"
+                  src="/Logo Elements (Light).png"
+                  alt="Logo"
+                  className="w-6 h-8 sm:w-6 sm:h-10"
                 />
               </div>
               {/* CAPSTONE PROJECT NAME */}
               <span className="text-lg sm:text-xl md:text-2xl">
-                <span className="text-amber-500 font-medium">Eco</span>
-                <span className="text-green-500 font-bold">Points</span>
+                <img
+                  src="/EcoPoints Primary Logo (Light version).png"
+                  alt="Logo"
+                  className="w-6 h-8 sm:w-30 sm:h-8"
+                />
+                {/* <span className="text-amber-500 font-medium">Eco</span>
+                <span className="text-green-500 font-bold">Points</span> */}
               </span>
             </div>
           </Link>

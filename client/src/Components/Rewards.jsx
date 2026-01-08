@@ -39,7 +39,9 @@ export default function Rewards() {
   ];
 
   return (
-    <section id="rewards" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+    <section 
+      id="rewards" 
+      className="relative min-h-screen flex item-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28">
       <div className="relative max-w-6xl mx-auto">
         <a href="https://www.ecopoints.org">Back to Main Site</a>
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
