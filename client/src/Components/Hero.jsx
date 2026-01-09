@@ -32,12 +32,12 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #ff7b00d4, transparent 50%)`,
+          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67e22, transparent 50%)`,
         }}
       />
       {/* Pulse Background */}
       {/* <div className="absolute top-30 left-4 sm:left-10 w-48 sm:w-72 h-48 sm: h-72 bg-teal-900/70 rounded-full blur-3xl animate-pulse"></div> */}
-      <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 bg-orange-500/40 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div>
 
       {/*  */}
       {/* Grid Container Hero Section */}
@@ -114,7 +114,7 @@ export default function Hero() {
             Concept Study
           </span>
         </h2>
-        <p className="text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+        <p className="text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
           Welcome to the official platform for EcoPoints. EcoPoints is an
           Automated Reverse Vending Machine (RVM) prototype designed to address
           the critical issue of plastic waste management. By utilizing QR-based

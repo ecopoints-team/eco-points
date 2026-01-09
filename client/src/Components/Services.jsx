@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Play, ChevronDown, ImagePlay } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 // const services = [
 //   {
@@ -56,26 +56,26 @@ export default function Services() {
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-md sm:text-base lg:text-lg text-white max-w-2xl mx-auto lg:mx-0 font-body-regular mb-6 sm:mb-8">
+            <p className="text-md sm:text-base lg:text-lg text-white text-justify max-w-2xl mx-auto lg:mx-0 font-body-regular mb-6 sm:mb-8">
               We offer a bunch of services including rewards blah blah. Lorem
               ipsum, dolor sit amet consectetur adipisicing elit. Illo error eos
               nisi, provident modi quidem amet ab eum voluptas numquam debitis,
               sunt quaerat in incidunt, repellat fuga. Maiores, harum aut.
             </p>
-                {/* Button */}
-                <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
-                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
-                    <Link
-                      href="/rewards"
-                      className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
-                    >
-                      Continue to Rewards
-                    </Link>
-                  </div>
-                </div>
+            {/* Button */}
+            <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
+                <Link
+                  href="/rewards"
+                  className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-bl from-amber-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
+                >
+                  Continue to Rewards
+                </Link>
               </div>
             </div>
           </div>
+        </div>
+      </div>
     </section>
   );
 }
