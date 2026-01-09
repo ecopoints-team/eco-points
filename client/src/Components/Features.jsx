@@ -2,21 +2,21 @@ const features = [
   {
     title: "Vision System",
     description:
-      "By using the blah blah blah...   Lorem ipsum dolor, sit amet consectetur adipisicing elit. Rerum atque harum, illo impedit, libero nostrum error dicta ut, omnis reiciendis ipsam minima et culpa aliquid? Hic sunt ea earum. Tenetur?",
+      "The prototype is equipped with intelligent sensors that act as its “eyes”. When you insert an item, the Vision System instantly scans and analyzes it to verify that it is a valid PET bottle and reject anything that says otherwise. This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
     image: "Camera and Image Processing",
     imagePosition: "left",
   },
   {
     title: "User-Friendly Experience",
     description:
-      "UI/UX Design helps...   Lorem ipsum dolor, sit amet consectetur adipisicing elit. Rerum atque harum, illo impedit, libero nostrum error dicta ut, omnis reiciendis ipsam minima et culpa aliquid? Hic sunt ea earum. Tenetur?",
+      "EcoPoints was designed with people in mind. From the height of the scanner to the clarity of the touchscreen instructions, every aspect follows ergonomic standards. The interface is simple, intuitive, and guides you through the recycling process in seconds, making it easy for students, faculty, and staff to use without any training.",
     image: "User-Friendly",
     imagePosition: "left",
   },
   {
     title: "QR-Based User Authentication System",
     description:
-      "Simple as a QR Code...   Lorem ipsum dolor, sit amet consectetur adipisicing elit. Rerum atque harum, illo impedit, libero nostrum error dicta ut, omnis reiciendis ipsam minima et culpa aliquid? Hic sunt ea earum. Tenetur?",
+      "Our system uses a secure Quick Response (QR) code technology for instant login. Every user gets a unique personal QR code on our website. Simply show this code to the machine’s scanner, and it immediately identifies you and opens your account, making the process touch-free and secure.",
     image: "QR-Code",
     imagePosition: "right",
   },
@@ -30,7 +30,7 @@ const features = [
   {
     title: "Web-Connected Rewards System",
     description:
-      "By using our machine, 'EcoPoints' accumulate to certain rewards...   Lorem ipsum dolor, sit amet consectetur adipisicing elit. Rerum atque harum, illo impedit, libero nostrum error dicta ut, omnis reiciendis ipsam minima et culpa aliquid? Hic sunt ea earum. Tenetur?",
+      "The EcoPoints machine is fully IoT-enabled (Internet of Things). This means it is constantly connected to the internet. As soon as you recycle a bottle, the machine sends a signal to our cloud server, and your reward points are instantly updated on your web dashboard. You can check your balance from any device anytime and anywhere.",
     image: "Rewards-Showcase",
     imagePosition: "right",
   },

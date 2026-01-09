@@ -68,19 +68,19 @@
   /* Main Color Palette (Reusable) */
 
   .background-color {
-    color: #d4eadd;
+    background-color: #d4eadd;
   }
 
   .primary-color {
-    color: #2e7d32;
+    background-color: #2e7d32;
   }
 
   .secondary-color {
-    color: #00838f;
+    background-color: #00838f;
   }
 
   .accent-color {
-    color: #e67e22;
+    background-color: #e67e22;
   }
 
   .text-color {
