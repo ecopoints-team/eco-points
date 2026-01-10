@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { MenuIcon, X } from "lucide-react";
 import Link from "next/link";
@@ -18,8 +18,10 @@ export default function NavBar({ onLoginClick }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = navLinks.map(link => document.getElementById(link.target));
-      const current = sections.find(section => {
+      const sections = navLinks.map((link) =>
+        document.getElementById(link.target)
+      );
+      const current = sections.find((section) => {
         if (section) {
           const rect = section.getBoundingClientRect();
           return rect.top >= -150 && rect.top < window.innerHeight / 2;
@@ -48,25 +50,27 @@ export default function NavBar({ onLoginClick }) {
     setActiveSection(target);
   }, []);
 
-  const handleNavLinkClick = useCallback((link) => {
-    if (link.external && link.href) {
-      setMobileMenuIsOpen(false);
-      if (typeof window !== "undefined") {
-        window.location.assign(link.href);
+  const handleNavLinkClick = useCallback(
+    (link) => {
+      if (link.external && link.href) {
+        setMobileMenuIsOpen(false);
+        if (typeof window !== "undefined") {
+          window.location.assign(link.href);
+        }
+        return;
       }
-      return;
-    }
-    handleNavClick(link.target);
-  }, [handleNavClick]);
+      handleNavClick(link.target);
+    },
+    [handleNavClick]
+  );
 
   return (
     <nav className="fixed top-0 w-full z-50 transition-all duration-300 bg-lime-950/90 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex justify-between items-center h-14 sm:h-16 md:h-20">
-          
           {/* LOGO SECTION */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             onClick={(e) => {
               e.preventDefault();
               handleNavClick("home");
@@ -92,12 +96,14 @@ export default function NavBar({ onLoginClick }) {
                   key={link.target}
                   type="button"
                   onClick={() => handleNavLinkClick(link)}
-                  className={`relative group text-sm lg:text-base transition-colors duration-300 ${
-                    isActive ? "text-orange-300" : "text-white hover:text-orange-300"
+                  className={`relative group text-sm lg:text-base transition-colors duration-300 cursor-pointer ${
+                    isActive
+                      ? "text-orange-300"
+                      : "text-white hover:text-orange-300"
                   }`}
                 >
                   {link.label}
-                  <span 
+                  <span
                     className={`absolute bottom-0 h-0.5 bg-orange-300 transition-all duration-500 ease-out left-1/2 -translate-x-1/2 ${
                       isActive ? "w-full" : "w-0"
                     }`}
@@ -108,12 +114,12 @@ export default function NavBar({ onLoginClick }) {
           </div>
 
           {/* DESKTOP LOGIN BUTTON */}
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 font-light transition-all duration-100 hover:bg-amber-700/80 hover:font-medium">
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8  ">
+            <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 font-light transition-all duration-100 hover:bg-amber-700/80 hover:font-medium ">
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="text-white text-sm lg:text-base px-2 w-full text-center"
+                className="text-white text-sm lg:text-base px-2 w-full text-center "
               >
                 Log In
               </button>
@@ -144,13 +150,15 @@ export default function NavBar({ onLoginClick }) {
                 type="button"
                 onClick={() => handleNavLinkClick(link)}
                 className={`block text-sm lg:text-base text-left w-full ${
-                  activeSection === link.target ? "text-orange-400 font-bold" : "text-white hover:text-orange-600"
+                  activeSection === link.target
+                    ? "text-orange-400 font-bold"
+                    : "text-white hover:text-orange-600"
                 }`}
               >
                 {link.label}
               </button>
             ))}
-            
+
             <button
               type="button"
               onClick={() => {

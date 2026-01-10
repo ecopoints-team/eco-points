@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   ArrowRight,
@@ -32,22 +32,22 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #ff7b00d4, transparent 50%)`,
+          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67e22, transparent 50%)`,
         }}
       />
       {/* Pulse Background */}
       {/* <div className="absolute top-30 left-4 sm:left-10 w-48 sm:w-72 h-48 sm: h-72 bg-teal-900/70 rounded-full blur-3xl animate-pulse"></div> */}
-      <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 bg-orange-500/40 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div>
 
       {/*  */}
       {/* Grid Container Hero Section */}
       {/*  */}
 
       <div className="max-w-7xl mx-auto text-center relative w-full">
-        <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
+        <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #1 */}
           <div>
-             {/* Introducing EcoPoints */}
+            {/* Introducing EcoPoints */}
             <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border border-orange-700/60 rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
               <QrCodeIcon className="w-5 h-5 text-white" />
               <span className="font-medium font-lato-bold text-xs sm:text-sm text-white">
@@ -56,22 +56,17 @@ export default function Hero() {
             </div>
             {/* Header Text */}
             <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-              <span className="bg-gradient-to-r from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
-                Reduce, Use,
+              <span className="bg-gradient-to-tl from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+                EcoPoints: A Smart
               </span>
-              <span className="bg-gradient-to-r from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
-                and Explore
-              </span>
-              <span className="font-bold bg-gradient-to-r from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
-                With EcoPoints
+              <span className="bg-gradient-to-br from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+                Recycling Initiative
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-md sm:text-base lg:text-lg text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-              A SMART RECYCLING SOLUTION. Lorem ipsum, dolor sit amet
-              consectetur adipisicing elit. Illo error eos nisi, provident modi
-              quidem amet ab eum voluptas numquam debitis, sunt quaerat in
-              incidunt, repellat fuga. Maiores, harum aut.
+            <p className="text-xl sm:text-base lg:text-xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+              Bridging the gap between technology and environmental
+              sustainability through an automated reward system.
             </p>
 
             {/* BUTTONS inside Grid #1
@@ -107,13 +102,28 @@ export default function Hero() {
                   </div>
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
+                {/* Inside Container */}
               </div>
             </div>
           </div>
-          
 
           {/* Floating Cards */}
         </div>
+        <h2 className="text-3xl sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-left font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+          <span className="bg-gradient-to-br from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+            Concept Study
+          </span>
+        </h2>
+        <p className="text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+          Welcome to the official platform for EcoPoints. EcoPoints is an
+          Automated Reverse Vending Machine (RVM) prototype designed to address
+          the critical issue of plastic waste management. By utilizing QR-based
+          user authentication and embedded sensor technology, our machine
+          verifies and compacts PET bottles, converting waste into digital
+          currency. This website serves as the user portal where you can
+          register, track your recycling history, and monitor your EcoPoints
+          balance.
+        </p>
       </div>
     </section>
   );
