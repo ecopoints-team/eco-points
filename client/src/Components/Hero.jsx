@@ -37,7 +37,7 @@ export default function Hero() {
       />
       {/* Pulse Background */}
       {/* <div className="absolute top-30 left-4 sm:left-10 w-48 sm:w-72 h-48 sm: h-72 bg-teal-900/70 rounded-full blur-3xl animate-pulse"></div> */}
-      <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div>
+      {/* <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div> */}
 
       {/*  */}
       {/* Grid Container Hero Section */}
@@ -56,15 +56,15 @@ export default function Hero() {
             </div>
             {/* Header Text */}
             <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-              <span className="bg-gradient-to-tl from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+              <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints: A Smart
               </span>
-              <span className="bg-gradient-to-br from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+              <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
                 Recycling Initiative
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-xl sm:text-base lg:text-xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            <p className="text-shadow-lg text-xl sm:text-base lg:text-xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
               Bridging the gap between technology and environmental
               sustainability through an automated reward system.
             </p>
@@ -110,11 +110,11 @@ export default function Hero() {
           {/* Floating Cards */}
         </div>
         <h2 className="text-3xl sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-left font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-          <span className="bg-gradient-to-br from-orange-400 via-amber-400 bg-clip-text text-transparent block mb-1 sm:2">
+          <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
             Concept Study
           </span>
         </h2>
-        <p className="text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+        <p className="text-shadow-lg text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
           Welcome to the official platform for EcoPoints. EcoPoints is an
           Automated Reverse Vending Machine (RVM) prototype designed to address
           the critical issue of plastic waste management. By utilizing QR-based

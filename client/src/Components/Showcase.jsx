@@ -41,10 +41,10 @@ export default function Rewards() {
   return (
     <section
       id="showcase"
-      className="relative min-h-screen flex item-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28 primary-color"
+      className="relative min-h-screen flex item-center justify-center pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28 background-color"
     >
       <div className="relative max-w-6xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+        <div className="text-center mb-2 sm:mb-6 lg:mb-10">
           <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
             <span className="font-header text-color bg-clip-text text-transparent">
               Have{" "}
