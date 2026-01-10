@@ -16,14 +16,14 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
         className={`
           w-full relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
           ${active || expanded 
-            ? 'text-white' 
-            : 'text-slate-400 hover:bg-white/5 hover:text-emerald-300'
+            ? 'bg-slate-100 text-slate-900 dark:bg-transparent dark:text-white' 
+            : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-300'
           }
           ${collapsed ? 'justify-center' : 'justify-between'}
         `}
       >
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg transition-all duration-300 ${active || expanded ? 'bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'text-slate-400 group-hover:text-emerald-400'}`}>
+          <div className={`p-2 rounded-lg transition-all duration-300 ${active || expanded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 dark:shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'text-slate-400 group-hover:text-emerald-500'}`}>
             <Icon size={20} />
           </div>
           {!collapsed && <span className="font-semibold text-sm tracking-wide">{label}</span>}
@@ -31,7 +31,7 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
         {!collapsed && (
           <ChevronDown 
             size={16} 
-            className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-emerald-400' : 'text-slate-600'}`} 
+            className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} 
           />
         )}
       </button>
@@ -45,15 +45,15 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
       className={`
         relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
         ${active 
-          ? 'bg-gradient-to-r from-emerald-600 to-emerald-900 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-500/50' 
-          : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-900 dark:text-white dark:shadow-[0_0_20px_rgba(16,185,129,0.3)] dark:border dark:border-emerald-500/50' 
+          : 'text-slate-500 hover:bg-slate-100 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white dark:border dark:border-transparent'
         }
         ${collapsed ? 'justify-center' : 'justify-start'}
       `}
     >
       <Icon 
         size={20} 
-        className={`shrink-0 transition-all duration-300 ${active ? 'text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'group-hover:text-emerald-400'}`} 
+        className={`shrink-0 transition-all duration-300 ${active ? 'text-emerald-700 dark:text-white dark:drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'}`} 
       />
       
       {!collapsed && (
@@ -62,9 +62,9 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
         </span>
       )}
 
-      {/* Glowing Indicator Line for Active State */}
+      {/* Glowing Indicator Line (Dark Mode Only) */}
       {active && !collapsed && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-400 rounded-r-full shadow-[0_0_10px_#34d399]"></div>
+        <div className="hidden dark:block absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-400 rounded-r-full shadow-[0_0_10px_#34d399]"></div>
       )}
     </Link>
   );
@@ -76,18 +76,19 @@ const SubMenuItem = ({ label, href, active }) => (
     className={`
       flex items-center py-2 pl-11 pr-3 my-1 rounded-lg text-sm transition-all duration-200 relative
       ${active 
-        ? 'text-emerald-300 font-medium' 
-        : 'text-slate-500 hover:text-emerald-200'
+        ? 'text-emerald-700 font-bold bg-emerald-50 dark:text-emerald-300 dark:font-medium dark:bg-transparent' 
+        : 'text-slate-500 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-200'
       }
     `}
   >
     {/* Tiny dot connector */}
-    <div className={`absolute left-[2.25rem] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${active ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-700'}`}></div>
+    <div className={`absolute left-[2.25rem] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-emerald-600 dark:bg-emerald-400 dark:shadow-[0_0_8px_#34d399]' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
     {label}
   </Link>
 );
 
-export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile }) {
+// Added isDarkMode prop (optional usage, but good for future proofing)
+export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDarkMode }) {
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState(['user-management', 'logs']);
 
@@ -125,34 +126,37 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile }) {
 
   return (
     <>
+      {/* Mobile Overlay */}
       {isMobile && isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" onClick={closeMobile} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={closeMobile} />
       )}
 
       <aside 
         className={`
-          fixed top-0 left-0 h-full z-50 bg-[#0f172a] border-r border-slate-800 shadow-[10px_0_30px_rgba(0,0,0,0.5)] transition-all duration-300
-          ${isOpen ? 'w-64' : 'w-20'}
-          ${isMobile ? (isOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
+          fixed top-0 left-0 h-full z-50 transition-all duration-300
+          bg-white border-r border-slate-200 shadow-2xl
+          dark:bg-[#0f172a] dark:border-slate-800 dark:shadow-[10px_0_30px_rgba(0,0,0,0.5)]
+          ${isOpen ? 'w-64 translate-x-0' : (isMobile ? '-translate-x-full' : 'w-20 translate-x-0')}
         `}
       >
         {/* LOGO AREA */}
-        <div className="h-24 flex items-center justify-center border-b border-slate-800/50 relative overflow-hidden bg-[#020617]">
-            <div className="absolute top-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900 opacity-50"></div>
+        <div className="h-24 flex items-center justify-center border-b border-slate-100 dark:border-slate-800/50 relative overflow-hidden bg-white dark:bg-[#020617] transition-colors duration-300">
+            {/* Subtle Gradient Overlay */}
+            <div className="absolute top-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-900 dark:to-slate-900 opacity-50"></div>
           
           <div className="flex items-center gap-3 overflow-hidden px-4 w-full relative z-10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-white/10">
-              <Leaf className="text-white fill-white/20" size={22} />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-200 dark:shadow-[0_0_5px_rgba(16,185,129,0.15)] border border-white/20 dark:border-white/10">
+              <Leaf className="text-white" size={22} />
             </div>
             <div className={`flex flex-col transition-all duration-300 ${!isOpen ? 'opacity-0 translate-x-4 hidden' : 'opacity-100 translate-x-0'}`}>
-              <span className="font-bold text-xl text-white tracking-wide font-sans">EcoPoints</span>
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Admin Panel</span>
+              <span className="font-bold text-xl text-slate-800 dark:text-white tracking-wide font-sans">EcoPoints</span>
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Admin Panel</span>
             </div>
           </div>
         </div>
 
         {/* NAVIGATION LIST */}
-        <nav className="px-3 py-6 space-y-1 h-[calc(100vh-160px)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        <nav className="px-3 py-6 space-y-1 h-[calc(100vh-160px)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent">
           {navStructure.map((item, idx) => {
             if (item.type === 'item') {
               return (
@@ -187,7 +191,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile }) {
                     ${isExpanded && isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                   `}
                 >
-                  <div className="relative ml-5 pl-3 border-l border-slate-700/50 my-1 space-y-0.5">
+                  <div className="relative ml-5 pl-3 border-l border-slate-200 dark:border-slate-700/50 my-1 space-y-0.5">
                     {item.children.map((child, cIdx) => (
                       <SubMenuItem 
                         key={cIdx} 
@@ -202,18 +206,18 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile }) {
           })}
         </nav>
 
-        {/* COLLAPSE TOGGLE BUTTON */}
+        {/* COLLAPSE TOGGLE BUTTON (Hidden on Mobile) */}
         {!isMobile && (
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="absolute -right-3 top-28 bg-emerald-500 border-2 border-[#0f172a] p-1 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.6)] text-black hover:bg-white transition-all z-50 hover:scale-110"
+            className="absolute -right-3 top-28 bg-white dark:bg-emerald-500 border border-slate-200 dark:border-[#0f172a] p-1 rounded-full shadow-md dark:shadow-[0_0_15px_rgba(16,185,129,0.6)] text-slate-500 dark:text-black hover:text-emerald-600 dark:hover:bg-white transition-all z-50 hover:scale-110"
           >
             {isOpen ? <ChevronLeft size={14} strokeWidth={3} /> : <ChevronRight size={14} strokeWidth={3} />}
           </button>
         )}
 
         {/* FOOTER */}
-        <div className="absolute bottom-0 left-0 w-full p-4 border-t border-slate-800 bg-[#020617]">
+        <div className="absolute bottom-0 left-0 w-full p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] transition-colors duration-300">
           <SidebarItem 
             icon={LogOut} 
             label="Sign Out" 
