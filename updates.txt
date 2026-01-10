@@ -47,3 +47,49 @@ Refactored authentication flow, corrected project architecture/imports, and impl
 
 ## Configuration Requirements
 - Ensure `darkMode: 'class'` is present in `tailwind.config.js` for the theme toggle to function correctly.
+
+
+# Frontend Update Log - Jan 10, 2026
+
+## Summary
+Resolved critical Tailwind CSS version mismatches to restore site stability, enforced a permanent "Cyberpunk" Dark Mode (removing the toggle), and customized the Admin Dashboard content with shortcut actions and conditional table logic.
+
+## Changes
+
+### 1. Architecture & Stability Fixes
+- **Version Rollback:** Downgraded from Tailwind v4 (Alpha) to Stable v3 (3.4.1) to resolve build crashes and plugin incompatibilities.
+- **Configuration Repair:**
+    - Updated `postcss.config.js` to use the standard v3 `tailwindcss` plugin.
+    - Corrected `src/index.css` directives.
+    - Fixed `tailwind.config.js` content paths to correctly detect files in the `app/` directory.
+
+### 2. UI/Theming Engine
+- **Forced Dark Mode:**
+    - Hardcoded `AdminLayout` to strictly render in Dark Mode (`useState(true)`).
+    - Removed the Sun/Moon toggle button and logic.
+    - Implemented a glowing Emerald/Slate color palette ("EcoPoints Theme").
+- **Custom Scrollbar:** Added WebKit styles in `index.css` for a slim, hovering emerald scrollbar.
+
+### 3. Dashboard Features
+- **Stat Cards:** Replaced "CO2 Reduced" card with "Active Users" to better reflect administrator needs.
+- **Quick Actions Panel:** Replaced the "Live Feed" list with a "Quick Actions" grid containing shortcut buttons (Manage Users, Logs, Machines, Settings).
+
+### 4. Component Logic
+- **Table Logic:** Added a `showAdd` prop to the `Table` component to conditionally render the "Add New" button.
+- **Sidebar Styling:** Updated hover states and active indicators to match the refined dark theme.
+
+## Files Modified
+
+### Edited
+- package.json (Dependency adjustments)
+- postcss.config.js (Plugin correction)
+- tailwind.config.js (Content paths & Config)
+- src/index.css (Tailwind directives & Scrollbar CSS)
+- src/Components/AdminLayout.jsx (Forced Dark Mode, Removed Toggle)
+- src/Components/Sidebar.jsx (Styling updates)
+- src/Components/Table.jsx (Added showAdd prop logic)
+- src/app/admin/page.js (Content updates: Shortcuts & Stat Cards)
+
+## Configuration Requirements
+- **Crucial:** Must delete `node_modules` and run `npm install` again to apply the Tailwind v3 downgrade.
+- **Crucial:** Must restart the development server (`npm run dev`) for the new configuration to take effect.
