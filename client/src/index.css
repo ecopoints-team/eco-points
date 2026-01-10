@@ -67,18 +67,26 @@
 
   /* Main Color Palette (Reusable) */
 
+  /* Fresh Mint */
   .background-color {
     background-color: #d4eadd;
   }
 
+  /* Forest Green */
   .primary-color {
     background-color: #2e7d32;
   }
 
-  .secondary-color {
-    background-color: #00838f;
+  .primary-color-header {
+    color: #2e7d32;
   }
 
+  /* Light Fern */
+  .secondary-color {
+    background-color: #81c784;
+  }
+
+  /* Safety Orange */
   .accent-color-background {
     background-color: #e67e22;
   }
@@ -91,6 +99,12 @@
     border-color: #e67e22;
   }
 
+  /* Light Fern */
+  .text-color-header {
+    color: #81c784;
+  }
+
+  /* Deep Slate */
   .text-color {
     color: #102027;
   }
@@ -131,39 +145,33 @@
   }
 }
 
-
 /* Custom Scrollar */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent; 
+  scrollbar-color: #334155 transparent;
 }
-
 
 ::-webkit-scrollbar {
-  width: 6px;  
-  height: 6px; 
+  width: 6px;
+  height: 6px;
 }
 
-
 ::-webkit-scrollbar-track {
-  background: transparent; 
+  background: transparent;
   margin: 4px;
 }
 
-
 ::-webkit-scrollbar-thumb {
-  background: #334155; 
-  border-radius: 10px; 
+  background: #334155;
+  border-radius: 10px;
   transition: background 0.3s ease;
 }
 
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #10b981; 
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); 
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
-
 
 ::-webkit-scrollbar-corner {
   background: transparent;
