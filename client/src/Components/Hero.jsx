@@ -48,7 +48,7 @@ export default function Hero() {
           {/* Grid #1 */}
           <div>
             {/* Introducing EcoPoints */}
-            <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border border-orange-700/60 rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
+            <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
               <QrCodeIcon className="w-5 h-5 text-white" />
               <span className="font-medium font-lato-bold text-xs sm:text-sm text-white">
                 Introduction of EcoPoints

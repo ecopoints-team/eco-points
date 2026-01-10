@@ -9,7 +9,8 @@ export default function RewardsOrg() {
     },
     {
       title: "Another Reward",
-      description: "You can list reward details, costs, and redemption rules here.",
+      description:
+        "You can list reward details, costs, and redemption rules here.",
       image: "/Omniman.jpg",
     },
     {
@@ -30,12 +31,13 @@ export default function RewardsOrg() {
 
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
           <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 font-header">
-            <span className="bg-gradient-to-r from-orange-400 via-amber-400 bg-clip-text text-transparent">
+            <span className="accent-color-text bg-clip-text text-transparent">
               Rewards Portal
             </span>
           </h1>
           <p className="text-md sm:text-base lg:text-lg text-white max-w-2xl mx-auto font-body-regular leading-relaxed">
-            This page is the in-app version of the rewards site. Add here content you want for rewards.ecopoints.org.
+            This page is the in-app version of the rewards site. Add here
+            content you want for rewards.ecopoints.org.
           </p>
         </div>
 
@@ -47,7 +49,11 @@ export default function RewardsOrg() {
                   <div className="absolute inset-0 bg-gray-600/20 rounded-xl sm:rounded-2xl transition-all duration-500" />
                   <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition">
                     <div className="relative group bg-gray-900/20 rounded-lg p-3 sm:p-4">
-                      <img src={reward.image} alt={reward.title} className="w-full rounded-md" />
+                      <img
+                        src={reward.image}
+                        alt={reward.title}
+                        className="w-full rounded-md"
+                      />
                       <div className="mt-4">
                         <h2 className="text-2xl sm:text-2xl lg:text-3xl font-bold mb-2 text-white font-header">
                           {reward.title}
