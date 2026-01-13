@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
-import { Menu, Settings, LogOut, ChevronDown } from 'lucide-react'; // ❌ Removed Sun, Moon imports
+import { Menu, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
-  // 1. Theme State (LOCKED TO DARK MODE)
-  const [isDarkMode] = useState(true);
+
 
   // 2. Sidebar & Mobile State
   const [sidebarOpen, setSidebarOpen] = useState(true);
