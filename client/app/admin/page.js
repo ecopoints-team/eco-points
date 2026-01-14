@@ -1,17 +1,87 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import AdminLayout from '../../src/Components/AdminLayout';
-import Table from '../../src/Components/Table';
 import SlotCounter from '../../src/Components/SlotCounter';
-import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings } from 'lucide-react';
+import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock } from 'lucide-react';
 
-// Mock Data
+// Mock Data - Recent transactions for dashboard summary
 const recentTransactions = [
-    ["#TXN-8842", "Justin Ibale", "500ml PET", "Active", "Jan 08, 10:42 AM"],
-    ["#TXN-8841", "Jana Soriano", "1000ml PET", "Active", "Jan 08, 10:30 AM"],
-    ["#TXN-8840", "Guest User", "350ml PET", "Active", "Jan 08, 09:15 AM"],
+    {
+        id: 'LOG-8842',
+        userId: 'USR-1234',
+        userName: 'Justin Ibale',
+        machineId: 'RVM-001',
+        machineName: 'Main Campus RVM',
+        bottleType: '500ml PET',
+        pointsAwarded: 5,
+        timestamp: 'Jan 14, 10:42 AM',
+        status: 'Completed',
+    },
+    {
+        id: 'LOG-8841',
+        userId: 'USR-1235',
+        userName: 'Jana Soriano',
+        machineId: 'RVM-002',
+        machineName: 'Library RVM',
+        bottleType: '1000ml PET',
+        pointsAwarded: 10,
+        timestamp: 'Jan 14, 10:30 AM',
+        status: 'Completed',
+    },
+    {
+        id: 'LOG-8840',
+        userId: 'GUEST',
+        userName: 'Guest User',
+        machineId: 'RVM-001',
+        machineName: 'Main Campus RVM',
+        bottleType: '350ml PET',
+        pointsAwarded: 3,
+        timestamp: 'Jan 14, 09:15 AM',
+        status: 'Completed',
+    },
+    {
+        id: 'LOG-8839',
+        userId: 'USR-1240',
+        userName: 'Mark Santos',
+        machineId: 'RVM-004',
+        machineName: 'Sports Complex RVM',
+        bottleType: '1500ml PET',
+        pointsAwarded: 15,
+        timestamp: 'Jan 14, 08:45 AM',
+        status: 'Completed',
+    },
+    {
+        id: 'LOG-8838',
+        userId: 'USR-1238',
+        userName: 'Sarah Cruz',
+        machineId: 'RVM-002',
+        machineName: 'Library RVM',
+        bottleType: '500ml PET',
+        pointsAwarded: 5,
+        timestamp: 'Jan 14, 08:20 AM',
+        status: 'Completed',
+    },
 ];
+
+// Chart data for different time periods
+const chartData = {
+    week: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        values: [400, 650, 300, 800, 550, 900, 450],
+        maxValue: 1000
+    },
+    month: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        values: [2800, 3200, 2950, 3500],
+        maxValue: 4000
+    },
+    year: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        values: [8500, 9200, 10500, 11200, 12450, 13800, 14200, 15000, 13500, 12800, 11500, 10200],
+        maxValue: 16000
+    }
+};
 
 // DUAL-THEME STAT CARD
 const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
@@ -90,6 +160,18 @@ const ShortcutBtn = ({ label, icon: Icon, color, href }) => {
 }
 
 export default function AdminDashboard() {
+    const [timeRange, setTimeRange] = useState('week');
+    const currentData = chartData[timeRange];
+
+    // Generate Y-axis labels based on max value
+    const yAxisLabels = [
+        currentData.maxValue,
+        Math.round(currentData.maxValue * 0.75),
+        Math.round(currentData.maxValue * 0.5),
+        Math.round(currentData.maxValue * 0.25),
+        0
+    ];
+
     return (
         <AdminLayout>
             {/* 1. Statistics Row */}
@@ -109,29 +191,42 @@ export default function AdminDashboard() {
           bg-white border border-slate-200
           dark:bg-[#1e293b]/60 dark:backdrop-blur-md dark:border-slate-700/50
         ">
-                    <div className="flex justify-between items-center mb-8">
+                    {/* Header with title, legend, and dropdown */}
+                    <div className="flex justify-between items-center mb-8 relative z-30">
                         <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             <span className="w-1 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
                             Recycling Trends
                         </h3>
-                        <select className="text-xs py-1.5 px-3 rounded-lg outline-none transition-colors
-               bg-slate-50 text-slate-600 border border-slate-200
-               dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 focus:border-emerald-500
-             ">
-                            <option>Last 7 Days</option>
-                            <option>Last Month</option>
-                        </select>
+                        <div className="flex items-center gap-4">
+                            {/* Legend */}
+                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                <div className="w-3 h-3 rounded bg-gradient-to-t from-emerald-500 to-emerald-300"></div>
+                                <span>Bottles Recycled</span>
+                            </div>
+                            {/* Dropdown */}
+                            <select
+                                value={timeRange}
+                                onChange={(e) => setTimeRange(e.target.value)}
+                                className="text-xs py-1.5 px-3 rounded-lg outline-none transition-colors cursor-pointer
+                                    bg-slate-50 text-slate-600 border border-slate-200
+                                    dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 focus:border-emerald-500"
+                            >
+                                <option value="week">By Week</option>
+                                <option value="month">By Month</option>
+                                <option value="year">By Year</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Chart Visuals with Y-axis */}
                     <div className="flex">
                         {/* Y-axis labels */}
-                        <div className="flex flex-col justify-between h-64 pr-3 text-right">
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">1000</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">750</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">500</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">250</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">0</span>
+                        <div className="flex flex-col justify-between h-64 pr-4 text-right min-w-[50px]">
+                            {yAxisLabels.map((label, i) => (
+                                <span key={i} className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                                    {label.toLocaleString()}
+                                </span>
+                            ))}
                         </div>
 
                         {/* Chart area with grid lines */}
@@ -144,26 +239,30 @@ export default function AdminDashboard() {
                             </div>
 
                             {/* Bars */}
-                            <div className="h-64 w-full flex items-end justify-between px-2 gap-3 relative">
-                                {[400, 650, 300, 800, 550, 900, 450].map((value, i) => {
-                                    const height = (value / 1000) * 100;
+                            <div className="h-64 w-full flex items-end justify-around gap-2 relative">
+                                {currentData.values.map((value, i) => {
+                                    const height = (value / currentData.maxValue) * 100;
                                     return (
-                                        <div key={i} className="w-full rounded-t-lg relative group cursor-pointer border-b border-transparent hover:border-emerald-500 transition-all duration-300
+                                        <div key={i} className="flex-1 max-w-16 rounded-t-lg relative group cursor-pointer transition-all duration-300
                                             bg-slate-100 dark:bg-slate-800/50 h-full"
                                         >
                                             <div
-                                                className="absolute bottom-0 w-full rounded-t-lg transition-all duration-700
-                                                    bg-gradient-to-t from-emerald-500 to-emerald-300 opacity-90
-                                                    dark:from-emerald-600 dark:to-emerald-400/80 dark:opacity-80 dark:group-hover:opacity-100 dark:group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                                className="absolute bottom-0 w-full rounded-t-lg transition-all duration-300 flex items-center justify-center
+                                                    bg-gradient-to-t from-emerald-500 to-emerald-300 
+                                                    group-hover:brightness-110 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]
+                                                    dark:from-emerald-600 dark:to-emerald-400/80 
+                                                    dark:group-hover:shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                                                 style={{ height: `${height}%` }}
-                                            ></div>
-
-                                            {/* Tooltip */}
-                                            <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 text-xs font-bold py-2 px-3 rounded-lg shadow-xl transition-all duration-300 z-20 whitespace-nowrap
-                                                bg-slate-800 text-white dark:bg-slate-900 dark:text-emerald-400 dark:border dark:border-emerald-500/30"
                                             >
-                                                {value} Bottles
-                                                <div className="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-slate-800 dark:bg-slate-900 dark:border-r dark:border-b dark:border-emerald-500/30"></div>
+                                                {/* Premium glowing tooltip inside bar */}
+                                                <span className="opacity-0 group-hover:opacity-100 group-hover:scale-110 
+                                                    text-xs font-bold py-1 px-2 rounded-md 
+                                                    bg-slate-900/80 backdrop-blur-sm text-emerald-400 
+                                                    border border-emerald-500/50 
+                                                    shadow-[0_0_15px_rgba(16,185,129,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]
+                                                    transition-all duration-300 whitespace-nowrap">
+                                                    {value}
+                                                </span>
                                             </div>
                                         </div>
                                     );
@@ -172,14 +271,12 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* X-axis labels and legend */}
-                    <div className="flex items-center justify-between mt-4">
-                        <div className="flex-1 flex justify-between text-xs text-slate-400 dark:text-slate-500 px-2 pl-12 font-mono uppercase tracking-widest">
-                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <div className="w-3 h-3 rounded bg-gradient-to-t from-emerald-500 to-emerald-300"></div>
-                            <span>Bottles Recycled</span>
+                    {/* X-axis labels */}
+                    <div className="flex mt-4 pl-[50px]">
+                        <div className="flex-1 flex justify-around text-xs text-slate-400 dark:text-slate-500 font-mono uppercase tracking-wider">
+                            {currentData.labels.map((label, i) => (
+                                <span key={i} className="text-center flex-1 max-w-16">{label}</span>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -203,13 +300,90 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* 3. Recent Transactions Table */}
-            <Table
-                title="Real-Time Data Logs"
-                headers={["Trans ID", "User", "Item Type", "Status", "Timestamp"]}
-                data={recentTransactions}
-                showAddButton={false}
-            />
-        </AdminLayout>
+            {/* 3. Recent Transactions Table - Summary View */}
+            <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden mt-6">
+                {/* Table Header */}
+                <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                        <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
+                        Real-Time Data Logs
+                    </h3>
+                    <Link href="/admin/logs/bottles" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
+                        View All →
+                    </Link>
+                </div>
+
+                {/* Table Content */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700
+                            bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
+                            <tr>
+                                <th className="px-6 py-4">Log ID</th>
+                                <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">Machine</th>
+                                <th className="px-6 py-4">Bottle Type</th>
+                                <th className="px-6 py-4">Points</th>
+                                <th className="px-6 py-4">Time</th>
+                                <th className="px-6 py-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            {recentTransactions.map((log) => (
+                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            {log.id}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                                                <User size={14} className="text-slate-500 dark:text-slate-400" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin size={14} className="text-slate-400" />
+                                            <div>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300">{log.machineName}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">{log.machineId}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                            {log.bottleType}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                            +{log.pointsAwarded}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                            <Clock size={14} />
+                                            {log.timestamp}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="px-2.5 py-1 rounded-full text-xs font-bold
+                                            bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                            {log.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </AdminLayout >
     );
 }

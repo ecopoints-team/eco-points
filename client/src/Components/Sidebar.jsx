@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -139,6 +139,18 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
         },
     ];
 
+    // Keep dropdowns open when visiting a page within that group
+    useEffect(() => {
+        navStructure.forEach(item => {
+            if (item.type === 'group' && item.children) {
+                const isActive = item.children.some(child => pathname === child.href);
+                if (isActive) {
+                    setExpandedMenus(prev => prev.includes(item.key) ? prev : [...prev, item.key]);
+                }
+            }
+        });
+    }, [pathname]);
+
     return (
         <>
             {/* Mobile Overlay */}
@@ -171,7 +183,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 </div>
 
                 {/* NAVIGATION LIST */}
-                <nav className="px-3 py-6 space-y-1 h-[calc(100vh-160px)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                <nav className={`px-3 py-6 space-y-1 h-[calc(100vh-160px)] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent ${isOpen ? 'overflow-y-auto' : 'overflow-visible'}`}>
                     {navStructure.map((item, idx) => {
                         if (item.type === 'item') {
                             return (
