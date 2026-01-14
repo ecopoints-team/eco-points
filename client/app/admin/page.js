@@ -295,7 +295,7 @@ export default function AdminDashboard() {
                         <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
                         <ShortcutBtn label="View Logs" icon={FileText} color="blue" href="/admin/logs/bottles" />
                         <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
-                        <ShortcutBtn label="Settings" icon={Settings} color="purple" href="/admin/profile" />
+                        <ShortcutBtn label="Settings" icon={Settings} color="purple" href="/admin/settings" />
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings
 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle }) => {
@@ -122,7 +122,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             label: 'User Management',
             icon: Users,
             children: [
-                { label: 'All Users', href: '/admin/users' },
+                { label: 'Manage Users', href: '/admin/users' },
                 { label: 'Permissions', href: '/admin/users/permissions' },
             ]
         },
@@ -137,6 +137,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 { label: 'Admin Access', href: '/admin/logs/access' },
             ]
         },
+        { type: 'item', label: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
     // Keep dropdowns open when visiting a page within that group
