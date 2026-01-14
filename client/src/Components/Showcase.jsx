@@ -1,39 +1,39 @@
 export default function Rewards() {
   const features = [
     {
-      title: "OMNIMAN",
+      title: "Pencil",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/Pencil.jpg",
       imagePosition: "left",
     },
     {
-      title: "OMNIMAN",
+      title: "Notebook",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/Ntbk.jpg",
       imagePosition: "left",
     },
     {
-      title: "OMNIMAN",
+      title: "Lanyard",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/Lanyard.jpg",
       imagePosition: "right",
     },
     {
-      title: "OMNIMAN",
+      title: "Tote Bag",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/TBag.jpg",
       imagePosition: "right",
     },
     {
-      title: "OMNIMAN",
+      title: "Stickers",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/Stkrs.jpg",
       imagePosition: "right",
     },
     {
-      title: "OMNIMAN",
+      title: "Keychain",
       description: "",
-      image: "/Omniman.jpg",
+      image: "/Kychn.jpg",
       imagePosition: "right",
     },
   ];
