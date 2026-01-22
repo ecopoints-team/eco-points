@@ -4,11 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle }) => {
-    // 1. GROUP HEADER (Collapsible)
+const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle, hidden }) => {
+    // Don't render if hidden
+    if (hidden) return null;
+
+    // GROUP HEADER (Collapsible)
     if (hasChildren) {
         return (
             <button
@@ -45,7 +49,7 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
         );
     }
 
-    // 2. STANDARD LINK
+    // STANDARD LINK
     return (
         <Link
             href={href}
@@ -85,27 +89,44 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
     );
 };
 
-const SubMenuItem = ({ label, href, active }) => (
-    <Link
-        href={href}
-        className={`
-      flex items-center py-2 pl-11 pr-3 my-1 rounded-lg text-sm transition-all duration-200 relative
-      ${active
-                ? 'text-emerald-700 font-bold bg-emerald-50 dark:text-emerald-300 dark:font-medium dark:bg-transparent'
-                : 'text-slate-500 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-200'
-            }
-    `}
-    >
-        {/* Tiny dot connector */}
-        <div className={`absolute left-[2.25rem] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-emerald-600 dark:bg-emerald-400 dark:shadow-[0_0_8px_#34d399]' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-        {label}
-    </Link>
-);
+const SubMenuItem = ({ label, href, active, hidden }) => {
+    if (hidden) return null;
 
-// Added isDarkMode prop (optional usage, but good for future proofing)
+    return (
+        <Link
+            href={href}
+            className={`
+          flex items-center py-2 pl-11 pr-3 my-1 rounded-lg text-sm transition-all duration-200 relative
+          ${active
+                    ? 'text-emerald-700 font-bold bg-emerald-50 dark:text-emerald-300 dark:font-medium dark:bg-transparent'
+                    : 'text-slate-500 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-200'
+                }
+        `}
+        >
+            {/* Tiny dot connector */}
+            <div className={`absolute left-[2.25rem] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-emerald-600 dark:bg-emerald-400 dark:shadow-[0_0_8px_#34d399]' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
+            {label}
+        </Link>
+    );
+};
+
 export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDarkMode }) {
     const pathname = usePathname();
     const [expandedMenus, setExpandedMenus] = useState([]);
+
+    // Get auth context
+    let currentUser = null;
+    let hasPermission = () => false;
+    let isSuperAdmin = false;
+
+    try {
+        const auth = useAuth();
+        currentUser = auth.currentUser;
+        hasPermission = auth.hasPermission;
+        isSuperAdmin = auth.isSuperAdmin;
+    } catch (e) {
+        // AuthContext not available yet, use defaults
+    }
 
     const toggleMenu = (key) => {
         setExpandedMenus(prev =>
@@ -113,37 +134,71 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
         );
     };
 
+    // Navigation structure with permission checks
     const navStructure = [
-        { type: 'item', label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
-        { type: 'item', label: 'Machines (RVM)', icon: Package, href: '/admin/machines' },
+        {
+            type: 'item',
+            label: 'Dashboard',
+            icon: LayoutDashboard,
+            href: '/admin',
+            hidden: false // Everyone can see dashboard
+        },
+        {
+            type: 'item',
+            label: 'Locations',
+            icon: Building2,
+            href: '/admin/locations',
+            hidden: !isSuperAdmin // Only Super Admin
+        },
+        {
+            type: 'item',
+            label: 'Machines (RVM)',
+            icon: Package,
+            href: '/admin/machines',
+            hidden: !hasPermission('machines', 'view')
+        },
         {
             type: 'group',
             key: 'user-management',
             label: 'User Management',
             icon: Users,
+            hidden: !hasPermission('users', 'view'),
             children: [
                 { label: 'Manage Users', href: '/admin/users' },
                 { label: 'Permissions', href: '/admin/users/permissions' },
             ]
         },
-        { type: 'item', label: 'Rewards Inventory', icon: FileText, href: '/admin/rewards' },
+        {
+            type: 'item',
+            label: 'Rewards Inventory',
+            icon: FileText,
+            href: '/admin/rewards',
+            hidden: !hasPermission('rewards', 'view')
+        },
         {
             type: 'group',
             key: 'logs',
             label: 'System Logs',
             icon: Activity,
+            hidden: !hasPermission('logs', 'view'),
             children: [
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
                 { label: 'Admin Access', href: '/admin/logs/access' },
             ]
         },
-        { type: 'item', label: 'Settings', icon: Settings, href: '/admin/settings' },
+        {
+            type: 'item',
+            label: 'Settings',
+            icon: Settings,
+            href: '/admin/settings',
+            hidden: !hasPermission('settings', 'view')
+        },
     ];
 
     // Keep dropdowns open when visiting a page within that group
     useEffect(() => {
         navStructure.forEach(item => {
-            if (item.type === 'group' && item.children) {
+            if (item.type === 'group' && item.children && !item.hidden) {
                 const isActive = item.children.some(child => pathname === child.href);
                 if (isActive) {
                     setExpandedMenus(prev => prev.includes(item.key) ? prev : [...prev, item.key]);
@@ -186,6 +241,8 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 {/* NAVIGATION LIST */}
                 <nav className={`px-3 py-6 space-y-1 h-[calc(100vh-160px)] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent ${isOpen ? 'overflow-y-auto' : 'overflow-visible'}`}>
                     {navStructure.map((item, idx) => {
+                        if (item.hidden) return null;
+
                         if (item.type === 'item') {
                             return (
                                 <SidebarItem

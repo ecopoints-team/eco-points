@@ -128,7 +128,15 @@ export default function BottleLogsPage() {
                                     <td className="px-6 py-4"><span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">{log.id}</span></td>
                                     <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center"><User size={14} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p></div></div></td>
                                     <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><MapPin size={14} className="text-slate-400" />{log.machineName}</div></td>
-                                    <td className="px-6 py-4"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">{log.bottleType}</span></td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
+                                            {log.bottleType.split(' ').map((part, i) => (
+                                                <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                                                    {part}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded} pts</span></td>
                                     <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} className="text-slate-400" />{log.timestamp}</div></td>
                                     <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>

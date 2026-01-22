@@ -1,7 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
-import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle } from 'lucide-react';
+import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle, Sun, Moon, Palette } from 'lucide-react';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 const ToggleSwitch = ({ enabled, onChange, label, description }) => (
     <div className="flex items-center justify-between py-3">
@@ -20,11 +21,15 @@ export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState('general');
     const [hasChanges, setHasChanges] = useState(false);
 
+    // Theme context for dark/light mode
+    const { isDarkMode, toggleTheme } = useTheme();
+
     const updateSetting = (key, value) => { setSettings(prev => ({ ...prev, [key]: value })); setHasChanges(true); };
     const handleSave = () => { setHasChanges(false); alert('Settings saved!'); };
 
     const sections = [
         { id: 'general', label: 'General', icon: Globe },
+        { id: 'appearance', label: 'Appearance', icon: Palette },
         { id: 'points', label: 'Points Config', icon: Zap },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
@@ -56,6 +61,31 @@ export default function SettingsPage() {
                                     <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Language</label><select value={settings.language} onChange={(e) => updateSetting('language', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none"><option value="en">English</option><option value="fil">Filipino</option></select></div>
                                 </div>
                                 <ToggleSwitch enabled={settings.maintenanceMode} onChange={() => updateSetting('maintenanceMode', !settings.maintenanceMode)} label="Maintenance Mode" description="Disable public access" />
+                            </div>
+                        </>)}
+                        {activeSection === 'appearance' && (<>
+                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"><h3 className="text-lg font-bold text-slate-800 dark:text-white">Appearance</h3></div>
+                            <div className="p-6 space-y-6">
+                                <div className="flex items-center justify-between py-4 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-xl transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-yellow-400' : 'bg-amber-100 text-amber-600'}`}>
+                                            {isDarkMode ? <Moon size={24} /> : <Sun size={24} />}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-700 dark:text-slate-200">Theme Mode</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">Switch between light and dark appearance</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={toggleTheme}
+                                        className={`relative w-16 h-8 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                    >
+                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 flex items-center justify-center ${isDarkMode ? 'left-9' : 'left-1'}`}>
+                                            {isDarkMode ? <Moon size={14} className="text-slate-700" /> : <Sun size={14} className="text-amber-500" />}
+                                        </div>
+                                    </button>
+                                </div>
+                                <div className="text-sm text-slate-500 dark:text-slate-400 italic">Your theme preference is saved automatically and will persist across sessions.</div>
                             </div>
                         </>)}
                         {activeSection === 'points' && (<>

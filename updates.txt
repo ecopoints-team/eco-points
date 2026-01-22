@@ -93,3 +93,57 @@ Resolved critical Tailwind CSS version mismatches to restore site stability, enf
 ## Configuration Requirements
 - **Crucial:** Must delete `node_modules` and run `npm install` again to apply the Tailwind v3 downgrade.
 - **Crucial:** Must restart the development server (`npm run dev`) for the new configuration to take effect.
+
+# Frontend Update Log - Jan 22, 2026
+
+## Summary
+Implemented a comprehensive Multi-Tenant RBAC system with location-based filtering and successfully integrated a Dark/Light Theme Toggle compatible with Tailwind CSS v4.
+
+## Changes
+
+### 1. Multi-Tenant RBAC System
+- **Location-Based Architecture:** Defined "School A" and "School B" locations with distinct data isolation.
+- **Role Permissions:** Created 4 key roles:
+    - **Super Admin:** Global access to all locations.
+    - **Head Admin:** Full access scoped to their location.
+    - **Auditor:** Read-only access scoped to their location.
+    - **Inventory Officer:** Machine/Reward management scoped to their location.
+- **Mock Data Layer:** Updated `src/data/mockData.js` with 7 test accounts and location-linked resources (Machines, Rewards, Users).
+
+### 2. Dashboard Experience
+- **Context Management:** Created `AuthContext` to manage user sessions and permissions.
+- **Account Switcher:** Added a dropdown in the header to instantly switch between test accounts.
+- **Dynamic Filtering:** All dashboard stats, charts, and table data now filter automatically based on the logged-in user's location.
+- **Super Admin View:** Added "View as [Location]" selector for global admins to inspect specific sites.
+
+### 3. Theme Toggle (Dark/Light Mode)
+- **Infrastructure:**
+    - Created `ThemeContext` with localStorage persistence.
+    - Configured Tailwind v4 to support class-based dark mode (`darkMode: 'class'`).
+    - Fixed v4 config issue by adding `@config` directive to `index.css`.
+- **UI Implementation:**
+    - Added "Appearance" section to Settings page.
+    - Implemented a smooth toggle switch with Sun/Moon icons.
+    - Visual theme now correctly follows the toggle state regardless of system preferences.
+
+### 4. New Pages & Features
+- **Locations Page:** Super Admin exclusive page to manage all registered locations.
+- **Log In Update:** Enhanced login modal with a "Quick Login" role selector for easy testing.
+- **Mobile UI Fix:** Refactored Bottle Logs table to properly stack "Bottle Type" badges on small screens.
+
+## Files Modified
+
+### Added
+- `src/context/AuthContext.js`
+- `src/context/ThemeContext.js`
+- `app/admin/locations/page.js`
+
+### Edited
+- `src/data/mockData.js` (Centralized Data)
+- `src/Components/AdminLayout.jsx` (Header/Layout)
+- `src/Components/Sidebar.jsx` (Menu Logic)
+- `src/Components/LogIn.jsx` (Role Selector)
+- `src/index.css` (Tailwind Config Fix)
+- `tailwind.config.js` (Dark Mode Config)
+- `app/admin/page.js` (Dashboard Logic)
+- `app/admin/settings/page.js` (Appearance Settings)

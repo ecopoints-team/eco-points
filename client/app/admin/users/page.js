@@ -1,34 +1,17 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
-import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, ChevronDown, X } from 'lucide-react';
-
-// Mock Data for Users
-const allUsers = [
-    { id: 'USR-1234', name: 'Justin Ibale', email: 'justin.ibale@email.com', role: 'Admin', status: 'Active', points: 2450, joinDate: 'Jan 5, 2025' },
-    { id: 'USR-1235', name: 'Jana Soriano', email: 'jana.soriano@email.com', role: 'User', status: 'Active', points: 1890, joinDate: 'Jan 8, 2025' },
-    { id: 'USR-1236', name: 'Miguel Torres', email: 'miguel.torres@email.com', role: 'User', status: 'Active', points: 3210, joinDate: 'Jan 10, 2025' },
-    { id: 'USR-1237', name: 'Anna Reyes', email: 'anna.reyes@email.com', role: 'Moderator', status: 'Active', points: 1560, joinDate: 'Jan 12, 2025' },
-    { id: 'USR-1238', name: 'Sarah Cruz', email: 'sarah.cruz@email.com', role: 'User', status: 'Inactive', points: 890, joinDate: 'Jan 15, 2025' },
-    { id: 'USR-1239', name: 'Carlos Garcia', email: 'carlos.garcia@email.com', role: 'User', status: 'Active', points: 2100, joinDate: 'Jan 18, 2025' },
-    { id: 'USR-1240', name: 'Mark Santos', email: 'mark.santos@email.com', role: 'User', status: 'Active', points: 4500, joinDate: 'Jan 20, 2025' },
-    { id: 'USR-1241', name: 'Lisa Mendoza', email: 'lisa.mendoza@email.com', role: 'User', status: 'Suspended', points: 320, joinDate: 'Jan 22, 2025' },
-    { id: 'USR-1242', name: 'Ryan Tan', email: 'ryan.tan@email.com', role: 'User', status: 'Active', points: 1750, joinDate: 'Jan 25, 2025' },
-    { id: 'USR-1243', name: 'Maria Lopez', email: 'maria.lopez@email.com', role: 'User', status: 'Active', points: 2890, joinDate: 'Jan 28, 2025' },
-    { id: 'USR-1244', name: 'David Kim', email: 'david.kim@email.com', role: 'Moderator', status: 'Active', points: 1200, joinDate: 'Feb 1, 2025' },
-    { id: 'USR-1245', name: 'Angela Lim', email: 'angela.lim@email.com', role: 'User', status: 'Active', points: 980, joinDate: 'Feb 3, 2025' },
-    { id: 'USR-1246', name: 'Patrick Tan', email: 'patrick.tan@email.com', role: 'User', status: 'Inactive', points: 450, joinDate: 'Feb 5, 2025' },
-    { id: 'USR-1247', name: 'Christina Ong', email: 'christina.ong@email.com', role: 'User', status: 'Active', points: 3100, joinDate: 'Feb 7, 2025' },
-    { id: 'USR-1248', name: 'Kevin Wu', email: 'kevin.wu@email.com', role: 'User', status: 'Active', points: 2200, joinDate: 'Feb 10, 2025' },
-];
-
-const stats = {
-    totalUsers: allUsers.length,
-    activeUsers: allUsers.filter(u => u.status === 'Active').length,
-    totalPoints: allUsers.reduce((sum, u) => sum + u.points, 0),
-};
+import { useAuth } from '../../../src/context/AuthContext';
+import { USERS, getUsersByLocation } from '../../../src/data/mockData';
+import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2 } from 'lucide-react';
 
 export default function ManageUsersPage() {
+    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
+
+    // Get initial users based on location
+    const getInitialUsers = () => getUsersByLocation(effectiveLocationId);
+
+    const [users, setUsers] = useState(getInitialUsers);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterRole, setFilterRole] = useState('');
@@ -36,11 +19,17 @@ export default function ManageUsersPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    const roles = [...new Set(allUsers.map(u => u.role))];
-    const statuses = [...new Set(allUsers.map(u => u.status))];
+    // Update users when location changes
+    useEffect(() => {
+        setUsers(getUsersByLocation(effectiveLocationId));
+        setCurrentPage(1);
+    }, [effectiveLocationId]);
+
+    const roles = [...new Set(users.map(u => u.role))];
+    const statuses = [...new Set(users.map(u => u.status))];
 
     const filteredUsers = useMemo(() => {
-        return allUsers.filter(user => {
+        return users.filter(user => {
             const matchesSearch = searchQuery === '' ||
                 user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -49,16 +38,29 @@ export default function ManageUsersPage() {
             const matchesStatus = filterStatus === '' || user.status === filterStatus;
             return matchesSearch && matchesRole && matchesStatus;
         });
-    }, [searchQuery, filterRole, filterStatus]);
+    }, [users, searchQuery, filterRole, filterStatus]);
 
     const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
+    // Stats
+    const stats = {
+        totalUsers: users.length,
+        activeUsers: users.filter(u => u.status === 'Active').length,
+        totalPoints: users.reduce((sum, u) => sum + u.points, 0),
+    };
+
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
     const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setSearchQuery(''); setCurrentPage(1); };
     const hasActiveFilters = filterRole || filterStatus;
+
+    // Get location name
+    const getLocationName = (locationId) => {
+        const loc = allLocations.find(l => l.id === locationId);
+        return loc ? loc.name : '';
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -71,25 +73,43 @@ export default function ManageUsersPage() {
 
     const getRoleColor = (role) => {
         switch (role) {
-            case 'Admin': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
-            case 'Moderator': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
-            case 'User': return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+            case 'Student': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
+            case 'Faculty': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
+            case 'Staff': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
             default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
         }
     };
+
+    // Check if user can edit
+    const canEdit = hasPermission('users', 'edit');
+    const canDelete = hasPermission('users', 'delete');
+    const canCreate = hasPermission('users', 'create');
 
     return (
         <AdminLayout>
             {/* Page Header */}
             <div className="mb-8 flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Users</h1>
-                    <p className="text-slate-500 dark:text-slate-400">View and manage all registered users</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-white">Manage Users</h1>
+                        {currentLocation && (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                {currentLocation.name}
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                        {isSuperAdmin && !effectiveLocationId
+                            ? 'Viewing all users across all locations'
+                            : `View and manage users at ${currentLocation?.name || 'your location'}`}
+                    </p>
                 </div>
-                <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                    <UserPlus size={18} />
-                    Add User
-                </button>
+                {canCreate && (
+                    <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                        <UserPlus size={18} />
+                        Add User
+                    </button>
+                )}
             </div>
 
             {/* Stats Cards */}
@@ -149,7 +169,7 @@ export default function ManageUsersPage() {
                                 ${showFilter || hasActiveFilters
                                     ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
-                            <Filter size={16} /> Filter
+                            <Filter size={16} />Filter
                         </button>
                     </div>
                 </div>
@@ -168,7 +188,7 @@ export default function ManageUsersPage() {
                                 {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
-                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium"><X size={14} /> Clear</button>}
+                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium"><X size={14} />Clear</button>}
                     </div>
                 )}
 
@@ -178,11 +198,12 @@ export default function ManageUsersPage() {
                             <tr>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Email</th>
+                                {isSuperAdmin && !effectiveLocationId && <th className="px-6 py-4">Location</th>}
                                 <th className="px-6 py-4">Role</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Points</th>
                                 <th className="px-6 py-4">Joined</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
+                                {(canEdit || canDelete) && <th className="px-6 py-4 text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -205,6 +226,14 @@ export default function ManageUsersPage() {
                                             {user.email}
                                         </div>
                                     </td>
+                                    {isSuperAdmin && !effectiveLocationId && (
+                                        <td className="px-6 py-4">
+                                            <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                                                <Building2 size={12} />
+                                                {getLocationName(user.locationId)}
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getRoleColor(user.role)}`}>{user.role}</span></td>
                                     <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(user.status)}`}>{user.status}</span></td>
                                     <td className="px-6 py-4"><span className="font-bold text-emerald-600 dark:text-emerald-400">{user.points.toLocaleString()}</span></td>
@@ -214,43 +243,59 @@ export default function ManageUsersPage() {
                                             {user.joinDate}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex justify-end gap-2">
-                                            <button className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all"><Edit2 size={16} /></button>
-                                            <button className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all"><Trash2 size={16} /></button>
-                                        </div>
-                                    </td>
+                                    {(canEdit || canDelete) && (
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end gap-2">
+                                                {canEdit && (
+                                                    <button className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all"><Edit2 size={16} /></button>
+                                                )}
+                                                {canDelete && (
+                                                    <button className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all"><Trash2 size={16} /></button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
 
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-4">
-                        <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
-                        <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                            className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                            <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
-                        </select>
+                {/* Empty State */}
+                {currentUsers.length === 0 && (
+                    <div className="p-12 text-center">
+                        <User size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                        <p className="text-slate-500 dark:text-slate-400">No users found for this location.</p>
                     </div>
-                    <div className="flex gap-1">
-                        <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
-                            className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
-                            <ChevronLeft size={14} />
-                        </button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 5).map(page => (
-                            <button key={page} onClick={() => setCurrentPage(page)}
-                                className={`px-3 py-1.5 rounded-lg font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
-                                {page}
+                )}
+
+                {totalPages > 0 && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-4">
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-1">
+                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
+                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                <ChevronLeft size={14} />
                             </button>
-                        ))}
-                        <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
-                            className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
-                            <ChevronRight size={14} />
-                        </button>
+                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(page => (
+                                <button key={page} onClick={() => setCurrentPage(page)}
+                                    className={`px-3 py-1.5 rounded-lg font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
+                                    {page}
+                                </button>
+                            ))}
+                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
+                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </AdminLayout>
     );
