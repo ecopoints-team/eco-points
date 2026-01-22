@@ -391,9 +391,13 @@ export default function AdminDashboard() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                                            {log.bottleType}
-                                        </span>
+                                        <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
+                                            {log.bottleType.split(' ').map((part, i) => (
+                                                <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                                                    {part}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded}</span>
