@@ -1,42 +1,13 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
-import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck } from 'lucide-react';
+import { useAuth } from '../../../../src/context/AuthContext';
+import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
+import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown } from 'lucide-react';
 
 // ============================================================================
-// HARDCODED DATA - Will serve as template for database seeding
+// USING ADMIN_USERS FROM MOCKDATA - Connected to School A & B accounts
 // ============================================================================
-
-// User accounts for each role (for testing RBAC)
-const ADMIN_USERS = [
-    {
-        id: 'USR-ADMIN-001',
-        name: 'System Administrator',
-        email: 'admin@ecopoints.com',
-        role: 'head_admin',
-        avatar: 'SA',
-        status: 'Active',
-        lastLogin: '2025-01-22 14:30'
-    },
-    {
-        id: 'USR-AUDIT-001',
-        name: 'Internal Auditor',
-        email: 'auditor@ecopoints.com',
-        role: 'auditor',
-        avatar: 'IA',
-        status: 'Active',
-        lastLogin: '2025-01-22 09:15'
-    },
-    {
-        id: 'USR-INV-001',
-        name: 'Inventory Manager',
-        email: 'inventory@ecopoints.com',
-        role: 'inventory_officer',
-        avatar: 'IM',
-        status: 'Active',
-        lastLogin: '2025-01-21 16:45'
-    }
-];
 
 // 3-Role Permission Structure (Snipe-IT Inspired)
 const ROLES_DATA = [
@@ -115,8 +86,8 @@ const ACTION_ICONS = {
 
 const PermissionBadge = ({ enabled }) => (
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${enabled
-            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
-            : 'bg-red-100 text-red-400 dark:bg-red-500/10 dark:text-red-400/50'
+        ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+        : 'bg-red-100 text-red-400 dark:bg-red-500/10 dark:text-red-400/50'
         }`}>
         {enabled ? <Check size={16} strokeWidth={3} /> : <X size={16} strokeWidth={2} />}
     </div>
@@ -142,8 +113,8 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
         <button
             onClick={onClick}
             className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${isSelected
-                    ? 'bg-emerald-50 border-2 border-emerald-500 shadow-lg dark:bg-emerald-900/20 dark:border-emerald-500'
-                    : 'bg-slate-50 border-2 border-transparent hover:border-slate-200 dark:bg-slate-800/50 dark:hover:border-slate-600'
+                ? 'bg-emerald-50 border-2 border-emerald-500 shadow-lg dark:bg-emerald-900/20 dark:border-emerald-500'
+                : 'bg-slate-50 border-2 border-transparent hover:border-slate-200 dark:bg-slate-800/50 dark:hover:border-slate-600'
                 }`}
         >
             <div className="flex items-start gap-3">
@@ -181,7 +152,13 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
     );
 };
 
-const UserAccountRow = ({ user }) => {
+const UserAccountRow = ({ user, onRoleChange }) => {
+    const { user: currentUser, isSuperAdmin } = useAuth();
+    const [isChangingRole, setIsChangingRole] = useState(false);
+
+    // Check if current logged in user has permission to edit users
+    const canEditUsers = isSuperAdmin || currentUser?.permissions?.users?.edit;
+
     const roleColors = {
         head_admin: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
         auditor: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
@@ -192,6 +169,30 @@ const UserAccountRow = ({ user }) => {
         head_admin: 'Head Admin',
         auditor: 'Auditor',
         inventory_officer: 'Inventory Officer',
+    };
+
+    // Get location name from user's locationId
+    const getLocationName = (locationId) => {
+        const loc = LOCATIONS.find(l => l.id === locationId);
+        return loc ? loc.name : 'All Locations';
+    };
+
+    const roleOptions = [
+        { id: 'head_admin', name: 'Head Admin' },
+        { id: 'auditor', name: 'Auditor' },
+        { id: 'inventory_officer', name: 'Inventory Officer' },
+    ];
+
+    const handleRoleChange = async (newRole) => {
+        if (newRole === user.role) {
+            setIsChangingRole(false);
+            return;
+        }
+
+        if (onRoleChange) {
+            await onRoleChange(user.id, newRole);
+        }
+        setIsChangingRole(false);
     };
 
     return (
@@ -211,9 +212,38 @@ const UserAccountRow = ({ user }) => {
                 <span className="text-sm text-slate-600 dark:text-slate-300">{user.email}</span>
             </td>
             <td className="px-6 py-4">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${roleColors[user.role]}`}>
-                    {roleNames[user.role]}
+                <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    <Building2 size={12} />
+                    {getLocationName(user.locationId)}
                 </span>
+            </td>
+            <td className="px-6 py-4">
+                {isChangingRole ? (
+                    <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(e.target.value)}
+                        onBlur={() => setIsChangingRole(false)}
+                        autoFocus
+                        className="px-2 py-1 text-xs font-bold rounded-lg border border-emerald-500 
+                            bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200
+                            outline-none cursor-pointer"
+                    >
+                        {roleOptions.map(role => (
+                            <option key={role.id} value={role.id}>{role.name}</option>
+                        ))}
+                    </select>
+                ) : (
+                    <button
+                        onClick={() => canEditUsers && setIsChangingRole(true)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${roleColors[user.role]} 
+                            ${canEditUsers ? 'hover:ring-2 hover:ring-offset-1 hover:ring-emerald-500 cursor-pointer' : 'cursor-default opacity-80'} 
+                            transition-all`}
+                        title={canEditUsers ? "Click to change role" : "You don't have permission to change roles"}
+                        disabled={!canEditUsers}
+                    >
+                        {roleNames[user.role]}
+                    </button>
+                )}
             </td>
             <td className="px-6 py-4">
                 <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
@@ -228,13 +258,35 @@ const UserAccountRow = ({ user }) => {
 };
 
 // ============================================================================
-// MAIN PAGE COMPONENT
-// ============================================================================
 
 export default function PermissionsPage() {
+    const { user: currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [roles] = useState(ROLES_DATA);
-    const [users] = useState(ADMIN_USERS);
+    // Use ADMIN_USERS from mockData (filter out super_admin for local admins only)
+    const [allUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
+
+    // Filter users based on viewAsLocationId
+    const users = useMemo(() => {
+        if (!viewAsLocationId && isSuperAdmin) return allUsers;
+        const targetLocationId = viewAsLocationId || currentUser?.locationId;
+        return allUsers.filter(u => u.locationId === targetLocationId);
+    }, [allUsers, viewAsLocationId, isSuperAdmin, currentUser]);
+
+    // Mutable users state for UI updates
+    const [displayUsers, setDisplayUsers] = useState(users);
+
+    useEffect(() => {
+        setDisplayUsers(users);
+    }, [users]);
+
     const [selectedRole, setSelectedRole] = useState(roles[0]);
+
+    // Handle role change for a user
+    const handleRoleChange = async (userId, newRole) => {
+        setDisplayUsers(prev => prev.map(user =>
+            user.id === userId ? { ...user, role: newRole } : user
+        ));
+    };
 
     const getColorClasses = (color) => ({
         purple: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30',
@@ -410,19 +462,24 @@ export default function PermissionsPage() {
                             <tr>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Email</th>
+                                <th className="px-6 py-4">Location</th>
                                 <th className="px-6 py-4">Role</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Last Login</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {users.map(user => (
-                                <UserAccountRow key={user.id} user={user} />
+                            {displayUsers.map(user => (
+                                <UserAccountRow
+                                    key={user.id}
+                                    user={user}
+                                    onRoleChange={handleRoleChange}
+                                />
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

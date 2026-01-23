@@ -16,6 +16,11 @@ module.exports = {
         'eco-accent': '#0ea5e9',
         'status-danger': '#ef4444',
         'status-warning': '#f59e0b',
+        // Neutral mode colors
+        'neutral-bg': '#374151',
+        'neutral-card': '#4b5563',
+        'neutral-border': '#6b7280',
+        'neutral-text': '#f3f4f6',
       },
       boxShadow: {
         'glow': '0 0 10px rgba(16, 185, 129, 0.5)',

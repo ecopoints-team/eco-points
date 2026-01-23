@@ -2,14 +2,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // ============================================================================
-// THEME CONTEXT - Dark/Light Mode Management
+// THEME CONTEXT - Light/Neutral/Dark Mode Management
 // ============================================================================
 
 const ThemeContext = createContext(null);
 
+// Theme modes
+const THEMES = {
+    light: 'light',
+    neutral: 'neutral',
+    dark: 'dark'
+};
+
 export function ThemeProvider({ children }) {
     // Default to dark mode
-    const [isDarkMode, setIsDarkMode] = useState(true);
+    const [theme, setThemeState] = useState('dark');
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Load theme from localStorage on initial mount AND apply class immediately
@@ -17,49 +24,72 @@ export function ThemeProvider({ children }) {
         if (typeof window !== 'undefined') {
             const storedTheme = localStorage.getItem('ecopoints_theme');
             // Default to dark if no preference stored
-            const shouldBeDark = storedTheme ? storedTheme === 'dark' : true;
-            setIsDarkMode(shouldBeDark);
-
-            // Apply class immediately on load
-            if (shouldBeDark) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-
+            const initialTheme = storedTheme && ['light', 'neutral', 'dark'].includes(storedTheme)
+                ? storedTheme
+                : 'dark';
+            setThemeState(initialTheme);
+            applyThemeClass(initialTheme);
             setIsInitialized(true);
         }
     }, []);
 
-    // Save theme to localStorage and apply class to HTML element when changed
+    // Apply theme class to HTML element
+    const applyThemeClass = (newTheme) => {
+        if (typeof window !== 'undefined') {
+            const html = document.documentElement;
+            // Remove all theme classes
+            html.classList.remove('light', 'neutral', 'dark');
+            // Add the current theme class
+            html.classList.add(newTheme);
+        }
+    };
+
+    // Save theme to localStorage and apply class when changed
     useEffect(() => {
         if (isInitialized && typeof window !== 'undefined') {
-            localStorage.setItem('ecopoints_theme', isDarkMode ? 'dark' : 'light');
-
-            // Apply or remove 'dark' class on the HTML element for Tailwind
-            if (isDarkMode) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            localStorage.setItem('ecopoints_theme', theme);
+            applyThemeClass(theme);
         }
-    }, [isDarkMode, isInitialized]);
-
-    // Toggle theme
-    const toggleTheme = () => {
-        setIsDarkMode(prev => !prev);
-    };
+    }, [theme, isInitialized]);
 
     // Set specific theme
-    const setTheme = (theme) => {
-        setIsDarkMode(theme === 'dark');
+    const setTheme = (newTheme) => {
+        if (['light', 'neutral', 'dark'].includes(newTheme)) {
+            setThemeState(newTheme);
+        }
     };
 
+    // Cycle through themes: light -> neutral -> dark -> light
+    const cycleTheme = () => {
+        setThemeState(prev => {
+            switch (prev) {
+                case 'light': return 'neutral';
+                case 'neutral': return 'dark';
+                case 'dark': return 'light';
+                default: return 'dark';
+            }
+        });
+    };
+
+    // Toggle between light and dark (backwards compatibility)
+    const toggleTheme = () => {
+        setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
+    };
+
+    // Computed properties for backwards compatibility
+    const isDarkMode = theme === 'dark';
+    const isNeutralMode = theme === 'neutral';
+    const isLightMode = theme === 'light';
+
     const value = {
-        isDarkMode,
-        toggleTheme,
+        theme,
         setTheme,
-        theme: isDarkMode ? 'dark' : 'light',
+        cycleTheme,
+        toggleTheme,
+        isDarkMode,
+        isNeutralMode,
+        isLightMode,
+        THEMES
     };
 
     return (

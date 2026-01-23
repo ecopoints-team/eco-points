@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
+import AddUserModal from '../../../src/Components/AddUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 import { USERS, getUsersByLocation } from '../../../src/data/mockData';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2 } from 'lucide-react';
@@ -18,6 +19,7 @@ export default function ManageUsersPage() {
     const [filterStatus, setFilterStatus] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     // Update users when location changes
     useEffect(() => {
@@ -105,7 +107,10 @@ export default function ManageUsersPage() {
                     </p>
                 </div>
                 {canCreate && (
-                    <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                    >
                         <UserPlus size={18} />
                         Add User
                     </button>
@@ -297,6 +302,15 @@ export default function ManageUsersPage() {
                     </div>
                 )}
             </div>
+
+            {/* Add User Modal */}
+            <AddUserModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onUserAdded={(newUser) => {
+                    setUsers(prev => [newUser, ...prev]);
+                }}
+            />
         </AdminLayout>
     );
 }

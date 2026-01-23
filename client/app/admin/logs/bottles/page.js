@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
+import { useAuth } from '../../../../src/context/AuthContext';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown } from 'lucide-react';
 
 const generateBottleLogs = () => {
@@ -10,8 +11,9 @@ const generateBottleLogs = () => {
         { id: 'USR-1240', name: 'Mark Santos' }, { id: 'USR-1241', name: 'Lisa Mendoza' }, { id: 'GUEST', name: 'Guest User' },
     ];
     const machines = [
-        { id: 'RVM-001', name: 'Main Campus RVM' }, { id: 'RVM-002', name: 'Library RVM' },
-        { id: 'RVM-003', name: 'Cafeteria RVM' }, { id: 'RVM-004', name: 'Sports Complex RVM' },
+        { id: 'RVM-001', name: 'Main Campus RVM', locationId: 'LOC-001' }, { id: 'RVM-002', name: 'Library RVM', locationId: 'LOC-001' },
+        { id: 'RVM-003', name: 'Cafeteria RVM', locationId: 'LOC-001' }, { id: 'RVM-004', name: 'Sports Complex RVM', locationId: 'LOC-002' },
+        { id: 'RVM-005', name: 'Admin Block RVM', locationId: 'LOC-002' }, { id: 'RVM-006', name: 'Dormitory RVM', locationId: 'LOC-002' }
     ];
     const bottleTypes = ['350ml PET', '500ml PET', '750ml Glass', '1000ml PET', '1500ml PET'];
     const pointsMap = { '350ml PET': 3, '500ml PET': 5, '750ml Glass': 8, '1000ml PET': 10, '1500ml PET': 15 };
@@ -25,7 +27,7 @@ const generateBottleLogs = () => {
         const status = i < 140 ? 'Completed' : statuses[Math.floor(Math.random() * statuses.length)];
         const logDate = new Date(baseDate.getTime() - (i * 15 * 60000));
         const formattedDate = logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + logDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        logs.push({ id: `LOG-${8842 - i}`, userId: user.id, userName: user.name, machineId: machine.id, machineName: machine.name, bottleType, pointsAwarded: pointsMap[bottleType], timestamp: formattedDate, status });
+        logs.push({ id: `LOG-${8842 - i}`, userId: user.id, userName: user.name, machineId: machine.id, machineName: machine.name, locationId: machine.locationId, bottleType, pointsAwarded: pointsMap[bottleType], timestamp: formattedDate, status });
     }
     return logs;
 };
@@ -34,6 +36,7 @@ const allBottleLogs = generateBottleLogs();
 const stats = { todayTransactions: 156, todayBottles: 203, todayPoints: 1520 };
 
 export default function BottleLogsPage() {
+    const { user, isSuperAdmin, viewAsLocationId } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
@@ -47,7 +50,16 @@ export default function BottleLogsPage() {
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
 
     const filteredLogs = useMemo(() => {
-        return allBottleLogs.filter(log => {
+        let logs = allBottleLogs;
+
+        // Filter by View As Location (or user's scoped location)
+        if (viewAsLocationId) {
+            logs = logs.filter(log => log.locationId === viewAsLocationId);
+        } else if (user?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === user.locationId);
+        }
+
+        return logs.filter(log => {
             const matchesSearch = searchQuery === '' || log.id.toLowerCase().includes(searchQuery.toLowerCase()) || log.userName.toLowerCase().includes(searchQuery.toLowerCase()) || log.machineName.toLowerCase().includes(searchQuery.toLowerCase()) || log.bottleType.toLowerCase().includes(searchQuery.toLowerCase());
             return matchesSearch && (filterMachine === '' || log.machineName === filterMachine) && (filterBottleType === '' || log.bottleType === filterBottleType) && (filterStatus === '' || log.status === filterStatus);
         });
@@ -165,6 +177,6 @@ export default function BottleLogsPage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

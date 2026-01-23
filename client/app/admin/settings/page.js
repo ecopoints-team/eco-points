@@ -21,8 +21,8 @@ export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState('general');
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Theme context for dark/light mode
-    const { isDarkMode, toggleTheme } = useTheme();
+    // Theme context for 3-way mode
+    const { theme, setTheme } = useTheme();
 
     const updateSetting = (key, value) => { setSettings(prev => ({ ...prev, [key]: value })); setHasChanges(true); };
     const handleSave = () => { setHasChanges(false); alert('Settings saved!'); };
@@ -66,26 +66,61 @@ export default function SettingsPage() {
                         {activeSection === 'appearance' && (<>
                             <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"><h3 className="text-lg font-bold text-slate-800 dark:text-white">Appearance</h3></div>
                             <div className="p-6 space-y-6">
-                                <div className="flex items-center justify-between py-4 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-xl transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-yellow-400' : 'bg-amber-100 text-amber-600'}`}>
-                                            {isDarkMode ? <Moon size={24} /> : <Sun size={24} />}
-                                        </div>
+                                {/* 3-Way Theme Toggle */}
+                                <div className="py-4 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                    <div className="flex items-center justify-between mb-4">
                                         <div>
                                             <p className="font-semibold text-slate-700 dark:text-slate-200">Theme Mode</p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Switch between light and dark appearance</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">Choose between light, neutral, or dark appearance</p>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={toggleTheme}
-                                        className={`relative w-16 h-8 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                    >
-                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 flex items-center justify-center ${isDarkMode ? 'left-9' : 'left-1'}`}>
-                                            {isDarkMode ? <Moon size={14} className="text-slate-700" /> : <Sun size={14} className="text-amber-500" />}
-                                        </div>
-                                    </button>
+
+                                    {/* 3-Way Toggle */}
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setTheme('light')}
+                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'light'
+                                                ? 'border-emerald-500 bg-white shadow-lg'
+                                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}
+                                        >
+                                            <div className={`p-3 rounded-full ${theme === 'light' ? 'bg-amber-100 text-amber-500' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}>
+                                                <Sun size={24} />
+                                            </div>
+                                            <span className={`text-sm font-medium ${theme === 'light' ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-400'}`}>Light</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setTheme('neutral')}
+                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'neutral'
+                                                ? 'border-emerald-500 bg-gray-500 shadow-lg'
+                                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}
+                                        >
+                                            <div className={`p-3 rounded-full ${theme === 'neutral' ? 'bg-gray-400 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}>
+                                                <Palette size={24} />
+                                            </div>
+                                            <span className={`text-sm font-medium ${theme === 'neutral' ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>Neutral</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setTheme('dark')}
+                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'dark'
+                                                ? 'border-emerald-500 bg-slate-900 shadow-lg'
+                                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}
+                                        >
+                                            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-slate-700 text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}>
+                                                <Moon size={24} />
+                                            </div>
+                                            <span className={`text-sm font-medium ${theme === 'dark' ? 'text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>Dark</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="text-sm text-slate-500 dark:text-slate-400 italic">Your theme preference is saved automatically and will persist across sessions.</div>
+
+                                <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                                    Your theme preference is saved automatically and will persist across sessions.
+                                </div>
                             </div>
                         </>)}
                         {activeSection === 'points' && (<>
@@ -119,6 +154,6 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

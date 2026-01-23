@@ -241,8 +241,8 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                             <div
                                 key={log.id}
                                 className={`p-4 rounded-xl border transition-colors ${log.resolved
-                                        ? 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
-                                        : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-500/30'
+                                    ? 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                                    : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-500/30'
                                     }`}
                             >
                                 <div className="flex items-start justify-between mb-2">
@@ -251,8 +251,8 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                         <span className="text-sm font-medium text-slate-800 dark:text-white">{log.date}</span>
                                     </div>
                                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${log.resolved
-                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                            : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                         }`}>
                                         {log.resolved ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                                         {log.resolved ? 'Resolved' : 'Pending'}
@@ -292,19 +292,19 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 // Machine Card Component
 const MachineCard = ({ machine, onOpenMaintenance, locationName }) => (
     <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${machine.status === 'Maintenance'
-            ? 'border-red-300 dark:border-red-500/30'
-            : machine.status === 'Full'
-                ? 'border-amber-300 dark:border-amber-500/30'
-                : 'border-slate-200 dark:border-slate-700'
+        ? 'border-red-300 dark:border-red-500/30'
+        : machine.status === 'Full'
+            ? 'border-amber-300 dark:border-amber-500/30'
+            : 'border-slate-200 dark:border-slate-700'
         }`}>
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${machine.status === 'Maintenance'
-                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
-                        : machine.status === 'Full'
-                            ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                            : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
+                    : machine.status === 'Full'
+                        ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                        : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                     }`}>
                     <Package size={24} />
                 </div>
@@ -522,6 +522,6 @@ export default function MachinesPage() {
                 }}
                 onAddLog={handleAddMaintenanceLog}
             />
-        </AdminLayout>
+        </AdminLayout >
     );
 }

@@ -2,15 +2,58 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
-import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle } from 'lucide-react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { ROLES } from '../data/mockData';
 
+// 3-Way Theme Toggle Component
+const ThemeToggle = ({ theme, setTheme }) => {
+  return (
+    <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 neutral:bg-gray-600 border border-slate-200 dark:border-slate-700">
+      <button
+        onClick={() => setTheme('light')}
+        className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'light'
+          ? 'bg-white text-amber-500 shadow-md'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        title="Light Mode"
+      >
+        <Sun size={14} />
+      </button>
+      <button
+        onClick={() => setTheme('neutral')}
+        className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'neutral'
+          ? 'bg-gray-500 text-white shadow-md'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        title="Neutral Mode"
+      >
+        <Circle size={14} />
+      </button>
+      <button
+        onClick={() => setTheme('dark')}
+        className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'dark'
+          ? 'bg-slate-900 text-emerald-400 shadow-md'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        title="Dark Mode"
+      >
+        <Moon size={14} />
+      </button>
+    </div>
+  );
+};
+
 // Main layout component that uses AuthContext and ThemeContext
 export default function AdminLayout({ children }) {
   // Theme State from Context
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { theme, setTheme, isDarkMode, isNeutralMode } = useTheme();
+
+  // Get current pathname for conditional rendering
+  const pathname = usePathname();
+  const isOnLocationsPage = pathname === '/admin/locations';
 
   // Sidebar & Mobile State
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -61,11 +104,39 @@ export default function AdminLayout({ children }) {
     emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
   };
 
+  // Determine theme class for root
+  const themeClass = theme === 'dark' ? 'dark' : theme === 'neutral' ? 'neutral dark' : '';
+
+  // Refs for click outside detection
+  const profileRef = React.useRef(null);
+  const accountRef = React.useRef(null);
+  const locationRef = React.useRef(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+      if (accountRef.current && !accountRef.current.contains(event.target)) {
+        setIsAccountSwitcherOpen(false);
+      }
+      if (locationRef.current && !locationRef.current.contains(event.target)) {
+        setIsLocationSelectorOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className={`${isDarkMode ? 'dark' : ''} flex h-screen overflow-hidden transition-colors duration-700 ease-in-out`}>
+    <div className={`${themeClass} flex h-screen overflow-hidden transition-colors duration-700 ease-in-out`}>
 
       {/* GLOBAL BACKGROUND LAYER */}
-      <div className="absolute inset-0 bg-gray-50 dark:bg-[#020617] transition-colors duration-700 -z-10">
+      <div className={`absolute inset-0 transition-colors duration-700 -z-10 ${theme === 'light' ? 'bg-gray-50' :
+        theme === 'neutral' ? 'bg-gray-700' :
+          'bg-[#020617]'
+        }`}>
         {/* Cyber Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700"
           style={{
@@ -82,7 +153,7 @@ export default function AdminLayout({ children }) {
         setIsOpen={setSidebarOpen}
         isMobile={isMobile}
         closeMobile={() => setSidebarOpen(false)}
-        isDarkMode={true}
+        isDarkMode={isDarkMode || isNeutralMode}
       />
 
       {/* MAIN CONTENT */}
@@ -92,10 +163,11 @@ export default function AdminLayout({ children }) {
       `}>
 
         {/* HEADER */}
-        <header className="h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30
-          bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md 
-          border-b border-gray-200 dark:border-emerald-500/20 
-          transition-all duration-500 shadow-sm"
+        <header className={`h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30
+          backdrop-blur-md border-b transition-all duration-500 shadow-sm ${theme === 'light' ? 'bg-white/80 border-gray-200' :
+            theme === 'neutral' ? 'bg-gray-600/80 border-gray-500' :
+              'bg-[#0f172a]/80 border-emerald-500/20'
+          }`}
         >
           <div className="flex items-center gap-3">
             {isMobile && (
@@ -114,8 +186,8 @@ export default function AdminLayout({ children }) {
 
           <div className="flex items-center gap-2 sm:gap-4">
 
-            {/* LOCATION BADGE */}
-            {currentLocation ? (
+            {/* LOCATION BADGE - Hidden on Locations page */}
+            {!isOnLocationsPage && currentLocation ? (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
                 bg-purple-100 border border-purple-200
                 dark:bg-purple-500/10 dark:border-purple-500/20">
@@ -124,7 +196,7 @@ export default function AdminLayout({ children }) {
                   {currentLocation.name}
                 </span>
               </div>
-            ) : isSuperAdmin && (
+            ) : !isOnLocationsPage && isSuperAdmin && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
                 bg-red-100 border border-red-200
                 dark:bg-red-500/10 dark:border-red-500/20">
@@ -135,26 +207,27 @@ export default function AdminLayout({ children }) {
               </div>
             )}
 
-            {/* SUPER ADMIN - VIEW AS LOCATION SELECTOR */}
-            {isSuperAdmin && (
-              <div className="relative hidden lg:block">
+            {/* SUPER ADMIN - VIEW AS LOCATION SELECTOR - Hidden on Locations page */}
+            {!isOnLocationsPage && isSuperAdmin && (
+              <div className="relative" ref={locationRef}>
                 <button
                   onClick={() => setIsLocationSelectorOpen(!isLocationSelectorOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                    bg-slate-100 text-slate-600 hover:bg-slate-200
-                    dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' :
+                    theme === 'neutral' ? 'bg-gray-500 text-gray-200 hover:bg-gray-400' :
+                      'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
                 >
                   <Eye size={14} />
-                  <span>View as: {viewAsLocationId ? allLocations.find(l => l.id === viewAsLocationId)?.name : 'All'}</span>
+                  <span className="hidden sm:inline">View as: {viewAsLocationId ? allLocations.find(l => l.id === viewAsLocationId)?.name : 'All'}</span>
                   <ChevronDown size={12} />
                 </button>
 
                 {isLocationSelectorOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsLocationSelectorOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-48 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5
-                      bg-white border border-gray-100
-                      dark:bg-[#1e293b] dark:border-slate-700">
+                    <div className={`absolute right-0 mt-2 w-48 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 ${theme === 'light' ? 'bg-white border border-gray-100' :
+                      theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
+                        'bg-[#1e293b] border-slate-700'
+                      }`}>
                       <div className="py-1">
                         <button
                           onClick={() => { setViewAsLocation(null); setIsLocationSelectorOpen(false); }}
@@ -196,7 +269,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* ACCOUNT SWITCHER DROPDOWN */}
-            <div className="relative">
+            <div className="relative" ref={accountRef}>
               <button
                 onClick={() => setIsAccountSwitcherOpen(!isAccountSwitcherOpen)}
                 className="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors
@@ -209,11 +282,11 @@ export default function AdminLayout({ children }) {
 
               {isAccountSwitcherOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsAccountSwitcherOpen(false)}></div>
-                  <div className="absolute right-0 mt-2 w-72 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5
-                    bg-white border border-gray-100
-                    dark:bg-[#1e293b] dark:border-slate-700
-                    max-h-96 overflow-y-auto">
+                  <div className={`absolute right-0 mt-2 w-72 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5
+                    max-h-96 overflow-y-auto ${theme === 'light' ? 'bg-white border border-gray-100' :
+                      theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
+                        'bg-[#1e293b] border-slate-700'
+                    }`}>
                     <div className="p-2 border-b border-slate-200 dark:border-slate-700">
                       <p className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">TEST ACCOUNTS</p>
                     </div>
@@ -257,15 +330,16 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* PROFILE DROPDOWN */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2 focus:outline-none group"
               >
                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 p-[2px] shadow-md group-hover:shadow-lg transition-all">
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors
-                      bg-white text-slate-700
-                      dark:bg-slate-900 dark:text-white">
+                  <div className={`w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors ${theme === 'light' ? 'bg-white text-slate-700' :
+                    theme === 'neutral' ? 'bg-gray-600 text-white' :
+                      'bg-slate-900 text-white'
+                    }`}>
                     {currentUser?.avatar || 'AD'}
                   </div>
                 </div>
@@ -275,11 +349,11 @@ export default function AdminLayout({ children }) {
               {/* Dropdown Menu */}
               {isProfileOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}></div>
-                  <div className="absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none 
-                      bg-white border border-gray-100
-                      dark:bg-[#1e293b] dark:border-slate-700
-                      animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none 
+                      animate-in fade-in slide-in-from-top-2 duration-200 ${theme === 'light' ? 'bg-white border border-gray-100' :
+                      theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
+                        'bg-[#1e293b] border-slate-700'
+                    }`}>
 
                     <div className="py-1">
                       <div className="px-4 py-3 border-b mb-1 border-gray-100 dark:border-slate-700/50">
@@ -293,7 +367,7 @@ export default function AdminLayout({ children }) {
                       </div>
 
                       <Link href="/admin/profile">
-                        <button className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
+                        <button onClick={() => setIsProfileOpen(false)} className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
                             text-slate-700 hover:bg-gray-50 hover:text-emerald-600
                             dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-emerald-400">
                           <Settings size={16} />

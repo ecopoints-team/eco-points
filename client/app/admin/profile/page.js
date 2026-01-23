@@ -1,18 +1,37 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
+import { useAuth } from '../../../src/context/AuthContext';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Camera, Save, Key, Activity } from 'lucide-react';
 
 export default function ProfilePage() {
+    const { currentUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
     const fileInputRef = useRef(null);
 
     const [profile, setProfile] = useState({
-        name: 'Justin Ibale', email: 'justin.ibale@ecopoints.com', phone: '+63 912 345 6789',
-        location: 'Metro Manila, Philippines', role: 'Super Admin', joinDate: 'January 5, 2025',
-        bio: 'System administrator for EcoPoints. Passionate about environmental sustainability.',
+        name: '', email: '', phone: '',
+        location: '', role: '', joinDate: '',
+        bio: '',
     });
+
+    useEffect(() => {
+        if (currentUser) {
+            setProfile({
+                name: currentUser.name || 'Admin User',
+                email: currentUser.email || 'admin@ecopoints.com',
+                phone: '+63 912 345 6789', // Mock phone
+                location: currentUser.location || 'Metro Manila, Philippines', // Start with mock/default
+                role: currentUser.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Admin',
+                joinDate: 'January 5, 2025', // Mock date
+                bio: `System administrator for EcoPoints. Role: ${currentUser.role || 'Admin'}.`,
+            });
+            // Update location specifically if we have easy access to location name via context or mock data
+            // For now, we keep the mock location unless we want to fetch it from LOCATIONS based on locationId
+        }
+    }, [currentUser]);
+
     const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
 
     const stats = { actionsToday: 12, totalActions: 1547, rewardsManaged: 45, usersManaged: 156 };
@@ -37,7 +56,7 @@ export default function ProfilePage() {
                         <div className="px-6 pb-6">
                             <div className="relative -mt-12 mb-4">
                                 <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 shadow-lg overflow-hidden mx-auto">
-                                    {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-3xl font-bold text-white">JI</div>}
+                                    {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-3xl font-bold text-white">{profile.name ? profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US'}</div>}
                                 </div>
                                 <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-0 right-1/2 translate-x-1/2 translate-y-1/2 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-500"><Camera size={14} /></button>
                                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -102,6 +121,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

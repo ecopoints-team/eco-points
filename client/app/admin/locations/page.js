@@ -129,8 +129,8 @@ export default function LocationsPage() {
                                 </div>
                             </div>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${location.status === 'Active'
-                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                                 }`}>
                                 {location.status}
                             </span>

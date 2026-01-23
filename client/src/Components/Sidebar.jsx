@@ -7,6 +7,7 @@ import {
     LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle, hidden }) => {
     // Don't render if hidden
@@ -112,6 +113,7 @@ const SubMenuItem = ({ label, href, active, hidden }) => {
 
 export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDarkMode }) {
     const pathname = usePathname();
+    const { theme } = useTheme();
     const [expandedMenus, setExpandedMenus] = useState([]);
 
     // Get auth context
@@ -217,13 +219,19 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             <aside
                 className={`
           fixed top-0 left-0 h-full z-50 transition-all duration-300
-          bg-white border-r border-slate-200 shadow-2xl
-          dark:bg-[#0f172a] dark:border-slate-800 dark:shadow-[10px_0_30px_rgba(0,0,0,0.5)]
+          border-r shadow-2xl
+          ${theme === 'neutral'
+                        ? 'bg-gray-800 border-gray-600'
+                        : 'bg-white border-slate-200 dark:bg-[#0f172a] dark:border-slate-800 dark:shadow-[10px_0_30px_rgba(0,0,0,0.5)]'
+                    }
           ${isOpen ? 'w-64 translate-x-0' : (isMobile ? '-translate-x-full' : 'w-20 translate-x-0')}
         `}
             >
                 {/* LOGO AREA */}
-                <div className="h-24 flex items-center justify-center border-b border-slate-100 dark:border-slate-800/50 relative overflow-hidden bg-white dark:bg-[#020617] transition-colors duration-300">
+                <div className={`h-24 flex items-center justify-center border-b relative overflow-hidden transition-colors duration-300 ${theme === 'neutral'
+                    ? 'bg-gray-900 border-gray-700'
+                    : 'bg-white dark:bg-[#020617] border-slate-100 dark:border-slate-800/50'
+                    }`}>
                     {/* Subtle Gradient Overlay */}
                     <div className="absolute top-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-900 dark:to-slate-900 opacity-50"></div>
 
@@ -272,18 +280,20 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
 
                                 <div
                                     className={`
-                    overflow-hidden transition-all duration-300 ease-in-out
-                    ${isExpanded && isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
+                    grid transition-all duration-300 ease-in-out
+                    ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
                   `}
                                 >
-                                    <div className="relative ml-5 pl-3 border-l border-slate-200 dark:border-slate-700/50 my-1 space-y-0.5">
-                                        {item.children.map((child, cIdx) => (
-                                            <SubMenuItem
-                                                key={cIdx}
-                                                {...child}
-                                                active={pathname === child.href}
-                                            />
-                                        ))}
+                                    <div className="overflow-hidden">
+                                        <div className="relative ml-5 pl-3 border-l border-slate-200 dark:border-slate-700/50 my-1 space-y-0.5">
+                                            {item.children.map((child, cIdx) => (
+                                                <SubMenuItem
+                                                    key={cIdx}
+                                                    {...child}
+                                                    active={pathname === child.href}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

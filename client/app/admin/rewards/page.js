@@ -389,10 +389,10 @@ export default function RewardsInventoryPage() {
                                     <tr
                                         key={r.id}
                                         className={`hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors ${isOutOfStock
-                                                ? 'bg-red-50/50 dark:bg-red-900/10 border-l-4 border-l-red-500'
-                                                : isLowStock
-                                                    ? 'bg-amber-50/50 dark:bg-amber-900/10 border-l-4 border-l-amber-500'
-                                                    : ''
+                                            ? 'bg-red-50/50 dark:bg-red-900/10 border-l-4 border-l-red-500'
+                                            : isLowStock
+                                                ? 'bg-amber-50/50 dark:bg-amber-900/10 border-l-4 border-l-amber-500'
+                                                : ''
                                             }`}
                                     >
                                         <td className="px-6 py-4">
@@ -451,8 +451,8 @@ export default function RewardsInventoryPage() {
                                                     onClick={() => handleDispense(r.id)}
                                                     disabled={r.stock === 0}
                                                     className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${r.stock === 0
-                                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
-                                                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:hover:bg-purple-500/30'
+                                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
+                                                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:hover:bg-purple-500/30'
                                                         }`}
                                                 >
                                                     <ShoppingBag size={14} />
@@ -580,6 +580,6 @@ export default function RewardsInventoryPage() {
                     </div>
                 </div>
             )}
-        </AdminLayout>
+        </AdminLayout >
     );
 }
