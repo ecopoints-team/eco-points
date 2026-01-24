@@ -1,9 +1,5 @@
 # Update Log - Jan 8, 2026 - Initial Setup & Auth
 
-So, basically had to fix a mess today. The project structure was kinda broken and the login was just redirecting in circles.
-
-## What I did:
-
 ### 1. Fix the Login Loop
 - Deleted the `app/login` route because it was fighting with the main page.
 - Made the login a modal in the Navbar instead. Way cleaner.
@@ -25,10 +21,6 @@ So, basically had to fix a mess today. The project structure was kinda broken an
 
 # Update Log - Jan 10, 2026 - Tailwind Nightmare
 
-Okay, Tailwind v4 alpha broke EVERYTHING. Had to roll back.
-
-## What I did:
-
 ### 1. Downgrade from Hell
 - Rolled back to Tailwind v3 (3.4.1) because v4 was crashing the build.
 - Fixed `postcss.config.js` and `tailwind.config.js` to match v3 syntax.
@@ -46,10 +38,6 @@ Okay, Tailwind v4 alpha broke EVERYTHING. Had to roll back.
 ---
 
 # Update Log - Jan 22, 2026 - RBAC & Multi-Tenant
-
-Big update. Made the system actually handle multiple schools (multi-tenant) and roles.
-
-## What I did:
 
 ### 1. Roles & Locations
 - Set up "School A" and "School B".
@@ -70,10 +58,6 @@ Big update. Made the system actually handle multiple schools (multi-tenant) and 
 
 # Update Log (Jan 23-24) - Sidebar & UI Fixes
 
-Basically spent the last 2 days fixing the UI and that annoying sidebar flicker.
-
-## What I did:
-
 ### 1. Fixed the Sidebar (Finally)
 - **The Flicker:** The sidebar kept closing/resetting every time I clicked a link. Turns out the `AdminLayout` was re-rendering on every single page. Refactored it to wrap everything at the root level instead. It's super smooth now.
 - **Persistence:** Used `localStorage` so the sidebar actually remembers if it's open or closed when you refresh.
@@ -89,4 +73,3 @@ Basically spent the last 2 days fixing the UI and that annoying sidebar flicker.
 - Cleaned up the code and removed a bunch of redundant wrappers.
 - Improved the permissions UI a bit.
 
-Repo is looking way cleaner now.
