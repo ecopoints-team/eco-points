@@ -223,7 +223,7 @@ export default function RewardsInventoryPage() {
     };
 
     return (
-        <AdminLayout>
+        <>
             {/* Page Header */}
             <div className="mb-8 flex justify-between items-center">
                 <div>
@@ -580,6 +580,6 @@ export default function RewardsInventoryPage() {
                     </div>
                 </div>
             )}
-        </AdminLayout >
+        </>
     );
 }

@@ -85,7 +85,7 @@ export default function BottleLogsPage() {
     };
 
     return (
-        <AdminLayout>
+        <>
             <div className="mb-8">
                 <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bottle Logs</h1>
                 <p className="text-slate-500 dark:text-slate-400">View all bottle recycling transactions and activity logs</p>
@@ -177,6 +177,6 @@ export default function BottleLogsPage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout >
+        </>
     );
 }

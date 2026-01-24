@@ -295,7 +295,7 @@ export default function PermissionsPage() {
     }[color] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400');
 
     return (
-        <AdminLayout>
+        <>
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Role-Based Access Control</h1>
@@ -480,6 +480,6 @@ export default function PermissionsPage() {
                     </table>
                 </div>
             </div>
-        </AdminLayout >
+        </>
     );
 }

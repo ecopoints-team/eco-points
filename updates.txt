@@ -1,149 +1,92 @@
-# Frontend Update Log - Jan 8, 2026
+# Update Log - Jan 8, 2026 - Initial Setup & Auth
 
-## Summary
-Refactored authentication flow, corrected project architecture/imports, and implemented a responsive dual-theme (Light/Dark) Admin Dashboard.
+So, basically had to fix a mess today. The project structure was kinda broken and the login was just redirecting in circles.
 
-## Changes
+## What I did:
 
-### 1. Authentication Refactor
-- Removed redundant `app/login` route to prevent redirect loops.
-- Implemented modal-based login triggered from `NavBar.jsx`.
-- State management moved to `app/page.js` to handle modal visibility overlay.
-- Removed legacy "Mock Login" UI artifacts.
+### 1. Fix the Login Loop
+- Deleted the `app/login` route because it was fighting with the main page.
+- Made the login a modal in the Navbar instead. Way cleaner.
+- Moved the state to `app/page.js` so it actually works properly.
 
-### 2. Architecture & Bug Fixes
-- Fixed module resolution errors caused by sibling `app/` and `src/` directory structure.
-- Standardized import paths to explicit relative paths (e.g., `../../src/Components/`).
-- Resolved component naming mismatch (`FuturisticTable` -> `Table.jsx`).
+### 2. Architecture & Bug Squashing
+- Fixed the imports. Turns out having `src/` and `app/` siblings confuses Next.js sometimes.
+- Renamed `FuturisticTable` to `Table.jsx` because... honestly, keep it simple.
 
-### 3. Dashboard Features
-- **SlotCounter:** Added custom hook/component for numeric rolling animations.
-- **Analytics UI:** Implemented CSS-based bar charts and dynamic Stat Cards.
-- **Live Feed:** Added mock data structure for system alerts (Bin Full, System Online).
+### 3. Dashboard Stuff
+- **SlotCounter:** Added that rolling number thing. Looks cool.
+- **Charts:** CSS bar charts and stats cards are in.
+- **Sidebar:** Made it responsive. On mobile it slides out with a blur effect.
 
-### 4. UI/Theming Engine
-- **Dark Mode:** Implemented Tailwind `darkMode: 'class'` strategy.
-    - Default: Cyberpunk/Slate theme.
-    - Light: Standard SaaS/Gray theme.
-- **Responsive Sidebar:**
-    - Desktop: Collapsible state persists.
-    - Mobile: Converted to slide-over drawer with backdrop blur (breakpoint < 1024px).
-- **Animations:** Standardized transition durations to 700ms with custom cubic-bezier easing.
+### 4. Dark Mode (Part 1)
+- Implemented Tailwind dark mode. Default is this cyberpunk slate theme.
 
-## Files Modified
+---
 
-### Added
-- `src/Components/SlotCounter.jsx`
+# Update Log - Jan 10, 2026 - Tailwind Nightmare
 
-### Edited
-- `src/app/page.js` (Landing Logic)
-- `src/app/admin/page.js` (Dashboard Content)
-- `src/Components/AdminLayout.jsx` (Theme Wrapper)
-- `src/Components/Sidebar.jsx` (Navigation)
-- `src/Components/NavBar.jsx` (Triggers)
-- `src/Components/LogIn.jsx` (Modal UI)
-- `src/Components/Table.jsx` (Styles)
-- `tailwind.config.js` (Config)
+Okay, Tailwind v4 alpha broke EVERYTHING. Had to roll back.
 
-## Configuration Requirements
-- Ensure `darkMode: 'class'` is present in `tailwind.config.js` for the theme toggle to function correctly.
+## What I did:
 
+### 1. Downgrade from Hell
+- Rolled back to Tailwind v3 (3.4.1) because v4 was crashing the build.
+- Fixed `postcss.config.js` and `tailwind.config.js` to match v3 syntax.
+- Had to nuke `node_modules` and reinstall everything. Standard procedure.
 
-# Frontend Update Log - Jan 10, 2026
+### 2. Theming Changes
+- **Forced Dark Mode:** The toggle was buggy with the downgrade so I just forced dark mode for now.
+- **New Palette:** Went with a glowing Emerald/Slate look. "EcoPoints Theme".
+- **Custom Scrollbar:** Added a slim emerald scrollbar because the browser default one is ugly.
 
-## Summary
-Resolved critical Tailwind CSS version mismatches to restore site stability, enforced a permanent "Cyberpunk" Dark Mode (removing the toggle), and customized the Admin Dashboard content with shortcut actions and conditional table logic.
+### 3. Dashboard Tweaks
+- Swapped "CO2 Reduced" for "Active Users".
+- Added a "Quick Actions" grid instead of a live feed. More useful.
 
-## Changes
+---
 
-### 1. Architecture & Stability Fixes
-- **Version Rollback:** Downgraded from Tailwind v4 (Alpha) to Stable v3 (3.4.1) to resolve build crashes and plugin incompatibilities.
-- **Configuration Repair:**
-    - Updated `postcss.config.js` to use the standard v3 `tailwindcss` plugin.
-    - Corrected `src/index.css` directives.
-    - Fixed `tailwind.config.js` content paths to correctly detect files in the `app/` directory.
+# Update Log - Jan 22, 2026 - RBAC & Multi-Tenant
 
-### 2. UI/Theming Engine
-- **Forced Dark Mode:**
-    - Hardcoded `AdminLayout` to strictly render in Dark Mode (`useState(true)`).
-    - Removed the Sun/Moon toggle button and logic.
-    - Implemented a glowing Emerald/Slate color palette ("EcoPoints Theme").
-- **Custom Scrollbar:** Added WebKit styles in `index.css` for a slim, hovering emerald scrollbar.
+Big update. Made the system actually handle multiple schools (multi-tenant) and roles.
 
-### 3. Dashboard Features
-- **Stat Cards:** Replaced "CO2 Reduced" card with "Active Users" to better reflect administrator needs.
-- **Quick Actions Panel:** Replaced the "Live Feed" list with a "Quick Actions" grid containing shortcut buttons (Manage Users, Logs, Machines, Settings).
+## What I did:
 
-### 4. Component Logic
-- **Table Logic:** Added a `showAdd` prop to the `Table` component to conditionally render the "Add New" button.
-- **Sidebar Styling:** Updated hover states and active indicators to match the refined dark theme.
+### 1. Roles & Locations
+- Set up "School A" and "School B".
+- Created roles: Super Admin, Head Admin, Auditor, Inventory Officer.
+- Mocked up data for all of them so we can test filtering.
 
-## Files Modified
+### 2. Dashboard Logic
+- **Auth Context:** Built a context to manage who is logged in.
+- **Account Switcher:** Added a dropdown to swap users instantly. Useful for testing.
+- **Filtering:** Everything (stats, charts, tables) now filters based on your location. If you're from School A, you don't see School B's stuff.
 
-### Edited
-- package.json (Dependency adjustments)
-- postcss.config.js (Plugin correction)
-- tailwind.config.js (Content paths & Config)
-- src/index.css (Tailwind directives & Scrollbar CSS)
-- src/Components/AdminLayout.jsx (Forced Dark Mode, Removed Toggle)
-- src/Components/Sidebar.jsx (Styling updates)
-- src/Components/Table.jsx (Added showAdd prop logic)
-- src/app/admin/page.js (Content updates: Shortcuts & Stat Cards)
+### 3. Theme Toggle is Back
+- Fixed the theme toggle! It works with Tailwind v4 now (upgraded again? yeah).
+- Added logic to save your preference to localStorage.
+- Added an "Appearance" section in settings.
 
-## Configuration Requirements
-- **Crucial:** Must delete `node_modules` and run `npm install` again to apply the Tailwind v3 downgrade.
-- **Crucial:** Must restart the development server (`npm run dev`) for the new configuration to take effect.
+---
 
-# Frontend Update Log - Jan 22, 2026
+# Update Log (Jan 23-24) - Sidebar & UI Fixes
 
-## Summary
-Implemented a comprehensive Multi-Tenant RBAC system with location-based filtering and successfully integrated a Dark/Light Theme Toggle compatible with Tailwind CSS v4.
+Basically spent the last 2 days fixing the UI and that annoying sidebar flicker.
 
-## Changes
+## What I did:
 
-### 1. Multi-Tenant RBAC System
-- **Location-Based Architecture:** Defined "School A" and "School B" locations with distinct data isolation.
-- **Role Permissions:** Created 4 key roles:
-    - **Super Admin:** Global access to all locations.
-    - **Head Admin:** Full access scoped to their location.
-    - **Auditor:** Read-only access scoped to their location.
-    - **Inventory Officer:** Machine/Reward management scoped to their location.
-- **Mock Data Layer:** Updated `src/data/mockData.js` with 7 test accounts and location-linked resources (Machines, Rewards, Users).
+### 1. Fixed the Sidebar (Finally)
+- **The Flicker:** The sidebar kept closing/resetting every time I clicked a link. Turns out the `AdminLayout` was re-rendering on every single page. Refactored it to wrap everything at the root level instead. It's super smooth now.
+- **Persistence:** Used `localStorage` so the sidebar actually remembers if it's open or closed when you refresh.
+- **Better UX:** Added accordion-style dropdowns (so only one opens at a time) and added those cool flyout menus on hover when it's collapsed (kinda like Snipe-IT).
 
-### 2. Dashboard Experience
-- **Context Management:** Created `AuthContext` to manage user sessions and permissions.
-- **Account Switcher:** Added a dropdown in the header to instantly switch between test accounts.
-- **Dynamic Filtering:** All dashboard stats, charts, and table data now filter automatically based on the logged-in user's location.
-- **Super Admin View:** Added "View as [Location]" selector for global admins to inspect specific sites.
+### 2. UI Enhancements
+- **Theming:** Added a "Neutral" theme option because why not.
+- **Dynamic Header:** The header title actually updates now depending on which page you're on (e.g. "Values & Permissions", "User Management").
+- **Login Fix:** Fixed the icons overlapping the placeholder text on mobile.
 
-### 3. Theme Toggle (Dark/Light Mode)
-- **Infrastructure:**
-    - Created `ThemeContext` with localStorage persistence.
-    - Configured Tailwind v4 to support class-based dark mode (`darkMode: 'class'`).
-    - Fixed v4 config issue by adding `@config` directive to `index.css`.
-- **UI Implementation:**
-    - Added "Appearance" section to Settings page.
-    - Implemented a smooth toggle switch with Sun/Moon icons.
-    - Visual theme now correctly follows the toggle state regardless of system preferences.
+### 3. Other Stuff
+- Fixed that weird hydration error in the console.
+- Cleaned up the code and removed a bunch of redundant wrappers.
+- Improved the permissions UI a bit.
 
-### 4. New Pages & Features
-- **Locations Page:** Super Admin exclusive page to manage all registered locations.
-- **Log In Update:** Enhanced login modal with a "Quick Login" role selector for easy testing.
-- **Mobile UI Fix:** Refactored Bottle Logs table to properly stack "Bottle Type" badges on small screens.
-
-## Files Modified
-
-### Added
-- `src/context/AuthContext.js`
-- `src/context/ThemeContext.js`
-- `app/admin/locations/page.js`
-
-### Edited
-- `src/data/mockData.js` (Centralized Data)
-- `src/Components/AdminLayout.jsx` (Header/Layout)
-- `src/Components/Sidebar.jsx` (Menu Logic)
-- `src/Components/LogIn.jsx` (Role Selector)
-- `src/index.css` (Tailwind Config Fix)
-- `tailwind.config.js` (Dark Mode Config)
-- `app/admin/page.js` (Dashboard Logic)
-- `app/admin/settings/page.js` (Appearance Settings)
+Repo is looking way cleaner now.

@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import AdminLayout from '../../src/Components/AdminLayout';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
 import { MACHINES, USERS, REWARDS, LOCATIONS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation } from '../../src/data/mockData';
@@ -168,7 +167,7 @@ export default function AdminDashboard() {
     }, [effectiveLocationId]);
 
     return (
-        <AdminLayout>
+        <>
             {/* Location Ranking Banner for Location Admins */}
             {locationRanking && (
                 <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-500/30 flex items-center justify-between">
@@ -420,6 +419,6 @@ export default function AdminDashboard() {
                     </table>
                 </div>
             </div>
-        </AdminLayout >
+        </>
     );
 }

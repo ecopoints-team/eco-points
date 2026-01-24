@@ -55,7 +55,7 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const isOnLocationsPage = pathname === '/admin/locations';
 
-  // Sidebar & Mobile State
+  // Sidebar & Mobile State - Always start with true (consistent for SSR)
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -75,15 +75,50 @@ export default function AdminLayout({ children }) {
     setViewAsLocation
   } = useAuth();
 
+  // Load sidebar state from localStorage after mount (client-only)
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    if (saved !== null) {
+      setSidebarOpen(saved === 'true');
+    }
+  }, []);
+
+  // Persist sidebar state to localStorage
+  const handleSidebarToggle = (newState) => {
+    setSidebarOpen(newState);
+    localStorage.setItem('sidebarOpen', String(newState));
+  };
+
+  // Determine Page Title based on current path
+  const getPageTitle = (path) => {
+    if (path === '/admin') return { main: 'Dashboard', sub: 'Overview' };
+    if (path === '/admin/locations') return { main: 'School', sub: 'Locations' };
+    if (path === '/admin/machines') return { main: 'Machine', sub: 'Management' };
+    if (path === '/admin/users') return { main: 'User', sub: 'Management' };
+    if (path === '/admin/users/permissions') return { main: 'User', sub: 'Permissions' };
+    if (path === '/admin/rewards') return { main: 'Rewards', sub: 'Inventory' };
+    if (path === '/admin/logs/bottles') return { main: 'System', sub: 'Bottle Logs' };
+    if (path === '/admin/logs/access') return { main: 'System', sub: 'Access Logs' };
+    if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
+    if (path === '/admin/profile') return { main: 'My', sub: 'Profile' };
+    return { main: 'Admin', sub: 'Panel' };
+  };
+
+  const pageTitle = getPageTitle(pathname);
+
   // Handle Screen Resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsMobile(true);
-        setSidebarOpen(false);
+        setSidebarOpen(false); // Mobile always starts collapsed
       } else {
         setIsMobile(false);
-        setSidebarOpen(true);
+        // On desktop, restore from localStorage
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved !== null) {
+          setSidebarOpen(saved === 'true');
+        }
       }
     };
     handleResize();
@@ -150,7 +185,7 @@ export default function AdminLayout({ children }) {
       {/* SIDEBAR */}
       <Sidebar
         isOpen={sidebarOpen}
-        setIsOpen={setSidebarOpen}
+        setIsOpen={handleSidebarToggle}
         isMobile={isMobile}
         closeMobile={() => setSidebarOpen(false)}
         isDarkMode={isDarkMode || isNeutralMode}
@@ -180,7 +215,7 @@ export default function AdminLayout({ children }) {
             )}
 
             <h2 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white transition-colors duration-500 flex flex-col sm:block leading-tight">
-              Dashboard <span className="text-emerald-600 dark:text-emerald-400 font-light text-sm sm:text-xl">Overview</span>
+              {pageTitle.main} <span className="text-emerald-600 dark:text-emerald-400 font-light text-sm sm:text-xl">{pageTitle.sub}</span>
             </h2>
           </div>
 

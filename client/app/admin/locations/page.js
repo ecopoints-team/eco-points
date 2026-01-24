@@ -1,6 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import AdminLayout from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
 import { LOCATIONS } from '../../../src/data/mockData';
 import {
@@ -20,17 +19,15 @@ export default function LocationsPage() {
     // Redirect or show access denied if not Super Admin
     if (!isSuperAdmin) {
         return (
-            <AdminLayout>
-                <div className="flex items-center justify-center h-[60vh]">
-                    <div className="text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
-                            <Building2 size={40} className="text-red-500" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Access Denied</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Only Super Admins can access the Locations page.</p>
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="text-center">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+                        <Building2 size={40} className="text-red-500" />
                     </div>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Access Denied</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Only Super Admins can access the Locations page.</p>
                 </div>
-            </AdminLayout>
+            </div>
         );
     }
 
@@ -40,7 +37,7 @@ export default function LocationsPage() {
     const totalBottles = locations.reduce((sum, loc) => sum + loc.totalBottlesCollected, 0);
 
     return (
-        <AdminLayout>
+        <>
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">
@@ -208,6 +205,6 @@ export default function LocationsPage() {
                     </div>
                 ))}
             </div>
-        </AdminLayout>
+        </>
     );
 }

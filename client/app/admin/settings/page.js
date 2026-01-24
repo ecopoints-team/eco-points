@@ -36,7 +36,7 @@ export default function SettingsPage() {
     ];
 
     return (
-        <AdminLayout>
+        <>
             <div className="mb-8 flex justify-between items-center">
                 <div><h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Settings</h1><p className="text-slate-500 dark:text-slate-400">Configure system settings</p></div>
                 {hasChanges && <button onClick={handleSave} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg"><Save size={18} /> Save</button>}
@@ -154,6 +154,6 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout >
+        </>
     );
 }

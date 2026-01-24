@@ -46,7 +46,7 @@ export default function ProfilePage() {
     const handleSave = () => { setIsEditing(false); alert('Profile updated!'); };
 
     return (
-        <AdminLayout>
+        <>
             <div className="mb-8"><h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Profile</h1><p className="text-slate-500 dark:text-slate-400">View and update your account</p></div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -121,6 +121,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
-        </AdminLayout >
+        </>
     );
 }

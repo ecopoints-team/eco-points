@@ -88,7 +88,7 @@ export default function ManageUsersPage() {
     const canCreate = hasPermission('users', 'create');
 
     return (
-        <AdminLayout>
+        <>
             {/* Page Header */}
             <div className="mb-8 flex justify-between items-center">
                 <div>
@@ -311,6 +311,6 @@ export default function ManageUsersPage() {
                     setUsers(prev => [newUser, ...prev]);
                 }}
             />
-        </AdminLayout>
+        </>
     );
 }

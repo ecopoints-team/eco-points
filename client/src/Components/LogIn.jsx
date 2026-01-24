@@ -53,7 +53,7 @@ const InputField = ({ type, placeholder, icon, showToggle, value, onChange }) =>
                 onChange={onChange}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
           focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-          block pl-10 md:p-3 p-2 transition-all duration-300 outline-none hover:bg-white"
+          block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white"
             />
             {showToggle && (
                 <button

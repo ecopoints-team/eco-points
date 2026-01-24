@@ -9,44 +9,66 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
-const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle, hidden }) => {
+const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle, hidden, children: childrenItems }) => {
     // Don't render if hidden
     if (hidden) return null;
 
-    // GROUP HEADER (Collapsible)
+    // GROUP HEADER (Collapsible) - With flyout menu when collapsed
     if (hasChildren) {
         return (
-            <button
-                onClick={onToggle}
-                className={`
-          w-full relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
-          ${active || expanded
-                        ? 'bg-slate-100 text-slate-900 dark:bg-transparent dark:text-white'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-300'
-                    }
-          ${collapsed ? 'justify-center' : 'justify-between'}
-        `}
-            >
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg transition-all duration-300 ${active || expanded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 dark:shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'text-slate-400 group-hover:text-emerald-500'}`}>
-                        <Icon size={20} />
+            <div className="relative group">
+                <button
+                    onClick={onToggle}
+                    className={`
+                        w-full relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300
+                        ${active || expanded
+                            ? 'bg-slate-800/50 text-white dark:bg-transparent dark:text-white'
+                            : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-300'
+                        }
+                        ${collapsed ? 'justify-center' : 'justify-between'}
+                    `}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg transition-all duration-300 ${active || expanded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 dark:shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'text-slate-400 group-hover:text-emerald-500'}`}>
+                            <Icon size={20} />
+                        </div>
+                        {!collapsed && <span className="font-semibold text-sm tracking-wide">{label}</span>}
                     </div>
-                    {!collapsed && <span className="font-semibold text-sm tracking-wide">{label}</span>}
-                </div>
-                {!collapsed && (
-                    <ChevronDown
-                        size={16}
-                        className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
-                    />
-                )}
-                {/* Tooltip for collapsed sidebar */}
-                {collapsed && (
-                    <div className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
-                        {label}
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-800 rotate-45"></div>
+                    {!collapsed && (
+                        <ChevronDown
+                            size={16}
+                            className={`transition-transform duration-300 ${expanded ? 'rotate-180 text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}
+                        />
+                    )}
+                </button>
+
+                {/* FLYOUT MENU - Shows on hover when collapsed (Snipe-IT style) */}
+                {collapsed && childrenItems && childrenItems.length > 0 && (
+                    <div className="absolute left-full top-0 ml-2 py-2 px-1 min-w-[180px] bg-slate-800 dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        {/* Header */}
+                        <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-700 mb-1 flex items-center gap-2">
+                            <Icon size={14} className="text-emerald-400" />
+                            {label}
+                        </div>
+                        {/* Submenu Items */}
+                        {childrenItems.map((child, idx) => (
+                            <Link
+                                key={idx}
+                                href={child.href}
+                                className={`flex items-center gap-2 px-3 py-2 mx-1 rounded-lg text-sm transition-colors ${child.active
+                                    ? 'bg-emerald-500/20 text-emerald-400 font-medium'
+                                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                                    }`}
+                            >
+                                <div className={`w-1.5 h-1.5 rounded-full ${child.active ? 'bg-emerald-400' : 'bg-slate-500'}`}></div>
+                                {child.label}
+                            </Link>
+                        ))}
+                        {/* Arrow pointer */}
+                        <div className="absolute left-0 top-4 -translate-x-1 w-2 h-2 bg-slate-800 dark:bg-slate-900 rotate-45 border-l border-b border-slate-700"></div>
                     </div>
                 )}
-            </button>
+            </div>
         );
     }
 
@@ -55,13 +77,13 @@ const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, 
         <Link
             href={href}
             className={`
-        relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
-        ${active
+                relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
+                ${active
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-900 dark:text-white dark:shadow-[0_0_20px_rgba(16,185,129,0.3)] dark:border dark:border-emerald-500/50'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white dark:border dark:border-transparent'
                 }
-        ${collapsed ? 'justify-center' : 'justify-start'}
-      `}
+                ${collapsed ? 'justify-center' : 'justify-start'}
+            `}
         >
             <Icon
                 size={20}
@@ -99,7 +121,7 @@ const SubMenuItem = ({ label, href, active, hidden }) => {
             className={`
           flex items-center py-2 pl-11 pr-3 my-1 rounded-lg text-sm transition-all duration-200 relative
           ${active
-                    ? 'text-emerald-700 font-bold bg-emerald-50 dark:text-emerald-300 dark:font-medium dark:bg-transparent'
+                    ? 'text-emerald-700 font-bold bg-emerald-900/20 dark:text-emerald-300 dark:font-medium dark:bg-transparent'
                     : 'text-slate-500 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-200'
                 }
         `}
@@ -114,7 +136,8 @@ const SubMenuItem = ({ label, href, active, hidden }) => {
 export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDarkMode }) {
     const pathname = usePathname();
     const { theme } = useTheme();
-    const [expandedMenus, setExpandedMenus] = useState([]);
+    // Accordion state: only one menu can be expanded at a time
+    const [activeMenuKey, setActiveMenuKey] = useState(null);
 
     // Get auth context
     let currentUser = null;
@@ -130,10 +153,9 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
         // AuthContext not available yet, use defaults
     }
 
+    // Accordion toggle: clicking an open menu closes it, clicking a closed menu opens it (and closes others)
     const toggleMenu = (key) => {
-        setExpandedMenus(prev =>
-            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-        );
+        setActiveMenuKey(prev => prev === key ? null : key);
     };
 
     // Navigation structure with permission checks
@@ -203,7 +225,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             if (item.type === 'group' && item.children && !item.hidden) {
                 const isActive = item.children.some(child => pathname === child.href);
                 if (isActive) {
-                    setExpandedMenus(prev => prev.includes(item.key) ? prev : [...prev, item.key]);
+                    setActiveMenuKey(item.key);
                 }
             }
         });
@@ -261,28 +283,31 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                                 />
                             );
                         }
-                        const isExpanded = expandedMenus.includes(item.key);
+                        const isExpanded = activeMenuKey === item.key;
                         const isActive = item.children.some(child => pathname === child.href);
+                        // Destructure to separate 'key' from other props to avoid React warning
+                        const { key: itemKey, ...itemProps } = item;
 
                         return (
                             <div key={idx} className="mb-2">
                                 <SidebarItem
-                                    {...item}
+                                    {...itemProps}
                                     collapsed={!isOpen}
                                     active={isActive}
                                     hasChildren={true}
                                     expanded={isExpanded}
-                                    onToggle={() => {
-                                        if (!isOpen) setIsOpen(true);
-                                        toggleMenu(item.key);
-                                    }}
+                                    onToggle={() => toggleMenu(itemKey)}
+                                    children={item.children.map(child => ({
+                                        ...child,
+                                        active: pathname === child.href
+                                    }))}
                                 />
 
                                 <div
                                     className={`
-                    grid transition-all duration-300 ease-in-out
-                    ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
-                  `}
+                                        grid transition-all duration-300 ease-in-out
+                                        ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
+                                    `}
                                 >
                                     <div className="overflow-hidden">
                                         <div className="relative ml-5 pl-3 border-l border-slate-200 dark:border-slate-700/50 my-1 space-y-0.5">
