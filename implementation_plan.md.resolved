@@ -1,0 +1,81 @@
+# Location Management & RVM Auto-Registration Plan
+
+## Approach Comparison
+
+### 1. Manual Entry (Current / Legacy)
+*   **Workflow**: Admin creates a new "Location" entry. Admin gets a new RVM, manually enters its UUID into the system, and assigns it to the Location.
+*   **Pros**: Full control, clean data, security (rogue devices can't just register themselves).
+*   **Cons**: Friction in deployment. If an installer plugs in a device without telling the Admin, it won't work.
+
+### 2. Fully Automated ("Real-time")
+*   **Workflow**: Machine turns on, determines its location (via GPS or local config), sends data to Server. Server creates record instantly.
+*   **Pros**: "Plug and Play".
+*   **Cons**:
+    *   **Hardware limitation**: Does the RVM have GPS? (Likely not, indoors).
+    *   **Data quality**: "School Gym" vs "School Gymnasium" inconsistency if typed on device.
+    *   **Security**: Any device with a script can flood the database with fake machines.
+
+### 3. Recommended: Hybrid (Auto-Provisioning)
+*   **Workflow**:
+    1.  **Deploy**: Plug in the RVM. It sends a "Heartbeat" with its UUID.
+    2.  **Auto-Register**: Server sees new UUID -> Creates "Unassigned RVM" record.
+    3.  **Assign**: Admin sees "New Device Detected" in Dashboard -> Clicks "Assign to St. Mary's School".
+*   **Why it's best**: Best balance of speed and control. Installers don't need to type UUIDs. Admins manage the "Clean High-level Data" (School Names).
+
+---
+
+## Implementation Plan
+
+### 1. Database Schema Changes
+We need a dedicated `Location` table to manage addresses/contacts centrally, rather than just a string in the RVM table.
+
+#### [NEW] [server/app/models.py](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/models.py) (Modification)
+*   **Create `Location` Model**:
+    *   `id` (PK)
+    *   `name` (e.g., "St. Mary's School")
+    *   `address` (Text)
+    *   `contact_person` (String)
+    *   `created_at` (DateTime)
+*   **Update [RVM](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/models.py#159-168) Model**:
+    *   Add `location_id` (ForeignKey -> locations.id)
+    *   (Optional) Keep `location_name` as a fallback or cache, but `location_id` is primary.
+
+### 2. Backend API Updates (Auto-Registration)
+
+#### [MODIFY] [server/app/controllers/rpi_controller.py](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/controllers/rpi_controller.py)
+*   **New Endpoint**: `POST /api/rpi/heartbeat`
+    *   **Input**: `{ "machine_uuid": "...", "fw_version": "1.0" }`
+    *   **Logic**:
+        1.  Check if [RVM](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/models.py#159-168) exists by `machine_uuid`.
+        2.  **IF EXISTS**: Update `last_heartbeat`, `is_online=True`.
+        3.  **IF NEW**: Create new [RVM](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/models.py#159-168) record!
+            *   `machine_uuid` = payload.uuid
+            *   `location_id` = NULL (Unassigned)
+            *   [status](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/controllers/rpi_controller.py#93-106) = "New"
+*   **Update Existing Endpoints**: Ensure [handle_scan](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/server/app/controllers/rpi_controller.py#32-65) works if `location_id` is set.
+
+### 3. Admin Frontend (The "Locations Menu")
+
+#### [NEW] [client/app/admin/locations/page.js](file:///c:/Users/ARCDO%20HP/Documents/GitHub/eco-points/client/app/admin/locations/page.js)
+*   **List View**: Table of Locations (Name, Address, # of RVMs).
+*   **Add/Edit Modal**: Form to create "St. Mary's School".
+
+#### [MODIFY] `client/app/admin/rvms/page.js` (or similar)
+*   **Dashboard**: Show list of RVMs.
+*   **Highlighting**: Visually distinct "Unassigned / New" RVMs.
+*   **Assignment Action**: Dropdown to "Move to Location X".
+
+## Verification Plan
+
+### Automated Tests
+*   **API Test**:
+    *   Send `POST /heartbeat` with new UUID -> Verify RVM created in DB.
+    *   Send `POST /heartbeat` with existing UUID -> Verify `last_heartbeat` updated.
+
+### Manual Verification
+1.  **Simulate RVM**: Use Postman/Curl to send `{ "machine_uuid": "test-pi-001" }` to `/heartbeat`.
+2.  **Verify Admin**: Log into Admin Panel.
+3.  **Check RVM List**: See "test-pi-001" listed as "Unassigned".
+4.  **Create Location**: Go to "Locations" -> Create "Test School".
+5.  **Assign**: Assign "test-pi-001" to "Test School".
+6.  **Verify Persistence**: Refresh page, ensure link remains.
