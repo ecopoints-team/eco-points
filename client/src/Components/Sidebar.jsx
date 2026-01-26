@@ -207,6 +207,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             hidden: !hasPermission('logs', 'view'),
             children: [
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
+                { label: 'Machine Logs', href: '/admin/logs/machines' },
                 { label: 'Admin Access', href: '/admin/logs/access' },
             ]
         },
@@ -221,14 +222,19 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
 
     // Keep dropdowns open when visiting a page within that group
     useEffect(() => {
+        let foundGroup = false;
         navStructure.forEach(item => {
             if (item.type === 'group' && item.children && !item.hidden) {
                 const isActive = item.children.some(child => pathname === child.href);
                 if (isActive) {
                     setActiveMenuKey(item.key);
+                    foundGroup = true;
                 }
             }
         });
+        if (!foundGroup) {
+            setActiveMenuKey(null);
+        }
     }, [pathname]);
 
     return (
@@ -338,13 +344,32 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
 
                 {/* FOOTER */}
                 <div className="absolute bottom-0 left-0 w-full p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] transition-colors duration-300">
-                    <SidebarItem
-                        icon={LogOut}
-                        label="Sign Out"
+                    <Link
                         href="/"
-                        collapsed={!isOpen}
-                        active={false}
-                    />
+                        className={`
+                            relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
+                            text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/10 dark:hover:text-red-400
+                            ${!isOpen ? 'justify-center' : 'justify-start'}
+                        `}
+                    >
+                        <LogOut
+                            size={20}
+                            className={`shrink-0 transition-all duration-300 group-hover:text-red-600 dark:group-hover:text-red-400`}
+                        />
+
+                        {isOpen && (
+                            <span className="ml-3 font-medium text-sm whitespace-nowrap">
+                                Sign Out
+                            </span>
+                        )}
+
+                        {!isOpen && (
+                            <div className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                                Sign Out
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-800 rotate-45"></div>
+                            </div>
+                        )}
+                    </Link>
                 </div>
             </aside>
         </>

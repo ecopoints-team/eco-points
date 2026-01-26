@@ -86,8 +86,12 @@ export default function RewardsInventoryPage() {
     const [showFilter, setShowFilter] = useState(false);
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterLocation, setFilterLocation] = useState('');
+    const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showModal, setShowModal] = useState(false);
+    const [deletingReward, setDeletingReward] = useState(null);
     const [editingReward, setEditingReward] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -123,12 +127,22 @@ export default function RewardsInventoryPage() {
             const matchesCategory = filterCategory === '' || r.category === filterCategory;
             const status = getStatus(r.stock);
             const matchesStatus = filterStatus === '' || status === filterStatus;
-            return matchesSearch && matchesCategory && matchesStatus;
+            const matchesLocation = filterLocation === '' || r.locationId === filterLocation;
+            return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
+        }).sort((a, b) => {
+            switch (sortOrder) {
+                case 'Alphabetical': return a.name.localeCompare(b.name);
+                case 'Points (High-Low)': return b.pointsCost - a.pointsCost;
+                case 'Points (Low-High)': return a.pointsCost - b.pointsCost;
+                case 'Stock (High-Low)': return b.stock - a.stock;
+                case 'Stock (Low-High)': return a.stock - b.stock;
+                default: return 0; // Newest implicit
+            }
         });
-    }, [rewards, searchQuery, filterCategory, filterStatus]);
+    }, [rewards, searchQuery, filterCategory, filterStatus, filterLocation, sortOrder]);
 
-    const totalPages = Math.ceil(filteredRewards.length / 10);
-    const currentRewards = filteredRewards.slice((currentPage - 1) * 10, currentPage * 10);
+    const totalPages = Math.ceil(filteredRewards.length / rowsPerPage);
+    const currentRewards = filteredRewards.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
     // Stats
     const totalStock = rewards.reduce((s, r) => s + r.stock, 0);
@@ -173,7 +187,7 @@ export default function RewardsInventoryPage() {
     };
 
     const handleSubmit = () => {
-        if (!formData.name || !formData.pointsCost || !formData.stock) return;
+        if (!formData.name || !formData.pointsCost || !formData.stock || !formData.sku || !formData.category) return;
         const stock = parseInt(formData.stock);
 
         if (editingReward) {
@@ -357,10 +371,33 @@ export default function RewardsInventoryPage() {
                             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                             className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                         >
-                            <option value="">All Statuses</option>
-                            <option value="Available">Available</option>
-                            <option value="Low Stock">Low Stock</option>
                             <option value="Out of Stock">Out of Stock</option>
+                        </select>
+
+                        {/* Location Filter */}
+                        {isSuperAdmin && !effectiveLocationId && (
+                            <select
+                                value={filterLocation}
+                                onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
+                                className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+                            >
+                                <option value="">All Locations</option>
+                                {allLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            </select>
+                        )}
+
+                        {/* Sort */}
+                        <select
+                            value={sortOrder}
+                            onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}
+                            className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+                        >
+                            <option value="Newest">Newest First</option>
+                            <option value="Alphabetical">Alphabetical (A-Z)</option>
+                            <option value="Points (High-Low)">Points (High-Low)</option>
+                            <option value="Points (Low-High)">Points (Low-High)</option>
+                            <option value="Stock (High-Low)">Stock (High-Low)</option>
+                            <option value="Stock (Low-High)">Stock (Low-High)</option>
                         </select>
                     </div>
                 )}
@@ -428,13 +465,6 @@ export default function RewardsInventoryPage() {
                                             </div>
                                             <div className="flex items-center gap-1 mt-1">
                                                 <button
-                                                    onClick={() => adjustStock(r.id, -1)}
-                                                    disabled={r.stock === 0}
-                                                    className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                                >
-                                                    <Minus size={12} />
-                                                </button>
-                                                <button
                                                     onClick={() => adjustStock(r.id, 1)}
                                                     className="p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
                                                 >
@@ -465,7 +495,7 @@ export default function RewardsInventoryPage() {
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => setRewards(prev => prev.filter(x => x.id !== r.id))}
+                                                    onClick={() => setDeletingReward(r)}
                                                     className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10"
                                                 >
                                                     <Trash2 size={16} />
@@ -489,13 +519,19 @@ export default function RewardsInventoryPage() {
 
                 {/* Pagination */}
                 {totalPages > 0 && (
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
-                        <span>Showing {currentRewards.length} of {filteredRewards.length}</span>
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-4">
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{(currentPage - 1) * rowsPerPage + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(currentPage * rowsPerPage, filteredRewards.length)}</strong> of {filteredRewards.length} rewards</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
+                            </select>
+                        </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border disabled:opacity-50 bg-white dark:bg-slate-800 dark:border-slate-700">
                                 <ChevronLeft size={14} />
                             </button>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
                                 <button
                                     key={p}
                                     onClick={() => setCurrentPage(p)}
@@ -547,7 +583,7 @@ export default function RewardsInventoryPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">SKU</label>
-                                    <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" placeholder="e.g., ECO-BAG-001" />
+                                    <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" placeholder="Item Name (SKU-123)" />
                                 </div>
                             </div>
                             <div>
@@ -566,16 +602,57 @@ export default function RewardsInventoryPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
-                                <select value={formData.category} onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none">
-                                    <option>Merchandise</option>
-                                    <option>Vouchers</option>
-                                    <option>Experience</option>
-                                </select>
+                                <input
+                                    list="category-list"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none"
+                                    placeholder="Select or type a category..."
+                                />
+                                <datalist id="category-list">
+                                    <option value="Merchandise" />
+                                    <option value="Vouchers" />
+                                    <option value="Experience" />
+                                    {categories.filter(c => !['Merchandise', 'Vouchers', 'Experience'].includes(c)).map(c => (
+                                        <option key={c} value={c} />
+                                    ))}
+                                </datalist>
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                             <button onClick={() => setShowModal(false)} className="px-5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
                             <button onClick={handleSubmit} className="px-5 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirmation Modal */}
+            {deletingReward && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center animate-scale-in">
+                        <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 dark:text-red-400">
+                            <Trash2 size={24} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Delete Reward?</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                            Are you sure you want to delete <strong>{deletingReward.name}</strong>? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeletingReward(null)}
+                                className="flex-1 py-2.5 rounded-xl font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setRewards(prev => prev.filter(x => x.id !== deletingReward.id));
+                                    setDeletingReward(null);
+                                }}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
                 </div>

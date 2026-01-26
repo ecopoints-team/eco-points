@@ -1,0 +1,143 @@
+
+UPDATES FOR THE ADMIN DASHBOARD
+
+Dashboard Overview
+Sign-Up/Log-In Page/Modal
+•	During the animation of colored card consuming the Modal put this Logo Display: EcoPoints Primary Logo (Light version).png : in the middle of it and add some animation to it as well. Also, make it a little bit bigger to it will be noticeable.
+•	Same goes for the phone screen ratio but use this logo display instead : Logo Elements (Light)
+•	Make the submit buttons a little bit less wider for aesthetic.
+•	On the sign up/create an account, on this side add the following fields:
+o	A dropdown if they are student, faculty, admin, or staff.
+o	A searchable dropdown like on what school are they. Since we’re on a prototype it will only show the Arellano University Pasig campus (when you add this on our mock data, put the full location and detail).
+o	The list of school will only show when the user starts typing you got me? And the list should show upwards.
+•	When the new fields were implemented, on the phone screen ratio, it will be cramped on the sign up section. Adjust the field sizes on that part so it will not overlap or it will not be too cramped for the modal. I trust you in this adjustments.
+Side Navigation Bar
+•	Change the sign-out hover color in the side bar from green to red.
+•	The User Management or System Logs dropdown should close when other menus like dashboard and locations were active.
+Recycling Trends
+•	The table has confusing logic.
+o	If it is ____, it should show____.
+	Day – Sunday to Saturday
+	Weekly – Week 1 – 4 (Depends on the month of course with awareness to leap years like an ordinary calendar).
+	Monthly – January to December
+
+Quick Actions
+•	Remove settings and change it to Rewards with linking of course.
+•	Change label of View Logs to Admin Logs
+•	Change the link of “Admin Logs” from Bottle Logs to Admin Access.
+•	When accounts were changed, the shortcuts change as well depending on the account’s role, for instance inventory officer the shortcut will be rewards Management you get me?
+
+Data Logs Overview
+•	Change its title from Real-Time Data Logs to Real-Time Bottle Logs.
+•	Also add a Location Column where it shows the school they were deployed.
+•	Remove the Log ID Column, it should be seen only on the database not at the actual dashboard. And in exchange make it the User ID Column.
+•	Add a column named Condition, here’s the condition that we’re accepting on our machine (the 5th and the 6th column) but still use this table for the basis of points, bottle accepted and condition for more accurate logs for our system so update all the affected areas:
+Brand Type & Context (PH)	Category	Brands	Volume	Points (Label + Cap)	Points (No Label/Cap)	System Action
+School/Street "Mismo"	Small PET	Coke, Royal, Sprite, RC Cola	290ml - 300ml	5 pts	3 pts	Accepted
+Standard Pocket Water	Small PET	Nature's Spring, Wilkins Pure, Absolute	330ml - 350ml	5 pts	3 pts	Accepted
+RTD Tea & Juice	Small PET	C2 Green Tea, Real Leaf, Minute Maid	230ml - 500ml	8 pts	5 pts	Accepted
+Sports & Wellness	Medium PET	Gatorade, Pocari Sweat, Powerade	350ml - 500ml	8 pts	5 pts	Accepted
+Event/Mall Premium	Medium PET	Hope in a Bottle, Summit, Viva	500ml	8 pts	5 pts	Accepted
+Standard Canteen Soda	Medium PET	Pepsi, Mountain Dew, Sprite, Coke	500ml	8 pts	5 pts	Accepted
+Large Soft Drink	Large PET	Coke, Pepsi, Royal, Sprite	750ml - 800ml	10 pts	7 pts	Accepted
+Large Hydration	Large PET	Le Minerale, Nature's Spring, Wilkins	1000ml (1L)	10 pts	7 pts	Accepted
+Family Size / Multi-Serve	Invalid Size	Any Brand (1.5L or 2L bottles)	> 1000ml	0 pts	0 pts	Rejected
+
+
+Location Management
+•	Have future fixes
+
+Machine Management
+Machines Section
+•	Remove fill level (we don’t need that).
+•	Maintenance button – Change to other color (maybe blue) since its confusing because the full card is orange as well (Just change the HUE not the WHOLE button style).
+•	All the actions here should create logs as well (will be shown to the new machine logs under system logs)
+•	Only accessible by head admin and Technician role.
+
+User Management
+All User Section
+•	Change the label for the range of rows on the table to “Showing 1 to 10 of 14 users” just like this, but instead of entries change it to users. 
+•	In the table separate the column for Username and User ID as well. 
+•	For the search function, the search should be able to search the User ID, Username, and email since it’s the most significant part of the information of the user (show it as a placeholder is good).
+•	On the filter, add a school filter, and that filter should update when new school/place is added on the system. Also add these following on the filter but more like a toggle:
+o	Alphabetical Username (A-Z).
+o	Points (Highest to Lowest and vice versa)
+•	Maybe add a border for the clear button so it can be more visible and a hover effect as well (implement this to all the existing table with filter on the system).
+•	Move the add user feature to the Manage Admins side.
+•	Create new add user button feature but it contains the same fields as the updated sign up page on the login modal.
+Permissions Section
+•	It’s all good but make sure that it must show all the admin users from the admin panel ONLY not the users of the machine. You can differentiate that right?
+•	Change the label from permissions to Manage Admins
+•	Add new Admin Role / Duty – Technician (they access only the machines menu and the machine logs)
+•	Remove the machine permission to the inventory officer.
+•	Move the add users feature for manage users to Manage Admins and change it from Add Users to Add Admin. 
+•	The delete on the system logs should be “ – “ because no one should be able to delete logs yes?
+
+Rewards Inventory
+Add Rewards
+•	Make all the fields a required field.
+•	Complete the acronym SKU and just put the acronym inside a parenthesis beside the name like “Stock Keeping Unit (SKU)”
+All Rewards Section
+•	A dropdown filter for Location
+•	Remove the Minus (-), only the Plus (+) on the stock because we already have “dispense” button and for adding stock, we can do that on the edit action.
+•	Add a confirmation prompt when deleting a reward to prevent misclicking problems.
+•	Add a feature where we can add a category for the reward.
+•	Make sure the Page Size Selector and Pagination Summary look like the other tables.
+•	For the filter apply these changes:
+o	A toggle filter for:
+	Alphabetical
+	Points (Ascending; Descending)
+	Stock (Ascending; Descending)
+
+System Logs
+•	Add a new submenu named “Machine Logs” 
+Bottle Logs
+•	Bottle Type – Remove Glass because our system only accepts PET bottle ONLY.
+•	Change table column:
+o	User ID
+o	Username
+o	Machine/Location (school/place of the unit)
+o	Bottle Type
+o	Condition (Complete, no cap, no label)
+o	Points
+o	Timestamp
+o	Status (Accepted or Rejected)
+•	Filter
+o	Toggle filter:
+	Alphabetical Username
+o	Location (School/Places Deployed)
+o	Machine (This is for the local admin, when there is more than one unit deployed in their machine, this dropdown filter will activate. But when there’s only one unit is deployed, it will not. Next is for the Super Admin, this dropdown filter will only activate when the Super Admin chooses a Location first)
+o	Size
+o	Condition
+o	Status (Accepted / Rejected)
+	Points (Ascending; Descending)
+	Time (Latest / Oldest)
+o	Search function should be able to search:
+	User ID
+	Username
+	School/Place where the unit is Deployed (Basically Location)
+Admin Access Logs
+•	Change the menu label from Admin Access to Admin Logs
+•	Remove the other cards and leave the active admin card.
+•	Create a custom view:
+o	Location
+o	Area
+•	Table column update:
+o	Remove Log ID
+o	Admin Role (The Duty Roles)
+o	Admin Username
+o	Action
+o	Target:
+	If its target is user – User ID
+	Machine – Machine ID
+•	To see the full log for machine you should toggle the column location and area on the custom view dropdown checkbox.
+	Rewards – SKU
+o	Remove IP and STATUS column
+•	Make sure the Page Size Selector and Pagination Summary look like the other tables.
+
+General Updates
+•	In the pagination summary, instead of entries make it aligned with the table’s purpose for instance if its for users make it users you get me?
+•	Make sure that all the fields are required field.
+•	Make all the button function.
+•	In user’s profile, remove the activity card and the recent activity card/log.
+•	Make sure that there’s a export function on all logs.

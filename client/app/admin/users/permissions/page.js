@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
+import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
-import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown } from 'lucide-react';
+import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown, Wrench } from 'lucide-react';
 
 // ============================================================================
 // USING ADMIN_USERS FROM MOCKDATA - Connected to School A & B accounts
@@ -46,15 +47,31 @@ const ROLES_DATA = [
     {
         id: 'inventory_officer',
         name: 'Inventory Officer',
-        description: 'Logistics focus - Machines & Rewards management',
+        description: 'Logistics focus - Rewards management',
         color: 'emerald',
         icon: Package,
-        userCount: 1,
+        userCount: 0,
+        permissions: {
+            dashboard: { view: true, edit: false },
+            users: { view: false, edit: false, delete: false, create: false },
+            machines: { view: false, edit: false, delete: false, create: false },
+            rewards: { view: true, edit: true, delete: false, create: true },
+            logs: { view: true, export: false, delete: false },
+            settings: { view: false, edit: false }
+        }
+    },
+    {
+        id: 'technician',
+        name: 'Technician',
+        description: 'Maintenance focus - Machines & Logs',
+        color: 'amber',
+        icon: Wrench,
+        userCount: 0,
         permissions: {
             dashboard: { view: true, edit: false },
             users: { view: false, edit: false, delete: false, create: false },
             machines: { view: true, edit: true, delete: false, create: false },
-            rewards: { view: true, edit: true, delete: false, create: true },
+            rewards: { view: false, edit: false, delete: false, create: false },
             logs: { view: true, export: false, delete: false },
             settings: { view: false, edit: false }
         }
@@ -67,7 +84,7 @@ const PERMISSION_MODULES = [
     { key: 'users', label: 'User Management', icon: Users, actions: ['view', 'edit', 'create', 'delete'] },
     { key: 'machines', label: 'Machines (RVM)', icon: Package, actions: ['view', 'edit', 'create', 'delete'] },
     { key: 'rewards', label: 'Rewards Inventory', icon: FileText, actions: ['view', 'edit', 'create', 'delete'] },
-    { key: 'logs', label: 'System Logs', icon: Activity, actions: ['view', 'export', 'delete'] },
+    { key: 'logs', label: 'System Logs', icon: Activity, actions: ['view', 'export'] },
     { key: 'settings', label: 'System Settings', icon: Settings, actions: ['view', 'edit'] },
 ];
 
@@ -100,13 +117,17 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
     const colorClasses = {
         purple: 'from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700',
         blue: 'from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700',
+        blue: 'from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700',
         emerald: 'from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700',
+        amber: 'from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700',
     };
 
     const badgeColors = {
         purple: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
         blue: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+        blue: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
         emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+        amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
     };
 
     return (
@@ -162,13 +183,17 @@ const UserAccountRow = ({ user, onRoleChange }) => {
     const roleColors = {
         head_admin: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
         auditor: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+        auditor: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
         inventory_officer: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+        technician: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
     };
 
     const roleNames = {
         head_admin: 'Head Admin',
         auditor: 'Auditor',
+        auditor: 'Auditor',
         inventory_officer: 'Inventory Officer',
+        technician: 'Technician',
     };
 
     // Get location name from user's locationId
@@ -180,7 +205,9 @@ const UserAccountRow = ({ user, onRoleChange }) => {
     const roleOptions = [
         { id: 'head_admin', name: 'Head Admin' },
         { id: 'auditor', name: 'Auditor' },
+        { id: 'auditor', name: 'Auditor' },
         { id: 'inventory_officer', name: 'Inventory Officer' },
+        { id: 'technician', name: 'Technician' },
     ];
 
     const handleRoleChange = async (newRole) => {
@@ -262,6 +289,7 @@ const UserAccountRow = ({ user, onRoleChange }) => {
 export default function PermissionsPage() {
     const { user: currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [roles] = useState(ROLES_DATA);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     // Use ADMIN_USERS from mockData (filter out super_admin for local admins only)
     const [allUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
 
@@ -297,9 +325,18 @@ export default function PermissionsPage() {
     return (
         <>
             {/* Page Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Role-Based Access Control</h1>
-                <p className="text-slate-500 dark:text-slate-400">Manage roles and permissions for admin users</p>
+            <div className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Admins</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Manage roles and permissions for admin users</p>
+                </div>
+                <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                >
+                    <Plus size={18} />
+                    Add Admin
+                </button>
             </div>
 
             {/* Stats Overview */}
@@ -480,6 +517,20 @@ export default function PermissionsPage() {
                     </table>
                 </div>
             </div>
+
+
+            <AddUserModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onUserAdded={(newUser) => {
+                    // In a real app, you'd add to DB and refresh
+                    // Here we just update local state if needed or show success
+                    console.log("Admin Added", newUser);
+                    // For demo purposes, we might want to update allUsers if we can access setAllUsers
+                    // But allUsers is derived from MockData which we can't easily mutate from here persistenty.
+                    // We'll just close for now.
+                }}
+            />
         </>
     );
 }

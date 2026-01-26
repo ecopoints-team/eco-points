@@ -21,8 +21,14 @@ const ADMIN_ROLES = [
     {
         id: 'inventory_officer',
         name: 'Inventory Officer',
-        description: 'Manage machines and rewards',
+        description: 'Manage rewards inventory',
         color: 'emerald'
+    },
+    {
+        id: 'technician',
+        name: 'Technician',
+        description: 'Manage machines and maintenance',
+        color: 'amber'
     },
 ];
 
@@ -203,9 +209,19 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                     superUser: 'deny',
                     adminAccess: 'deny',
                     usersManage: 'deny',
-                    machinesManage: 'grant',
+                    machinesManage: 'deny',
                     rewardsManage: 'grant',
                     logsAccess: 'inherit',
+                });
+                break;
+            case 'technician':
+                setPermissions({
+                    superUser: 'deny',
+                    adminAccess: 'deny',
+                    usersManage: 'deny',
+                    machinesManage: 'grant',
+                    rewardsManage: 'deny',
+                    logsAccess: 'grant',
                 });
                 break;
         }
@@ -282,6 +298,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         purple: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500',
         blue: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500',
         emerald: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500',
+        amber: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500',
     };
 
     return (

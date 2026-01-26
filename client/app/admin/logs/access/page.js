@@ -120,7 +120,7 @@ export default function AdminAccessLogsPage() {
     return (
         <>
             <div className="mb-8">
-                <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Access Logs</h1>
+                <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Logs</h1>
                 <p className="text-slate-500 dark:text-slate-400">Track all administrative actions</p>
             </div>
 
@@ -173,24 +173,37 @@ export default function AdminAccessLogsPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
-                            <tr><th className="px-6 py-4">Log ID</th><th className="px-6 py-4">Admin</th><th className="px-6 py-4">Action</th><th className="px-6 py-4">Target</th><th className="px-6 py-4">Category</th><th className="px-6 py-4">IP</th><th className="px-6 py-4">Time</th><th className="px-6 py-4">Status</th></tr>
+                            <tr>
+                                <th className="px-6 py-4">Date/Time</th>
+                                <th className="px-6 py-4">Admin Name</th>
+                                <th className="px-6 py-4">Role</th>
+                                <th className="px-6 py-4">Action</th>
+                                <th className="px-6 py-4">Target</th>
+                            </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-purple-900/10 transition-colors">
-                                    <td className="px-6 py-4"><span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">{log.id}</span></td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center"><User size={14} className="text-purple-600 dark:text-purple-400" /></div>
-                                            <div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.adminName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.adminRole}</p></div>
+                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                            <Clock size={14} />{log.timestamp}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">{log.action}</td>
-                                    <td className="px-6 py-4"><span className="font-mono text-sm text-slate-600 dark:text-slate-400">{log.target}</span></td>
-                                    <td className="px-6 py-4"><span className={`px-2 py-1 rounded-lg text-xs font-medium ${getCategoryColor(log.category)}`}>{log.category}</span></td>
-                                    <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Globe size={14} />{log.ipAddress}</div></td>
-                                    <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} />{log.timestamp}</div></td>
-                                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${log.status === 'Success' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>{log.status}</span></td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
+                                                <User size={14} className="text-purple-600 dark:text-purple-400" />
+                                            </div>
+                                            <p className="font-medium text-slate-800 dark:text-white text-sm">{log.adminName}</p>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                            {log.adminRole}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</td>
+                                    <td className="px-6 py-4"><span className="font-mono text-sm text-slate-500 dark:text-slate-400">{log.target}</span></td>
                                 </tr>
                             ))}
                         </tbody>

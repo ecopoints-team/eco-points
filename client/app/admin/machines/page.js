@@ -46,31 +46,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// Fill Level Bar Component
-const FillLevelBar = ({ level }) => {
-    const getColor = () => {
-        if (level >= 90) return 'from-red-500 to-red-400';
-        if (level >= 70) return 'from-amber-500 to-amber-400';
-        return 'from-emerald-500 to-emerald-400';
-    };
 
-    return (
-        <div className="w-full">
-            <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-500 dark:text-slate-400">Fill Level</span>
-                <span className={`font-bold ${level >= 90 ? 'text-red-600 dark:text-red-400' : level >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {level}%
-                </span>
-            </div>
-            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div
-                    className={`h-full bg-gradient-to-r ${getColor()} transition-all duration-500`}
-                    style={{ width: `${level}%` }}
-                ></div>
-            </div>
-        </div>
-    );
-};
 
 // Maintenance Log Modal
 const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
@@ -290,7 +266,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 };
 
 // Machine Card Component
-const MachineCard = ({ machine, onOpenMaintenance, locationName }) => (
+const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) => (
     <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${machine.status === 'Maintenance'
         ? 'border-red-300 dark:border-red-500/30'
         : machine.status === 'Full'
@@ -342,8 +318,7 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName }) => (
             </div>
         </div>
 
-        {/* Fill Level */}
-        <FillLevelBar level={machine.fillLevel} />
+
 
         {/* Actions */}
         <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -353,15 +328,17 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName }) => (
                 <Eye size={16} />
                 View Details
             </button>
-            <button
-                onClick={() => onOpenMaintenance(machine)}
-                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium
-                    bg-amber-100 text-amber-700 hover:bg-amber-200
-                    dark:bg-amber-500/20 dark:text-amber-400 dark:hover:bg-amber-500/30 transition-colors"
-            >
-                <Wrench size={16} />
-                Maintenance
-            </button>
+            {['super_admin', 'head_admin', 'technician'].includes(currentUser?.role) && (
+                <button
+                    onClick={() => onOpenMaintenance(machine)}
+                    className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium
+                    bg-blue-100 text-blue-700 hover:bg-blue-200
+                    dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30 transition-colors"
+                >
+                    <Wrench size={16} />
+                    Maintenance
+                </button>
+            )}
             <button className="flex items-center justify-center p-2 rounded-lg
                 bg-slate-100 text-slate-600 hover:bg-slate-200
                 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors">
@@ -376,7 +353,7 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName }) => (
 // ============================================================================
 
 export default function MachinesPage() {
-    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations } = useAuth();
+    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser } = useAuth();
 
     // Filter machines by location
     const filteredMachines = useMemo(() => {
@@ -502,6 +479,7 @@ export default function MachinesPage() {
                             machine={machine}
                             onOpenMaintenance={handleOpenMaintenance}
                             locationName={isSuperAdmin && !effectiveLocationId ? getLocationName(machine.locationId) : null}
+                            currentUser={currentUser}
                         />
                     ))}
                 </div>

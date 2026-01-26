@@ -15,8 +15,9 @@ const generateBottleLogs = () => {
         { id: 'RVM-003', name: 'Cafeteria RVM', locationId: 'LOC-001' }, { id: 'RVM-004', name: 'Sports Complex RVM', locationId: 'LOC-002' },
         { id: 'RVM-005', name: 'Admin Block RVM', locationId: 'LOC-002' }, { id: 'RVM-006', name: 'Dormitory RVM', locationId: 'LOC-002' }
     ];
-    const bottleTypes = ['350ml PET', '500ml PET', '750ml Glass', '1000ml PET', '1500ml PET'];
-    const pointsMap = { '350ml PET': 3, '500ml PET': 5, '750ml Glass': 8, '1000ml PET': 10, '1500ml PET': 15 };
+    const bottleTypes = ['350ml PET', '500ml PET', '1000ml PET', '1500ml PET'];
+    const pointsMap = { '350ml PET': 3, '500ml PET': 5, '1000ml PET': 10, '1500ml PET': 15 };
+    const conditions = ['Perfect', 'Good', 'Crushed', 'Dirty (Rejected)'];
     const statuses = ['Completed', 'Pending', 'Failed'];
     const logs = [];
     const baseDate = new Date('2026-01-14T10:45:00');
@@ -24,10 +25,11 @@ const generateBottleLogs = () => {
         const user = users[Math.floor(Math.random() * users.length)];
         const machine = machines[Math.floor(Math.random() * machines.length)];
         const bottleType = bottleTypes[Math.floor(Math.random() * bottleTypes.length)];
+        const condition = conditions[Math.floor(Math.random() * conditions.length)];
         const status = i < 140 ? 'Completed' : statuses[Math.floor(Math.random() * statuses.length)];
         const logDate = new Date(baseDate.getTime() - (i * 15 * 60000));
         const formattedDate = logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + logDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        logs.push({ id: `LOG-${8842 - i}`, userId: user.id, userName: user.name, machineId: machine.id, machineName: machine.name, locationId: machine.locationId, bottleType, pointsAwarded: pointsMap[bottleType], timestamp: formattedDate, status });
+        logs.push({ id: `LOG-${8842 - i}`, userId: user.id, userName: user.name, machineId: machine.id, machineName: machine.name, locationId: machine.locationId, bottleType, condition, pointsAwarded: pointsMap[bottleType], timestamp: formattedDate, timestampObj: logDate, status });
     }
     return logs;
 };
@@ -41,7 +43,10 @@ export default function BottleLogsPage() {
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
     const [filterBottleType, setFilterBottleType] = useState('');
+    const [filterCondition, setFilterCondition] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterLocation, setFilterLocation] = useState('');
+    const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
 
@@ -61,17 +66,29 @@ export default function BottleLogsPage() {
 
         return logs.filter(log => {
             const matchesSearch = searchQuery === '' || log.id.toLowerCase().includes(searchQuery.toLowerCase()) || log.userName.toLowerCase().includes(searchQuery.toLowerCase()) || log.machineName.toLowerCase().includes(searchQuery.toLowerCase()) || log.bottleType.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesSearch && (filterMachine === '' || log.machineName === filterMachine) && (filterBottleType === '' || log.bottleType === filterBottleType) && (filterStatus === '' || log.status === filterStatus);
+            return matchesSearch &&
+                (filterMachine === '' || log.machineName === filterMachine) &&
+                (filterBottleType === '' || log.bottleType === filterBottleType) &&
+                (filterCondition === '' || log.condition === filterCondition) &&
+                (filterStatus === '' || log.status === filterStatus) &&
+                (filterLocation === '' || log.locationId === filterLocation);
+        }).sort((a, b) => {
+            switch (sortOrder) {
+                case 'Alphabetical': return a.userName.localeCompare(b.userName);
+                case 'Points (High-Low)': return b.pointsAwarded - a.pointsAwarded;
+                case 'Points (Low-High)': return a.pointsAwarded - b.pointsAwarded;
+                case 'Newest': default: return b.timestampObj - a.timestampObj;
+            }
         });
-    }, [searchQuery, filterMachine, filterBottleType, filterStatus]);
+    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortOrder]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const currentLogs = filteredLogs.slice(startIndex, startIndex + rowsPerPage);
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterStatus(''); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterMachine || filterBottleType || filterStatus;
+    const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterCondition(''); setFilterStatus(''); setFilterLocation(''); setSortOrder('Newest'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation || sortOrder !== 'Newest';
 
     const getStatusColor = (s) => ({ 'Completed': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Failed': 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' }[s] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400');
 
@@ -122,8 +139,15 @@ export default function BottleLogsPage() {
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-4 items-center">
                         <div className="flex flex-wrap gap-3 flex-1">
                             <div className="relative"><select value={filterMachine} onChange={(e) => handleFilterChange(setFilterMachine, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Machines</option>{machines.map(m => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
-                            <div className="relative"><select value={filterBottleType} onChange={(e) => handleFilterChange(setFilterBottleType, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Bottle Types</option>{bottleTypes.map(b => <option key={b} value={b}>{b}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+                            <div className="relative"><select value={filterBottleType} onChange={(e) => handleFilterChange(setFilterBottleType, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Sizes</option>{bottleTypes.map(b => <option key={b} value={b}>{b}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+                            <div className="relative"><select value={filterCondition} onChange={(e) => handleFilterChange(setFilterCondition, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Conditions</option>{['Perfect', 'Good', 'Crushed', 'Dirty (Rejected)'].map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                             <div className="relative"><select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Statuses</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+
+                            {isSuperAdmin && !viewAsLocationId && (
+                                <div className="relative"><select value={filterLocation} onChange={(e) => handleFilterChange(setFilterLocation, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Locations</option><option value="LOC-001">School A</option><option value="LOC-002">School B</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+                            )}
+
+                            <div className="relative"><select value={sortOrder} onChange={(e) => handleFilterChange(setSortOrder, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="Newest">Newest First</option><option value="Alphabetical">Alphabetical (User)</option><option value="Points (High-Low)">Points (High-Low)</option><option value="Points (Low-High)">Points (Low-High)</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                         </div>
                         {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium"><X size={14} /> Clear Filters</button>}
                     </div>
@@ -132,14 +156,19 @@ export default function BottleLogsPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
-                            <tr><th className="px-6 py-4">Log ID</th><th className="px-6 py-4">User</th><th className="px-6 py-4">Machine</th><th className="px-6 py-4">Bottle Type</th><th className="px-6 py-4">Points</th><th className="px-6 py-4">Timestamp</th><th className="px-6 py-4">Status</th></tr>
+                            <tr><th className="px-6 py-4">Log ID</th><th className="px-6 py-4">User</th><th className="px-6 py-4">Machine/Location</th><th className="px-6 py-4">Bottle Type</th><th className="px-6 py-4">Condition</th><th className="px-6 py-4">Points</th><th className="px-6 py-4">Timestamp</th><th className="px-6 py-4">Status</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-6 py-4"><span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">{log.id}</span></td>
                                     <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center"><User size={14} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p></div></div></td>
-                                    <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><MapPin size={14} className="text-slate-400" />{log.machineName}</div></td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><MapPin size={14} className="text-slate-400" />{log.machineName}</div>
+                                            {isSuperAdmin && !viewAsLocationId && <span className="text-[10px] text-slate-400 ml-5">{log.locationId === 'LOC-001' ? 'School A' : 'School B'}</span>}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
                                             {log.bottleType.split(' ').map((part, i) => (
@@ -149,6 +178,7 @@ export default function BottleLogsPage() {
                                             ))}
                                         </div>
                                     </td>
+                                    <td className="px-6 py-4"><span className="text-sm text-slate-600 dark:text-slate-300">{log.condition}</span></td>
                                     <td className="px-6 py-4"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded} pts</span></td>
                                     <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} className="text-slate-400" />{log.timestamp}</div></td>
                                     <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>

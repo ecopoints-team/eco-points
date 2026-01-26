@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
-import AddUserModal from '../../../src/Components/AddUserModal';
+import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 import { USERS, getUsersByLocation } from '../../../src/data/mockData';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2 } from 'lucide-react';
@@ -17,6 +17,8 @@ export default function ManageUsersPage() {
     const [showFilter, setShowFilter] = useState(false);
     const [filterRole, setFilterRole] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterSchool, setFilterSchool] = useState('');
+    const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -38,9 +40,17 @@ export default function ManageUsersPage() {
                 user.email.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesRole = filterRole === '' || user.role === filterRole;
             const matchesStatus = filterStatus === '' || user.status === filterStatus;
-            return matchesSearch && matchesRole && matchesStatus;
+            const matchesSchool = filterSchool === '' || user.locationId === filterSchool;
+            return matchesSearch && matchesRole && matchesStatus && matchesSchool;
+        }).sort((a, b) => {
+            switch (sortOrder) {
+                case 'Alphabetical': return a.name.localeCompare(b.name);
+                case 'Points (High-Low)': return b.points - a.points;
+                case 'Points (Low-High)': return a.points - b.points;
+                case 'Newest': default: return new Date(b.joinDate) - new Date(a.joinDate);
+            }
         });
-    }, [users, searchQuery, filterRole, filterStatus]);
+    }, [users, searchQuery, filterRole, filterStatus, filterSchool, sortOrder]);
 
     const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -55,8 +65,8 @@ export default function ManageUsersPage() {
     };
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterRole || filterStatus;
+    const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setFilterSchool(''); setSortOrder('Newest'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterRole || filterStatus || filterSchool || sortOrder !== 'Newest';
 
     // Get location name
     const getLocationName = (locationId) => {
@@ -192,8 +202,30 @@ export default function ManageUsersPage() {
                                 <option value="">All Statuses</option>
                                 {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
+
+                            {/* School Filter (Super Admin) */}
+                            {isSuperAdmin && !effectiveLocationId && (
+                                <select value={filterSchool} onChange={(e) => handleFilterChange(setFilterSchool, e.target.value)}
+                                    className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                    <option value="">All Schools</option>
+                                    {allLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
+                            )}
+
+                            {/* Sort Dropdown */}
+                            <select value={sortOrder} onChange={(e) => handleFilterChange(setSortOrder, e.target.value)}
+                                className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value="Newest">Newest First</option>
+                                <option value="Alphabetical">Alphabetical (A-Z)</option>
+                                <option value="Points (High-Low)">Points (High-Low)</option>
+                                <option value="Points (Low-High)">Points (Low-High)</option>
+                            </select>
                         </div>
-                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-medium"><X size={14} />Clear</button>}
+                        {hasActiveFilters && (
+                            <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-medium transition-colors flex items-center gap-1">
+                                <X size={12} /> Clear Filters
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -201,7 +233,8 @@ export default function ManageUsersPage() {
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">User ID</th>
+                                <th className="px-6 py-4">Name</th>
                                 <th className="px-6 py-4">Email</th>
                                 {isSuperAdmin && !effectiveLocationId && <th className="px-6 py-4">Location</th>}
                                 <th className="px-6 py-4">Role</th>
@@ -215,14 +248,14 @@ export default function ManageUsersPage() {
                             {currentUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-6 py-4">
+                                        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{user.id}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
                                                 {user.name.split(' ').map(n => n[0]).join('')}
                                             </div>
-                                            <div>
-                                                <p className="font-semibold text-slate-800 dark:text-white text-sm">{user.name}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">{user.id}</p>
-                                            </div>
+                                            <p className="font-semibold text-slate-800 dark:text-white text-sm">{user.name}</p>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -277,7 +310,7 @@ export default function ManageUsersPage() {
                 {totalPages > 0 && (
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-4">
-                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length} users</span>
                             <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                                 className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
                                 <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
@@ -304,7 +337,7 @@ export default function ManageUsersPage() {
             </div>
 
             {/* Add User Modal */}
-            <AddUserModal
+            <AddRegularUserModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onUserAdded={(newUser) => {

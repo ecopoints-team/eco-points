@@ -14,7 +14,8 @@ import {
     Users,
     Zap,
     ArrowRight,
-    Leaf
+    Leaf,
+    Search
 } from "lucide-react";
 
 // Test accounts for demo login
@@ -79,6 +80,10 @@ export default function LogIn({ onClose }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [role, setRole] = useState("");
+    const [school, setSchool] = useState("");
+    const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+    const [filteredSchools, setFilteredSchools] = useState(["Arellano University - Andres Bonifacio Pasig Campus"]);
     const [error, setError] = useState("");
     const [showAccountPicker, setShowAccountPicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -223,7 +228,7 @@ export default function LogIn({ onClose }) {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-3 bg-lime-600 text-white rounded-lg font-bold shadow-lg 
+                                className="w-2/4 mx-auto py-3 bg-lime-600 text-white rounded-lg font-bold shadow-lg 
                   hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5 
                   transition-all duration-300 flex items-center justify-center gap-2
                   disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
@@ -249,75 +254,171 @@ export default function LogIn({ onClose }) {
                 {/* --- RIGHT SIDE: SIGN UP FORM --- */}
                 <div className={`
           absolute top-0 right-0 h-full w-full md:w-1/2 
-          flex flex-col items-center p-8 bg-white
+          flex flex-col items-center 
+          bg-white
           transition-all duration-700 ease-in-out
           ${isMobile
-                        ? (isSignUp ? 'opacity-100 z-20 justify-start pt-12' : 'opacity-0 z-0 pointer-events-none justify-center') // Signup Active: Anchor Top
-                        : 'z-10 justify-center'
+                        ? (isSignUp ? 'opacity-100 z-20 pt-6 pb-48 overflow-y-auto no-scrollbar justify-start' : 'opacity-0 z-0 pointer-events-none justify-center')
+                        : 'z-10 justify-center p-8'
                     }
         `}>
                     <div className={`w-full max-w-xs flex flex-col items-center transition-opacity duration-500 ${isSignUp ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>
-                        <h1 className="text-3xl font-extrabold text-gray-800 mb-2">Create Account</h1>
-                        <p className="text-gray-400 text-sm mb-8">Join EcoPoints community today</p>
+                        <h1 className={`${isMobile ? 'text-2xl mt-2' : 'text-3xl'} font-extrabold text-gray-800 mb-1`}>Create Account</h1>
+                        <p className="text-gray-400 text-xs mb-4">Join EcoPoints community today</p>
 
-                        <form onSubmit={handleSignUp} className="w-full space-y-4">
-                            <InputField
-                                type="text"
-                                placeholder="Full Name"
-                                icon={<User size={18} />}
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                            />
+                        <form onSubmit={handleSignUp} className={`w-full ${isMobile ? 'space-y-2' : 'space-y-4'}`}>
+                            <div className={`${isMobile ? 'scale-95 origin-top' : ''} space-y-2 w-full`}>
+                                <InputField
+                                    type="text"
+                                    placeholder="Full Name"
+                                    icon={<User size={18} />}
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                />
 
-                            <InputField
-                                type="email"
-                                placeholder="Email"
-                                icon={<Mail size={18} />}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
+                                <InputField
+                                    type="email"
+                                    placeholder="Email"
+                                    icon={<Mail size={18} />}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
 
-                            <InputField
-                                type="password"
-                                placeholder="Password"
-                                icon={<Lock size={18} />}
-                                showToggle={true}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-
-                            <InputField
-                                type="password"
-                                placeholder="Confirm Password"
-                                icon={<Lock size={18} />}
-                                showToggle={true}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                            />
-
-                            {error && isSignUp && (
-                                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center font-medium">
-                                    {error}
+                                {/* ROLE DROPDOWN */}
+                                <div className="relative w-full group">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                                        <Users size={18} />
+                                    </div>
+                                    <select
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                        className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                    focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                    block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                    ${role === "" ? "text-gray-400" : "text-gray-800"}`}
+                                    >
+                                        <option value="" disabled>Select your role</option>
+                                        <option value="Student">Student</option>
+                                        <option value="Faculty">Faculty</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Staff">Staff</option>
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                                        <ChevronDown size={16} />
+                                    </div>
                                 </div>
-                            )}
 
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full py-3 bg-lime-600 text-white rounded-lg font-bold shadow-lg 
+                                {/* SCHOOL SEARCHABLE DROPDOWN */}
+                                <div className="relative w-full group">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                                        <Building2 size={18} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Select School / Campus"
+                                        value={school}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setSchool(val);
+                                            if (val.length > 0) {
+                                                setShowSchoolDropdown(true);
+                                                // Mock Filtering (Client Side)
+                                                if ("Arellano University - Andres Bonifacio Pasig Campus".toLowerCase().includes(val.toLowerCase())) {
+                                                    setFilteredSchools(["Arellano University - Andres Bonifacio Pasig Campus"]);
+                                                } else {
+                                                    setFilteredSchools([]);
+                                                }
+                                            } else {
+                                                setShowSchoolDropdown(false);
+                                            }
+                                        }}
+                                        onFocus={() => {
+                                            if (school.length > 0) setShowSchoolDropdown(true);
+                                        }}
+                                        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
+                                    focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                    block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white"
+                                    />
+                                    {showSchoolDropdown && school.length > 0 && (
+                                        <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-50 p-1">
+                                            <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 mb-1">
+                                                <Building2 size={12} />
+                                                Suggested Schools
+                                            </div>
+                                            {filteredSchools.length > 0 ? (
+                                                filteredSchools.map((s, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSchool(s);
+                                                            setShowSchoolDropdown(false);
+                                                        }}
+                                                        className="w-full text-left px-3 py-2.5 hover:bg-lime-50 rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-3 group"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full bg-lime-100 flex items-center justify-center text-lime-600 group-hover:bg-lime-200 transition-colors">
+                                                            <Building2 size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-gray-800 group-hover:text-lime-800">{s}</p>
+                                                            <p className="text-xs text-gray-400">Pasig City</p>
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="px-4 py-8 text-center flex flex-col items-center justify-center text-gray-400 gap-2">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                        <Search size={18} />
+                                                    </div>
+                                                    <span className="text-xs">No schools found matching "{school}"</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <InputField
+                                    type="password"
+                                    placeholder="Password"
+                                    icon={<Lock size={18} />}
+                                    showToggle={true}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+
+                                <InputField
+                                    type="password"
+                                    placeholder="Confirm Password"
+                                    icon={<Lock size={18} />}
+                                    showToggle={true}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
+
+                                {error && isSignUp && (
+                                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center font-medium">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className={`w-2/4 mx-auto ${isMobile ? 'py-2.5 mt-2' : 'py-3'} bg-lime-600 text-white rounded-lg font-bold shadow-lg 
                   hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5 
                   transition-all duration-300 flex items-center justify-center gap-2
-                  disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                            >
-                                {isLoading && isSignUp ? (
-                                    <>
-                                        <Loader2 size={20} className="animate-spin" />
-                                        <span>Creating...</span>
-                                    </>
-                                ) : (
-                                    'Sign Up'
-                                )}
-                            </button>
+                  disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-3`}
+                                >
+                                    {isLoading && isSignUp ? (
+                                        <>
+                                            <Loader2 size={20} className="animate-spin" />
+                                            <span>Creating...</span>
+                                        </>
+                                    ) : (
+                                        'Sign Up'
+                                    )}
+                                </button>
+                            </div>
                         </form>
 
                     </div>
@@ -347,11 +448,22 @@ export default function LogIn({ onClose }) {
                         }`
                     }
         `}>
-                    <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center">
+                    <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center flex-col">
+
+                        {/* ANIMATED LOGO DISPLAY */}
+                        <div className={`absolute transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
+                            ${isExpanding ? 'scale-125 opacity-100 rotate-0' : 'scale-75 opacity-0 -rotate-12'}
+                            ${isMobile ? 'w-24' : 'w-48'} z-0`}>
+                            <img
+                                src={isMobile ? "/Logo Elements (Light).png" : "/EcoPoints Primary Logo (Light version).png"}
+                                alt="EcoPoints Logo"
+                                className="w-full h-auto object-contain drop-shadow-2xl animate-float-slow"
+                            />
+                        </div>
 
                         {/* Content Container */}
                         <div className={`
-              relative w-full h-full transition-opacity duration-300 flex items-center justify-center
+              relative w-full h-full transition-opacity duration-300 flex items-center justify-center z-10
               ${isExpanding ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
             `}>
 

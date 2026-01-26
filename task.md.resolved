@@ -1,0 +1,172 @@
+# EcoPoints Admin Dashboard Updates
+
+## Overview
+Comprehensive updates to the admin dashboard based on `New Updates.txt` requirements. The updates span across multiple areas including login/signup flow, navigation, dashboard components, user management, rewards, system logs, and general UI/UX improvements.
+
+---
+
+## Phase 1: Login/Signup Modal Enhancements
+- [ ] 1.1 Shorten transition animation timing between login and signup modes
+- [ ] 1.2 Display EcoPoints logo on colored card during animation transition
+- [ ] 1.3 Add new signup fields:
+  - [ ] Role dropdown (Student, Faculty, Admin, Staff)
+  - [ ] Searchable school dropdown with Google Maps API integration
+
+---
+
+## Phase 2: Side Navigation Bar Updates
+- [ ] 2.1 Change sign-out button hover color from green to red
+- [ ] 2.2 Implement dropdown close behavior (User Management/System Logs collapse when Dashboard/Locations active)
+
+---
+
+## Phase 3: Dashboard Overview Updates
+- [ ] 3.1 Remove decorative elements from stat cards (except Machines card photo)
+- [ ] 3.2 Fix Recycling Trends chart logic:
+  - Day view: Sunday to Saturday
+  - Weekly view: Week 1-4 (month-aware, leap year aware)
+  - Monthly view: January to December
+- [ ] 3.3 Quick Actions updates:
+  - Replace Settings with Rewards (with link)
+  - Rename "View Logs" to "Admin Logs"
+  - Link "Admin Logs" to Admin Access page (not Bottle Logs)
+  - Implement role-based shortcuts (e.g., Inventory Officer sees Rewards Management)
+
+---
+
+## Phase 4: Data Logs Overview (Dashboard)
+- [ ] 4.1 Rename title from "Real-Time Data Logs" to "Real-Time Bottle Logs"
+- [ ] 4.2 Add Location column (school deployed)
+- [ ] 4.3 Remove Log ID column, add User ID column
+- [ ] 4.4 Add Condition column with bottle points system:
+  - Small PET (290-350ml): 5 pts with label/cap, 3 pts without
+  - Medium PET (350-500ml): 8 pts with label/cap, 5 pts without
+  - Large PET (750-1000ml): 10 pts with label/cap, 7 pts without
+  - Invalid Size (>1000ml): 0 pts - Rejected
+
+---
+
+## Phase 5: Machine Management Updates
+- [ ] 5.1 Remove fill level display from machine cards
+- [ ] 5.2 Change Maintenance button color to blue (instead of orange)
+- [ ] 5.3 Log all machine actions to Machine Logs
+- [ ] 5.4 Restrict access to Head Admin and Technician roles only
+
+---
+
+## Phase 6: User Management - All Users Section
+- [ ] 6.1 Update pagination summary to "Showing 1 to 10 of 14 users" format
+- [ ] 6.2 Separate Username and User ID into distinct columns
+- [ ] 6.3 Enhance search function (User ID, Username, Email) with placeholder hint
+- [ ] 6.4 Add filters:
+  - School dropdown (Super Admin only, dynamic based on system locations)
+  - Area dropdown (Local Admins only)
+  - Toggle: Alphabetical Username (A-Z)
+  - Toggle: Points (High to Low / Low to High)
+- [ ] 6.5 Add border and hover effect to Clear Filter button (apply to all tables)
+- [ ] 6.6 Move Add User feature to Manage Admins section
+- [ ] 6.7 Create new Add User button with same fields as updated signup form
+
+---
+
+## Phase 7: User Management - Permissions/Manage Admins Section
+- [ ] 7.1 Rename "Permissions" to "Manage Admins"
+- [ ] 7.2 Filter to show only admin panel users (not machine users)
+- [ ] 7.3 Add new Technician role (access: Machines menu + Machine Logs only)
+- [ ] 7.4 Remove machine permission from Inventory Officer role
+- [ ] 7.5 Remove machine permission from Auditor role
+- [ ] 7.6 Move Add Users feature here, rename to "Add Admin"
+- [ ] 7.7 Disable delete action on System Logs (show "-" instead)
+
+---
+
+## Phase 8: Rewards Inventory Updates
+- [ ] 8.1 Make all Add Reward fields required
+- [ ] 8.2 Change "SKU" to "Stock Keeping Unit (SKU)"
+- [ ] 8.3 Add Location filter dropdown (Super Admin only)
+- [ ] 8.4 Remove Minus (-) button from stock (keep only Plus)
+- [ ] 8.5 Add delete confirmation prompt
+- [ ] 8.6 Add reward category feature
+- [ ] 8.7 Standardize Page Size Selector and Pagination Summary
+- [ ] 8.8 Add toggle filters: Alphabetical, Points (Asc/Desc), Stock (Asc/Desc)
+- [ ] 8.9 Fix runtime error in Rewards page (missing state variable)
+
+---
+
+## Phase 9: System Logs - New Structure
+- [ ] 9.1 Add new "Machine Logs" submenu under System Logs
+- [ ] 9.2 Connect machine actions to Machine Logs
+
+---
+
+## Phase 10: System Logs - Bottle Logs Updates
+- [ ] 10.1 Remove "Glass" from Bottle Type options (PET only)
+- [ ] 10.2 Update table columns:
+  - User ID, Username, Machine/Location, Bottle Type, Condition, Points, Timestamp, Status
+- [ ] 10.3 Implement filters:
+  - Toggle: Alphabetical Username
+  - Dropdown: Location
+  - Dropdown: Machine (conditional activation based on role/location selection)
+  - Dropdown: Size
+  - Dropdown: Condition
+  - Dropdown: Status (Accepted/Rejected)
+  - Toggle: Points (Asc/Desc)
+  - Toggle: Time (Latest/Oldest)
+- [ ] 10.4 Search function: User ID, Username, Location
+
+---
+
+## Phase 11: System Logs - Admin Access Logs Updates
+- [ ] 11.1 Rename menu label from "Admin Access" to "Admin Logs"
+- [ ] 11.2 Remove extra stat cards, keep only Active Admin card
+- [ ] 11.3 Add custom view dropdown with Location and Area checkboxes
+- [ ] 11.4 Update table columns:
+  - Remove Log ID
+  - Add: Admin Role, Admin Username, Action, Target (User ID/Machine ID/SKU)
+- [ ] 11.5 Remove IP and STATUS columns
+- [ ] 11.6 Standardize Page Size Selector and Pagination Summary
+
+---
+
+## Phase 12: User Profile Updates
+- [ ] 12.1 Remove Activity card from profile page
+- [ ] 12.2 Remove Recent Activity card/log from profile page
+
+---
+
+## Phase 13: General Updates (Apply Across All Pages)
+- [ ] 13.1 Update pagination summary to match table context (users, rewards, logs, etc.)
+- [ ] 13.2 Ensure all form fields are required
+- [ ] 13.3 Ensure all buttons are functional
+- [ ] 13.5 Implement Search Refinement Chips (Google-style filter UI) for all filter dropdowns
+- [ ] 13.4 Add export function to all log pages
+
+---
+
+## Mock Data Updates
+- [ ] 14.1 Add new Technician role to ROLES_DATA
+- [ ] 14.2 Add Condition field to bottle log data structure
+- [ ] 14.3 Update bottle points calculation based on new system
+- [ ] 14.4 Create Machine Logs data structure
+
+---
+
+## Phase 15: Revisions and Fixes
+- [ ] 15.1 Revert StatCard component changes (restore bgImage, remove glow effect)
+
+---
+
+## Phase 16: Restoration of Missing Files (Critical Fixes)
+- [ ] 16.1 Restore Sidebar.jsx (Fixes AdminLayout error)
+- [ ] 16.2 Restore AddAdminModal.jsx
+- [ ] 16.3 Restore AddUserModal.jsx
+- [ ] 16.4 Create AddRewardModal.jsx (Missing component)
+- [ ] 16.5 Restore admin/users/page.js
+- [ ] 16.6 Restore admin/users/permissions/page.js
+- [ ] 16.7 Restore admin/rewards/page.js
+- [ ] 16.8 Fix Table.jsx onAdd prop support
+
+## Phase 17: Log Pages Restoration
+- [ ] 17.1 Recreate admin/logs/machines/page.js
+- [ ] 17.2 Recreate admin/logs/bottles/page.js
+- [ ] 17.3 Recreate admin/logs/access/page.js (Admin Logs)

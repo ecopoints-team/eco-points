@@ -72,7 +72,7 @@ const ShortcutBtn = ({ label, icon: Icon, color, href }) => {
 }
 
 export default function AdminDashboard() {
-    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations } = useAuth();
+    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser } = useAuth();
     const [timeRange, setTimeRange] = useState('week');
 
     // =========================================================================
@@ -110,8 +110,8 @@ export default function AdminDashboard() {
 
         return {
             week: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                values: [400, 650, 300, 800, 550, 900, 450].map(v => Math.round(v * baseMultiplier)),
+                labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                values: [450, 400, 650, 300, 800, 550, 900].map(v => Math.round(v * baseMultiplier)),
                 maxValue: Math.round(1000 * baseMultiplier)
             },
             month: {
@@ -148,23 +148,47 @@ export default function AdminDashboard() {
     // Location-specific recent transactions
     const recentTransactions = useMemo(() => {
         const machines = getMachinesByLocation(effectiveLocationId);
-        const machineIds = machines.map(m => m.id);
 
         // Generate transactions based on actual machines
         const users = getUsersByLocation(effectiveLocationId);
 
-        return machines.slice(0, 5).map((machine, idx) => ({
-            id: `LOG-${8842 - idx}`,
-            userId: users[idx]?.id || 'GUEST',
-            userName: users[idx]?.name || 'Guest User',
-            machineId: machine.id,
-            machineName: machine.name,
-            bottleType: ['500ml PET', '1000ml PET', '350ml PET', '1500ml PET'][idx % 4],
-            pointsAwarded: [5, 10, 3, 15, 5][idx % 5],
-            timestamp: `Jan 23, ${10 - idx}:${30 + idx * 5} AM`,
-            status: 'Completed',
-        }));
-    }, [effectiveLocationId]);
+        return machines.slice(0, 5).map((machine, idx) => {
+            // Mock Data based on new requirements
+            const conditions = ['Complete', 'No Label', 'No Cap', 'Complete', 'Complete'];
+            const bottleTypes = ['Small PET (350ml)', 'Large PET (1L)', 'Small PET (290ml)', 'Medium PET (500ml)', 'Large PET (1.5L)'];
+            // Approx map to points based on Condition and Type
+            let points = 0;
+            let status = 'Accepted';
+
+            // Simple logic for points
+            const type = bottleTypes[idx % 5];
+            const cond = conditions[idx % 5];
+
+            if (type.includes('1.5L')) {
+                points = 0;
+                status = 'Rejected';
+            } else if (type.includes('Large')) {
+                points = cond === 'Complete' ? 10 : 7;
+            } else if (type.includes('Medium') || type.includes('Small')) {
+                points = cond === 'Complete' ? 8 : 5; // Simplified for Medium
+                if (type.includes('Small')) points = cond === 'Complete' ? 5 : 3;
+            }
+
+            return {
+                id: `LOG-${8842 - idx}`, // Still keep for key, but won't show
+                userId: users[idx]?.id || 'USR-GUEST',
+                userName: users[idx]?.name || 'Guest User',
+                location: currentLocation ? currentLocation.name : machine.location,
+                machineId: machine.id,
+                machineName: machine.name,
+                bottleType: type,
+                condition: cond,
+                pointsAwarded: points,
+                timestamp: `Jan 23, ${10 - idx}:${30 + idx * 5} AM`,
+                status: status,
+            };
+        });
+    }, [effectiveLocationId, currentLocation]);
 
     return (
         <>
@@ -329,10 +353,22 @@ export default function AdminDashboard() {
                         Quick Actions
                     </h3>
                     <div className="grid grid-cols-2 gap-4 flex-1">
-                        <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
-                        <ShortcutBtn label="View Logs" icon={FileText} color="blue" href="/admin/logs/bottles" />
-                        <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
-                        <ShortcutBtn label="Settings" icon={Settings} color="purple" href="/admin/settings" />
+                        {/* Role-based Shortcuts */}
+                        {['super_admin', 'head_admin', 'inventory_officer'].includes(currentUser?.role) && (
+                            <ShortcutBtn label="Rewards" icon={Trophy} color="purple" href="/admin/rewards" />
+                        )}
+
+                        {['super_admin', 'head_admin'].includes(currentUser?.role) && (
+                            <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
+                        )}
+
+                        {['super_admin', 'head_admin', 'auditor'].includes(currentUser?.role) && (
+                            <ShortcutBtn label="Admin Logs" icon={FileText} color="blue" href="/admin/logs/access" />
+                        )}
+
+                        {['super_admin', 'head_admin'].includes(currentUser?.role) && (
+                            <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
+                        )}
                     </div>
                 </div>
             </div>
@@ -342,7 +378,7 @@ export default function AdminDashboard() {
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
                         <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
-                        Real-Time Data Logs {currentLocation && <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({currentLocation.name})</span>}
+                        Real-Time Bottle Logs {currentLocation && <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({currentLocation.name})</span>}
                     </h3>
                     <Link href="/admin/logs/bottles" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
                         View All →
@@ -354,10 +390,10 @@ export default function AdminDashboard() {
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700
                             bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-6 py-4">Log ID</th>
+                                <th className="px-6 py-4">User ID</th>
                                 <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Machine</th>
-                                <th className="px-6 py-4">Bottle Type</th>
+                                <th className="px-6 py-4">Location</th>
+                                <th className="px-6 py-4">Condition</th>
                                 <th className="px-6 py-4">Points</th>
                                 <th className="px-6 py-4">Time</th>
                                 <th className="px-6 py-4">Status</th>
@@ -367,7 +403,7 @@ export default function AdminDashboard() {
                             {recentTransactions.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-6 py-4">
-                                        <span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">{log.id}</span>
+                                        <span className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400">{log.userId}</span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -376,27 +412,20 @@ export default function AdminDashboard() {
                                             </div>
                                             <div>
                                                 <p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Student</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             <MapPin size={14} className="text-slate-400" />
-                                            <div>
-                                                <p className="text-sm text-slate-700 dark:text-slate-300">{log.machineName}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">{log.machineId}</p>
-                                            </div>
+                                            <span className="text-sm text-slate-700 dark:text-slate-300">{log.location}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
-                                            {log.bottleType.split(' ').map((part, i) => (
-                                                <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
-                                                    {part}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                            {log.condition}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded}</span>
@@ -408,8 +437,11 @@ export default function AdminDashboard() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="px-2.5 py-1 rounded-full text-xs font-bold
-                                            bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold
+                                            ${log.status === 'Accepted'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                            }`}>
                                             {log.status}
                                         </span>
                                     </td>

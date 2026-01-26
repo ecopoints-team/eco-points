@@ -61,7 +61,7 @@ export const ADMIN_USERS = [
             users: { view: true, edit: true, delete: true, create: true },
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: true, edit: true, delete: true, create: true },
-            logs: { view: true, export: true, delete: true },
+            logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: true },
             locations: { view: true, edit: true, delete: true, create: true }
         }
@@ -122,7 +122,7 @@ export const ADMIN_USERS = [
         permissions: {
             dashboard: { view: true, edit: false },
             users: { view: false, edit: false, delete: false, create: false },
-            machines: { view: true, edit: true, delete: false, create: false },
+            machines: { view: false, edit: false, delete: false, create: false },
             rewards: { view: true, edit: true, delete: false, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: false, edit: false },
@@ -185,7 +185,7 @@ export const ADMIN_USERS = [
         permissions: {
             dashboard: { view: true, edit: false },
             users: { view: false, edit: false, delete: false, create: false },
-            machines: { view: true, edit: true, delete: false, create: false },
+            machines: { view: false, edit: false, delete: false, create: false },
             rewards: { view: true, edit: true, delete: false, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: false, edit: false },
@@ -340,8 +340,14 @@ export const ROLES = {
     },
     inventory_officer: {
         name: 'Inventory Officer',
-        description: 'Manage machines and rewards within assigned location',
+        description: 'Manage rewards within assigned location',
         color: 'emerald',
+        scope: 'location'
+    },
+    technician: {
+        name: 'Technician',
+        description: 'Manage machines and maintenance',
+        color: 'amber',
         scope: 'location'
     }
 };
