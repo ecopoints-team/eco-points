@@ -314,14 +314,14 @@ export default function AdminDashboard() {
                                     bg-slate-50 text-slate-600 border border-slate-200
                                     dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 focus:border-emerald-500"
                             >
-                                <option value="week">By Week</option>
-                                <option value="month">By Month</option>
-                                <option value="year">By Year</option>
+                                <option value="week">Daily (Sun-Sat)</option>
+                                <option value="month">Weekly (Week 1-4)</option>
+                                <option value="year">Monthly (Jan-Dec)</option>
                             </select>
                         </div>
                     </div>
 
-                    <div className="flex">
+                    <div className="flex" style={{ overflow: 'visible' }}>
                         <div className="flex flex-col justify-between h-64 pr-4 text-right min-w-[50px]">
                             {yAxisLabels.map((label, i) => (
                                 <span key={i} className="text-xs text-slate-400 dark:text-slate-500 font-mono">
@@ -329,34 +329,46 @@ export default function AdminDashboard() {
                                 </span>
                             ))}
                         </div>
-                        <div className="flex-1 relative">
+                        <div className="flex-1 relative" style={{ overflow: 'visible' }}>
                             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                                 {[0, 1, 2, 3, 4].map((_, i) => (
                                     <div key={i} className="border-t border-slate-200 dark:border-slate-700/50 w-full"></div>
                                 ))}
                             </div>
-                            <div className="h-64 w-full flex items-end justify-around gap-2 relative">
+                            <div className="h-64 w-full flex items-end justify-around gap-2 relative" style={{ overflow: 'visible' }}>
                                 {currentData.values.map((value, i) => {
                                     const height = (value / currentData.maxValue) * 100;
                                     return (
-                                        <div key={i} className="flex-1 max-w-16 rounded-t-lg relative group cursor-pointer transition-all duration-300
-                                            bg-slate-100 dark:bg-slate-800/50 h-full">
+                                        <div key={i} className="flex-1 max-w-16 relative group cursor-pointer h-full"
+                                            style={{ overflow: 'visible' }}>
+                                            {/* Background bar */}
+                                            <div className="absolute bottom-0 w-full h-full rounded-t-lg bg-slate-100 dark:bg-slate-800/50"></div>
+                                            {/* Value bar */}
                                             <div
-                                                className="absolute bottom-0 w-full rounded-t-lg transition-all duration-300 flex items-center justify-center
+                                                className="absolute bottom-0 w-full rounded-t-lg transition-all duration-300
                                                     bg-gradient-to-t from-emerald-500 to-emerald-300 
                                                     group-hover:brightness-110 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]
                                                     dark:from-emerald-600 dark:to-emerald-400/80 
                                                     dark:group-hover:shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                                                 style={{ height: `${height}%` }}
                                             >
-                                                <span className="opacity-0 group-hover:opacity-100 group-hover:scale-110 
-                                                    text-xs font-bold py-1 px-2 rounded-md 
-                                                    bg-slate-900/80 backdrop-blur-sm text-emerald-400 
+                                            </div>
+                                            {/* Tooltip - positioned above the bar */}
+                                            <div
+                                                className="absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 
+                                                    pointer-events-none transition-all duration-300 z-50"
+                                                style={{ bottom: `calc(${height}% + 8px)` }}
+                                            >
+                                                <span className="text-xs font-bold py-1.5 px-2.5 rounded-lg 
+                                                    bg-slate-900/90 backdrop-blur-sm text-emerald-400 
                                                     border border-emerald-500/50 
                                                     shadow-[0_0_15px_rgba(16,185,129,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]
-                                                    transition-all duration-300 whitespace-nowrap">
+                                                    whitespace-nowrap block">
                                                     {value.toLocaleString()}
                                                 </span>
+                                                {/* Arrow */}
+                                                <div className="w-2 h-2 bg-slate-900/90 border-r border-b border-emerald-500/50 
+                                                    rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1"></div>
                                             </div>
                                         </div>
                                     );
@@ -438,7 +450,7 @@ export default function AdminDashboard() {
                                             </div>
                                             <div>
                                                 <p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">Student</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{log.userId}</p>
                                             </div>
                                         </div>
                                     </td>

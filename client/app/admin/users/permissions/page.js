@@ -24,7 +24,7 @@ const ROLES_DATA = [
             users: { view: true, edit: true, delete: true, create: true },
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: true, edit: true, delete: true, create: true },
-            logs: { view: true, export: true, delete: true },
+            logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: true }
         }
     },

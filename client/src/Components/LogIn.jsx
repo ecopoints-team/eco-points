@@ -83,6 +83,9 @@ export default function LogIn({ onClose }) {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [role, setRole] = useState("");
     const [school, setSchool] = useState("");
+    const [course, setCourse] = useState("");
+    const [yearLevel, setYearLevel] = useState("");
+    const [department, setDepartment] = useState("");
     const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
     const [filteredSchools, setFilteredSchools] = useState(["Arellano University - Andres Bonifacio Pasig Campus"]);
     const [error, setError] = useState("");
@@ -279,13 +282,13 @@ export default function LogIn({ onClose }) {
 
                                 <InputField
                                     type="email"
-                                    placeholder="Email"
+                                    placeholder="School Email (@arellano.edu.ph)"
                                     icon={<Mail size={18} />}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
 
-                                {/* ROLE DROPDOWN */}
+                                {/* USER TYPE DROPDOWN */}
                                 <div className="relative w-full group">
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
                                         <Users size={18} />
@@ -298,16 +301,99 @@ export default function LogIn({ onClose }) {
                                     block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
                                     ${role === "" ? "text-gray-400" : "text-gray-800"}`}
                                     >
-                                        <option value="" disabled>Select your role</option>
+                                        <option value="" disabled>Select User Type</option>
                                         <option value="Student">Student</option>
-                                        <option value="Faculty">Faculty</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Staff">Staff</option>
+                                        <option value="Employee">Employee</option>
                                     </select>
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                                         <ChevronDown size={16} />
                                     </div>
                                 </div>
+
+                                {/* CONDITIONAL FIELDS FOR STUDENT */}
+                                {role === "Student" && (
+                                    <>
+                                        {/* COURSE DROPDOWN */}
+                                        <div className="relative w-full group">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                                                <Building2 size={18} />
+                                            </div>
+                                            <select
+                                                value={course}
+                                                onChange={(e) => setCourse(e.target.value)}
+                                                className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                            block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                            ${course === "" ? "text-gray-400" : "text-gray-800"}`}
+                                            >
+                                                <option value="" disabled>Select Course</option>
+                                                <option value="BSIT">BS Information Technology</option>
+                                                <option value="BSCS">BS Computer Science</option>
+                                                <option value="BSN">BS Nursing</option>
+                                                <option value="BSBA">BS Business Administration</option>
+                                                <option value="BSHM">BS Hospitality Management</option>
+                                                <option value="BSED">BS Education</option>
+                                                <option value="BSA">BS Accountancy</option>
+                                            </select>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                                                <ChevronDown size={16} />
+                                            </div>
+                                        </div>
+
+                                        {/* YEAR LEVEL DROPDOWN */}
+                                        <div className="relative w-full group">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                                                <Zap size={18} />
+                                            </div>
+                                            <select
+                                                value={yearLevel}
+                                                onChange={(e) => setYearLevel(e.target.value)}
+                                                className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                            block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                            ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
+                                            >
+                                                <option value="" disabled>Select Year Level</option>
+                                                <option value="1">1st Year</option>
+                                                <option value="2">2nd Year</option>
+                                                <option value="3">3rd Year</option>
+                                                <option value="4">4th Year</option>
+                                            </select>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                                                <ChevronDown size={16} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* CONDITIONAL FIELDS FOR EMPLOYEE */}
+                                {role === "Employee" && (
+                                    <div className="relative w-full group">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                                            <Building2 size={18} />
+                                        </div>
+                                        <select
+                                            value={department}
+                                            onChange={(e) => setDepartment(e.target.value)}
+                                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                        focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                        block pl-10 pr-3 md:py-3 py-2.5 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                        ${department === "" ? "text-gray-400" : "text-gray-800"}`}
+                                        >
+                                            <option value="" disabled>Select Department</option>
+                                            <option value="Administration">Administration</option>
+                                            <option value="Academics">Academics</option>
+                                            <option value="Finance">Finance</option>
+                                            <option value="IT">Information Technology</option>
+                                            <option value="HR">Human Resources</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                            <option value="Security">Security</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                                            <ChevronDown size={16} />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* SCHOOL SEARCHABLE DROPDOWN */}
                                 <div className="relative w-full group">

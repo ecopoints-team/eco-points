@@ -69,23 +69,11 @@ export default function AdminAccessLogsPage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20"><Activity size={24} className="text-purple-600 dark:text-purple-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Actions (24h)</p><p className="text-2xl font-black text-slate-800 dark:text-white">47</p></div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+            <div className="mb-8">
+                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl max-w-sm">
                     <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Shield size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
                         <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Admins</p><p className="text-2xl font-black text-slate-800 dark:text-white">4</p></div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20"><X size={24} className="text-red-600 dark:text-red-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Failed Actions</p><p className="text-2xl font-black text-slate-800 dark:text-white">5</p></div>
                     </div>
                 </div>
             </div>
@@ -111,7 +99,7 @@ export default function AdminAccessLogsPage() {
                         <select value={filterCategory} onChange={(e) => handleFilterChange(setFilterCategory, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
                             <option value="">All Categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
-                        {hasActiveFilters && <button onClick={clearFilters} className="text-sm text-red-600 font-medium flex items-center gap-1"><X size={14} /> Clear</button>}
+                        {hasActiveFilters && <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 font-medium flex items-center gap-1 hover:bg-red-50 transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
                     </div>
                 )}
 
@@ -156,7 +144,7 @@ export default function AdminAccessLogsPage() {
                 </div>
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
-                    <span>Showing <strong className="text-purple-600 dark:text-purple-400">{startIndex + 1}</strong> to <strong className="text-purple-600 dark:text-purple-400">{Math.min(startIndex + rowsPerPage, filteredLogs.length)}</strong> of {filteredLogs.length}</span>
+                    <span>Showing <strong className="text-purple-600 dark:text-purple-400">{startIndex + 1}</strong> to <strong className="text-purple-600 dark:text-purple-400">{Math.min(startIndex + rowsPerPage, filteredLogs.length)}</strong> of {filteredLogs.length} logs</span>
                     <div className="flex gap-1">
                         <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"><ChevronLeft size={14} /></button>
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(page => (

@@ -116,15 +116,6 @@ export default function ManageUsersPage() {
                             : `View and manage users at ${currentLocation?.name || 'your location'}`}
                     </p>
                 </div>
-                {canCreate && (
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                    >
-                        <UserPlus size={18} />
-                        Add User
-                    </button>
-                )}
             </div>
 
             {/* Stats Cards */}
@@ -174,7 +165,7 @@ export default function ManageUsersPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <div className="relative group flex-1 sm:w-64">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                            <input type="text" placeholder="Search users..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
+                            <input type="text" placeholder="Search by User ID, Name, or Email..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none transition-all placeholder:text-slate-400
                                     bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
                                     dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />

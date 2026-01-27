@@ -208,7 +208,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             children: [
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
                 { label: 'Machine Logs', href: '/admin/logs/machines' },
-                { label: 'Admin Access', href: '/admin/logs/access', hidden: !isSuperAdmin && currentUser?.role !== 'head_admin' },
+                { label: 'Admin Logs', href: '/admin/logs/access', hidden: !isSuperAdmin && currentUser?.role !== 'head_admin' },
             ]
         },
         {

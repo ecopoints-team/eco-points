@@ -143,6 +143,8 @@ export default function RewardsInventoryPage() {
 
     const totalPages = Math.ceil(filteredRewards.length / rowsPerPage);
     const currentRewards = filteredRewards.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+    const hasActiveFilters = filterCategory || filterStatus || filterLocation || sortOrder !== 'Newest';
+    const clearFilters = () => { setFilterCategory(''); setFilterStatus(''); setFilterLocation(''); setSortOrder('Newest'); setSearchQuery(''); setCurrentPage(1); };
 
     // Stats
     const totalStock = rewards.reduce((s, r) => s + r.stock, 0);
@@ -399,6 +401,11 @@ export default function RewardsInventoryPage() {
                             <option value="Stock (High-Low)">Stock (High-Low)</option>
                             <option value="Stock (Low-High)">Stock (Low-High)</option>
                         </select>
+                        {hasActiveFilters && (
+                            <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10">
+                                <X size={14} /> Clear Filters
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -582,7 +589,7 @@ export default function RewardsInventoryPage() {
                                     <input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">SKU</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock Keeping Unit (SKU) *</label>
                                     <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" placeholder="Item Name (SKU-123)" />
                                 </div>
                             </div>
@@ -601,7 +608,7 @@ export default function RewardsInventoryPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category *</label>
                                 <input
                                     list="category-list"
                                     value={formData.category}
