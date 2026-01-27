@@ -34,14 +34,6 @@ export default function ProfilePage() {
 
     const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
 
-    const stats = { actionsToday: 12, totalActions: 1547, rewardsManaged: 45, usersManaged: 156 };
-    const recentActivity = [
-        { action: 'Updated user permissions', time: '10 minutes ago' },
-        { action: 'Added new reward item', time: '1 hour ago' },
-        { action: 'Exported bottle logs', time: '2 hours ago' },
-        { action: 'Changed machine status', time: '3 hours ago' },
-    ];
-
     const handleImageUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setProfileImage(reader.result); reader.readAsDataURL(file); } };
     const handleSave = () => { setIsEditing(false); alert('Profile updated!'); };
 
@@ -74,16 +66,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl p-6 backdrop-blur-xl">
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-emerald-600 dark:text-emerald-400" /> Activity</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.actionsToday}</p><p className="text-xs text-slate-500 dark:text-slate-400">Today</p></div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"><p className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.totalActions}</p><p className="text-xs text-slate-500 dark:text-slate-400">Total</p></div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"><p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.rewardsManaged}</p><p className="text-xs text-slate-500 dark:text-slate-400">Rewards</p></div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"><p className="text-2xl font-black text-purple-600 dark:text-purple-400">{stats.usersManaged}</p><p className="text-xs text-slate-500 dark:text-slate-400">Users</p></div>
-                        </div>
-                    </div>
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
@@ -110,13 +92,6 @@ export default function ProfilePage() {
                                 <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm</label><input type="password" value={passwords.confirm} onChange={(e) => setPasswords(p => ({ ...p, confirm: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none" placeholder="••••••••" /></div>
                             </div>
                             <button className="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold py-2 px-5 rounded-lg text-sm">Update Password</button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
-                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"><h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><Activity size={20} className="text-emerald-600 dark:text-emerald-400" /> Recent Activity</h3></div>
-                        <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {recentActivity.map((a, i) => <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-emerald-900/10"><span className="text-sm text-slate-700 dark:text-slate-300">{a.action}</span><span className="text-xs text-slate-500 dark:text-slate-400">{a.time}</span></div>)}
                         </div>
                     </div>
                 </div>

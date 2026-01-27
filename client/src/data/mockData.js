@@ -10,40 +10,47 @@
 export const LOCATIONS = [
     {
         id: 'LOC-001',
-        name: 'School A',
-        fullName: 'San Beda University - Quezon City',
-        city: 'Quezon City',
-        address: '123 Education Ave, Quezon City',
-        contactPerson: 'Dr. Maria Santos',
-        contactEmail: 'admin@schoola.edu.ph',
-        contactPhone: '+63 2 8123 4567',
-        machineCount: 3,
-        userCount: 156,
-        totalBottlesCollected: 8350,
+        name: 'Arellano University',
+        fullName: 'Arellano University - Andres Bonifacio Pasig Campus',
+        city: 'Pasig City',
+        address: 'Pag-asa St, Caniogan, Pasig',
+        contactPerson: 'Admin Officer',
+        contactEmail: 'admin@arellano.edu.ph',
+        contactPhone: '+63 2 8734 7371',
+        machineCount: 6,
+        userCount: 200,
+        totalBottlesCollected: 15420,
         joinDate: '2024-06-15',
         status: 'Active',
         ranking: 1
-    },
-    {
-        id: 'LOC-002',
-        name: 'School B',
-        fullName: 'De La Salle University - Makati',
-        city: 'Makati City',
-        address: '456 Green Street, Makati City',
-        contactPerson: 'Prof. Juan Dela Cruz',
-        contactEmail: 'admin@schoolb.edu.ph',
-        contactPhone: '+63 2 8765 4321',
-        machineCount: 2,
-        userCount: 89,
-        totalBottlesCollected: 4210,
-        joinDate: '2024-08-20',
-        status: 'Active',
-        ranking: 2
     }
 ];
 
 // ============================================================================
-// ADMIN USERS (7 Test Accounts)
+// ROLE DEFINITIONS
+// ============================================================================
+export const ROLES = {
+    super_admin: { name: 'Super Admin', description: 'Global access to all locations and features', color: 'red', scope: 'global' },
+    head_admin: { name: 'Head Admin', description: 'Full access within assigned location', color: 'purple', scope: 'location' },
+    auditor: { name: 'Auditor', description: 'View and export data within assigned location', color: 'blue', scope: 'location' },
+    inventory_officer: { name: 'Inventory Officer', description: 'Manage rewards within assigned location', color: 'emerald', scope: 'location' },
+    technician: { name: 'Technician', description: 'Manage machines and maintenance', color: 'amber', scope: 'location' }
+};
+
+// ============================================================================
+// GENERATORS
+// ============================================================================
+
+const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen', 'Miguel', 'Ana', 'Juan', 'Maria', 'Carlos', 'Sofia', 'Luis', 'Andrea', 'Jose', 'Isabella'];
+const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'];
+const schools = ['CAS', 'CITE', 'CBA', 'Nursing', 'Education', 'Hospitality'];
+
+const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+
+// ============================================================================
+// ADMIN USERS (System Access)
 // ============================================================================
 export const ADMIN_USERS = [
     // SUPER ADMIN - Global Access
@@ -52,365 +59,216 @@ export const ADMIN_USERS = [
         name: 'System Administrator',
         email: 'superadmin@ecopoints.com',
         role: 'super_admin',
-        locationId: null, // null = access to ALL locations
+        locationId: null,
         avatar: 'SA',
         status: 'Active',
-        lastLogin: '2025-01-23 08:30',
-        permissions: {
-            dashboard: { view: true, edit: true },
-            users: { view: true, edit: true, delete: true, create: true },
-            machines: { view: true, edit: true, delete: true, create: true },
-            rewards: { view: true, edit: true, delete: true, create: true },
-            logs: { view: true, export: true, delete: false },
-            settings: { view: true, edit: true },
-            locations: { view: true, edit: true, delete: true, create: true }
-        }
+        permissions: { dashboard: { view: true, edit: true }, users: { view: true, edit: true, delete: true, create: true }, machines: { view: true, edit: true, delete: true, create: true }, rewards: { view: true, edit: true, delete: true, create: true }, logs: { view: true, export: true, delete: false }, settings: { view: true, edit: true } }
     },
-
-    // SCHOOL A - Head Admin
-    {
-        id: 'ADM-A-001',
-        name: 'Maria Santos',
-        email: 'headadmin.schoola@ecopoints.com',
-        role: 'head_admin',
-        locationId: 'LOC-001',
-        avatar: 'MS',
-        status: 'Active',
-        lastLogin: '2025-01-23 07:45',
-        permissions: {
-            dashboard: { view: true, edit: true },
-            users: { view: true, edit: true, delete: true, create: true },
-            machines: { view: true, edit: true, delete: true, create: true },
-            rewards: { view: true, edit: true, delete: true, create: true },
-            logs: { view: true, export: true, delete: false },
-            settings: { view: true, edit: true },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    },
-
-    // SCHOOL A - Auditor
-    {
-        id: 'ADM-A-002',
-        name: 'Carlos Reyes',
-        email: 'auditor.schoola@ecopoints.com',
-        role: 'auditor',
-        locationId: 'LOC-001',
-        avatar: 'CR',
-        status: 'Active',
-        lastLogin: '2025-01-22 16:30',
-        permissions: {
-            dashboard: { view: true, edit: false },
-            users: { view: true, edit: false, delete: false, create: false },
-            machines: { view: true, edit: false, delete: false, create: false },
-            rewards: { view: true, edit: false, delete: false, create: false },
-            logs: { view: true, export: true, delete: false },
-            settings: { view: false, edit: false },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    },
-
-    // SCHOOL A - Inventory Officer
-    {
-        id: 'ADM-A-003',
-        name: 'Ana Lim',
-        email: 'inventory.schoola@ecopoints.com',
-        role: 'inventory_officer',
-        locationId: 'LOC-001',
-        avatar: 'AL',
-        status: 'Active',
-        lastLogin: '2025-01-23 06:15',
-        permissions: {
-            dashboard: { view: true, edit: false },
-            users: { view: false, edit: false, delete: false, create: false },
-            machines: { view: false, edit: false, delete: false, create: false },
-            rewards: { view: true, edit: true, delete: false, create: true },
-            logs: { view: true, export: false, delete: false },
-            settings: { view: false, edit: false },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    },
-
-    // SCHOOL B - Head Admin
-    {
-        id: 'ADM-B-001',
-        name: 'Juan Dela Cruz',
-        email: 'headadmin.schoolb@ecopoints.com',
-        role: 'head_admin',
-        locationId: 'LOC-002',
-        avatar: 'JD',
-        status: 'Active',
-        lastLogin: '2025-01-22 14:00',
-        permissions: {
-            dashboard: { view: true, edit: true },
-            users: { view: true, edit: true, delete: true, create: true },
-            machines: { view: true, edit: true, delete: true, create: true },
-            rewards: { view: true, edit: true, delete: true, create: true },
-            logs: { view: true, export: true, delete: false },
-            settings: { view: true, edit: true },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    },
-
-    // SCHOOL B - Auditor
-    {
-        id: 'ADM-B-002',
-        name: 'Patricia Tan',
-        email: 'auditor.schoolb@ecopoints.com',
-        role: 'auditor',
-        locationId: 'LOC-002',
-        avatar: 'PT',
-        status: 'Active',
-        lastLogin: '2025-01-21 11:30',
-        permissions: {
-            dashboard: { view: true, edit: false },
-            users: { view: true, edit: false, delete: false, create: false },
-            machines: { view: true, edit: false, delete: false, create: false },
-            rewards: { view: true, edit: false, delete: false, create: false },
-            logs: { view: true, export: true, delete: false },
-            settings: { view: false, edit: false },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    },
-
-    // SCHOOL B - Inventory Officer
-    {
-        id: 'ADM-B-003',
-        name: 'Roberto Garcia',
-        email: 'inventory.schoolb@ecopoints.com',
-        role: 'inventory_officer',
-        locationId: 'LOC-002',
-        avatar: 'RG',
-        status: 'Active',
-        lastLogin: '2025-01-23 05:45',
-        permissions: {
-            dashboard: { view: true, edit: false },
-            users: { view: false, edit: false, delete: false, create: false },
-            machines: { view: false, edit: false, delete: false, create: false },
-            rewards: { view: true, edit: true, delete: false, create: true },
-            logs: { view: true, export: false, delete: false },
-            settings: { view: false, edit: false },
-            locations: { view: false, edit: false, delete: false, create: false }
-        }
-    }
+    // ARELLANO ADMINS
+    { id: 'ADM-AU-01', name: 'Maria Santos', email: 'head@arellano.edu.ph', role: 'head_admin', locationId: 'LOC-001', avatar: 'MS', status: 'Active', permissions: ROLES.head_admin },
+    { id: 'ADM-AU-02', name: 'Juan Dela Cruz', email: 'auditor@arellano.edu.ph', role: 'auditor', locationId: 'LOC-001', avatar: 'JD', status: 'Active', permissions: ROLES.auditor },
+    { id: 'ADM-AU-03', name: 'Ana Lim', email: 'inventory@arellano.edu.ph', role: 'inventory_officer', locationId: 'LOC-001', avatar: 'AL', status: 'Active', permissions: ROLES.inventory_officer },
+    { id: 'ADM-AU-04', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', role: 'technician', locationId: 'LOC-001', avatar: 'CR', status: 'Active', permissions: ROLES.technician },
 ];
 
 // ============================================================================
-// MACHINES (RVMs) - Location Scoped
+// MACHINES (RVMs)
 // ============================================================================
 export const MACHINES = [
-    // SCHOOL A - 3 Machines
-    {
-        id: 'RVM-001',
-        name: 'Cafeteria RVM',
-        locationId: 'LOC-001',
-        location: 'Main Cafeteria, Exit Area',
-        status: 'Online',
-        bottlesCollected: 3100,
-        lastSync: '1 min ago',
-        fillLevel: 45,
-        installedDate: '2024-06-20',
-        maintenanceLogs: [
-            { id: 1, date: '2025-01-20', technician: 'John Smith', issue: 'Routine Checkup', cost: 0, resolved: true },
-            { id: 2, date: '2025-01-10', technician: 'Maria Garcia', issue: 'Sensor Calibration', cost: 150, resolved: true },
-        ]
-    },
-    {
-        id: 'RVM-002',
-        name: 'Library RVM',
-        locationId: 'LOC-001',
-        location: 'University Library, Entrance',
-        status: 'Online',
-        bottlesCollected: 2450,
-        lastSync: '3 mins ago',
-        fillLevel: 35,
-        installedDate: '2024-06-25',
-        maintenanceLogs: [
-            { id: 1, date: '2025-01-15', technician: 'Carlos Reyes', issue: 'Coin Dispenser Fix', cost: 200, resolved: true },
-        ]
-    },
-    {
-        id: 'RVM-003',
-        name: 'Gymnasium RVM',
-        locationId: 'LOC-001',
-        location: 'Sports Complex, Main Lobby',
-        status: 'Full',
-        bottlesCollected: 2800,
-        lastSync: '30 secs ago',
-        fillLevel: 95,
-        installedDate: '2024-07-10',
-        maintenanceLogs: [
-            { id: 1, date: '2025-01-18', technician: 'Anna Torres', issue: 'Bin Sensor Replaced', cost: 120, resolved: true },
-        ]
-    },
-
-    // SCHOOL B - 2 Machines
-    {
-        id: 'RVM-004',
-        name: 'Main Lobby RVM',
-        locationId: 'LOC-002',
-        location: 'Administration Building, Ground Floor',
-        status: 'Online',
-        bottlesCollected: 2100,
-        lastSync: '2 mins ago',
-        fillLevel: 55,
-        installedDate: '2024-08-25',
-        maintenanceLogs: [
-            { id: 1, date: '2025-01-12', technician: 'John Smith', issue: 'Software Update', cost: 0, resolved: true },
-        ]
-    },
-    {
-        id: 'RVM-005',
-        name: 'Canteen RVM',
-        locationId: 'LOC-002',
-        location: 'Student Canteen, Near Exit',
-        status: 'Maintenance',
-        bottlesCollected: 2110,
-        lastSync: '2 hours ago',
-        fillLevel: 60,
-        installedDate: '2024-09-01',
-        maintenanceLogs: [
-            { id: 1, date: '2025-01-22', technician: 'Roberto Garcia', issue: 'Motor Failure - Awaiting Parts', cost: 0, resolved: false },
-            { id: 2, date: '2025-01-05', technician: 'Carlos Reyes', issue: 'Belt Replacement', cost: 180, resolved: true },
-        ]
-    }
+    { id: 'RVM-AU-01', name: 'Main Gate RVM', locationId: 'LOC-001', location: 'Main Gate', status: 'Online', bottlesCollected: 4520, lastMaintenance: '2025-01-20' },
+    { id: 'RVM-AU-02', name: 'Canteen A RVM', locationId: 'LOC-001', location: 'Canteen A', status: 'Online', bottlesCollected: 3850, lastMaintenance: '2025-01-22' },
+    { id: 'RVM-AU-03', name: 'Library RVM', locationId: 'LOC-001', location: 'Library Lobby', status: 'Online', bottlesCollected: 2100, lastMaintenance: '2025-01-15' },
+    { id: 'RVM-AU-04', name: 'Gym RVM', locationId: 'LOC-001', location: 'Gymnasium', status: 'Maintenance', bottlesCollected: 3100, lastMaintenance: '2025-01-25' },
+    { id: 'RVM-AU-05', name: 'Nursing Bldg RVM', locationId: 'LOC-001', location: 'Nursing Building', status: 'Online', bottlesCollected: 1850, lastMaintenance: '2025-01-18' },
 ];
 
 // ============================================================================
-// REWARDS - Location Scoped
+// REWARDS
 // ============================================================================
 export const REWARDS = [
-    // SCHOOL A Rewards
-    { id: 'RWD-A-001', name: 'School A Eco Tote Bag', description: 'Canvas tote with School A logo', pointsCost: 500, stock: 45, category: 'Merchandise', locationId: 'LOC-001', sku: 'SA-BAG-001', dispensed: 127 },
-    { id: 'RWD-A-002', name: 'Cafeteria Voucher', description: '₱50 School A cafeteria credit', pointsCost: 150, stock: 100, category: 'Vouchers', locationId: 'LOC-001', sku: 'SA-VCH-001', dispensed: 245 },
-    { id: 'RWD-A-003', name: 'Reusable Water Bottle', description: 'Stainless steel 500ml bottle', pointsCost: 800, stock: 8, category: 'Merchandise', locationId: 'LOC-001', sku: 'SA-BTL-001', dispensed: 89 },
-    { id: 'RWD-A-004', name: 'Eco Notebook', description: 'Recycled paper notebook', pointsCost: 200, stock: 0, category: 'Merchandise', locationId: 'LOC-001', sku: 'SA-NTB-001', dispensed: 156 },
-    { id: 'RWD-A-005', name: 'Library Print Credits', description: '50 pages free printing', pointsCost: 100, stock: 200, category: 'Vouchers', locationId: 'LOC-001', sku: 'SA-PRT-001', dispensed: 412 },
-
-    // SCHOOL B Rewards
-    { id: 'RWD-B-001', name: 'School B Eco Bag', description: 'Recyclable bag with School B branding', pointsCost: 450, stock: 32, category: 'Merchandise', locationId: 'LOC-002', sku: 'SB-BAG-001', dispensed: 78 },
-    { id: 'RWD-B-002', name: 'Canteen Meal Voucher', description: '₱75 School B canteen credit', pointsCost: 200, stock: 75, category: 'Vouchers', locationId: 'LOC-002', sku: 'SB-VCH-001', dispensed: 189 },
-    { id: 'RWD-B-003', name: 'Bamboo Straw Set', description: 'Set of 4 bamboo straws', pointsCost: 300, stock: 5, category: 'Merchandise', locationId: 'LOC-002', sku: 'SB-STR-001', dispensed: 67 },
-    { id: 'RWD-B-004', name: 'Parking Pass (1 Day)', description: 'One-day campus parking', pointsCost: 500, stock: 20, category: 'Vouchers', locationId: 'LOC-002', sku: 'SB-PRK-001', dispensed: 34 },
+    { id: 'RWD-001', name: 'EcoPoints T-Shirt', sku: 'EP-TSHIRT-S', locationId: 'LOC-001', category: 'Merchandise', points: 500, stock: 45, status: 'Available' },
+    { id: 'RWD-002', name: 'Metal Straw Set', sku: 'EP-STRAW', locationId: 'LOC-001', category: 'Sustainable', points: 150, stock: 120, status: 'Available' },
+    { id: 'RWD-003', name: 'Bamboo Tumbler', sku: 'EP-TUMBLER', locationId: 'LOC-001', category: 'Sustainable', points: 800, stock: 20, status: 'Low Stock' },
+    { id: 'RWD-004', name: 'Canvas Tote Bag', sku: 'EP-TOTE', locationId: 'LOC-001', category: 'Merchandise', points: 300, stock: 68, status: 'Available' },
+    { id: 'RWD-005', name: 'School Supplies Kit', sku: 'EP-SCHOOL', locationId: 'LOC-001', category: 'Education', points: 200, stock: 200, status: 'Available' },
+    { id: 'RWD-006', name: 'Canteen Voucher (P50)', sku: 'EP-VOUCHER-50', locationId: 'LOC-001', category: 'Voucher', points: 100, stock: 500, status: 'Available' },
+    { id: 'RWD-007', name: 'Canteen Voucher (P100)', sku: 'EP-VOUCHER-100', locationId: 'LOC-001', category: 'Voucher', points: 200, stock: 350, status: 'Available' },
+    { id: 'RWD-008', name: 'Priority Enrollment', sku: 'EP-PRIO', locationId: 'LOC-001', category: 'Education', points: 5000, stock: 10, status: 'Low Stock' },
+    { id: 'RWD-009', name: 'Eco Notebook', sku: 'EP-NOTEBOOK', locationId: 'LOC-001', category: 'Sustainable', points: 120, stock: 150, status: 'Available' },
+    { id: 'RWD-010', name: 'Laptop Sticker Pack', sku: 'EP-STICKER', locationId: 'LOC-001', category: 'Merchandise', points: 50, stock: 300, status: 'Available' },
 ];
 
 // ============================================================================
-// REGULAR USERS (Students/Staff) - Location Scoped
+// REGULAR USERS GENERATION
 // ============================================================================
-export const USERS = [
-    // SCHOOL A Users
-    { id: 'USR-A-001', name: 'Justin Ibale', email: 'justin.ibale@schoola.edu.ph', role: 'Student', status: 'Active', points: 2450, locationId: 'LOC-001', joinDate: 'Jan 5, 2025' },
-    { id: 'USR-A-002', name: 'Jana Soriano', email: 'jana.soriano@schoola.edu.ph', role: 'Student', status: 'Active', points: 1890, locationId: 'LOC-001', joinDate: 'Jan 8, 2025' },
-    { id: 'USR-A-003', name: 'Miguel Torres', email: 'miguel.torres@schoola.edu.ph', role: 'Student', status: 'Active', points: 3210, locationId: 'LOC-001', joinDate: 'Jan 10, 2025' },
-    { id: 'USR-A-004', name: 'Anna Reyes', email: 'anna.reyes@schoola.edu.ph', role: 'Faculty', status: 'Active', points: 1560, locationId: 'LOC-001', joinDate: 'Jan 12, 2025' },
-    { id: 'USR-A-005', name: 'Sarah Cruz', email: 'sarah.cruz@schoola.edu.ph', role: 'Student', status: 'Inactive', points: 890, locationId: 'LOC-001', joinDate: 'Jan 15, 2025' },
-    { id: 'USR-A-006', name: 'Carlos Garcia', email: 'carlos.garcia@schoola.edu.ph', role: 'Student', status: 'Active', points: 2100, locationId: 'LOC-001', joinDate: 'Jan 18, 2025' },
-    { id: 'USR-A-007', name: 'Mark Santos', email: 'mark.santos@schoola.edu.ph', role: 'Staff', status: 'Active', points: 4500, locationId: 'LOC-001', joinDate: 'Jan 20, 2025' },
-    { id: 'USR-A-008', name: 'Lisa Mendoza', email: 'lisa.mendoza@schoola.edu.ph', role: 'Student', status: 'Active', points: 320, locationId: 'LOC-001', joinDate: 'Jan 22, 2025' },
+const generateUsers = (count) => {
+    const users = [];
+    const baseDate = new Date('2024-06-01');
+    const endDate = new Date();
 
-    // SCHOOL B Users
-    { id: 'USR-B-001', name: 'Ryan Tan', email: 'ryan.tan@schoolb.edu.ph', role: 'Student', status: 'Active', points: 1750, locationId: 'LOC-002', joinDate: 'Sep 1, 2024' },
-    { id: 'USR-B-002', name: 'Maria Lopez', email: 'maria.lopez@schoolb.edu.ph', role: 'Student', status: 'Active', points: 2890, locationId: 'LOC-002', joinDate: 'Sep 5, 2024' },
-    { id: 'USR-B-003', name: 'David Kim', email: 'david.kim@schoolb.edu.ph', role: 'Faculty', status: 'Active', points: 1200, locationId: 'LOC-002', joinDate: 'Sep 10, 2024' },
-    { id: 'USR-B-004', name: 'Angela Lim', email: 'angela.lim@schoolb.edu.ph', role: 'Student', status: 'Active', points: 980, locationId: 'LOC-002', joinDate: 'Sep 15, 2024' },
-    { id: 'USR-B-005', name: 'Patrick Ong', email: 'patrick.ong@schoolb.edu.ph', role: 'Student', status: 'Inactive', points: 450, locationId: 'LOC-002', joinDate: 'Sep 20, 2024' },
-    { id: 'USR-B-006', name: 'Christina Wu', email: 'christina.wu@schoolb.edu.ph', role: 'Staff', status: 'Active', points: 3100, locationId: 'LOC-002', joinDate: 'Oct 1, 2024' },
-];
+    for (let i = 0; i < count; i++) {
+        const firstName = getRandomElement(firstNames);
+        const lastName = getRandomElement(lastNames);
+        const role = Math.random() > 0.1 ? 'Student' : (Math.random() > 0.5 ? 'Faculty' : 'Staff');
+        const dept = getRandomElement(schools);
 
-// ============================================================================
-// ROLE DEFINITIONS
-// ============================================================================
-export const ROLES = {
-    super_admin: {
-        name: 'Super Admin',
-        description: 'Global access to all locations and features',
-        color: 'red',
-        scope: 'global'
-    },
-    head_admin: {
-        name: 'Head Admin',
-        description: 'Full access within assigned location',
-        color: 'purple',
-        scope: 'location'
-    },
-    auditor: {
-        name: 'Auditor',
-        description: 'View and export data within assigned location',
-        color: 'blue',
-        scope: 'location'
-    },
-    inventory_officer: {
-        name: 'Inventory Officer',
-        description: 'Manage rewards within assigned location',
-        color: 'emerald',
-        scope: 'location'
-    },
-    technician: {
-        name: 'Technician',
-        description: 'Manage machines and maintenance',
-        color: 'amber',
-        scope: 'location'
+        users.push({
+            id: `USR-${20240000 + i}`,
+            name: `${firstName} ${lastName}`,
+            email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@arellano.edu.ph`,
+            role: role,
+            department: dept,
+            locationId: 'LOC-001', // All Arellano
+            status: Math.random() > 0.9 ? 'Inactive' : 'Active',
+            points: getRandomInt(0, 5000),
+            joinDate: getRandomDate(baseDate, endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            avatar: `${firstName[0]}${lastName[0]}`
+        });
     }
+    return users;
 };
+
+export const USERS = generateUsers(200);
+
+// ============================================================================
+// LOGS GENERATION
+// ============================================================================
+
+// Bottle Logs
+const generateBottleLogs = () => {
+    const logs = [];
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30); // Last 30 days
+
+    const bottleTypes = ['350ml PET', '500ml PET', '1000ml PET', '1500ml PET'];
+    const pointsMap = { '350ml PET': 3, '500ml PET': 5, '1000ml PET': 10, '1500ml PET': 15 };
+    const conditions = ['Perfect', 'Good', 'Crushed', 'Rejected'];
+
+    // Generate ~500 logs
+    for (let i = 0; i < 500; i++) {
+        const user = getRandomElement(USERS);
+        const machine = getRandomElement(MACHINES);
+        const type = getRandomElement(bottleTypes);
+        const condition = getRandomElement(conditions);
+        const logDate = getRandomDate(startDate, endDate);
+
+        // Simulating rejection
+        const isRejected = condition === 'Rejected';
+        const points = isRejected ? 0 : pointsMap[type];
+        const status = isRejected ? 'Failed' : 'Completed';
+
+        logs.push({
+            id: `LOG-B-${10000 + i}`,
+            userId: user.id,
+            userName: user.name,
+            machineId: machine.id,
+            machineName: machine.name,
+            locationId: machine.locationId,
+            locationName: "Arellano University",
+            bottleType: type,
+            condition: condition,
+            pointsAwarded: points,
+            timestamp: logDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+            timestampObj: logDate, // For sorting if needed
+            status: status
+        });
+    }
+    return logs.sort((a, b) => b.timestampObj - a.timestampObj);
+};
+
+export const BOTTLE_LOGS = generateBottleLogs();
+
+// Machine Logs
+const generateMachineLogs = () => {
+    const logs = [];
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 60);
+
+    const issues = ['Sensor Error', 'Bin Full', 'Network Offline', 'Printer Jam', 'Software Update', 'Routine Checkup'];
+    const technicians = ADMIN_USERS.filter(u => u.role === 'technician' || u.role === 'head_admin');
+
+    for (let i = 0; i < 50; i++) {
+        const machine = getRandomElement(MACHINES);
+        const technician = getRandomElement(technicians);
+        const issue = getRandomElement(issues);
+        const logDate = getRandomDate(startDate, endDate);
+        const resolved = Math.random() > 0.2; // 80% resolved
+
+        logs.push({
+            id: `LOG-M-${5000 + i}`,
+            machineId: machine.id,
+            machineName: machine.name,
+            locationId: machine.locationId,
+            technician: technician.name,
+            issue: issue,
+            cost: getRandomInt(0, 1500),
+            resolved: resolved,
+            status: resolved ? 'Resolved' : 'Pending',
+            timestamp: logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            timestampObj: logDate
+        });
+    }
+    return logs.sort((a, b) => b.timestampObj - a.timestampObj);
+};
+
+export const MACHINE_LOGS = generateMachineLogs();
+
+// Admin Logs
+const generateAdminLogs = () => {
+    const logs = [];
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 14); // Last 2 weeks
+
+    const actions = [
+        { action: 'User Created', category: 'Users' },
+        { action: 'User Updated', category: 'Users' },
+        { action: 'User Suspended', category: 'Users' },
+        { action: 'Reward Added', category: 'Rewards' },
+        { action: 'Reward Stock Updated', category: 'Rewards' },
+        { action: 'Machine Maintained', category: 'Machines' },
+        { action: 'Settings Changed', category: 'Settings' },
+        { action: 'Exported Logs', category: 'Logs' }
+    ];
+
+    for (let i = 0; i < 80; i++) {
+        const admin = getRandomElement(ADMIN_USERS);
+        const actionData = getRandomElement(actions);
+        const logDate = getRandomDate(startDate, endDate);
+
+        let target = '-';
+        if (actionData.category === 'Users') target = getRandomElement(USERS).id;
+        if (actionData.category === 'Rewards') target = getRandomElement(REWARDS).sku;
+        if (actionData.category === 'Machines') target = getRandomElement(MACHINES).name;
+
+        logs.push({
+            id: `LOG-A-${8000 + i}`,
+            adminName: admin.name,
+            adminRole: ROLES[admin.role]?.name || admin.role,
+            locationId: admin.locationId,
+            action: actionData.action,
+            target: target,
+            category: actionData.category,
+            timestamp: logDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+            timestampObj: logDate,
+            status: 'Success'
+        });
+    }
+    return logs.sort((a, b) => b.timestampObj - a.timestampObj);
+};
+
+export const ADMIN_LOGS = generateAdminLogs();
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-/**
- * Get location by ID
- */
-export const getLocationById = (locationId) => {
-    return LOCATIONS.find(loc => loc.id === locationId);
-};
-
-/**
- * Get location name by ID
- */
-export const getLocationName = (locationId) => {
-    const location = getLocationById(locationId);
-    return location ? location.name : 'All Locations';
-};
-
-/**
- * Filter data by location (returns all if locationId is null - Super Admin)
- */
-export const filterByLocation = (data, locationId) => {
-    if (!locationId) return data; // Super Admin sees all
-    return data.filter(item => item.locationId === locationId);
-};
-
-/**
- * Get machines by location
- */
-export const getMachinesByLocation = (locationId) => {
-    return filterByLocation(MACHINES, locationId);
-};
-
-/**
- * Get rewards by location
- */
-export const getRewardsByLocation = (locationId) => {
-    return filterByLocation(REWARDS, locationId);
-};
-
-/**
- * Get users by location
- */
-export const getUsersByLocation = (locationId) => {
-    return filterByLocation(USERS, locationId);
-};
-
-/**
- * Check if user has permission for an action
- */
-export const hasPermission = (user, module, action) => {
-    if (!user || !user.permissions) return false;
-    return user.permissions[module]?.[action] || false;
-};
-
-/**
- * Check if user is Super Admin
- */
-export const isSuperAdmin = (user) => {
-    return user?.role === 'super_admin';
-};
+export const getLocationById = (id) => LOCATIONS.find(l => l.id === id);
+export const getLocationName = (id) => getLocationById(id)?.name || 'All Locations';
+export const filterByLocation = (data, id) => !id ? data : data.filter(item => item.locationId === id);
+export const getMachinesByLocation = (id) => filterByLocation(MACHINES, id);
+export const getRewardsByLocation = (id) => filterByLocation(REWARDS, id);
+export const getUsersByLocation = (id) => filterByLocation(USERS, id);
+export const hasPermission = (user, module, action) => user?.permissions?.[module]?.[action] || false;
+export const isSuperAdmin = (user) => user?.role === 'super_admin';

@@ -2,71 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity } from 'lucide-react';
+import { ADMIN_LOGS } from '../../../../src/data/mockData';
+import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download } from 'lucide-react';
 
-const generateAdminLogs = () => {
-    // Assign locations to admins for filtering demo
-    // LOC-001 = Main Campus, LOC-002 = Science Wing
-    const admins = [
-        { id: 'ADM-001', name: 'Justin Ibale', role: 'Super Admin', locationId: null }, // Global access
-        { id: 'ADM-002', name: 'Anna Reyes', role: 'Moderator', locationId: 'LOC-001' },
-        { id: 'ADM-003', name: 'David Kim', role: 'Moderator', locationId: 'LOC-002' },
-        { id: 'ADM-004', name: 'System', role: 'System', locationId: null }, // System events usually global
-    ];
-    const actions = [
-        { action: 'User Created', target: 'USR-1250', category: 'Users' },
-        { action: 'User Updated', target: 'USR-1234', category: 'Users' },
-        { action: 'User Suspended', target: 'USR-1241', category: 'Users' },
-        { action: 'Reward Added', target: 'RWD-045', category: 'Rewards' },
-        { action: 'Machine Status Changed', target: 'RVM-002', category: 'Machines' },
-        { action: 'Settings Updated', target: 'Points Config', category: 'Settings' },
-        { action: 'Login Successful', target: 'Admin Panel', category: 'Auth' },
-        { action: 'Permission Updated', target: 'Moderator Role', category: 'Permissions' },
-    ];
-    const ips = ['192.168.1.100', '192.168.1.105', '10.0.0.45', '172.16.0.88'];
-    const logs = [];
-    const baseDate = new Date('2026-01-15T00:30:00');
-
-    for (let i = 0; i < 100; i++) {
-        const adminIndex = Math.floor(Math.random() * admins.length);
-        const admin = admins[adminIndex];
-        const actionData = actions[Math.floor(Math.random() * actions.length)];
-        const logDate = new Date(baseDate.getTime() - (i * 20 * 60000));
-
-        // If admin has a location, the log is associated with that location.
-        // If admin is global (System/Super Admin), randomly assign a location OR keep it global depending on action
-        // For simplicity, we'll assign a random location to global admin actions to demonstrate filtering,
-        // unless it's a "Settings" or "System" type action.
-
-        let logLocationId = admin.locationId;
-        if (!logLocationId) {
-            // Randomly assign location for demo purposes if not specific to an admin's location
-            // This ensures Super Admin actions *can* appear in location views if they acted on that location
-            // But for now, let's keep it simple: matches the admin's location.
-            // If admin is global, maybe the *target* implies location?
-            // Let's simplified: Global admins generate global logs (null locationId), 
-            // but sometimes they act on a specific location.
-            // To make "View As" work well with generated data, let's explicitly add locationId to some global logs.
-            logLocationId = Math.random() > 0.5 ? (Math.random() > 0.5 ? 'LOC-001' : 'LOC-002') : null;
-        }
-
-        logs.push({
-            id: `ALOG-${5000 - i}`,
-            adminName: admin.name,
-            adminRole: admin.role,
-            locationId: logLocationId,
-            action: actionData.action,
-            target: actionData.target,
-            category: actionData.category,
-            ipAddress: ips[Math.floor(Math.random() * ips.length)],
-            timestamp: logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + logDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-            status: i < 95 ? 'Success' : 'Failed',
-        });
-    }
-    return logs;
-};
-
-const allAdminLogs = generateAdminLogs();
+const allAdminLogs = ADMIN_LOGS;
 
 export default function AdminAccessLogsPage() {
     const { effectiveLocationId } = useAuth(); // Get filtering context
@@ -119,9 +58,15 @@ export default function AdminAccessLogsPage() {
 
     return (
         <>
-            <div className="mb-8">
-                <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Logs</h1>
-                <p className="text-slate-500 dark:text-slate-400">Track all administrative actions</p>
+            <div className="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Logs</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Track all administrative actions</p>
+                </div>
+                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
+                    <Download size={18} />
+                    Export CSV
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -151,7 +96,7 @@ export default function AdminAccessLogsPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <div className="relative group flex-1 sm:w-64">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" placeholder="Search logs..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
+                            <input type="text" placeholder="Search by Admin, Action, or Target..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 focus:border-purple-500" />
                         </div>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${showFilter || hasActiveFilters ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}><Filter size={16} /> Filter</button>
@@ -174,22 +119,22 @@ export default function AdminAccessLogsPage() {
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-6 py-4">Date/Time</th>
-                                <th className="px-6 py-4">Admin Name</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Action</th>
-                                <th className="px-6 py-4">Target</th>
+                                <th className="px-4 py-3">Date/Time</th>
+                                <th className="px-4 py-3">Admin Name</th>
+                                <th className="px-4 py-3">Role</th>
+                                <th className="px-4 py-3">Action</th>
+                                <th className="px-4 py-3">Target</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-purple-900/10 transition-colors">
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-3">
                                         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                                             <Clock size={14} />{log.timestamp}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
                                                 <User size={14} className="text-purple-600 dark:text-purple-400" />
@@ -197,13 +142,13 @@ export default function AdminAccessLogsPage() {
                                             <p className="font-medium text-slate-800 dark:text-white text-sm">{log.adminName}</p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-3">
                                         <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
                                             {log.adminRole}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</td>
-                                    <td className="px-6 py-4"><span className="font-mono text-sm text-slate-500 dark:text-slate-400">{log.target}</span></td>
+                                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</td>
+                                    <td className="px-4 py-3"><span className="font-mono text-sm text-slate-500 dark:text-slate-400">{log.target}</span></td>
                                 </tr>
                             ))}
                         </tbody>

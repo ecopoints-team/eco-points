@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { MACHINES, USERS, REWARDS, LOCATIONS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation } from '../../src/data/mockData';
+import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation } from '../../src/data/mockData';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2 } from 'lucide-react';
 
 // DUAL-THEME STAT CARD
@@ -42,11 +42,13 @@ const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
                     <Icon size={24} strokeWidth={1.5} />
                 </div>
             </div>
-            <div className="relative z-10 mt-4 flex items-center gap-2">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded border ${themeClass}`}>
-                    {subtext}
-                </span>
-            </div>
+            {subtext && (
+                <div className="relative z-10 mt-4 flex items-center gap-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded border ${themeClass}`}>
+                        {subtext}
+                    </span>
+                </div>
+            )}
         </div>
     );
 };
@@ -105,24 +107,73 @@ export default function AdminDashboard() {
 
     // Location-specific chart data
     const chartData = useMemo(() => {
-        // Generate different chart data based on location
-        const baseMultiplier = effectiveLocationId === 'LOC-001' ? 1.2 : effectiveLocationId === 'LOC-002' ? 0.8 : 1.5;
+        const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
+        const now = new Date();
+
+        // Helper to get day name
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // 1. Weekly Data (Last 7 Days)
+        const weeklyValues = [0, 0, 0, 0, 0, 0, 0];
+        const weeklyLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(now.getDate() - i);
+            weeklyLabels.push(days[d.getDay()]); // e.g. "Mon"
+
+            // Sum bottles for this day
+            const dayStart = new Date(d.setHours(0, 0, 0, 0));
+            const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+
+            const count = logs.filter(l => l.timestampObj >= dayStart && l.timestampObj <= dayEnd).length;
+            weeklyValues[6 - i] = count;
+        }
+
+        // 2. Monthly Data (Last 4 Weeks) - Simplified
+        const monthlyValues = [0, 0, 0, 0];
+        const monthlyLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        // Logic: Group by last 4 weeks (approx)
+        // ... (Simplified logic: divide last 28 days into 4 chunks)
+        for (let i = 0; i < 4; i++) {
+            // 0=oldest week, 3=newest
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - ((3 - i) * 7) - 6);
+            const weekEnd = new Date(now);
+            weekEnd.setDate(now.getDate() - ((3 - i) * 7));
+
+            const count = logs.filter(l => l.timestampObj >= weekStart && l.timestampObj <= weekEnd).length;
+            monthlyValues[i] = count;
+        }
+
+        // 3. Yearly Data (Last 12 Months)
+        const yearlyValues = new Array(12).fill(0);
+        const yearlyLabels = months; // Fixed labels Jan-Dec
+        logs.forEach(log => {
+            const d = new Date(log.timestampObj);
+            if (d.getFullYear() === now.getFullYear()) {
+                yearlyValues[d.getMonth()]++;
+            }
+        });
+
+        // Determine Max Values for scaling
+        const getMax = (arr) => Math.max(...arr, 10); // Min 10 to avoid flatline
 
         return {
             week: {
-                labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-                values: [450, 400, 650, 300, 800, 550, 900].map(v => Math.round(v * baseMultiplier)),
-                maxValue: Math.round(1000 * baseMultiplier)
+                labels: weeklyLabels,
+                values: weeklyValues,
+                maxValue: getMax(weeklyValues)
             },
             month: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                values: [2800, 3200, 2950, 3500].map(v => Math.round(v * baseMultiplier)),
-                maxValue: Math.round(4000 * baseMultiplier)
+                labels: monthlyLabels,
+                values: monthlyValues,
+                maxValue: getMax(monthlyValues)
             },
             year: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                values: [8500, 9200, 10500, 11200, 12450, 13800, 14200, 15000, 13500, 12800, 11500, 10200].map(v => Math.round(v * baseMultiplier)),
-                maxValue: Math.round(16000 * baseMultiplier)
+                labels: yearlyLabels,
+                values: yearlyValues,
+                maxValue: getMax(yearlyValues)
             }
         };
     }, [effectiveLocationId]);
@@ -137,58 +188,37 @@ export default function AdminDashboard() {
     }, [effectiveLocationId, isSuperAdmin, allLocations]);
 
     // Y-axis labels based on max value
-    const yAxisLabels = [
-        currentData.maxValue,
-        Math.round(currentData.maxValue * 0.75),
-        Math.round(currentData.maxValue * 0.5),
-        Math.round(currentData.maxValue * 0.25),
-        0
-    ];
+    const yAxisLabels = useMemo(() => {
+        const max = currentData.maxValue;
+        return [
+            max,
+            Math.round(max * 0.75),
+            Math.round(max * 0.5),
+            Math.round(max * 0.25),
+            0
+        ];
+    }, [currentData]);
 
     // Location-specific recent transactions
     const recentTransactions = useMemo(() => {
-        const machines = getMachinesByLocation(effectiveLocationId);
+        // Use the centralized BOTTLE_LOGS
+        const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
 
-        // Generate transactions based on actual machines
-        const users = getUsersByLocation(effectiveLocationId);
-
-        return machines.slice(0, 5).map((machine, idx) => {
-            // Mock Data based on new requirements
-            const conditions = ['Complete', 'No Label', 'No Cap', 'Complete', 'Complete'];
-            const bottleTypes = ['Small PET (350ml)', 'Large PET (1L)', 'Small PET (290ml)', 'Medium PET (500ml)', 'Large PET (1.5L)'];
-            // Approx map to points based on Condition and Type
-            let points = 0;
-            let status = 'Accepted';
-
-            // Simple logic for points
-            const type = bottleTypes[idx % 5];
-            const cond = conditions[idx % 5];
-
-            if (type.includes('1.5L')) {
-                points = 0;
-                status = 'Rejected';
-            } else if (type.includes('Large')) {
-                points = cond === 'Complete' ? 10 : 7;
-            } else if (type.includes('Medium') || type.includes('Small')) {
-                points = cond === 'Complete' ? 8 : 5; // Simplified for Medium
-                if (type.includes('Small')) points = cond === 'Complete' ? 5 : 3;
-            }
-
-            return {
-                id: `LOG-${8842 - idx}`, // Still keep for key, but won't show
-                userId: users[idx]?.id || 'USR-GUEST',
-                userName: users[idx]?.name || 'Guest User',
-                location: currentLocation ? currentLocation.name : machine.location,
-                machineId: machine.id,
-                machineName: machine.name,
-                bottleType: type,
-                condition: cond,
-                pointsAwarded: points,
-                timestamp: `Jan 23, ${10 - idx}:${30 + idx * 5} AM`,
-                status: status,
-            };
-        });
-    }, [effectiveLocationId, currentLocation]);
+        // Sort by timestamp (newest first) and take top 5
+        return logs.slice(0, 5).map(log => ({
+            id: log.id,
+            userId: log.userId,
+            userName: log.userName,
+            location: log.locationName,
+            machineId: log.machineId,
+            machineName: log.machineName,
+            bottleType: log.bottleType,
+            condition: log.condition,
+            pointsAwarded: log.pointsAwarded,
+            timestamp: log.timestamp,
+            status: log.status,
+        }));
+    }, [effectiveLocationId]);
 
     return (
         <>
@@ -234,14 +264,14 @@ export default function AdminDashboard() {
                 <StatCard
                     title="Total Bottles"
                     value={stats.totalBottles.toLocaleString()}
-                    subtext={`${stats.totalMachines} machines`}
+
                     color="emerald"
                     icon={Box}
                 />
                 <StatCard
                     title="Points Distributed"
                     value={stats.totalPoints.toLocaleString()}
-                    subtext={`${stats.totalUsers} users`}
+
                     color="blue"
                     icon={Zap}
                 />
@@ -255,7 +285,7 @@ export default function AdminDashboard() {
                 <StatCard
                     title="Active Users"
                     value={stats.activeUsers.toString()}
-                    subtext={`${stats.totalRewards} rewards`}
+
                     color="purple"
                     icon={Users}
                 />
@@ -390,7 +420,6 @@ export default function AdminDashboard() {
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700
                             bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-6 py-4">User ID</th>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Location</th>
                                 <th className="px-6 py-4">Condition</th>
@@ -402,9 +431,6 @@ export default function AdminDashboard() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {recentTransactions.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <span className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400">{log.userId}</span>
-                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
@@ -438,7 +464,7 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold
-                                            ${log.status === 'Accepted'
+                                            ${['Accepted', 'Completed', 'Success', 'Resolved'].includes(log.status)
                                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                                                 : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>

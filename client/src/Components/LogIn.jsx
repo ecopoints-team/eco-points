@@ -21,12 +21,6 @@ import {
 // Test accounts for demo login
 const TEST_ACCOUNTS = [
     { id: 'ADM-SUPER-001', name: 'System Administrator', email: 'superadmin@ecopoints.com', role: 'Super Admin', location: 'All Locations', color: 'red' },
-    { id: 'ADM-A-001', name: 'Maria Santos', email: 'headadmin.schoola@ecopoints.com', role: 'Head Admin', location: 'School A', color: 'purple' },
-    { id: 'ADM-A-002', name: 'Carlos Reyes', email: 'auditor.schoola@ecopoints.com', role: 'Auditor', location: 'School A', color: 'blue' },
-    { id: 'ADM-A-003', name: 'Ana Lim', email: 'inventory.schoola@ecopoints.com', role: 'Inventory Officer', location: 'School A', color: 'emerald' },
-    { id: 'ADM-B-001', name: 'Juan Dela Cruz', email: 'headadmin.schoolb@ecopoints.com', role: 'Head Admin', location: 'School B', color: 'purple' },
-    { id: 'ADM-B-002', name: 'Patricia Tan', email: 'auditor.schoolb@ecopoints.com', role: 'Auditor', location: 'School B', color: 'blue' },
-    { id: 'ADM-B-003', name: 'Roberto Garcia', email: 'inventory.schoolb@ecopoints.com', role: 'Inventory Officer', location: 'School B', color: 'emerald' },
 ];
 
 // Role badge colors

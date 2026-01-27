@@ -2,40 +2,11 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown } from 'lucide-react';
+import { BOTTLE_LOGS } from '../../../../src/data/mockData';
+import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download } from 'lucide-react';
 
-const generateBottleLogs = () => {
-    const users = [
-        { id: 'USR-1234', name: 'Justin Ibale' }, { id: 'USR-1235', name: 'Jana Soriano' }, { id: 'USR-1236', name: 'Miguel Torres' },
-        { id: 'USR-1237', name: 'Anna Reyes' }, { id: 'USR-1238', name: 'Sarah Cruz' }, { id: 'USR-1239', name: 'Carlos Garcia' },
-        { id: 'USR-1240', name: 'Mark Santos' }, { id: 'USR-1241', name: 'Lisa Mendoza' }, { id: 'GUEST', name: 'Guest User' },
-    ];
-    const machines = [
-        { id: 'RVM-001', name: 'Main Campus RVM', locationId: 'LOC-001' }, { id: 'RVM-002', name: 'Library RVM', locationId: 'LOC-001' },
-        { id: 'RVM-003', name: 'Cafeteria RVM', locationId: 'LOC-001' }, { id: 'RVM-004', name: 'Sports Complex RVM', locationId: 'LOC-002' },
-        { id: 'RVM-005', name: 'Admin Block RVM', locationId: 'LOC-002' }, { id: 'RVM-006', name: 'Dormitory RVM', locationId: 'LOC-002' }
-    ];
-    const bottleTypes = ['350ml PET', '500ml PET', '1000ml PET', '1500ml PET'];
-    const pointsMap = { '350ml PET': 3, '500ml PET': 5, '1000ml PET': 10, '1500ml PET': 15 };
-    const conditions = ['Perfect', 'Good', 'Crushed', 'Dirty (Rejected)'];
-    const statuses = ['Completed', 'Pending', 'Failed'];
-    const logs = [];
-    const baseDate = new Date('2026-01-14T10:45:00');
-    for (let i = 0; i < 156; i++) {
-        const user = users[Math.floor(Math.random() * users.length)];
-        const machine = machines[Math.floor(Math.random() * machines.length)];
-        const bottleType = bottleTypes[Math.floor(Math.random() * bottleTypes.length)];
-        const condition = conditions[Math.floor(Math.random() * conditions.length)];
-        const status = i < 140 ? 'Completed' : statuses[Math.floor(Math.random() * statuses.length)];
-        const logDate = new Date(baseDate.getTime() - (i * 15 * 60000));
-        const formattedDate = logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + logDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        logs.push({ id: `LOG-${8842 - i}`, userId: user.id, userName: user.name, machineId: machine.id, machineName: machine.name, locationId: machine.locationId, bottleType, condition, pointsAwarded: pointsMap[bottleType], timestamp: formattedDate, timestampObj: logDate, status });
-    }
-    return logs;
-};
-
-const allBottleLogs = generateBottleLogs();
-const stats = { todayTransactions: 156, todayBottles: 203, todayPoints: 1520 };
+const allBottleLogs = BOTTLE_LOGS;
+const stats = { todayTransactions: 0, todayBottles: 0, todayPoints: 0 };
 
 export default function BottleLogsPage() {
     const { user, isSuperAdmin, viewAsLocationId } = useAuth();
@@ -103,9 +74,15 @@ export default function BottleLogsPage() {
 
     return (
         <>
-            <div className="mb-8">
-                <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bottle Logs</h1>
-                <p className="text-slate-500 dark:text-slate-400">View all bottle recycling transactions and activity logs</p>
+            <div className="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bottle Logs</h1>
+                    <p className="text-slate-500 dark:text-slate-400">View all bottle recycling transactions and activity logs</p>
+                </div>
+                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
+                    <Download size={18} />
+                    Export CSV
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -126,7 +103,7 @@ export default function BottleLogsPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <div className="relative group flex-1 sm:w-64">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500" />
-                            <input type="text" placeholder="Search logs..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
+                            <input type="text" placeholder="Search by User, Machine, or Type..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilter || hasActiveFilters ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
@@ -156,20 +133,19 @@ export default function BottleLogsPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
-                            <tr><th className="px-6 py-4">Log ID</th><th className="px-6 py-4">User</th><th className="px-6 py-4">Machine/Location</th><th className="px-6 py-4">Bottle Type</th><th className="px-6 py-4">Condition</th><th className="px-6 py-4">Points</th><th className="px-6 py-4">Timestamp</th><th className="px-6 py-4">Status</th></tr>
+                            <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Machine/Location</th><th className="px-4 py-3">Bottle Type</th><th className="px-4 py-3">Condition</th><th className="px-4 py-3">Points</th><th className="px-4 py-3">Timestamp</th><th className="px-4 py-3">Status</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                    <td className="px-6 py-4"><span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">{log.id}</span></td>
-                                    <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center"><User size={14} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p></div></div></td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center"><User size={14} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p></div></div></td>
+                                    <td className="px-4 py-3">
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><MapPin size={14} className="text-slate-400" />{log.machineName}</div>
                                             {isSuperAdmin && !viewAsLocationId && <span className="text-[10px] text-slate-400 ml-5">{log.locationId === 'LOC-001' ? 'School A' : 'School B'}</span>}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-3">
                                         <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
                                             {log.bottleType.split(' ').map((part, i) => (
                                                 <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
@@ -178,10 +154,10 @@ export default function BottleLogsPage() {
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4"><span className="text-sm text-slate-600 dark:text-slate-300">{log.condition}</span></td>
-                                    <td className="px-6 py-4"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded} pts</span></td>
-                                    <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} className="text-slate-400" />{log.timestamp}</div></td>
-                                    <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
+                                    <td className="px-4 py-3"><span className="text-sm text-slate-600 dark:text-slate-300">{log.condition}</span></td>
+                                    <td className="px-4 py-3"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded} pts</span></td>
+                                    <td className="px-4 py-3"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} className="text-slate-400" />{log.timestamp}</div></td>
+                                    <td className="px-4 py-3"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
                                 </tr>
                             ))}
                         </tbody>

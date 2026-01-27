@@ -189,7 +189,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             hidden: !hasPermission('users', 'view'),
             children: [
                 { label: 'Manage Users', href: '/admin/users' },
-                { label: 'Permissions', href: '/admin/users/permissions' },
+                { label: 'Manage Admins', href: '/admin/users/permissions' },
             ]
         },
         {
@@ -208,7 +208,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             children: [
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
                 { label: 'Machine Logs', href: '/admin/logs/machines' },
-                { label: 'Admin Access', href: '/admin/logs/access' },
+                { label: 'Admin Access', href: '/admin/logs/access', hidden: !isSuperAdmin && currentUser?.role !== 'head_admin' },
             ]
         },
         {
