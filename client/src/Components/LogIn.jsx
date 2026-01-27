@@ -18,10 +18,17 @@ import {
     Search
 } from "lucide-react";
 
-// Test accounts for demo login
-const TEST_ACCOUNTS = [
-    { id: 'ADM-SUPER-001', name: 'System Administrator', email: 'superadmin@ecopoints.com', role: 'Super Admin', location: 'All Locations', color: 'red' },
-];
+import { ADMIN_USERS, ROLES } from '../data/mockData';
+
+// Generate Test Accounts from Centralized Mock Data
+const TEST_ACCOUNTS = ADMIN_USERS.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: ROLES[user.role]?.name || 'Super Admin',
+    location: user.locationId ? 'Arellano University' : 'All Locations',
+    color: ROLES[user.role]?.color || 'red'
+}));
 
 // Role badge colors
 const roleColors = {
@@ -483,7 +490,7 @@ export default function LogIn({ onClose }) {
 
                                         {showAccountPicker && (
                                             <div className="mt-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-40 overflow-y-auto">
-                                                {TEST_ACCOUNTS.slice(0, 4).map((account) => (
+                                                {TEST_ACCOUNTS.slice(0, 8).map((account) => (
                                                     <button
                                                         key={account.id}
                                                         type="button"
@@ -532,7 +539,7 @@ export default function LogIn({ onClose }) {
 
                                         {showAccountPicker && (
                                             <div className="mt-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-40 overflow-y-auto">
-                                                {TEST_ACCOUNTS.slice(0, 4).map((account) => (
+                                                {TEST_ACCOUNTS.slice(0, 8).map((account) => (
                                                     <button
                                                         key={account.id}
                                                         type="button"
