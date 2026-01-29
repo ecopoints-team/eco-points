@@ -21,11 +21,23 @@ module.exports = {
         'neutral-card': '#4b5563',
         'neutral-border': '#6b7280',
         'neutral-text': '#f3f4f6',
+        // System theme colors (Environmental Dark)
+        'system-bg': '#0F1B11',
+        'system-card': '#1A2E1F',
+        'system-text': '#E1E4E1',
+        'system-border': 'rgba(123, 160, 91, 0.2)',
+        'system-accent': '#7BA05B',
       },
       boxShadow: {
         'glow': '0 0 10px rgba(16, 185, 129, 0.5)',
+        'system-glow': '0 0 10px rgba(123, 160, 91, 0.5)',
       }
     },
   },
-  plugins: [],
+  plugins: [
+    // Custom plugin for system: variant
+    function ({ addVariant }) {
+      addVariant('system', '.system &')
+    }
+  ],
 }

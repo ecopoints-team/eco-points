@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
-import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle, Sun, Moon, Palette } from 'lucide-react';
+import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle, Sun, Moon, Palette, Leaf } from 'lucide-react';
 import { useTheme } from '../../../src/context/ThemeContext';
 
 const ToggleSwitch = ({ enabled, onChange, label, description }) => (
@@ -21,7 +21,7 @@ export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState('general');
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Theme context for 3-way mode
+    // Theme context for 4-way mode
     const { theme, setTheme } = useTheme();
 
     const updateSetting = (key, value) => { setSettings(prev => ({ ...prev, [key]: value })); setHasChanges(true); };
@@ -66,20 +66,20 @@ export default function SettingsPage() {
                         {activeSection === 'appearance' && (<>
                             <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"><h3 className="text-lg font-bold text-slate-800 dark:text-white">Appearance</h3></div>
                             <div className="p-6 space-y-6">
-                                {/* 3-Way Theme Toggle */}
+                                {/* 4-Way Theme Toggle */}
                                 <div className="py-4 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
                                             <p className="font-semibold text-slate-700 dark:text-slate-200">Theme Mode</p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Choose between light, neutral, or dark appearance</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">Choose between light, neutral, dark, or system appearance</p>
                                         </div>
                                     </div>
 
-                                    {/* 3-Way Toggle */}
-                                    <div className="flex gap-3">
+                                    {/* 4-Way Toggle */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <button
                                             onClick={() => setTheme('light')}
-                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'light'
+                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'light'
                                                 ? 'border-emerald-500 bg-white shadow-lg'
                                                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
@@ -92,7 +92,7 @@ export default function SettingsPage() {
 
                                         <button
                                             onClick={() => setTheme('neutral')}
-                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'neutral'
+                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'neutral'
                                                 ? 'border-emerald-500 bg-gray-500 shadow-lg'
                                                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
@@ -105,7 +105,7 @@ export default function SettingsPage() {
 
                                         <button
                                             onClick={() => setTheme('dark')}
-                                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'dark'
+                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'dark'
                                                 ? 'border-emerald-500 bg-slate-900 shadow-lg'
                                                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
@@ -114,6 +114,19 @@ export default function SettingsPage() {
                                                 <Moon size={24} />
                                             </div>
                                             <span className={`text-sm font-medium ${theme === 'dark' ? 'text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>Dark</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setTheme('system')}
+                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${theme === 'system'
+                                                ? 'border-[#7BA05B] bg-[#0F1B11] shadow-lg shadow-[rgba(123,160,91,0.2)]'
+                                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}
+                                        >
+                                            <div className={`p-3 rounded-full ${theme === 'system' ? 'bg-[#1A2E1F] text-[#7BA05B]' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}>
+                                                <Leaf size={24} />
+                                            </div>
+                                            <span className={`text-sm font-medium ${theme === 'system' ? 'text-[#7BA05B]' : 'text-slate-600 dark:text-slate-400'}`}>System</span>
                                         </button>
                                     </div>
                                 </div>

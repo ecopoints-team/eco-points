@@ -3,15 +3,15 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle } from 'lucide-react';
+import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf } from 'lucide-react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { ROLES } from '../data/mockData';
 
-// 3-Way Theme Toggle Component
+// 4-Way Theme Toggle Component
 const ThemeToggle = ({ theme, setTheme }) => {
   return (
-    <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 neutral:bg-gray-600 border border-slate-200 dark:border-slate-700">
+    <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 neutral:bg-gray-600 system:bg-[#1A2E1F] border border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]">
       <button
         onClick={() => setTheme('light')}
         className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'light'
@@ -42,6 +42,16 @@ const ThemeToggle = ({ theme, setTheme }) => {
       >
         <Moon size={14} />
       </button>
+      <button
+        onClick={() => setTheme('system')}
+        className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'system'
+          ? 'bg-[#0F1B11] text-[#7BA05B] shadow-md shadow-[rgba(123,160,91,0.3)]'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        title="System Mode"
+      >
+        <Leaf size={14} />
+      </button>
     </div>
   );
 };
@@ -49,7 +59,7 @@ const ThemeToggle = ({ theme, setTheme }) => {
 // Main layout component that uses AuthContext and ThemeContext
 export default function AdminLayout({ children }) {
   // Theme State from Context
-  const { theme, setTheme, isDarkMode, isNeutralMode } = useTheme();
+  const { theme, setTheme, isDarkMode, isNeutralMode, isSystemMode } = useTheme();
 
   // Get current pathname for conditional rendering
   const pathname = usePathname();
@@ -140,7 +150,7 @@ export default function AdminLayout({ children }) {
   };
 
   // Determine theme class for root
-  const themeClass = theme === 'dark' ? 'dark' : theme === 'neutral' ? 'neutral dark' : '';
+  const themeClass = theme === 'dark' ? 'dark' : theme === 'neutral' ? 'neutral dark' : theme === 'system' ? 'system dark' : '';
 
   // Refs for click outside detection
   const profileRef = React.useRef(null);
@@ -170,14 +180,15 @@ export default function AdminLayout({ children }) {
       {/* GLOBAL BACKGROUND LAYER */}
       <div className={`absolute inset-0 transition-colors duration-700 -z-10 ${theme === 'light' ? 'bg-gray-50' :
         theme === 'neutral' ? 'bg-gray-700' :
-          'bg-[#020617]'
+          theme === 'system' ? 'bg-[#0F1B11]' :
+            'bg-[#020617]'
         }`}>
         {/* Cyber Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700"
           style={{
             backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
             backgroundSize: '40px 40px',
-            color: '#10b981'
+            color: theme === 'system' ? '#7BA05B' : '#10b981'
           }}>
         </div>
       </div>
@@ -188,7 +199,7 @@ export default function AdminLayout({ children }) {
         setIsOpen={handleSidebarToggle}
         isMobile={isMobile}
         closeMobile={() => setSidebarOpen(false)}
-        isDarkMode={isDarkMode || isNeutralMode}
+        isDarkMode={isDarkMode || isNeutralMode || isSystemMode}
       />
 
       {/* MAIN CONTENT */}
@@ -201,7 +212,8 @@ export default function AdminLayout({ children }) {
         <header className={`h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30
           backdrop-blur-md border-b transition-all duration-500 shadow-sm ${theme === 'light' ? 'bg-white/80 border-gray-200' :
             theme === 'neutral' ? 'bg-gray-600/80 border-gray-500' :
-              'bg-[#0f172a]/80 border-emerald-500/20'
+              theme === 'system' ? 'bg-[#1A2E1F]/80 border-[rgba(123,160,91,0.2)]' :
+                'bg-[#0f172a]/80 border-emerald-500/20'
           }`}
         >
           <div className="flex items-center gap-3">

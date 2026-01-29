@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // ============================================================================
-// THEME CONTEXT - Light/Neutral/Dark Mode Management
+// THEME CONTEXT - Light/Neutral/Dark/System Mode Management
 // ============================================================================
 
 const ThemeContext = createContext(null);
@@ -11,7 +11,8 @@ const ThemeContext = createContext(null);
 const THEMES = {
     light: 'light',
     neutral: 'neutral',
-    dark: 'dark'
+    dark: 'dark',
+    system: 'system'
 };
 
 export function ThemeProvider({ children }) {
@@ -24,7 +25,7 @@ export function ThemeProvider({ children }) {
         if (typeof window !== 'undefined') {
             const storedTheme = localStorage.getItem('ecopoints_theme');
             // Default to dark if no preference stored
-            const initialTheme = storedTheme && ['light', 'neutral', 'dark'].includes(storedTheme)
+            const initialTheme = storedTheme && ['light', 'neutral', 'dark', 'system'].includes(storedTheme)
                 ? storedTheme
                 : 'dark';
             setThemeState(initialTheme);
@@ -38,7 +39,7 @@ export function ThemeProvider({ children }) {
         if (typeof window !== 'undefined') {
             const html = document.documentElement;
             // Remove all theme classes
-            html.classList.remove('light', 'neutral', 'dark');
+            html.classList.remove('light', 'neutral', 'dark', 'system');
             // Add the current theme class
             html.classList.add(newTheme);
         }
@@ -54,18 +55,19 @@ export function ThemeProvider({ children }) {
 
     // Set specific theme
     const setTheme = (newTheme) => {
-        if (['light', 'neutral', 'dark'].includes(newTheme)) {
+        if (['light', 'neutral', 'dark', 'system'].includes(newTheme)) {
             setThemeState(newTheme);
         }
     };
 
-    // Cycle through themes: light -> neutral -> dark -> light
+    // Cycle through themes: light -> neutral -> dark -> system -> light
     const cycleTheme = () => {
         setThemeState(prev => {
             switch (prev) {
                 case 'light': return 'neutral';
                 case 'neutral': return 'dark';
-                case 'dark': return 'light';
+                case 'dark': return 'system';
+                case 'system': return 'light';
                 default: return 'dark';
             }
         });
@@ -80,6 +82,7 @@ export function ThemeProvider({ children }) {
     const isDarkMode = theme === 'dark';
     const isNeutralMode = theme === 'neutral';
     const isLightMode = theme === 'light';
+    const isSystemMode = theme === 'system';
 
     const value = {
         theme,
@@ -89,6 +92,7 @@ export function ThemeProvider({ children }) {
         isDarkMode,
         isNeutralMode,
         isLightMode,
+        isSystemMode,
         THEMES
     };
 

@@ -243,3 +243,34 @@
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ============================================================================
+   SYSTEM THEME - Environmental Dark Mode
+   Background: #0F1B11 (deep forest green-black)
+   Card surfaces: #1A2E1F (elevated elements)
+   Text: #E1E4E1 (high contrast)
+   Borders: rgba(123, 160, 91, 0.2) (accent green with transparency)
+   ============================================================================ */
+
+html.system {
+  background-color: #0F1B11;
+  color: #E1E4E1;
+}
+
+html.system body {
+  background-color: #0F1B11;
+}
+
+/* System theme scrollbar */
+html.system * {
+  scrollbar-color: rgba(123, 160, 91, 0.3) transparent;
+}
+
+html.system ::-webkit-scrollbar-thumb {
+  background: rgba(123, 160, 91, 0.3);
+}
+
+html.system ::-webkit-scrollbar-thumb:hover {
+  background: #7BA05B;
+  box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
+}
