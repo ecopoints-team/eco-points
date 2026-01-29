@@ -559,7 +559,11 @@ export default function AdminDashboard() {
                                     ))}
                                 </Pie>
                                 <Tooltip content={<PieTooltip />} isAnimationActive={true} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
+                                <Legend
+                                    wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }}
+                                    iconType="circle"
+                                    formatter={(value) => <span style={{ marginRight: '12px', color: '#9ca3af' }}>{value}</span>}
+                                />
                             </PieChart>
                         )}
                     </ResponsiveContainer>
