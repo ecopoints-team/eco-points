@@ -50,12 +50,12 @@ export default function Hero() {
             {/* Introducing EcoPoints */}
             <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
               <QrCodeIcon className="w-5 h-5 text-white" />
-              <span className="font-medium font-lato-bold text-xs sm:text-sm text-white">
+              <span className="font-header lg:text-sm sm:text-md text-white">
                 Introduction of EcoPoints
               </span>
             </div>
             {/* Header Text */}
-            <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="text-6xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints: A Smart
               </span>
@@ -64,7 +64,7 @@ export default function Hero() {
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-shadow-lg text-xl sm:text-base lg:text-xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            <p className="text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed ">
               Bridging the gap between technology and environmental
               sustainability through an automated reward system.
             </p>
@@ -109,21 +109,38 @@ export default function Hero() {
 
           {/* Floating Cards */}
         </div>
-        <h2 className="text-3xl sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-left font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-          <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
-            Concept Study
-          </span>
-        </h2>
-        <p className="text-shadow-lg text-md sm:text-base lg:text-lg text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-          Welcome to the official platform for EcoPoints. EcoPoints is an
-          Automated Reverse Vending Machine (RVM) prototype designed to address
-          the critical issue of plastic waste management. By utilizing QR-based
-          user authentication and embedded sensor technology, our machine
-          verifies and compacts PET bottles, converting waste into digital
-          currency. This website serves as the user portal where you can
-          register, track your recycling history, and monitor your EcoPoints
-          balance.
-        </p>
+        <div className="max-w-7xl px-3 sm:px-4 lg:py-20 sm:py-20 text-center relative w-full">
+          <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
+              WELCOME TO THE OFFICIAL PLATFORM
+            </span>
+          </h2>
+          <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
+              FOR ECOPOINTS
+            </span>
+          </h2>
+          <h2 className="text-4xl sm:text2xl md:text-3xl lg:text-4xl xl:text-5xl text-left lg:py-15 sm:py-8 font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
+              C O N C E P T
+            </span>
+          </h2>
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            EcoPoints is an Automated Reverse Vending Machine (RVM) prototype
+            designed to address the critical issue of plastic waste management.
+          </p>
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            By utilizing QR-based user authentication and embedded sensor
+            technology, our machine verifies and compacts PET bottles,
+            converting waste into digital currency. This website serves as the
+            user portal where you can register, track your recycling history,
+            and monitor your EcoPoints balance.
+          </p>
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            This website serves as the user portal where you can register, track
+            your recycling history, and monitor your EcoPoints balance.
+          </p>
+        </div>
       </div>
     </section>
   );
