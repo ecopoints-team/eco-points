@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
@@ -96,24 +96,18 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-// Custom Tooltip for Pie Chart - More styled
+// Custom Tooltip for Pie Chart - Styled (no percentage since labels show it)
 const PieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
         const data = payload[0];
+        const fillColor = data?.payload?.fill || data?.color || '#10b981';
         return (
-            <div className="bg-white dark:bg-slate-800/95 system:bg-[#1A2E1F]/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-slate-200 dark:border-slate-600 system:border-[rgba(123,160,91,0.3)]">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: data.payload.fill }} />
-                    <span className="text-sm font-bold text-gray-900 dark:text-white system:text-[#E1E4E1]">{data.name}</span>
-                </div>
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-4 text-xs">
-                        <span className="text-gray-500 dark:text-slate-400 system:text-[#E1E4E1]/60">Bottles:</span>
-                        <span className="font-bold text-gray-900 dark:text-white system:text-[#E1E4E1]">{data.value?.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 text-xs">
-                        <span className="text-gray-500 dark:text-slate-400 system:text-[#E1E4E1]/60">Share:</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]">{((data.percent || 0) * 100).toFixed(1)}%</span>
+            <div className="bg-white dark:bg-slate-800/95 system:bg-[#1A2E1F]/95 backdrop-blur-md rounded-xl p-3 shadow-xl border border-slate-200 dark:border-slate-600 system:border-[rgba(123,160,91,0.3)]">
+                <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: fillColor }} />
+                    <div>
+                        <span className="text-xs font-medium text-gray-500 dark:text-slate-400 system:text-[#E1E4E1]/60 block">{data?.name || '-'}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white system:text-[#E1E4E1]">{data?.value?.toLocaleString() || 0} bottles</span>
                     </div>
                 </div>
             </div>
@@ -126,7 +120,12 @@ export default function AdminDashboard() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser } = useAuth();
     const [timeRange, setTimeRange] = useState('week');
     const [chartType, setChartType] = useState('line');
+    const [mounted, setMounted] = useState(false);
 
+    // Prevent hydration mismatch - only render dynamic content after mount
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     // =========================================================================
     // LOCATION-FILTERED STATISTICS
     // =========================================================================
@@ -157,6 +156,15 @@ export default function AdminDashboard() {
 
     // Location-specific chart data with accepted/rejected
     const chartData = useMemo(() => {
+        // Return empty data during SSR to prevent hydration mismatch
+        if (!mounted) {
+            return {
+                week: { labels: [], accepted: [], rejected: [], maxValue: 10 },
+                month: { labels: [], accepted: [], rejected: [], maxValue: 10 },
+                year: { labels: [], accepted: [], rejected: [], maxValue: 10 }
+            };
+        }
+
         const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
         const now = new Date();
 
@@ -243,7 +251,7 @@ export default function AdminDashboard() {
                 maxValue: getMax(yearlyAccepted, yearlyRejected)
             }
         };
-    }, [effectiveLocationId]);
+    }, [effectiveLocationId, mounted]);
 
     const currentData = chartData[timeRange];
 
@@ -365,14 +373,20 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
-                        {/* Chart Type Toggle */}
-                        <div className="flex items-center gap-1 p-1 rounded-lg
-                            bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                        {/* Chart Type Toggle with Sliding Indicator */}
+                        <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                            {/* Sliding Background */}
+                            <div
+                                className="absolute top-1 bottom-1 w-8 rounded-md bg-emerald-500 shadow-md transition-transform duration-300 ease-out"
+                                style={{
+                                    transform: `translateX(${chartType === 'line' ? '0px' : chartType === 'bar' ? '32px' : '64px'})`,
+                                }}
+                            />
                             <button
                                 onClick={() => setChartType('line')}
-                                className={`p-2 rounded-md transition-all duration-300 ${chartType === 'line'
-                                    ? 'bg-emerald-500 text-white shadow-md'
-                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                className={`relative z-10 p-2 rounded-md transition-colors duration-200 ${chartType === 'line'
+                                    ? 'text-white'
+                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60'
                                     }`}
                                 title="Line Chart"
                             >
@@ -380,9 +394,9 @@ export default function AdminDashboard() {
                             </button>
                             <button
                                 onClick={() => setChartType('bar')}
-                                className={`p-2 rounded-md transition-all duration-300 ${chartType === 'bar'
-                                    ? 'bg-emerald-500 text-white shadow-md'
-                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                className={`relative z-10 p-2 rounded-md transition-colors duration-200 ${chartType === 'bar'
+                                    ? 'text-white'
+                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60'
                                     }`}
                                 title="Bar Chart"
                             >
@@ -390,9 +404,9 @@ export default function AdminDashboard() {
                             </button>
                             <button
                                 onClick={() => setChartType('pie')}
-                                className={`p-2 rounded-md transition-all duration-300 ${chartType === 'pie'
-                                    ? 'bg-emerald-500 text-white shadow-md'
-                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                className={`relative z-10 p-2 rounded-md transition-colors duration-200 ${chartType === 'pie'
+                                    ? 'text-white'
+                                    : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60'
                                     }`}
                                 title="Pie Chart"
                             >
@@ -400,9 +414,15 @@ export default function AdminDashboard() {
                             </button>
                         </div>
 
-                        {/* Time Range Pills */}
-                        <div className="flex items-center gap-1 p-1 rounded-lg
-                            bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                        {/* Time Range Pills with Sliding Indicator */}
+                        <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                            {/* Sliding Background */}
+                            <div
+                                className="absolute top-1 bottom-1 w-[64px] rounded-md bg-emerald-500 shadow-md transition-transform duration-300 ease-out"
+                                style={{
+                                    transform: `translateX(${timeRange === 'week' ? '0px' : timeRange === 'month' ? '64px' : '128px'})`,
+                                }}
+                            />
                             {[
                                 { key: 'week', label: 'Daily' },
                                 { key: 'month', label: 'Weekly' },
@@ -411,9 +431,9 @@ export default function AdminDashboard() {
                                 <button
                                     key={range.key}
                                     onClick={() => setTimeRange(range.key)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 ${timeRange === range.key
-                                        ? 'bg-emerald-500 text-white shadow-md'
-                                        : 'text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60 hover:bg-slate-200 dark:hover:bg-slate-700 system:hover:bg-[#1A2E1F]'
+                                    className={`relative z-10 w-[64px] py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-center ${timeRange === range.key
+                                        ? 'text-white'
+                                        : 'text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60'
                                         }`}
                                 >
                                     {range.label}
@@ -424,8 +444,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Chart Container */}
-                <div className="w-full h-80">
-                    <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full h-80 transition-all duration-300">
+                    <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%">
                         {chartType === 'line' ? (
                             <LineChart data={currentData.labels.map((label, i) => ({
                                 name: label,
@@ -452,8 +472,10 @@ export default function AdminDashboard() {
                                     stroke="#10b981"
                                     strokeWidth={2.5}
                                     dot={{ fill: '#10b981', r: 4, strokeWidth: 2, stroke: '#fff' }}
-                                    activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                                    activeDot={{ r: 8, fill: '#10b981', stroke: '#fff', strokeWidth: 3 }}
                                     name="Accepted"
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
                                 />
                                 <Line
                                     type="monotone"
@@ -461,8 +483,11 @@ export default function AdminDashboard() {
                                     stroke="#ef4444"
                                     strokeWidth={2.5}
                                     dot={{ fill: '#ef4444', r: 4, strokeWidth: 2, stroke: '#fff' }}
-                                    activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+                                    activeDot={{ r: 8, fill: '#ef4444', stroke: '#fff', strokeWidth: 3 }}
                                     name="Rejected"
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
+                                    animationBegin={200}
                                 />
                             </LineChart>
                         ) : chartType === 'bar' ? (
@@ -493,12 +518,17 @@ export default function AdminDashboard() {
                                     fill="#10b981"
                                     radius={[4, 4, 0, 0]}
                                     name="Accepted"
+                                    animationDuration={600}
+                                    animationEasing="ease-out"
                                 />
                                 <Bar
                                     dataKey="rejected"
                                     fill="#ef4444"
                                     radius={[4, 4, 0, 0]}
                                     name="Rejected"
+                                    animationDuration={600}
+                                    animationEasing="ease-out"
+                                    animationBegin={150}
                                 />
                             </BarChart>
                         ) : (
@@ -514,6 +544,8 @@ export default function AdminDashboard() {
                                     outerRadius={100}
                                     fill="#10b981"
                                     dataKey="value"
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
                                 >
                                     {currentData.labels.map((_, index) => (
                                         <Cell
@@ -526,7 +558,7 @@ export default function AdminDashboard() {
                                         />
                                     ))}
                                 </Pie>
-                                <Tooltip content={<PieTooltip />} />
+                                <Tooltip content={<PieTooltip />} isAnimationActive={true} />
                                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
                             </PieChart>
                         )}
