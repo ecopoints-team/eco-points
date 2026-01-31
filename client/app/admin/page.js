@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation } from '../../src/data/mockData';
+import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation, getOnlineUsersCount } from '../../src/data/mockData';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -267,15 +267,19 @@ export default function AdminDashboard() {
         // Use the centralized BOTTLE_LOGS
         const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
 
-        // Sort by timestamp (newest first) and take top 5
-        return logs.slice(0, 5).map(log => ({
+        // Sort by timestamp (newest first) and take top 8
+        return logs.slice(0, 8).map(log => ({
             id: log.id,
             userId: log.userId,
             userName: log.userName,
+            userEmail: log.userEmail,
             location: log.locationName,
+            area: log.area,
             machineId: log.machineId,
             machineName: log.machineName,
             bottleType: log.bottleType,
+            sizeCategory: log.sizeCategory,
+            brand: log.brand,
             condition: log.condition,
             pointsAwarded: log.pointsAwarded,
             timestamp: log.timestamp,
@@ -660,51 +664,62 @@ export default function AdminDashboard() {
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]
                             bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300 system:bg-[#0F1B11] system:text-[#E1E4E1]/60">
                             <tr>
-                                <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Location</th>
-                                <th className="px-6 py-4">Condition</th>
-                                <th className="px-6 py-4">Points</th>
-                                <th className="px-6 py-4">Time</th>
-                                <th className="px-6 py-4">Status</th>
+                                <th className="px-3 py-3">User ID</th>
+                                <th className="px-3 py-3">Username</th>
+                                <th className="px-3 py-3">Email</th>
+                                <th className="px-3 py-3">Location</th>
+                                <th className="px-3 py-3">Bottle Type</th>
+                                <th className="px-3 py-3">Condition</th>
+                                <th className="px-3 py-3">Points</th>
+                                <th className="px-3 py-3">Timestamp</th>
+                                <th className="px-3 py-3">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 system:divide-[rgba(123,160,91,0.1)]">
                             {recentTransactions.map((log) => (
-                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 system:hover:bg-[rgba(123,160,91,0.1)] transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 system:bg-[#0F1B11] flex items-center justify-center">
-                                                <User size={14} className="text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-slate-800 dark:text-white system:text-[#E1E4E1] text-sm">{log.userName}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/50 font-mono">{log.userId}</p>
-                                            </div>
-                                        </div>
+                                <tr
+                                    key={log.id}
+                                    className={`transition-colors ${log.status === 'Rejected'
+                                        ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20 system:bg-red-900/10 system:hover:bg-red-900/20'
+                                        : 'hover:bg-slate-50 dark:hover:bg-emerald-900/10 system:hover:bg-[rgba(123,160,91,0.1)]'
+                                        }`}
+                                >
+                                    <td className="px-3 py-3">
+                                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/50">{log.userId}</span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <MapPin size={14} className="text-slate-400 system:text-[#7BA05B]" />
-                                            <span className="text-sm text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{log.location}</span>
-                                        </div>
+                                    <td className="px-3 py-3">
+                                        <span className="text-sm font-medium text-slate-800 dark:text-white system:text-[#E1E4E1]">{log.userName}</span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11] text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
-                                            {log.condition}
+                                    <td className="px-3 py-3">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{log.userEmail}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{log.bottleType}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                                log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                                                    log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
+                                                        'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                            }`}>{log.condition}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                        <span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]' : 'text-red-500'}`}>
+                                            {log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="font-bold text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]">+{log.pointsAwarded}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
-                                            <Clock size={14} />
+                                    <td className="px-3 py-3">
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
+                                            <Clock size={12} />
                                             {log.timestamp}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-3 py-3">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold
-                                            ${['Accepted', 'Completed', 'Success', 'Resolved'].includes(log.status)
+                                            ${log.status === 'Accepted'
                                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 system:bg-[rgba(123,160,91,0.2)] system:text-[#7BA05B]'
                                                 : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>

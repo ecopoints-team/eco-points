@@ -2,10 +2,11 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { ADMIN_LOGS } from '../../../../src/data/mockData';
-import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download } from 'lucide-react';
+import { ADMIN_LOGS, ADMIN_USERS, getLocationName } from '../../../../src/data/mockData';
+import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 const allAdminLogs = ADMIN_LOGS;
+const activeAdmins = ADMIN_USERS.filter(a => a.accountHealth === 'Active').length;
 
 export default function AdminAccessLogsPage() {
     const { effectiveLocationId } = useAuth(); // Get filtering context
@@ -13,11 +14,36 @@ export default function AdminAccessLogsPage() {
     const [showFilter, setShowFilter] = useState(false);
     const [filterAdmin, setFilterAdmin] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
 
+    // Sortable column state
+    const [sortColumn, setSortColumn] = useState('timestampObj');
+    const [sortDirection, setSortDirection] = useState('desc');
+
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const SortIcon = ({ column }) => {
+        if (sortColumn !== column) return <ChevronsUpDown size={12} className="text-slate-400" />;
+        return sortDirection === 'asc'
+            ? <ChevronUp size={12} className="text-emerald-500" />
+            : <ChevronDown size={12} className="text-emerald-500" />;
+    };
+
+    // Column visibility
+    const [showLocation, setShowLocation] = useState(true);
+
     const admins = [...new Set(allAdminLogs.map(log => log.adminName))];
     const categories = [...new Set(allAdminLogs.map(log => log.category))];
+    const statuses = ['Completed', 'Failed'];
 
     const filteredLogs = useMemo(() => {
         return allAdminLogs.filter(log => {
@@ -39,21 +65,37 @@ export default function AdminAccessLogsPage() {
             // 3. Filter by Dropdowns
             const matchesAdmin = filterAdmin === '' || log.adminName === filterAdmin;
             const matchesCategory = filterCategory === '' || log.category === filterCategory;
+            const matchesStatus = filterStatus === '' || log.status === filterStatus;
 
-            return matchesSearch && matchesAdmin && matchesCategory;
+            return matchesSearch && matchesAdmin && matchesCategory && matchesStatus;
+        }).sort((a, b) => {
+            let aVal = a[sortColumn];
+            let bVal = b[sortColumn];
+            if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+            if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+            if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+            return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterAdmin, filterCategory, effectiveLocationId]);
+    }, [searchQuery, filterAdmin, filterCategory, filterStatus, effectiveLocationId, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const currentLogs = filteredLogs.slice(startIndex, startIndex + rowsPerPage);
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterAdmin || filterCategory;
+    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setFilterStatus(''); setSearchQuery(''); setSortColumn('timestampObj'); setSortDirection('desc'); setCurrentPage(1); };
+    const hasActiveFilters = filterAdmin || filterCategory || filterStatus;
 
     const getCategoryColor = (cat) => {
         const colors = { 'Users': 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', 'Rewards': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Machines': 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400', 'Settings': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300', 'Auth': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Permissions': 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400' };
         return colors[cat] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Completed': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
+            case 'Failed': return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
+            default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+        }
     };
 
     return (
@@ -73,7 +115,7 @@ export default function AdminAccessLogsPage() {
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl max-w-sm">
                     <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Shield size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Admins</p><p className="text-2xl font-black text-slate-800 dark:text-white">4</p></div>
+                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Admins</p><p className="text-2xl font-black text-slate-800 dark:text-white">{activeAdmins}</p></div>
                     </div>
                 </div>
             </div>
@@ -84,22 +126,71 @@ export default function AdminAccessLogsPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <div className="relative group flex-1 sm:w-64">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" placeholder="Search by Admin, Action, or Target..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
+                            <input type="text" placeholder="Search Admin, Action, Target..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 focus:border-purple-500" />
                         </div>
+                        <button onClick={() => window.location.reload()}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-purple-500/20 dark:hover:text-purple-400 transition-colors"
+                            title="Refresh">
+                            <RefreshCw size={16} />
+                        </button>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${showFilter || hasActiveFilters ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}><Filter size={16} /> Filter</button>
                     </div>
                 </div>
 
                 {showFilter && (
-                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-4 items-center">
-                        <select value={filterAdmin} onChange={(e) => handleFilterChange(setFilterAdmin, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
-                            <option value="">All Admins</option>{admins.map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                        <select value={filterCategory} onChange={(e) => handleFilterChange(setFilterCategory, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
-                            <option value="">All Categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        {hasActiveFilters && <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 font-medium flex items-center gap-1 hover:bg-red-50 transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        <div className="flex flex-wrap gap-3 items-center mb-3">
+                            <select value={filterAdmin} onChange={(e) => handleFilterChange(setFilterAdmin, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
+                                <option value="">All Admins</option>{admins.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                            <select value={filterCategory} onChange={(e) => handleFilterChange(setFilterCategory, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
+                                <option value="">All Categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)} className="pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none">
+                                <option value="">All Status</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {hasActiveFilters && <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 font-medium flex items-center gap-1 hover:bg-red-50 transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
+                        </div>
+
+                        {/* Column Visibility */}
+                        <div className="flex items-center gap-4 text-xs">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Show columns:</span>
+                            <button
+                                onClick={() => setShowLocation(!showLocation)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showLocation
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showLocation ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Location
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Top Pagination */}
+                {totalPages > 0 && (
+                    <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
+                        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                            <span>Showing <strong className="text-purple-600 dark:text-purple-400">{startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredLogs.length)}</strong> of {filteredLogs.length}</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-1">
+                            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronLeft size={12} />
+                            </button>
+                            <span className="px-2 py-1 text-slate-600 dark:text-slate-300">Page {currentPage} of {totalPages}</span>
+                            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronRight size={12} />
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -107,36 +198,47 @@ export default function AdminAccessLogsPage() {
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-4 py-3">Date/Time</th>
-                                <th className="px-4 py-3">Admin Name</th>
-                                <th className="px-4 py-3">Role</th>
-                                <th className="px-4 py-3">Action</th>
-                                <th className="px-4 py-3">Target</th>
+                                <th className="px-3 py-3">User ID</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('adminName')}>
+                                    <div className="flex items-center gap-1">Username <SortIcon column="adminName" /></div>
+                                </th>
+                                <th className="px-3 py-3">Duty</th>
+                                <th className="px-3 py-3">Action</th>
+                                <th className="px-3 py-3">Target</th>
+                                {showLocation && <th className="px-3 py-3">Location</th>}
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('timestampObj')}>
+                                    <div className="flex items-center gap-1">Date/Time <SortIcon column="timestampObj" /></div>
+                                </th>
+                                <th className="px-3 py-3">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
-                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-purple-900/10 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                            <Clock size={14} />{log.timestamp}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
-                                                <User size={14} className="text-purple-600 dark:text-purple-400" />
-                                            </div>
-                                            <p className="font-medium text-slate-800 dark:text-white text-sm">{log.adminName}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                <tr
+                                    key={log.id}
+                                    className={`transition-colors ${log.status === 'Failed'
+                                        ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                                        : 'hover:bg-slate-50 dark:hover:bg-purple-900/10'
+                                        }`}
+                                >
+                                    <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.adminId}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.adminName}</span></td>
+                                    <td className="px-3 py-3">
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
                                             {log.adminRole}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</td>
-                                    <td className="px-4 py-3"><span className="font-mono text-sm text-slate-500 dark:text-slate-400">{log.target}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</span></td>
+                                    <td className="px-3 py-3"><span className="font-mono text-xs text-slate-500 dark:text-slate-400">{log.target}</span></td>
+                                    {showLocation && (
+                                        <td className="px-3 py-3">
+                                            <span className="text-xs text-slate-600 dark:text-slate-400">
+                                                {log.locationName || getLocationName(log.locationId) || '-'}
+                                            </span>
+                                        </td>
+                                    )}
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
                                 </tr>
                             ))}
                         </tbody>

@@ -452,7 +452,7 @@ export default function MachinesPage() {
                             <Wrench size={24} className="text-red-600 dark:text-red-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Maintenance</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400"> Under Maintenance</p>
                             <p className="text-2xl font-black text-red-600 dark:text-red-400">{maintenanceCount}</p>
                         </div>
                     </div>

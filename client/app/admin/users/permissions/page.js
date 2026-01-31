@@ -4,7 +4,7 @@ import AdminLayout from '../../../../src/Components/AdminLayout';
 import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
-import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown, Wrench } from 'lucide-react';
+import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 // ============================================================================
 // USING ADMIN_USERS FROM MOCKDATA - Connected to School A & B accounts
@@ -224,27 +224,19 @@ const UserAccountRow = ({ user, onRoleChange }) => {
 
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
-                        {user.avatar}
-                    </div>
-                    <div>
-                        <p className="font-semibold text-slate-800 dark:text-white text-sm">{user.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{user.id}</p>
-                    </div>
-                </div>
+            <td className="px-3 py-3">
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.id}</span>
             </td>
-            <td className="px-6 py-4">
-                <span className="text-sm text-slate-600 dark:text-slate-300">{user.email}</span>
+            <td className="px-3 py-3">
+                <span className="text-sm font-medium text-slate-800 dark:text-white">{user.name}</span>
             </td>
-            <td className="px-6 py-4">
-                <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 font-medium">
-                    <Building2 size={12} />
-                    {getLocationName(user.locationId)}
-                </span>
+            <td className="px-3 py-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
             </td>
-            <td className="px-6 py-4">
+            <td className="px-3 py-3">
+                <span className="text-xs text-slate-600 dark:text-slate-300">{getLocationName(user.locationId)}</span>
+            </td>
+            <td className="px-3 py-3">
                 {isChangingRole ? (
                     <select
                         value={user.role}
@@ -262,7 +254,7 @@ const UserAccountRow = ({ user, onRoleChange }) => {
                 ) : (
                     <button
                         onClick={() => canEditUsers && setIsChangingRole(true)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${roleColors[user.role]} 
+                        className={`px-2 py-0.5 rounded-full text-xs font-bold ${roleColors[user.role]} 
                             ${canEditUsers ? 'hover:ring-2 hover:ring-offset-1 hover:ring-emerald-500 cursor-pointer' : 'cursor-default opacity-80'} 
                             transition-all`}
                         title={canEditUsers ? "Click to change role" : "You don't have permission to change roles"}
@@ -272,17 +264,43 @@ const UserAccountRow = ({ user, onRoleChange }) => {
                     </button>
                 )}
             </td>
-            <td className="px-6 py-4">
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+            <td className="px-3 py-3">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.status === 'Online'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                    }`}>
                     {user.status}
                 </span>
             </td>
-            <td className="px-6 py-4">
-                <span className="text-sm text-slate-500 dark:text-slate-400">{user.lastLogin}</span>
+            <td className="px-3 py-3">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.accountHealth === 'Active'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                    }`}>
+                    {user.accountHealth}
+                </span>
+            </td>
+            <td className="px-3 py-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400">{user.lastLogin}</span>
+            </td>
+            <td className="px-3 py-3">
+                <div className="flex justify-end gap-1">
+                    <button onClick={() => onEdit && onEdit(user)} className="p-1.5 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all" title="Edit Permissions">
+                        <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => onDelete && onDelete(user)} className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all" title="Delete Admin">
+                        <Trash2 size={14} />
+                    </button>
+                </div>
             </td>
         </tr>
     );
 };
+
+// Helper function for handling edit/delete in table
+const UserAccountRowWithActions = ({ user, onEdit, onDelete }) => (
+    <UserAccountRow user={user} onEdit={onEdit} onDelete={onDelete} />
+);
 
 // ============================================================================
 
@@ -293,27 +311,120 @@ export default function PermissionsPage() {
     // Use ADMIN_USERS from mockData (filter out super_admin for local admins only)
     const [allUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
 
-    // Filter users based on viewAsLocationId
-    const users = useMemo(() => {
-        if (!viewAsLocationId && isSuperAdmin) return allUsers;
-        const targetLocationId = viewAsLocationId || currentUser?.locationId;
-        return allUsers.filter(u => u.locationId === targetLocationId);
-    }, [allUsers, viewAsLocationId, isSuperAdmin, currentUser]);
+    // Search, Filter, Pagination state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterLocation, setFilterLocation] = useState('');
+    const [filterRole, setFilterRole] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [sortColumn, setSortColumn] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
 
-    // Mutable users state for UI updates
-    const [displayUsers, setDisplayUsers] = useState(users);
+    // Edit and Delete modal states
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [adminUsers, setAdminUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
 
-    useEffect(() => {
-        setDisplayUsers(users);
-    }, [users]);
+    // Handle Edit
+    const handleEdit = (user) => {
+        setSelectedUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    // Handle Delete
+    const handleDeleteClick = (user) => {
+        setSelectedUser(user);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (selectedUser) {
+            setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+            setIsDeleteModalOpen(false);
+            setSelectedUser(null);
+        }
+    };
+
+    // Filter users based on viewAsLocationId, then apply search/filters
+    const filteredUsers = useMemo(() => {
+        let result = adminUsers;
+
+        // Location scope filter
+        if (viewAsLocationId) {
+            result = result.filter(u => u.locationId === viewAsLocationId);
+        } else if (!isSuperAdmin && currentUser?.locationId) {
+            result = result.filter(u => u.locationId === currentUser.locationId);
+        }
+
+        // Search filter
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(u =>
+                u.id.toLowerCase().includes(q) ||
+                u.name.toLowerCase().includes(q) ||
+                u.email.toLowerCase().includes(q)
+            );
+        }
+
+        // Dropdown filters
+        if (filterLocation) result = result.filter(u => u.locationId === filterLocation);
+        if (filterRole) result = result.filter(u => u.role === filterRole);
+        if (filterStatus) result = result.filter(u => u.status === filterStatus);
+
+        // Sorting
+        if (sortColumn) {
+            result = [...result].sort((a, b) => {
+                let aVal = a[sortColumn];
+                let bVal = b[sortColumn];
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+                return aVal < bVal ? 1 : -1;
+            });
+        }
+
+        return result;
+    }, [allUsers, viewAsLocationId, isSuperAdmin, currentUser, searchQuery, filterLocation, filterRole, filterStatus, sortColumn, sortDirection]);
+
+    // Pagination
+    const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const currentUsers = filteredUsers.slice(startIndex, startIndex + rowsPerPage);
+
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const SortIcon = ({ column }) => {
+        if (sortColumn !== column) return <ChevronsUpDown size={12} className="text-slate-400" />;
+        return sortDirection === 'asc'
+            ? <ChevronUp size={12} className="text-emerald-500" />
+            : <ChevronDown size={12} className="text-emerald-500" />;
+    };
+
+    const clearFilters = () => {
+        setSearchQuery('');
+        setFilterLocation('');
+        setFilterRole('');
+        setFilterStatus('');
+        setSortColumn('');
+        setCurrentPage(1);
+    };
+    const hasActiveFilters = filterLocation || filterRole || filterStatus;
 
     const [selectedRole, setSelectedRole] = useState(roles[0]);
 
     // Handle role change for a user
     const handleRoleChange = async (userId, newRole) => {
-        setDisplayUsers(prev => prev.map(user =>
-            user.id === userId ? { ...user, role: newRole } : user
-        ));
+        // This would update in a real app
     };
 
     const getColorClasses = (color) => ({
@@ -359,7 +470,7 @@ export default function PermissionsPage() {
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Admin Users</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{users.length}</p>
+                            <p className="text-2xl font-black text-slate-800 dark:text-white">{allUsers.length}</p>
                         </div>
                     </div>
                 </div>
@@ -394,7 +505,7 @@ export default function PermissionsPage() {
                                     role={role}
                                     isSelected={selectedRole.id === role.id}
                                     onClick={() => setSelectedRole(role)}
-                                    users={users}
+                                    users={filteredUsers}
                                 />
                             ))}
                         </div>
@@ -484,38 +595,134 @@ export default function PermissionsPage() {
 
             {/* Admin Users Table */}
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
-                <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                {/* Header with Search & Filters */}
+                <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
                         <span className="w-1.5 h-6 bg-emerald-500 rounded-full dark:shadow-[0_0_10px_#10b981]"></span>
                         Admin User Accounts
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Test accounts for each role - use these credentials to verify RBAC functionality
-                    </p>
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <div className="relative group flex-1 sm:w-64">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500" />
+                            <input type="text" placeholder="Search ID, Name, Email..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
+                        </div>
+                        <button onClick={() => window.location.reload()}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
+                            title="Refresh">
+                            <RefreshCw size={16} />
+                        </button>
+                        <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilter || hasActiveFilters ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
+                            <Filter size={16} /> Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+                        </button>
+                    </div>
                 </div>
+
+                {/* Filter Panel */}
+                {showFilter && (
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-3 items-center">
+                        <div className="relative">
+                            <select value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value="">All Locations</option>
+                                {LOCATIONS.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                            <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value="">All Roles</option>
+                                <option value="head_admin">Head Admin</option>
+                                <option value="auditor">Auditor</option>
+                                <option value="inventory_officer">Inventory Officer</option>
+                                <option value="technician">Technician</option>
+                            </select>
+                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                            <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value="">All Status</option>
+                                <option value="Online">Online</option>
+                                <option value="Offline">Offline</option>
+                            </select>
+                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
+                    </div>
+                )}
+
+                {/* Top Pagination */}
+                {totalPages > 0 && (
+                    <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
+                        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-1">
+                            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronLeft size={12} />
+                            </button>
+                            <span className="px-2 py-1 text-slate-600 dark:text-slate-300">Page {currentPage} of {totalPages}</span>
+                            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronRight size={12} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Location</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Last Login</th>
+                                <th className="px-3 py-3">User ID</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('name')}>
+                                    <div className="flex items-center gap-1">Username <SortIcon column="name" /></div>
+                                </th>
+                                <th className="px-3 py-3">Email</th>
+                                <th className="px-3 py-3">Location</th>
+                                <th className="px-3 py-3">Duty</th>
+                                <th className="px-3 py-3">Status</th>
+                                <th className="px-3 py-3">Acct Health</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('lastLogin')}>
+                                    <div className="flex items-center gap-1">Last Login <SortIcon column="lastLogin" /></div>
+                                </th>
+                                <th className="px-3 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {displayUsers.map(user => (
+                            {currentUsers.map(user => (
                                 <UserAccountRow
                                     key={user.id}
                                     user={user}
                                     onRoleChange={handleRoleChange}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDeleteClick}
                                 />
                             ))}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Bottom Pagination */}
+                {totalPages > 0 && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-3">
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-1">
+                            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"><ChevronLeft size={14} /></button>
+                            <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"><ChevronRight size={14} /></button>
+                        </div>
+                    </div>
+                )}
             </div>
 
 
@@ -531,6 +738,54 @@ export default function PermissionsPage() {
                     // We'll just close for now.
                 }}
             />
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && selectedUser && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 rounded-full bg-red-100 dark:bg-red-500/20">
+                                <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Delete Admin</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">This action cannot be undone</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                                Are you sure you want to delete this admin?
+                            </p>
+                            <div className="flex items-center gap-3 mt-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                                    {selectedUser.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-slate-800 dark:text-white">{selectedUser.name}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{selectedUser.email}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setIsDeleteModalOpen(false); setSelectedUser(null); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={16} />
+                                Delete Admin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

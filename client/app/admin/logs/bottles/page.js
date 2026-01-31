@@ -3,10 +3,19 @@ import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { BOTTLE_LOGS } from '../../../../src/data/mockData';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 const allBottleLogs = BOTTLE_LOGS;
-const stats = { todayTransactions: 0, todayBottles: 0, todayPoints: 0 };
+
+// Calculate real stats
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const todayLogs = allBottleLogs.filter(log => log.timestampObj >= today);
+const stats = {
+    todayTransactions: todayLogs.length,
+    acceptedBottles: allBottleLogs.filter(log => log.status === 'Accepted').length,
+    rejectedBottles: allBottleLogs.filter(log => log.status === 'Rejected').length
+};
 
 export default function BottleLogsPage() {
     const { user, isSuperAdmin, viewAsLocationId } = useAuth();
@@ -17,9 +26,28 @@ export default function BottleLogsPage() {
     const [filterCondition, setFilterCondition] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
-    const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
+
+    // Sortable column state
+    const [sortColumn, setSortColumn] = useState('timestampObj');
+    const [sortDirection, setSortDirection] = useState('desc');
+
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const SortIcon = ({ column }) => {
+        if (sortColumn !== column) return <ChevronsUpDown size={12} className="text-slate-400" />;
+        return sortDirection === 'asc'
+            ? <ChevronUp size={12} className="text-emerald-500" />
+            : <ChevronDown size={12} className="text-emerald-500" />;
+    };
 
     const machines = [...new Set(allBottleLogs.map(log => log.machineName))];
     const bottleTypes = [...new Set(allBottleLogs.map(log => log.bottleType))];
@@ -44,24 +72,30 @@ export default function BottleLogsPage() {
                 (filterStatus === '' || log.status === filterStatus) &&
                 (filterLocation === '' || log.locationId === filterLocation);
         }).sort((a, b) => {
-            switch (sortOrder) {
-                case 'Alphabetical': return a.userName.localeCompare(b.userName);
-                case 'Points (High-Low)': return b.pointsAwarded - a.pointsAwarded;
-                case 'Points (Low-High)': return a.pointsAwarded - b.pointsAwarded;
-                case 'Newest': default: return b.timestampObj - a.timestampObj;
-            }
+            let aVal = a[sortColumn];
+            let bVal = b[sortColumn];
+            if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+            if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+            if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+            return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortOrder]);
+    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, user, isSuperAdmin]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const currentLogs = filteredLogs.slice(startIndex, startIndex + rowsPerPage);
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterCondition(''); setFilterStatus(''); setFilterLocation(''); setSortOrder('Newest'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation || sortOrder !== 'Newest';
+    const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterCondition(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation;
 
-    const getStatusColor = (s) => ({ 'Completed': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Failed': 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' }[s] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400');
+    const getStatusColor = (s) => {
+        switch (s) {
+            case 'Accepted': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
+            case 'Rejected': return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
+            default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+        }
+    };
 
     const getPageNumbers = () => {
         const pages = [];
@@ -87,13 +121,13 @@ export default function BottleLogsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Recycle size={24} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Today's Transactions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.todayTransactions}</p></div></div>
+                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Recycle size={24} className="text-blue-600 dark:text-blue-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Total Transactions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{allBottleLogs.length}</p></div></div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Recycle size={24} className="text-blue-600 dark:text-blue-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Bottles Recycled Today</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.todayBottles}</p></div></div>
+                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Recycle size={24} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Accepted Bottles</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.acceptedBottles}</p></div></div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20"><Recycle size={24} className="text-purple-600 dark:text-purple-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Points Awarded Today</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.todayPoints}</p></div></div>
+                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20"><Recycle size={24} className="text-red-600 dark:text-red-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Rejected Bottles</p><p className="text-2xl font-black text-red-600 dark:text-red-400">{stats.rejectedBottles}</p></div></div>
                 </div>
             </div>
 
@@ -103,9 +137,14 @@ export default function BottleLogsPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <div className="relative group flex-1 sm:w-64">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500" />
-                            <input type="text" placeholder="Search by User ID, Name, Machine, or Location..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
+                            <input type="text" placeholder="Search ID, Name, Location..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
+                        <button onClick={() => window.location.reload()}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
+                            title="Refresh">
+                            <RefreshCw size={16} />
+                        </button>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilter || hasActiveFilters ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
                             <Filter size={16} /> Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
                         </button>
@@ -123,41 +162,80 @@ export default function BottleLogsPage() {
                             {isSuperAdmin && !viewAsLocationId && (
                                 <div className="relative"><select value={filterLocation} onChange={(e) => handleFilterChange(setFilterLocation, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Locations</option><option value="LOC-001">School A</option><option value="LOC-002">School B</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                             )}
-
-                            <div className="relative"><select value={sortOrder} onChange={(e) => handleFilterChange(setSortOrder, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="Newest">Newest First</option><option value="Alphabetical">Alphabetical (User)</option><option value="Points (High-Low)">Points (High-Low)</option><option value="Points (Low-High)">Points (Low-High)</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                         </div>
                         {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"><X size={14} /> Clear Filters</button>}
+                    </div>
+                )}
+
+                {/* Top Pagination */}
+                {totalPages > 0 && (
+                    <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
+                        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredLogs.length)}</strong> of {filteredLogs.length}</span>
+                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-1">
+                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronLeft size={12} />
+                            </button>
+                            <span className="px-2 py-1 text-slate-600 dark:text-slate-300">Page {currentPage} of {totalPages}</span>
+                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}
+                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                <ChevronRight size={12} />
+                            </button>
+                        </div>
                     </div>
                 )}
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
-                            <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Machine/Location</th><th className="px-4 py-3">Bottle Type</th><th className="px-4 py-3">Condition</th><th className="px-4 py-3">Points</th><th className="px-4 py-3">Timestamp</th><th className="px-4 py-3">Status</th></tr>
+                            <tr>
+                                <th className="px-3 py-3">User ID</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('userName')}>
+                                    <div className="flex items-center gap-1">Username <SortIcon column="userName" /></div>
+                                </th>
+                                <th className="px-3 py-3">Email</th>
+                                <th className="px-3 py-3">Location</th>
+                                <th className="px-3 py-3">Bottle Type</th>
+                                <th className="px-3 py-3">Condition</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsAwarded" /></div>
+                                </th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('timestampObj')}>
+                                    <div className="flex items-center gap-1">Timestamp <SortIcon column="timestampObj" /></div>
+                                </th>
+                                <th className="px-3 py-3">Status</th>
+                            </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
-                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                    <td className="px-4 py-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center"><User size={14} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="font-medium text-slate-800 dark:text-white text-sm">{log.userName}</p><p className="text-xs text-slate-500 dark:text-slate-400">{log.userId}</p></div></div></td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><MapPin size={14} className="text-slate-400" />{log.machineName}</div>
-                                            {isSuperAdmin && !viewAsLocationId && <span className="text-[10px] text-slate-400 ml-5">{log.locationId === 'LOC-001' ? 'School A' : 'School B'}</span>}
-                                        </div>
+                                <tr
+                                    key={log.id}
+                                    className={`transition-colors ${log.status === 'Rejected'
+                                        ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                                        : 'hover:bg-slate-50 dark:hover:bg-emerald-900/10'
+                                        }`}
+                                >
+                                    <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.userId}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.userName}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.userEmail || '-'}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
+                                    <td className="px-3 py-3">
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                            log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
+                                                    'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                            }`}>{log.condition}</span>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
-                                            {log.bottleType.split(' ').map((part, i) => (
-                                                <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
-                                                    {part}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3"><span className="text-sm text-slate-600 dark:text-slate-300">{log.condition}</span></td>
-                                    <td className="px-4 py-3"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{log.pointsAwarded} pts</span></td>
-                                    <td className="px-4 py-3"><div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><Clock size={14} className="text-slate-400" />{log.timestamp}</div></td>
-                                    <td className="px-4 py-3"><span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
+                                    <td className="px-3 py-3"><span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
                                 </tr>
                             ))}
                         </tbody>
