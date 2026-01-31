@@ -175,6 +175,23 @@
     color: #102027;
   }
 
+  /* NAVIGATION BAR */
+
+  .nav {
+    background-color: #10172748;
+    position: fixed;
+    top: 0;
+    height: 90px;
+    width: 100%;
+    z-index: 1;
+    transition: 0.5s ease-in;
+    overflow: hidden;
+  }
+
+  .nav-bg {
+    background-color: #10172786;
+  }
+
   /* Fonts */
   .font-header {
     font-family: "Montserrat";
@@ -253,12 +270,12 @@
    ============================================================================ */
 
 html.system {
-  background-color: #0F1B11;
-  color: #E1E4E1;
+  background-color: #0f1b11;
+  color: #e1e4e1;
 }
 
 html.system body {
-  background-color: #0F1B11;
+  background-color: #0f1b11;
 }
 
 /* System theme scrollbar */
@@ -271,6 +288,6 @@ html.system ::-webkit-scrollbar-thumb {
 }
 
 html.system ::-webkit-scrollbar-thumb:hover {
-  background: #7BA05B;
+  background: #7ba05b;
   box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
 }

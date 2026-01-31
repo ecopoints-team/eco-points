@@ -32,7 +32,7 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67e22, transparent 50%)`,
+          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67d22b7, transparent 50%)`,
         }}
       />
       {/* Pulse Background */}
@@ -64,7 +64,7 @@ export default function Hero() {
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-regular lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed ">
+            <p className="text-shadow-lg text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed ">
               Bridging the gap between technology and environmental
               sustainability through an automated reward system.
             </p>
@@ -111,12 +111,12 @@ export default function Hero() {
         </div>
         <div className="max-w-7xl px-3 sm:px-4 lg:py-20 sm:py-20 text-center relative w-full">
           <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
               WELCOME TO THE OFFICIAL PLATFORM
             </span>
           </h2>
           <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
               FOR ECOPOINTS
             </span>
           </h2>
@@ -125,18 +125,18 @@ export default function Hero() {
               C O N C E P T
             </span>
           </h2>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             EcoPoints is an Automated Reverse Vending Machine (RVM) prototype
             designed to address the critical issue of plastic waste management.
           </p>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             By utilizing QR-based user authentication and embedded sensor
             technology, our machine verifies and compacts PET bottles,
             converting waste into digital currency. This website serves as the
             user portal where you can register, track your recycling history,
             and monitor your EcoPoints balance.
           </p>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-regular text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             This website serves as the user portal where you can register, track
             your recycling history, and monitor your EcoPoints balance.
           </p>
