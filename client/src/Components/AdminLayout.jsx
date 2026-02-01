@@ -147,6 +147,8 @@ export default function AdminLayout({ children }) {
     purple: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
     blue: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
     emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+    orange: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
   };
 
   // Determine theme class for root
@@ -204,7 +206,7 @@ export default function AdminLayout({ children }) {
 
       {/* MAIN CONTENT */}
       <div className={`
-        flex-1 flex flex-col transition-all duration-500 relative w-full
+        flex-1 flex flex-col transition-all duration-500 relative min-w-0
         ${!isMobile && sidebarOpen ? 'ml-64' : (!isMobile && !sidebarOpen ? 'ml-20' : 'ml-0')}
       `}>
 
@@ -440,7 +442,7 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-emerald-600/30 scrollbar-track-transparent">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-8 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-emerald-600/30 scrollbar-track-transparent">
           {children}
         </main>
       </div>
