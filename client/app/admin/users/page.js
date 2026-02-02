@@ -32,11 +32,37 @@ export default function ManageUsersPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        name: '', email: '', role: '', status: '', accountHealth: '', departmentId: '', strand: ''
+    });
 
     // Handle Edit
     const handleEdit = (user) => {
         setSelectedUser(user);
+        setEditFormData({
+            name: user.name || '',
+            email: user.email || '',
+            role: user.role || '',
+            status: user.status || '',
+            accountHealth: user.accountHealth || '',
+            departmentId: user.departmentId || '',
+            strand: user.strand || ''
+        });
         setIsEditModalOpen(true);
+    };
+
+    const handleEditChange = (field, value) => {
+        setEditFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const saveEdit = () => {
+        if (selectedUser) {
+            setUsers(prev => prev.map(u =>
+                u.id === selectedUser.id ? { ...u, ...editFormData } : u
+            ));
+            setIsEditModalOpen(false);
+            setSelectedUser(null);
+        }
     };
 
     // Handle Delete
@@ -119,6 +145,16 @@ export default function ManageUsersPage() {
     const endIndex = startIndex + rowsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
+    // Pagination page numbers with ellipsis
+    const getPageNumbers = () => {
+        const pages = [];
+        if (totalPages <= 5) { for (let i = 1; i <= totalPages; i++) pages.push(i); }
+        else if (currentPage <= 3) { for (let i = 1; i <= 4; i++) pages.push(i); pages.push('...', totalPages); }
+        else if (currentPage >= totalPages - 2) { pages.push(1, '...'); for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i); }
+        else { pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages); }
+        return pages;
+    };
+
     // Stats
     const stats = {
         totalUsers: users.length,
@@ -129,7 +165,7 @@ export default function ManageUsersPage() {
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
     const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setFilterAccountHealth(''); setFilterSchool(''); setSortColumn(''); setSortDirection('asc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterRole || filterStatus || filterAccountHealth || filterSchool;
+    const hasActiveFilters = filterRole || filterStatus || filterAccountHealth || filterSchool || sortColumn;
 
     // Get location name
     const getLocationName = (locationId) => {
@@ -237,7 +273,7 @@ export default function ManageUsersPage() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
+            <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
                         <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
@@ -372,7 +408,7 @@ export default function ManageUsersPage() {
                 )}
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-max text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
                                 <th className="px-3 py-3 whitespace-nowrap">User ID</th>
@@ -389,7 +425,9 @@ export default function ManageUsersPage() {
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('points')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="points" /></div>
                                 </th>
-                                <th className="px-3 py-3 whitespace-nowrap">Joined</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('joinDateObj')}>
+                                    <div className="flex items-center gap-1">Joined <SortIcon column="joinDateObj" /></div>
+                                </th>
                                 {(canEdit || canDelete) && <th className="px-3 py-3 text-right whitespace-nowrap">Actions</th>}
                             </tr>
                         </thead>
@@ -461,25 +499,28 @@ export default function ManageUsersPage() {
                 {totalPages > 0 && (
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-4">
-                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length} users</span>
-                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
-                            </select>
+                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{filteredUsers.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length} users</span>
+                            <div className="flex items-center gap-2">
+                                <span>Rows:</span>
+                                <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                    className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
+                                    <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
+                                </select>
+                            </div>
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
-                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
                                 <ChevronLeft size={14} />
                             </button>
-                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(page => (
-                                <button key={page} onClick={() => setCurrentPage(page)}
-                                    className={`px-3 py-1.5 rounded-lg font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
+                            {getPageNumbers().map((page, idx) => (
+                                <button key={idx} onClick={() => typeof page === 'number' && setCurrentPage(page)} disabled={page === '...'}
+                                    className={`px-3 py-1.5 rounded-lg transition-all font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : page === '...' ? 'cursor-default text-slate-400 dark:text-slate-500' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
                                     {page}
                                 </button>
                             ))}
                             <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
-                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
                                 <ChevronRight size={14} />
                             </button>
                         </div>
@@ -495,6 +536,133 @@ export default function ManageUsersPage() {
                     setUsers(prev => [newUser, ...prev]);
                 }}
             />
+
+            {/* Edit User Modal */}
+            {isEditModalOpen && selectedUser && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg">
+                                {selectedUser.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Edit User</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">ID: {selectedUser.id}</p>
+                            </div>
+                            <button onClick={() => { setIsEditModalOpen(false); setSelectedUser(null); }} className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                <X size={18} className="text-slate-400" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Full Name <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.name}
+                                        onChange={(e) => handleEditChange('name', e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="email"
+                                        value={editFormData.email}
+                                        onChange={(e) => handleEditChange('email', e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Role <span className="text-red-500">*</span></label>
+                                    <select
+                                        value={editFormData.role}
+                                        onChange={(e) => handleEditChange('role', e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
+                                    >
+                                        <option value="Student">Student</option>
+                                        <option value="Faculty">Faculty</option>
+                                        <option value="Staff">Staff</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status <span className="text-red-500">*</span></label>
+                                    <select
+                                        value={editFormData.status}
+                                        onChange={(e) => handleEditChange('status', e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
+                                    >
+                                        <option value="Online">Online</option>
+                                        <option value="Offline">Offline</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Health <span className="text-red-500">*</span></label>
+                                    <select
+                                        value={editFormData.accountHealth}
+                                        onChange={(e) => handleEditChange('accountHealth', e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Strand <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        list="strand-options"
+                                        value={editFormData.strand}
+                                        onChange={(e) => handleEditChange('strand', e.target.value)}
+                                        placeholder="Search or select strand..."
+                                        required
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
+                                    />
+                                    <datalist id="strand-options">
+                                        <option value="STEM" />
+                                        <option value="ABM" />
+                                        <option value="HUMSS" />
+                                        <option value="GAS" />
+                                        <option value="TVL-HE" />
+                                        <option value="TVL-ICT" />
+                                        <option value="Arts & Design" />
+                                        <option value="Sports Track" />
+                                        <option value="N/A" />
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <button
+                                onClick={() => { setIsEditModalOpen(false); setSelectedUser(null); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveEdit}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Edit2 size={16} />
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {isDeleteModalOpen && selectedUser && (

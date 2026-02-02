@@ -125,7 +125,7 @@ export const ROLES = {
     head_admin: { name: 'Head Admin', description: 'Full access within assigned location', color: 'purple', scope: 'location' },
     auditor: { name: 'Auditor', description: 'View and export data within assigned location', color: 'blue', scope: 'location' },
     inventory_officer: { name: 'Inventory Officer', description: 'Manage rewards within assigned location', color: 'emerald', scope: 'location' },
-    technician: { name: 'Technician', description: 'Manage machines and maintenance', color: 'amber', scope: 'location' }
+    technician: { name: 'Technician', description: 'Manage machines and maintenance', color: 'orange', scope: 'location' }
 };
 
 // ============================================================================
@@ -143,7 +143,7 @@ export const ADMIN_USERS = [
         avatar: 'SA',
         status: 'Online',
         accountHealth: 'Active',
-        lastLogin: new Date().toISOString(),
+        lastLogin: '2024-06-15T08:30:00.000Z',
         permissions: { dashboard: { view: true, edit: true }, users: { view: true, edit: true, delete: true, create: true }, machines: { view: true, edit: true, delete: true, create: true }, rewards: { view: true, edit: true, delete: true, create: true }, logs: { view: true, export: true, delete: false }, settings: { view: true, edit: true } }
     },
     {
@@ -156,30 +156,30 @@ export const ADMIN_USERS = [
         avatar: 'CT',
         status: 'Offline',
         accountHealth: 'Active',
-        lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        lastLogin: '2024-06-13T14:20:00.000Z',
         permissions: { dashboard: { view: true, edit: true }, users: { view: true, edit: true, delete: true, create: true }, machines: { view: true, edit: true, delete: true, create: true }, rewards: { view: true, edit: true, delete: true, create: true }, logs: { view: true, export: true, delete: false }, settings: { view: true, edit: true } }
     },
 
     // HEAD ADMINS (3)
-    { id: 'ADM-AU-01', name: 'Maria Santos', email: 'head@arellano.edu.ph', role: 'head_admin', duty: 'Campus Administration', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: new Date().toISOString(), permissions: ROLES.head_admin },
-    { id: 'ADM-AU-02', name: 'Roberto Garcia', email: 'rgarcia@arellano.edu.ph', role: 'head_admin', duty: 'Operations Management', locationId: 'LOC-001', avatar: 'RG', status: 'Online', accountHealth: 'Active', lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.head_admin },
-    { id: 'ADM-AU-03', name: 'Elena Cruz', email: 'ecruz@arellano.edu.ph', role: 'head_admin', duty: 'Student Affairs', locationId: 'LOC-001', avatar: 'EC', status: 'Offline', accountHealth: 'Active', lastLogin: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.head_admin },
+    { id: 'ADM-AU-01', name: 'Maria Santos', email: 'head@arellano.edu.ph', role: 'head_admin', duty: 'Campus Administration', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T09:15:00.000Z', permissions: ROLES.head_admin },
+    { id: 'ADM-AU-02', name: 'Roberto Garcia', email: 'rgarcia@arellano.edu.ph', role: 'head_admin', duty: 'Operations Management', locationId: 'LOC-001', avatar: 'RG', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T11:45:00.000Z', permissions: ROLES.head_admin },
+    { id: 'ADM-AU-03', name: 'Elena Cruz', email: 'ecruz@arellano.edu.ph', role: 'head_admin', duty: 'Student Affairs', locationId: 'LOC-001', avatar: 'EC', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-12T16:30:00.000Z', permissions: ROLES.head_admin },
 
     // AUDITORS (3)
-    { id: 'ADM-AU-04', name: 'Juan Dela Cruz', email: 'auditor@arellano.edu.ph', role: 'auditor', duty: 'Financial Audit', locationId: 'LOC-001', avatar: 'JD', status: 'Online', accountHealth: 'Active', lastLogin: new Date().toISOString(), permissions: ROLES.auditor },
-    { id: 'ADM-AU-05', name: 'Angela Reyes', email: 'areyes@arellano.edu.ph', role: 'auditor', duty: 'Compliance Audit', locationId: 'LOC-001', avatar: 'AR', status: 'Offline', accountHealth: 'Active', lastLogin: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.auditor },
-    { id: 'ADM-AU-06', name: 'Mark Gonzales', email: 'mgonzales@arellano.edu.ph', role: 'auditor', duty: 'Operations Audit', locationId: 'LOC-001', avatar: 'MG', status: 'Offline', accountHealth: 'Inactive', lastLogin: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.auditor },
+    { id: 'ADM-AU-04', name: 'Juan Dela Cruz', email: 'auditor@arellano.edu.ph', role: 'auditor', duty: 'Financial Audit', locationId: 'LOC-001', avatar: 'JD', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T10:00:00.000Z', permissions: ROLES.auditor },
+    { id: 'ADM-AU-05', name: 'Angela Reyes', email: 'areyes@arellano.edu.ph', role: 'auditor', duty: 'Compliance Audit', locationId: 'LOC-001', avatar: 'AR', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-10T13:20:00.000Z', permissions: ROLES.auditor },
+    { id: 'ADM-AU-06', name: 'Mark Gonzales', email: 'mgonzales@arellano.edu.ph', role: 'auditor', duty: 'Operations Audit', locationId: 'LOC-001', avatar: 'MG', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-11T09:45:00.000Z', permissions: ROLES.auditor },
 
     // INVENTORY OFFICERS (3)
-    { id: 'ADM-AU-07', name: 'Ana Lim', email: 'inventory@arellano.edu.ph', role: 'inventory_officer', duty: 'Rewards Management', locationId: 'LOC-001', avatar: 'AL', status: 'Online', accountHealth: 'Active', lastLogin: new Date().toISOString(), permissions: ROLES.inventory_officer },
-    { id: 'ADM-AU-08', name: 'Patricia Tan', email: 'ptan@arellano.edu.ph', role: 'inventory_officer', duty: 'Stock Control', locationId: 'LOC-001', avatar: 'PT', status: 'Offline', accountHealth: 'Active', lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.inventory_officer },
-    { id: 'ADM-AU-09', name: 'Jose Mendoza', email: 'jmendoza@arellano.edu.ph', role: 'inventory_officer', duty: 'Procurement', locationId: 'LOC-001', avatar: 'JM', status: 'Offline', accountHealth: 'Active', lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.inventory_officer },
+    { id: 'ADM-AU-07', name: 'Ana Lim', email: 'inventory@arellano.edu.ph', role: 'inventory_officer', duty: 'Rewards Management', locationId: 'LOC-001', avatar: 'AL', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T08:15:00.000Z', permissions: ROLES.inventory_officer },
+    { id: 'ADM-AU-08', name: 'Patricia Tan', email: 'ptan@arellano.edu.ph', role: 'inventory_officer', duty: 'Stock Control', locationId: 'LOC-001', avatar: 'PT', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-13T15:10:00.000Z', permissions: ROLES.inventory_officer },
+    { id: 'ADM-AU-09', name: 'Jose Mendoza', email: 'jmendoza@arellano.edu.ph', role: 'inventory_officer', duty: 'Procurement', locationId: 'LOC-001', avatar: 'JM', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-08T10:30:00.000Z', permissions: ROLES.inventory_officer },
 
     // TECHNICIANS (4)
-    { id: 'ADM-AU-10', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-001', avatar: 'CR', status: 'Online', accountHealth: 'Active', lastLogin: new Date().toISOString(), permissions: ROLES.technician },
-    { id: 'ADM-AU-11', name: 'Miguel Santos', email: 'msantos@arellano.edu.ph', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.technician },
-    { id: 'ADM-AU-12', name: 'Fernando Lopez', email: 'flopez@arellano.edu.ph', role: 'technician', duty: 'Software Support', locationId: 'LOC-001', avatar: 'FL', status: 'Offline', accountHealth: 'Active', lastLogin: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.technician },
-    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), permissions: ROLES.technician }
+    { id: 'ADM-AU-10', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-001', avatar: 'CR', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T07:45:00.000Z', permissions: ROLES.technician },
+    { id: 'ADM-AU-11', name: 'Miguel Santos', email: 'msantos@arellano.edu.ph', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T14:50:00.000Z', permissions: ROLES.technician },
+    { id: 'ADM-AU-12', name: 'Fernando Lopez', email: 'flopez@arellano.edu.ph', role: 'technician', duty: 'Software Support', locationId: 'LOC-001', avatar: 'FL', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-11T16:15:00.000Z', permissions: ROLES.technician },
+    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-06T11:20:00.000Z', permissions: ROLES.technician }
 ];
 
 // ============================================================================

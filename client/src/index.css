@@ -184,12 +184,12 @@
     height: 90px;
     width: 100%;
     z-index: 1;
-    transition: 0.5s ease-in;
+    transition: 0.3s ease-in;
     overflow: hidden;
   }
 
   .nav-bg {
-    background-color: #10172786;
+    background-color: #10172748;
   }
 
   /* Fonts */

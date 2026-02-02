@@ -46,10 +46,15 @@ export default function RewardsOrg() {
                 </p>
 
                 {/* BUTTONS Inside Grid #1 */}
-                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 animate-in slide-in-from-bottom duration-700 delay-300">
-                  <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 primary-color rounded-lg font-body-black text-sm sm:text-base transition-all duration-300 hover:scale-102 flex items-center justify-center space-x-2">
-                    <div>Start Earning EcoPoints</div>
-                  </button>
+                <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
+                    <Link
+                      href="/UserRewards"
+                      className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
+                    >
+                      Start Earning EcoPoints!
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
