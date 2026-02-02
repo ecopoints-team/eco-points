@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 
 import { QrCodeIcon, ChevronDown, ArrowRight, Play } from "lucide-react";
@@ -49,7 +50,7 @@ export default function RewardsOrg() {
                 <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
                   <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
                     <Link
-                      href="/UserRewards"
+                      href="/userRewards"
                       className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
                     >
                       Start Earning EcoPoints!
