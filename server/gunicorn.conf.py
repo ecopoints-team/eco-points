@@ -1,15 +1,18 @@
 # Gunicorn configuration file
 import multiprocessing
+import os
 
 # Server socket
-bind = "127.0.0.1:8000"
+# Docker needs 0.0.0.0 to be accessible outside the container
+bind = "0.0.0.0:8000" 
 backlog = 2048
 
 # Worker processes
-workers = multiprocessing.cpu_count() * 2 + 1
+# Allow overriding via environment variable
+workers = int(os.environ.get('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
 worker_class = "sync"
 worker_connections = 1000
-timeout = 30
+timeout = int(os.environ.get('GUNICORN_TIMEOUT', 30))
 keepalive = 2
 
 # Logging
