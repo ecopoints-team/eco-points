@@ -152,6 +152,10 @@
     background-color: #81c784;
   }
 
+  .secondary-color-header {
+    color: #81c784;
+  }
+
   /* Safety Orange */
   .accent-color-background {
     background-color: #e67e22;
