@@ -377,7 +377,7 @@ export default function ManageUsersPage() {
                                     }`}
                             >
                                 {showAccountHealth ? <Eye size={12} /> : <EyeOff size={12} />}
-                                Acct Health
+                                Account Health
                             </button>
                         </div>
                     </div>
