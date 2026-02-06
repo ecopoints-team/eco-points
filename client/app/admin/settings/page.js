@@ -14,7 +14,7 @@ const ToggleSwitch = ({ enabled, onChange, label, description }) => (
 export default function SettingsPage() {
     const [settings, setSettings] = useState({
         siteName: 'EcoPoints', timezone: 'Asia/Manila', language: 'en', maintenanceMode: false,
-        points350ml: 3, points500ml: 5, points750ml: 8, points1000ml: 10, points1500ml: 15,
+        points350ml: 3, points500ml: 5, points750ml: 8, points1000ml: 10,
         emailNotifications: true, pushNotifications: true, lowStockAlerts: true, machineOfflineAlerts: true,
         twoFactorAuth: false, sessionTimeout: 30, auditLogging: true,
     });
@@ -139,7 +139,7 @@ export default function SettingsPage() {
                         {activeSection === 'points' && (<>
                             <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"><h3 className="text-lg font-bold text-slate-800 dark:text-white">Points Configuration</h3></div>
                             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {[{ key: 'points350ml', label: '350ml PET' }, { key: 'points500ml', label: '500ml PET' }, { key: 'points750ml', label: '750ml Glass' }, { key: 'points1000ml', label: '1000ml PET' }, { key: 'points1500ml', label: '1500ml PET' }].map(item => (
+                                {[{ key: 'points350ml', label: '350ml PET' }, { key: 'points500ml', label: '500ml PET' }, { key: 'points750ml', label: '750ml Glass' }, { key: 'points1000ml', label: '1000ml PET' }].map(item => (
                                     <div key={item.key} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                                         <div className="flex items-center gap-3"><Recycle size={20} className="text-emerald-600 dark:text-emerald-400" /><span className="font-medium text-slate-700 dark:text-slate-200">{item.label}</span></div>
                                         <div className="flex items-center gap-2"><input type="number" value={settings[item.key]} onChange={(e) => updateSetting(item.key, parseInt(e.target.value))} className="w-16 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-center font-bold text-emerald-600 dark:text-emerald-400 outline-none" /><span className="text-sm text-slate-500 dark:text-slate-400">pts</span></div>

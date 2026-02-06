@@ -5,7 +5,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { REWARDS, getRewardsByLocation } from '../../../src/data/mockData';
 import {
     Search, Filter, ChevronLeft, ChevronRight, Gift, Package, Plus, Edit2, Trash2, X,
-    Upload, Image, AlertTriangle, Minus, ShoppingBag, Building2
+    Upload, Image, AlertTriangle, Minus, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 // Low stock threshold
@@ -90,6 +90,8 @@ export default function RewardsInventoryPage() {
     const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [sortColumn, setSortColumn] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc');
     const [showModal, setShowModal] = useState(false);
     const [deletingReward, setDeletingReward] = useState(null);
     const [editingReward, setEditingReward] = useState(null);
@@ -120,7 +122,7 @@ export default function RewardsInventoryPage() {
     };
 
     const filteredRewards = useMemo(() => {
-        return rewards.filter(r => {
+        let result = rewards.filter(r => {
             const matchesSearch = searchQuery === '' ||
                 r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 r.sku.toLowerCase().includes(searchQuery.toLowerCase());
@@ -129,22 +131,50 @@ export default function RewardsInventoryPage() {
             const matchesStatus = filterStatus === '' || status === filterStatus;
             const matchesLocation = filterLocation === '' || r.locationId === filterLocation;
             return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
-        }).sort((a, b) => {
-            switch (sortOrder) {
-                case 'Alphabetical': return a.name.localeCompare(b.name);
-                case 'Points (High-Low)': return b.pointsCost - a.pointsCost;
-                case 'Points (Low-High)': return a.pointsCost - b.pointsCost;
-                case 'Stock (High-Low)': return b.stock - a.stock;
-                case 'Stock (Low-High)': return a.stock - b.stock;
-                default: return 0; // Newest implicit
-            }
         });
-    }, [rewards, searchQuery, filterCategory, filterStatus, filterLocation, sortOrder]);
+
+        // Sort by column
+        if (sortColumn) {
+            result = [...result].sort((a, b) => {
+                let valA, valB;
+                switch (sortColumn) {
+                    case 'name': valA = a.name; valB = b.name; break;
+                    case 'pointsCost': valA = a.pointsCost; valB = b.pointsCost; break;
+                    case 'stock': valA = a.stock; valB = b.stock; break;
+                    case 'category': valA = a.category; valB = b.category; break;
+                    default: return 0;
+                }
+                if (typeof valA === 'string') {
+                    return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return sortDirection === 'asc' ? valA - valB : valB - valA;
+            });
+        }
+
+        return result;
+    }, [rewards, searchQuery, filterCategory, filterStatus, filterLocation, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredRewards.length / rowsPerPage);
     const currentRewards = filteredRewards.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-    const hasActiveFilters = filterCategory || filterStatus || filterLocation || sortOrder !== 'Newest';
-    const clearFilters = () => { setFilterCategory(''); setFilterStatus(''); setFilterLocation(''); setSortOrder('Newest'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterCategory || filterStatus || filterLocation || sortColumn;
+    const clearFilters = () => { setFilterCategory(''); setFilterStatus(''); setFilterLocation(''); setSortColumn(''); setSearchQuery(''); setCurrentPage(1); };
+
+    // Sort handler
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const SortIcon = ({ column }) => {
+        if (sortColumn !== column) return <ChevronsUpDown size={12} className="text-slate-400" />;
+        return sortDirection === 'asc'
+            ? <ChevronUp size={12} className="text-emerald-500" />
+            : <ChevronDown size={12} className="text-emerald-500" />;
+    };
 
     // Stats
     const totalStock = rewards.reduce((s, r) => s + r.stock, 0);
@@ -373,6 +403,9 @@ export default function RewardsInventoryPage() {
                             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                             className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                         >
+                            <option value="">All Status</option>
+                            <option value="Available">Available</option>
+                            <option value="Low Stock">Low Stock</option>
                             <option value="Out of Stock">Out of Stock</option>
                         </select>
 
@@ -388,19 +421,6 @@ export default function RewardsInventoryPage() {
                             </select>
                         )}
 
-                        {/* Sort */}
-                        <select
-                            value={sortOrder}
-                            onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}
-                            className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"
-                        >
-                            <option value="Newest">Newest First</option>
-                            <option value="Alphabetical">Alphabetical (A-Z)</option>
-                            <option value="Points (High-Low)">Points (High-Low)</option>
-                            <option value="Points (Low-High)">Points (Low-High)</option>
-                            <option value="Stock (High-Low)">Stock (High-Low)</option>
-                            <option value="Stock (Low-High)">Stock (Low-High)</option>
-                        </select>
                         {hasActiveFilters && (
                             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10">
                                 <X size={14} /> Clear Filters
@@ -415,11 +435,19 @@ export default function RewardsInventoryPage() {
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
                                 <th className="px-6 py-4">Image</th>
-                                <th className="px-6 py-4">Reward</th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('name')}>
+                                    <div className="flex items-center gap-1">Reward <SortIcon column="name" /></div>
+                                </th>
                                 {isSuperAdmin && !effectiveLocationId && <th className="px-6 py-4">Location</th>}
-                                <th className="px-6 py-4">Category</th>
-                                <th className="px-6 py-4">Points</th>
-                                <th className="px-6 py-4">Stock</th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('category')}>
+                                    <div className="flex items-center gap-1">Category <SortIcon column="category" /></div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsCost')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsCost" /></div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('stock')}>
+                                    <div className="flex items-center gap-1">Stock <SortIcon column="stock" /></div>
+                                </th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>

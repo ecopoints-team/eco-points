@@ -577,13 +577,15 @@ export default function LogIn({ onClose }) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Check credentials (full name, email, and password)
-    if (
-      fullName.toLowerCase() === "admin" &&
-      loginEmail === "superadmin@ecopoints.com" &&
-      loginPassword === "admin123"
-    ) {
-      localStorage.setItem("ecopoints_current_user", "ADM-SUPER-001");
+    // Find matching admin by email and password
+    const matchedUser = ADMIN_USERS.find(
+      (user) =>
+        user.email.toLowerCase() === loginEmail.toLowerCase() &&
+        user.password === loginPassword
+    );
+
+    if (matchedUser) {
+      localStorage.setItem("ecopoints_current_user", matchedUser.id);
       setFailedAttempts(0);
       setShowCaptcha(false);
       router.push("/admin");
@@ -593,7 +595,7 @@ export default function LogIn({ onClose }) {
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
     setError(
-      "Invalid credentials! Use: admin / superadmin@ecopoints.com / admin123",
+      "Invalid credentials! Use email + password: test123",
     );
 
     // Reset CAPTCHA for next attempt
@@ -795,13 +797,12 @@ export default function LogIn({ onClose }) {
           absolute top-0 left-0 h-full w-full md:w-1/2 
           flex flex-col items-center bg-white
           transition-all duration-700 ease-in-out overflow-y-auto mt-3
-          ${
-            isMobile
+          ${isMobile
               ? !isSignUp
                 ? "opacity-100 z-20 justify-end pb-10 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
-          }
+            }
         `}
         >
           <div
@@ -941,13 +942,12 @@ export default function LogIn({ onClose }) {
           flex flex-col items-center 
           bg-white
           transition-all duration-700 ease-in-out
-          ${
-            isMobile
+          ${isMobile
               ? isSignUp
                 ? "opacity-100 z-20 pt-4 pb-40 px-6 overflow-y-auto no-scrollbar justify-start"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6 overflow-y-auto"
-          }
+            }
         `}
         >
           <div
@@ -1340,27 +1340,24 @@ export default function LogIn({ onClose }) {
           absolute z-50 overflow-hidden
           transition-all duration-[800ms] cubic-bezier(0.65, 0, 0.35, 1) text-white
           
-          ${
-            isMobile
+          ${isMobile
               ? `w-full left-0
-               ${
-                 isExpanding
-                   ? isSignUp
-                     ? "h-full bottom-0 top-auto rounded-[2rem]"
-                     : "h-full top-0 rounded-[2rem]"
-                   : isSignUp
-                     ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
-                     : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
-               }`
+               ${isExpanding
+                ? isSignUp
+                  ? "h-full bottom-0 top-auto rounded-[2rem]"
+                  : "h-full top-0 rounded-[2rem]"
+                : isSignUp
+                  ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
+                  : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
+              }`
               : `top-0 h-full
-                ${
-                  isExpanding
-                    ? "w-full left-0 rounded-[2rem]"
-                    : isSignUp
-                      ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
-                      : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
-                }`
-          }
+                ${isExpanding
+                ? "w-full left-0 rounded-[2rem]"
+                : isSignUp
+                  ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
+                  : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
+              }`
+            }
         `}
         >
           <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center flex-col">

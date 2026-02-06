@@ -351,8 +351,16 @@ export default function PermissionsPage() {
 
     const saveEdit = () => {
         if (selectedUser) {
+            // Get new permissions if role changed
+            const roleChanged = editFormData.role !== selectedUser.role;
+            const newPermissions = roleChanged
+                ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
+                : selectedUser.permissions;
+
             setAdminUsers(prev => prev.map(u =>
-                u.id === selectedUser.id ? { ...u, ...editFormData } : u
+                u.id === selectedUser.id
+                    ? { ...u, ...editFormData, permissions: newPermissions }
+                    : u
             ));
             setIsEditModalOpen(false);
             setSelectedUser(null);
@@ -486,42 +494,6 @@ export default function PermissionsPage() {
                 </button>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
-                            <Shield size={24} className="text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Roles</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{roles.length}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <UserCheck size={24} className="text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Admin Users</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{allUsers.length}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                            <Activity size={24} className="text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Permission Modules</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{PERMISSION_MODULES.length}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Role & Permission Matrix */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

@@ -69,7 +69,7 @@ export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
+
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
 
   // Auth Context
@@ -156,7 +156,7 @@ export default function AdminLayout({ children }) {
 
   // Refs for click outside detection
   const profileRef = React.useRef(null);
-  const accountRef = React.useRef(null);
+
   const locationRef = React.useRef(null);
 
   // Close dropdowns on click outside
@@ -165,9 +165,7 @@ export default function AdminLayout({ children }) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
-      if (accountRef.current && !accountRef.current.contains(event.target)) {
-        setIsAccountSwitcherOpen(false);
-      }
+
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setIsLocationSelectorOpen(false);
       }
@@ -317,66 +315,6 @@ export default function AdminLayout({ children }) {
               <span className="text-xs font-bold tracking-wider text-emerald-700 dark:text-emerald-400">ONLINE</span>
             </div>
 
-            {/* ACCOUNT SWITCHER DROPDOWN */}
-            <div className="relative" ref={accountRef}>
-              <button
-                onClick={() => setIsAccountSwitcherOpen(!isAccountSwitcherOpen)}
-                className="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors
-                  hover:bg-slate-100 dark:hover:bg-slate-700/50"
-              >
-                <Users size={14} className="text-slate-400" />
-                <span className="hidden sm:inline text-xs font-medium text-slate-600 dark:text-slate-300">Switch Account</span>
-                <ChevronDown size={12} className="text-slate-400" />
-              </button>
-
-              {isAccountSwitcherOpen && (
-                <>
-                  <div className={`absolute right-0 mt-2 w-72 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5
-                    max-h-96 overflow-y-auto ${theme === 'light' ? 'bg-white border border-gray-100' :
-                      theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
-                        'bg-[#1e293b] border-slate-700'
-                    }`}>
-                    <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">TEST ACCOUNTS</p>
-                    </div>
-                    <div className="py-1">
-                      {allAdminUsers.map(user => {
-                        const userRoleInfo = getRoleInfo(user.role);
-                        const location = allLocations.find(l => l.id === user.locationId);
-                        return (
-                          <button
-                            key={user.id}
-                            onClick={() => { switchUser(user.id); setIsAccountSwitcherOpen(false); }}
-                            className={`w-full text-left px-3 py-2 transition-colors flex items-center gap-3
-                              ${currentUser?.id === user.id
-                                ? 'bg-emerald-50 dark:bg-emerald-500/10'
-                                : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-xs font-bold text-white">
-                              {user.avatar}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{user.name}</p>
-                              <div className="flex items-center gap-2">
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${roleColorClasses[userRoleInfo.color]}`}>
-                                  {userRoleInfo.name}
-                                </span>
-                                {location && (
-                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{location.name}</span>
-                                )}
-                              </div>
-                            </div>
-                            {currentUser?.id === user.id && (
-                              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
 
             {/* PROFILE DROPDOWN */}
             <div className="relative" ref={profileRef}>

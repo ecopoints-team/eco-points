@@ -255,19 +255,36 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
 
+        // Convert Fine-Tune permissions to hasPermission format
+        const isSuperUser = permissions.superUser === 'grant';
+        const hasAdminAccess = isSuperUser || permissions.adminAccess === 'grant';
+        const hasUsersManage = isSuperUser || permissions.usersManage === 'grant';
+        const hasMachinesManage = isSuperUser || permissions.machinesManage === 'grant';
+        const hasRewardsManage = isSuperUser || permissions.rewardsManage === 'grant';
+        const hasLogsAccess = isSuperUser || permissions.logsAccess === 'grant';
+
+        const mappedPermissions = {
+            dashboard: { view: true, edit: hasAdminAccess },
+            users: { view: hasUsersManage, edit: hasUsersManage, delete: hasUsersManage, create: hasUsersManage },
+            machines: { view: hasMachinesManage, edit: hasMachinesManage, delete: hasMachinesManage, create: hasMachinesManage },
+            rewards: { view: hasRewardsManage, edit: hasRewardsManage, delete: hasRewardsManage, create: hasRewardsManage },
+            logs: { view: hasLogsAccess, export: hasLogsAccess, delete: false },
+            settings: { view: true, edit: hasAdminAccess }
+        };
+
         // Create new admin user object
         const newUser = {
             id: `ADM-${Date.now()}`,
             name,
             email,
+            password: 'test123', // Default password for new users
             role: selectedRole,
             locationId: isSuperAdmin ? locationId : currentLocation?.id,
             avatar: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
             status: 'Active',
+            accountHealth: 'Active',
             lastLogin: 'Never',
-            permissions: Object.fromEntries(
-                Object.entries(permissions).map(([k, v]) => [k, v === 'grant'])
-            ),
+            permissions: mappedPermissions,
         };
 
         // Call callback to add user

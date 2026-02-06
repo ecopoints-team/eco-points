@@ -118,18 +118,83 @@ export const BOTTLE_BRANDS = [
 export const BOTTLE_VOLUMES = [350, 500, 750, 1000, 1500];
 
 // ============================================================================
-// ROLE DEFINITIONS
+// ROLE DEFINITIONS (with permission objects for hasPermission())
 // ============================================================================
 export const ROLES = {
-    super_admin: { name: 'Super Admin', description: 'Global access to all locations and features', color: 'red', scope: 'global' },
-    head_admin: { name: 'Head Admin', description: 'Full access within assigned location', color: 'purple', scope: 'location' },
-    auditor: { name: 'Auditor', description: 'View and export data within assigned location', color: 'blue', scope: 'location' },
-    inventory_officer: { name: 'Inventory Officer', description: 'Manage rewards within assigned location', color: 'emerald', scope: 'location' },
-    technician: { name: 'Technician', description: 'Manage machines and maintenance', color: 'orange', scope: 'location' }
+    super_admin: {
+        name: 'Super Admin',
+        description: 'Global access to all locations and features',
+        color: 'red',
+        scope: 'global',
+        permissions: {
+            dashboard: { view: true, edit: true },
+            users: { view: true, edit: true, delete: true, create: true },
+            machines: { view: true, edit: true, delete: true, create: true },
+            rewards: { view: true, edit: true, delete: true, create: true },
+            logs: { view: true, export: true, delete: true },
+            settings: { view: true, edit: true }
+        }
+    },
+    head_admin: {
+        name: 'Head Admin',
+        description: 'Full access within assigned location',
+        color: 'purple',
+        scope: 'location',
+        permissions: {
+            dashboard: { view: true, edit: true },
+            users: { view: true, edit: true, delete: true, create: true },
+            machines: { view: true, edit: true, delete: true, create: true },
+            rewards: { view: true, edit: true, delete: true, create: true },
+            logs: { view: true, export: true, delete: false },
+            settings: { view: true, edit: true }
+        }
+    },
+    auditor: {
+        name: 'Auditor',
+        description: 'View and export data within assigned location',
+        color: 'blue',
+        scope: 'location',
+        permissions: {
+            dashboard: { view: true, edit: false },
+            users: { view: true, edit: false, delete: false, create: false },
+            machines: { view: true, edit: false, delete: false, create: false },
+            rewards: { view: true, edit: false, delete: false, create: false },
+            logs: { view: true, export: true, delete: false },
+            settings: { view: true, edit: false }
+        }
+    },
+    inventory_officer: {
+        name: 'Inventory Officer',
+        description: 'Manage rewards within assigned location',
+        color: 'emerald',
+        scope: 'location',
+        permissions: {
+            dashboard: { view: true, edit: false },
+            users: { view: false, edit: false, delete: false, create: false },
+            machines: { view: false, edit: false, delete: false, create: false },
+            rewards: { view: true, edit: true, delete: true, create: true },
+            logs: { view: true, export: false, delete: false },
+            settings: { view: true, edit: false }
+        }
+    },
+    technician: {
+        name: 'Technician',
+        description: 'Manage machines and maintenance',
+        color: 'orange',
+        scope: 'location',
+        permissions: {
+            dashboard: { view: true, edit: false },
+            users: { view: false, edit: false, delete: false, create: false },
+            machines: { view: true, edit: true, delete: true, create: true },
+            rewards: { view: false, edit: false, delete: false, create: false },
+            logs: { view: true, export: false, delete: false },
+            settings: { view: true, edit: false }
+        }
+    }
 };
 
 // ============================================================================
-// ADMIN USERS (15 Total)
+// ADMIN USERS (15 Total) - All passwords: test123
 // ============================================================================
 export const ADMIN_USERS = [
     // SUPER ADMINS (2)
@@ -137,6 +202,7 @@ export const ADMIN_USERS = [
         id: 'ADM-SUPER-001',
         name: 'System Administrator',
         email: 'superadmin@ecopoints.com',
+        password: 'test123',
         role: 'super_admin',
         duty: 'System Management',
         locationId: null,
@@ -144,12 +210,13 @@ export const ADMIN_USERS = [
         status: 'Online',
         accountHealth: 'Active',
         lastLogin: '2024-06-15T08:30:00.000Z',
-        permissions: { dashboard: { view: true, edit: true }, users: { view: true, edit: true, delete: true, create: true }, machines: { view: true, edit: true, delete: true, create: true }, rewards: { view: true, edit: true, delete: true, create: true }, logs: { view: true, export: true, delete: false }, settings: { view: true, edit: true } }
+        permissions: ROLES.super_admin.permissions
     },
     {
         id: 'ADM-SUPER-002',
         name: 'Chief Technology Officer',
         email: 'cto@ecopoints.com',
+        password: 'test123',
         role: 'super_admin',
         duty: 'Technical Oversight',
         locationId: null,
@@ -157,29 +224,29 @@ export const ADMIN_USERS = [
         status: 'Offline',
         accountHealth: 'Active',
         lastLogin: '2024-06-13T14:20:00.000Z',
-        permissions: { dashboard: { view: true, edit: true }, users: { view: true, edit: true, delete: true, create: true }, machines: { view: true, edit: true, delete: true, create: true }, rewards: { view: true, edit: true, delete: true, create: true }, logs: { view: true, export: true, delete: false }, settings: { view: true, edit: true } }
+        permissions: ROLES.super_admin.permissions
     },
 
     // HEAD ADMINS (3)
-    { id: 'ADM-AU-01', name: 'Maria Santos', email: 'head@arellano.edu.ph', role: 'head_admin', duty: 'Campus Administration', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T09:15:00.000Z', permissions: ROLES.head_admin },
-    { id: 'ADM-AU-02', name: 'Roberto Garcia', email: 'rgarcia@arellano.edu.ph', role: 'head_admin', duty: 'Operations Management', locationId: 'LOC-001', avatar: 'RG', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T11:45:00.000Z', permissions: ROLES.head_admin },
-    { id: 'ADM-AU-03', name: 'Elena Cruz', email: 'ecruz@arellano.edu.ph', role: 'head_admin', duty: 'Student Affairs', locationId: 'LOC-001', avatar: 'EC', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-12T16:30:00.000Z', permissions: ROLES.head_admin },
+    { id: 'ADM-AU-01', name: 'Maria Santos', email: 'head@arellano.edu.ph', password: 'test123', role: 'head_admin', duty: 'Campus Administration', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T09:15:00.000Z', permissions: ROLES.head_admin.permissions },
+    { id: 'ADM-AU-02', name: 'Roberto Garcia', email: 'rgarcia@arellano.edu.ph', password: 'test123', role: 'head_admin', duty: 'Operations Management', locationId: 'LOC-001', avatar: 'RG', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T11:45:00.000Z', permissions: ROLES.head_admin.permissions },
+    { id: 'ADM-AU-03', name: 'Elena Cruz', email: 'ecruz@arellano.edu.ph', password: 'test123', role: 'head_admin', duty: 'Student Affairs', locationId: 'LOC-001', avatar: 'EC', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-12T16:30:00.000Z', permissions: ROLES.head_admin.permissions },
 
     // AUDITORS (3)
-    { id: 'ADM-AU-04', name: 'Juan Dela Cruz', email: 'auditor@arellano.edu.ph', role: 'auditor', duty: 'Financial Audit', locationId: 'LOC-001', avatar: 'JD', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T10:00:00.000Z', permissions: ROLES.auditor },
-    { id: 'ADM-AU-05', name: 'Angela Reyes', email: 'areyes@arellano.edu.ph', role: 'auditor', duty: 'Compliance Audit', locationId: 'LOC-001', avatar: 'AR', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-10T13:20:00.000Z', permissions: ROLES.auditor },
-    { id: 'ADM-AU-06', name: 'Mark Gonzales', email: 'mgonzales@arellano.edu.ph', role: 'auditor', duty: 'Operations Audit', locationId: 'LOC-001', avatar: 'MG', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-11T09:45:00.000Z', permissions: ROLES.auditor },
+    { id: 'ADM-AU-04', name: 'Juan Dela Cruz', email: 'auditor@arellano.edu.ph', password: 'test123', role: 'auditor', duty: 'Financial Audit', locationId: 'LOC-001', avatar: 'JD', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T10:00:00.000Z', permissions: ROLES.auditor.permissions },
+    { id: 'ADM-AU-05', name: 'Angela Reyes', email: 'areyes@arellano.edu.ph', password: 'test123', role: 'auditor', duty: 'Compliance Audit', locationId: 'LOC-001', avatar: 'AR', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-10T13:20:00.000Z', permissions: ROLES.auditor.permissions },
+    { id: 'ADM-AU-06', name: 'Mark Gonzales', email: 'mgonzales@arellano.edu.ph', password: 'test123', role: 'auditor', duty: 'Operations Audit', locationId: 'LOC-001', avatar: 'MG', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-11T09:45:00.000Z', permissions: ROLES.auditor.permissions },
 
     // INVENTORY OFFICERS (3)
-    { id: 'ADM-AU-07', name: 'Ana Lim', email: 'inventory@arellano.edu.ph', role: 'inventory_officer', duty: 'Rewards Management', locationId: 'LOC-001', avatar: 'AL', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T08:15:00.000Z', permissions: ROLES.inventory_officer },
-    { id: 'ADM-AU-08', name: 'Patricia Tan', email: 'ptan@arellano.edu.ph', role: 'inventory_officer', duty: 'Stock Control', locationId: 'LOC-001', avatar: 'PT', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-13T15:10:00.000Z', permissions: ROLES.inventory_officer },
-    { id: 'ADM-AU-09', name: 'Jose Mendoza', email: 'jmendoza@arellano.edu.ph', role: 'inventory_officer', duty: 'Procurement', locationId: 'LOC-001', avatar: 'JM', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-08T10:30:00.000Z', permissions: ROLES.inventory_officer },
+    { id: 'ADM-AU-07', name: 'Ana Lim', email: 'inventory@arellano.edu.ph', password: 'test123', role: 'inventory_officer', duty: 'Rewards Management', locationId: 'LOC-001', avatar: 'AL', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T08:15:00.000Z', permissions: ROLES.inventory_officer.permissions },
+    { id: 'ADM-AU-08', name: 'Patricia Tan', email: 'ptan@arellano.edu.ph', password: 'test123', role: 'inventory_officer', duty: 'Stock Control', locationId: 'LOC-001', avatar: 'PT', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-13T15:10:00.000Z', permissions: ROLES.inventory_officer.permissions },
+    { id: 'ADM-AU-09', name: 'Jose Mendoza', email: 'jmendoza@arellano.edu.ph', password: 'test123', role: 'inventory_officer', duty: 'Procurement', locationId: 'LOC-001', avatar: 'JM', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-08T10:30:00.000Z', permissions: ROLES.inventory_officer.permissions },
 
     // TECHNICIANS (4)
-    { id: 'ADM-AU-10', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-001', avatar: 'CR', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T07:45:00.000Z', permissions: ROLES.technician },
-    { id: 'ADM-AU-11', name: 'Miguel Santos', email: 'msantos@arellano.edu.ph', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T14:50:00.000Z', permissions: ROLES.technician },
-    { id: 'ADM-AU-12', name: 'Fernando Lopez', email: 'flopez@arellano.edu.ph', role: 'technician', duty: 'Software Support', locationId: 'LOC-001', avatar: 'FL', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-11T16:15:00.000Z', permissions: ROLES.technician },
-    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-06T11:20:00.000Z', permissions: ROLES.technician }
+    { id: 'ADM-AU-10', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-001', avatar: 'CR', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T07:45:00.000Z', permissions: ROLES.technician.permissions },
+    { id: 'ADM-AU-11', name: 'Miguel Santos', email: 'msantos@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T14:50:00.000Z', permissions: ROLES.technician.permissions },
+    { id: 'ADM-AU-12', name: 'Fernando Lopez', email: 'flopez@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Software Support', locationId: 'LOC-001', avatar: 'FL', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-11T16:15:00.000Z', permissions: ROLES.technician.permissions },
+    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-06T11:20:00.000Z', permissions: ROLES.technician.permissions }
 ];
 
 // ============================================================================
@@ -478,6 +545,66 @@ const generateAdminLogs = () => {
 };
 
 export const ADMIN_LOGS = generateAdminLogs();
+
+// ============================================================================
+// REWARDS LOGS GENERATION (Reward Redemptions)
+// ============================================================================
+const generateRewardsLogs = () => {
+    const logs = [];
+    // Use static date strings to avoid hydration errors
+    const staticDates = [
+        'Feb 6, 2026', 'Feb 5, 2026', 'Feb 4, 2026', 'Feb 3, 2026', 'Feb 2, 2026',
+        'Feb 1, 2026', 'Jan 31, 2026', 'Jan 30, 2026', 'Jan 29, 2026', 'Jan 28, 2026',
+        'Jan 27, 2026', 'Jan 26, 2026', 'Jan 25, 2026', 'Jan 24, 2026', 'Jan 23, 2026'
+    ];
+
+    const statuses = ['Redeemed', 'Pending', 'Cancelled'];
+    const statusWeights = [0.7, 0.2, 0.1]; // 70% redeemed, 20% pending, 10% cancelled
+
+    const getWeightedStatus = () => {
+        const rand = Math.random();
+        let cumulative = 0;
+        for (let i = 0; i < statuses.length; i++) {
+            cumulative += statusWeights[i];
+            if (rand < cumulative) return statuses[i];
+        }
+        return statuses[0];
+    };
+
+    for (let i = 0; i < 100; i++) {
+        const user = getRandomElement(USERS);
+        const reward = getRandomElement(REWARDS);
+        const machine = getRandomElement(MACHINES);
+        const status = getWeightedStatus();
+        const dateStr = staticDates[i % staticDates.length];
+        const hour = getRandomInt(8, 20);
+        const minute = getRandomInt(0, 59);
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+        logs.push({
+            id: `LOG-R-${String(9000 + i).padStart(5, '0')}`,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            rewardId: reward.id,
+            rewardName: reward.name,
+            rewardSku: reward.sku,
+            pointsCost: reward.pointsCost,
+            quantity: 1,
+            machineId: machine.id,
+            machineName: machine.name,
+            locationId: machine.locationId,
+            areaId: machine.areaId,
+            timestamp: `${dateStr} ${timeStr}`,
+            timestampObj: new Date(`${dateStr} ${timeStr}`),
+            status: status,
+            notes: status === 'Cancelled' ? 'User cancelled request' : status === 'Pending' ? 'Awaiting approval' : 'Reward dispensed successfully'
+        });
+    }
+    return logs.sort((a, b) => b.timestampObj - a.timestampObj);
+};
+
+export const REWARDS_LOGS = generateRewardsLogs();
 
 // ============================================================================
 // HELPER FUNCTIONS

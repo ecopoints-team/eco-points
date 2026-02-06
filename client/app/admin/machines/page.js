@@ -2,11 +2,141 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import { MACHINES, LOCATIONS, getMachinesByLocation } from '../../../src/data/mockData';
+import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation } from '../../../src/data/mockData';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
-    AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2
+    AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
+    ChevronLeft, ChevronRight, Search
 } from 'lucide-react';
+
+// Add Machine Modal
+const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        locationId: '',
+        areaId: '',
+        location: '',
+        status: 'Online'
+    });
+    const [errors, setErrors] = useState({});
+
+    const filteredAreas = useMemo(() => {
+        if (!formData.locationId) return [];
+        return areas.filter(a => a.locationId === formData.locationId);
+    }, [formData.locationId, areas]);
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.name.trim()) newErrors.name = 'Machine name is required';
+        if (!formData.locationId) newErrors.locationId = 'Location is required';
+        if (!formData.location.trim()) newErrors.location = 'Specific location is required';
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (validateForm()) {
+            onSubmit({
+                ...formData,
+                id: `RVM-${Date.now().toString().slice(-6)}`,
+                bottlesCollected: 0,
+                lastSync: 'Just now',
+                maintenanceLogs: []
+            });
+            setFormData({ name: '', locationId: '', areaId: '', location: '', status: 'Online' });
+            onClose();
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
+                            <Package size={20} className="text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add New Machine</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <X size={20} className="text-slate-500" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Machine Name *</label>
+                        <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="e.g., RVM Alpha-02"
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.name ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                        />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Campus/Location *</label>
+                        <select
+                            value={formData.locationId}
+                            onChange={(e) => setFormData({ ...formData, locationId: e.target.value, areaId: '' })}
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.locationId ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                        >
+                            <option value="">Select Location</option>
+                            {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                        </select>
+                        {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
+                    </div>
+                    {filteredAreas.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area (Optional)</label>
+                            <select
+                                value={formData.areaId}
+                                onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                <option value="">Select Area</option>
+                                {filteredAreas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Specific Location *</label>
+                        <input
+                            type="text"
+                            value={formData.location}
+                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                            placeholder="e.g., Building A, Floor 2"
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.location ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                        />
+                        {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
+                        <select
+                            value={formData.status}
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                            <option value="Online">Online</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit" className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20">
+                            Add Machine
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 // ============================================================================
 // COMPONENTS
@@ -363,11 +493,20 @@ export default function MachinesPage() {
     const [machines, setMachines] = useState(filteredMachines);
     const [selectedMachine, setSelectedMachine] = useState(null);
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const cardsPerPage = 9;
 
     // Update machines when location changes
     React.useEffect(() => {
         setMachines(getMachinesByLocation(effectiveLocationId));
+        setCurrentPage(1);
     }, [effectiveLocationId]);
+
+    // Pagination
+    const totalPages = Math.ceil(machines.length / cardsPerPage);
+    const startIndex = (currentPage - 1) * cardsPerPage;
+    const currentMachines = machines.slice(startIndex, startIndex + cardsPerPage);
 
     const onlineCount = machines.filter(m => m.status === 'Online').length;
     const fullCount = machines.filter(m => m.status === 'Full').length;
@@ -395,6 +534,11 @@ export default function MachinesPage() {
         } : null);
     };
 
+    // Add machine handler
+    const handleAddMachine = (newMachine) => {
+        setMachines([newMachine, ...machines]);
+    };
+
     // Get location name for a machine
     const getLocationName = (locationId) => {
         const loc = allLocations.find(l => l.id === locationId);
@@ -404,22 +548,33 @@ export default function MachinesPage() {
     return (
         <>
             {/* Page Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white">
-                        Machines (RVM)
-                    </h1>
-                    {currentLocation && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-                            {currentLocation.name}
-                        </span>
-                    )}
+            <div className="mb-8 flex justify-between items-end">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-white">
+                            Machines (RVM)
+                        </h1>
+                        {currentLocation && (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                {currentLocation.name}
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                        {isSuperAdmin && !effectiveLocationId
+                            ? 'Viewing all machines across all locations'
+                            : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
+                    </p>
                 </div>
-                <p className="text-slate-500 dark:text-slate-400">
-                    {isSuperAdmin && !effectiveLocationId
-                        ? 'Viewing all machines across all locations'
-                        : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
-                </p>
+                {isSuperAdmin && (
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20"
+                    >
+                        <Plus size={18} />
+                        Add Machine
+                    </button>
+                )}
             </div>
 
             {/* Stats Overview */}
@@ -472,17 +627,51 @@ export default function MachinesPage() {
 
             {/* Machine Cards Grid */}
             {machines.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {machines.map((machine) => (
-                        <MachineCard
-                            key={machine.id}
-                            machine={machine}
-                            onOpenMaintenance={handleOpenMaintenance}
-                            locationName={isSuperAdmin && !effectiveLocationId ? getLocationName(machine.locationId) : null}
-                            currentUser={currentUser}
-                        />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+                        {currentMachines.map((machine) => (
+                            <MachineCard
+                                key={machine.id}
+                                machine={machine}
+                                onOpenMaintenance={handleOpenMaintenance}
+                                locationName={isSuperAdmin && !effectiveLocationId ? getLocationName(machine.locationId) : null}
+                                currentUser={currentUser}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
+                                        ? 'bg-emerald-600 text-white shadow-md'
+                                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : (
                 <div className="text-center py-12">
                     <Package size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
@@ -499,6 +688,15 @@ export default function MachinesPage() {
                     setSelectedMachine(null);
                 }}
                 onAddLog={handleAddMaintenanceLog}
+            />
+
+            {/* Add Machine Modal */}
+            <AddMachineModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onSubmit={handleAddMachine}
+                locations={allLocations}
+                areas={AREAS}
             />
         </>
     );

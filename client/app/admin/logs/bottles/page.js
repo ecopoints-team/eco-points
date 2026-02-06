@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { BOTTLE_LOGS } from '../../../../src/data/mockData';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 const allBottleLogs = BOTTLE_LOGS;
 
@@ -28,6 +28,10 @@ export default function BottleLogsPage() {
     const [filterLocation, setFilterLocation] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
+
+    // Column visibility toggles
+    const [showMachine, setShowMachine] = useState(true);
+    const [showLocation, setShowLocation] = useState(true);
 
     // Sortable column state
     const [sortColumn, setSortColumn] = useState('timestampObj');
@@ -152,8 +156,9 @@ export default function BottleLogsPage() {
                 </div>
 
                 {showFilter && (
-                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-4 items-center">
-                        <div className="flex flex-wrap gap-3 flex-1">
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        {/* Filter Row */}
+                        <div className="flex flex-wrap gap-3 items-center mb-3">
                             <div className="relative"><select value={filterMachine} onChange={(e) => handleFilterChange(setFilterMachine, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Machines</option>{machines.map(m => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                             <div className="relative"><select value={filterBottleType} onChange={(e) => handleFilterChange(setFilterBottleType, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Sizes</option>{bottleTypes.map(b => <option key={b} value={b}>{b}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                             <div className="relative"><select value={filterCondition} onChange={(e) => handleFilterChange(setFilterCondition, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Conditions</option>{['Perfect', 'Good', 'Crushed', 'Dirty (Rejected)'].map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
@@ -162,8 +167,34 @@ export default function BottleLogsPage() {
                             {isSuperAdmin && !viewAsLocationId && (
                                 <div className="relative"><select value={filterLocation} onChange={(e) => handleFilterChange(setFilterLocation, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Locations</option><option value="LOC-001">School A</option><option value="LOC-002">School B</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
                             )}
+
+                            {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
-                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
+
+                        {/* Column Visibility Toggles */}
+                        <div className="flex items-center gap-4 text-xs">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Show columns:</span>
+                            <button
+                                onClick={() => setShowMachine(!showMachine)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showMachine
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showMachine ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Machine
+                            </button>
+                            <button
+                                onClick={() => setShowLocation(!showLocation)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showLocation
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showLocation ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Location
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -200,7 +231,8 @@ export default function BottleLogsPage() {
                                     <div className="flex items-center gap-1">Username <SortIcon column="userName" /></div>
                                 </th>
                                 <th className="px-3 py-3">Email</th>
-                                <th className="px-3 py-3">Location</th>
+                                {showMachine && <th className="px-3 py-3">Machine</th>}
+                                {showLocation && <th className="px-3 py-3">Location</th>}
                                 <th className="px-3 py-3">Bottle Type</th>
                                 <th className="px-3 py-3">Condition</th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
@@ -224,7 +256,12 @@ export default function BottleLogsPage() {
                                     <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.userId}</span></td>
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.userName}</span></td>
                                     <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.userEmail || '-'}</span></td>
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                    {showMachine && (
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.machineName || '-'}</span></td>
+                                    )}
+                                    {showLocation && (
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                    )}
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :

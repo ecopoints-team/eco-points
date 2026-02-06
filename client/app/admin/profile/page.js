@@ -94,26 +94,6 @@ export default function ProfilePage() {
                             <button className="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold py-2 px-5 rounded-lg text-sm">Update Password</button>
                         </div>
                     </div>
-
-                    {/* Activity Logs Section - Coming Soon */}
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
-                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                <Activity size={20} className="text-emerald-600 dark:text-emerald-400" />
-                                Activity Logs
-                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
-                                    Coming Soon
-                                </span>
-                            </h3>
-                        </div>
-                        <div className="p-12 text-center">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                                <Activity size={32} className="text-slate-400 dark:text-slate-500" />
-                            </div>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">Activity logs will be available soon</p>
-                            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Track your login history, actions, and system activities</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </>

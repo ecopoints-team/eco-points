@@ -667,6 +667,7 @@ export default function AdminDashboard() {
                                 <th className="px-3 py-3">User ID</th>
                                 <th className="px-3 py-3">Username</th>
                                 <th className="px-3 py-3">Email</th>
+                                <th className="px-3 py-3">Machine</th>
                                 <th className="px-3 py-3">Location</th>
                                 <th className="px-3 py-3">Bottle Type</th>
                                 <th className="px-3 py-3">Condition</th>
@@ -694,6 +695,9 @@ export default function AdminDashboard() {
                                         <span className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{log.userEmail}</span>
                                     </td>
                                     <td className="px-3 py-3">
+                                        <span className="text-xs text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.machineName || '-'}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
                                         <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
                                     </td>
                                     <td className="px-3 py-3">
@@ -701,9 +705,9 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                                log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                    log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
-                                                        'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                            log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
+                                                    'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>{log.condition}</span>
                                     </td>
                                     <td className="px-3 py-3">
