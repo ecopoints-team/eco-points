@@ -1,3 +1,45 @@
+// ============================================================================
+// ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
+// ============================================================================
+// SUPER ADMINS:
+//   - System Administrator     | superadmin@ecopoints.com
+//   - Chief Technology Officer  | cto@ecopoints.com
+//
+// HEAD ADMINS (LOC-001 — Arellano University):
+//   - Maria Santos              | head@arellano.edu.ph
+//   - Roberto Garcia            | rgarcia@arellano.edu.ph
+//   - Elena Cruz                | ecruz@arellano.edu.ph
+//
+// HEAD ADMIN (LOC-002 — Polytechnic University):
+//   - Rosa Aquino               | head@pup.edu.ph
+//
+// AUDITORS (LOC-001):
+//   - Juan Dela Cruz            | auditor@arellano.edu.ph
+//   - Angela Reyes              | areyes@arellano.edu.ph
+//   - Mark Gonzales             | mgonzales@arellano.edu.ph
+//
+// AUDITOR (LOC-002):
+//   - Leo Bautista              | auditor@pup.edu.ph
+//
+// INVENTORY OFFICERS (LOC-001):
+//   - Ana Lim                   | inventory@arellano.edu.ph
+//   - Patricia Tan              | ptan@arellano.edu.ph
+//   - Jose Mendoza              | jmendoza@arellano.edu.ph
+//
+// INVENTORY OFFICER (LOC-002):
+//   - Carmen Diaz               | inventory@pup.edu.ph
+//
+// TECHNICIANS (LOC-001):
+//   - Carlos Reyes              | tech@arellano.edu.ph
+//   - Miguel Santos             | msantos@arellano.edu.ph
+//   - Fernando Lopez            | flopez@arellano.edu.ph
+//   - David Villanueva          | dvillanueva@arellano.edu.ph
+//
+// TECHNICIANS (LOC-002):
+//   - Rico Fernandez            | tech@pup.edu.ph
+//   - Lorna Gutierrez           | tech2@pup.edu.ph
+// ============================================================================
+
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +56,6 @@ import {
   Users,
   Zap,
   ArrowRight,
-  Leaf,
   Search,
   GraduationCap,
   BookOpen,
@@ -23,9 +64,9 @@ import {
   CheckCircle,
   SkipForward,
 } from "lucide-react";
-// import ReCAPTCHA from "react-google-recaptcha";
+import ReCAPTCHA from "react-google-recaptcha";
 
-import { ADMIN_USERS, ROLES } from "../data/mockData";
+import { ADMIN_USERS } from "../data/mockData";
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments
@@ -145,25 +186,7 @@ const COLLEGE_DEPARTMENTS = [
   { id: "DM", name: "Diploma in Midwifery", abbreviation: "DM" },
 ];
 
-// Only Super Admin demo account
-const TEST_ACCOUNTS = ADMIN_USERS.filter(
-  (user) => user.role === "super_admin",
-).map((user) => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  role: ROLES[user.role]?.name || "Super Admin",
-  location: user.locationId ? "Arellano University" : "All Locations",
-  color: ROLES[user.role]?.color || "red",
-}));
 
-// Role badge colors
-const roleColors = {
-  red: "bg-red-500/20 text-red-400 border-red-500/30",
-  purple: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  blue: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-};
 
 // ============================================================================
 // Reusable Input Field Component
@@ -375,7 +398,7 @@ export default function LogIn({ onClose }) {
     "Arellano University - Andres Bonifacio Pasig Campus",
   ]);
   const [error, setError] = useState("");
-  const [showAccountPicker, setShowAccountPicker] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
 
   // CAPTCHA states
@@ -514,7 +537,6 @@ export default function LogIn({ onClose }) {
       const wasSignUp = isSignUp;
       setIsSignUp((prev) => !prev);
       setError("");
-      setShowAccountPicker(false);
 
       // Reset the form we're leaving
       if (wasSignUp) {
@@ -566,6 +588,12 @@ export default function LogIn({ onClose }) {
       return;
     }
 
+    // Check full name is provided
+    if (!fullName.trim()) {
+      setError("Full name is required");
+      return;
+    }
+
     // Check confirm password matches
     if (loginPassword !== loginConfirmPassword) {
       setError("Passwords do not match!");
@@ -595,7 +623,7 @@ export default function LogIn({ onClose }) {
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
     setError(
-      "Invalid credentials! Use email + password: test123",
+      "Invalid email or password. Please try again.",
     );
 
     // Reset CAPTCHA for next attempt
@@ -649,12 +677,7 @@ export default function LogIn({ onClose }) {
     }, 500);
   };
 
-  const handleQuickLogin = async (account) => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    localStorage.setItem("ecopoints_current_user", account.id);
-    router.push("/admin");
-  };
+
 
   const [isClosing, setIsClosing] = useState(false);
 
@@ -825,6 +848,7 @@ export default function LogIn({ onClose }) {
                 icon={<User size={16} />}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                required
               />
 
               {/* Email Field */}
@@ -927,11 +951,7 @@ export default function LogIn({ onClose }) {
               </button>
             </form>
 
-            <p className="text-[10px] text-center text-gray-400 mt-2">
-              Demo: <span className="font-medium">admin</span> /{" "}
-              <span className="font-medium">superadmin@ecopoints.com</span> /{" "}
-              <span className="font-medium">admin123</span>
-            </p>
+
           </div>
         </div>
 
@@ -1399,50 +1419,6 @@ export default function LogIn({ onClose }) {
                     Already have an account? Sign in.
                   </p>
 
-                  <div className="w-full hidden md:block">
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountPicker(!showAccountPicker)}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-full font-medium text-sm
-                        hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                      <Users size={16} />
-                      Demo Account
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform ${showAccountPicker ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    {showAccountPicker && (
-                      <div className="mt-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-32 overflow-y-auto">
-                        {TEST_ACCOUNTS.map((account) => (
-                          <button
-                            key={account.id}
-                            type="button"
-                            onClick={() => handleQuickLogin(account)}
-                            className="w-full p-2 flex items-center gap-2 hover:bg-white/20 transition-colors border-b border-white/10 last:border-0"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                              {account.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-xs font-medium">
-                                {account.name}
-                              </p>
-                              <p className="text-[10px] text-white/70">
-                                {account.role}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   <button
                     onClick={toggleMode}
                     className="px-5 py-2 bg-transparent border-2 border-white text-white rounded-full font-semibold uppercase tracking-wider text-xs hover:bg-white hover:text-lime-600 transition-all duration-300 shadow-lg"
@@ -1463,50 +1439,6 @@ export default function LogIn({ onClose }) {
                   >
                     Sign up and start your journey!
                   </p>
-
-                  <div className="w-full hidden md:block">
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountPicker(!showAccountPicker)}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-full font-medium text-sm
-                        hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                      <Users size={16} />
-                      Demo Account
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform ${showAccountPicker ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    {showAccountPicker && (
-                      <div className="mt-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-32 overflow-y-auto">
-                        {TEST_ACCOUNTS.map((account) => (
-                          <button
-                            key={account.id}
-                            type="button"
-                            onClick={() => handleQuickLogin(account)}
-                            className="w-full p-2 flex items-center gap-2 hover:bg-white/20 transition-colors border-b border-white/10 last:border-0"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                              {account.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-xs font-medium">
-                                {account.name}
-                              </p>
-                              <p className="text-[10px] text-white/70">
-                                {account.role}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
                   <button
                     onClick={toggleMode}

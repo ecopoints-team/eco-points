@@ -22,6 +22,19 @@ const getRandomInt = (min, max) => Math.floor(seededRandom() * (max - min + 1)) 
 const getRandomDate = (start, end) => new Date(start.getTime() + seededRandom() * (end.getTime() - start.getTime()));
 const getRandomBoolean = (probability = 0.5) => seededRandom() < probability;
 
+// Deterministic date formatters (avoids toLocaleString hydration mismatch)
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function formatDateShort(date) {
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+function formatDateOnly(date) {
+    return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
 // ============================================================================
 // LOCATIONS (Deployment Sites)
 // ============================================================================
@@ -42,6 +55,23 @@ export const LOCATIONS = [
         joinDate: '2024-06-15',
         status: 'Active',
         ranking: 1
+    },
+    {
+        id: 'LOC-002',
+        name: 'Polytechnic University',
+        fullName: 'Polytechnic University of the Philippines - Sta. Mesa',
+        city: 'Manila',
+        address: 'Anonas St, Sta. Mesa, Manila',
+        contactPerson: 'Campus Director',
+        contactEmail: 'admin@pup.edu.ph',
+        contactPhone: '+63 2 5335 1787',
+        machineCount: 4,
+        userCount: 150,
+        totalBottlesCollected: 9870,
+        totalPoints: 54200,
+        joinDate: '2024-09-01',
+        status: 'Active',
+        ranking: 2
     }
 ];
 
@@ -97,7 +127,13 @@ export const AREAS = [
     { id: 'AREA-005', name: 'Nursing Building', locationId: 'LOC-001' },
     { id: 'AREA-006', name: 'Education Building', locationId: 'LOC-001' },
     { id: 'AREA-007', name: 'IT Building', locationId: 'LOC-001' },
-    { id: 'AREA-008', name: 'Administration Building', locationId: 'LOC-001' }
+    { id: 'AREA-008', name: 'Administration Building', locationId: 'LOC-001' },
+    // LOC-002 Areas
+    { id: 'AREA-009', name: 'Main Entrance', locationId: 'LOC-002' },
+    { id: 'AREA-010', name: 'Student Canteen', locationId: 'LOC-002' },
+    { id: 'AREA-011', name: 'Ninoy Aquino Library', locationId: 'LOC-002' },
+    { id: 'AREA-012', name: 'Gymnasium Complex', locationId: 'LOC-002' },
+    { id: 'AREA-013', name: 'Engineering Building', locationId: 'LOC-002' }
 ];
 
 // ============================================================================
@@ -115,7 +151,7 @@ export const BOTTLE_BRANDS = [
     'Gatorade', 'Pocari Sweat', 'Nature Spring', 'Summit', 'Wilkins', 'Absolute'
 ];
 
-export const BOTTLE_VOLUMES = [350, 500, 750, 1000, 1500];
+export const BOTTLE_VOLUMES = [350, 500, 750, 1000];
 
 // ============================================================================
 // ROLE DEFINITIONS (with permission objects for hasPermission())
@@ -246,7 +282,14 @@ export const ADMIN_USERS = [
     { id: 'ADM-AU-10', name: 'Carlos Reyes', email: 'tech@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-001', avatar: 'CR', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-15T07:45:00.000Z', permissions: ROLES.technician.permissions },
     { id: 'ADM-AU-11', name: 'Miguel Santos', email: 'msantos@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-001', avatar: 'MS', status: 'Online', accountHealth: 'Active', lastLogin: '2024-06-14T14:50:00.000Z', permissions: ROLES.technician.permissions },
     { id: 'ADM-AU-12', name: 'Fernando Lopez', email: 'flopez@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Software Support', locationId: 'LOC-001', avatar: 'FL', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-06-11T16:15:00.000Z', permissions: ROLES.technician.permissions },
-    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-06T11:20:00.000Z', permissions: ROLES.technician.permissions }
+    { id: 'ADM-AU-13', name: 'David Villanueva', email: 'dvillanueva@arellano.edu.ph', password: 'test123', role: 'technician', duty: 'Network Support', locationId: 'LOC-001', avatar: 'DV', status: 'Offline', accountHealth: 'Inactive', lastLogin: '2024-05-06T11:20:00.000Z', permissions: ROLES.technician.permissions },
+
+    // LOC-002 ADMIN USERS
+    { id: 'ADM-PU-01', name: 'Rosa Aquino', email: 'head@pup.edu.ph', password: 'test123', role: 'head_admin', duty: 'Campus Administration', locationId: 'LOC-002', avatar: 'RA', status: 'Online', accountHealth: 'Active', lastLogin: '2024-09-15T09:00:00.000Z', permissions: ROLES.head_admin.permissions },
+    { id: 'ADM-PU-02', name: 'Leo Bautista', email: 'auditor@pup.edu.ph', password: 'test123', role: 'auditor', duty: 'Financial Audit', locationId: 'LOC-002', avatar: 'LB', status: 'Online', accountHealth: 'Active', lastLogin: '2024-09-14T10:30:00.000Z', permissions: ROLES.auditor.permissions },
+    { id: 'ADM-PU-03', name: 'Carmen Diaz', email: 'inventory@pup.edu.ph', password: 'test123', role: 'inventory_officer', duty: 'Rewards Management', locationId: 'LOC-002', avatar: 'CD', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-09-13T14:15:00.000Z', permissions: ROLES.inventory_officer.permissions },
+    { id: 'ADM-PU-04', name: 'Rico Fernandez', email: 'tech@pup.edu.ph', password: 'test123', role: 'technician', duty: 'Machine Maintenance', locationId: 'LOC-002', avatar: 'RF', status: 'Online', accountHealth: 'Active', lastLogin: '2024-09-15T07:45:00.000Z', permissions: ROLES.technician.permissions },
+    { id: 'ADM-PU-05', name: 'Lorna Gutierrez', email: 'tech2@pup.edu.ph', password: 'test123', role: 'technician', duty: 'Hardware Support', locationId: 'LOC-002', avatar: 'LG', status: 'Offline', accountHealth: 'Active', lastLogin: '2024-09-12T16:00:00.000Z', permissions: ROLES.technician.permissions }
 ];
 
 // ============================================================================
@@ -258,7 +301,12 @@ export const MACHINES = [
     { id: 'RVM-AU-03', name: 'Canteen RVM-B', locationId: 'LOC-001', areaId: 'AREA-002', area: 'Canteen', status: 'Online', bottlesCollected: 2800, totalPoints: 14000, lastMaintenance: '2025-01-23' },
     { id: 'RVM-AU-04', name: 'Library RVM', locationId: 'LOC-001', areaId: 'AREA-003', area: 'Library', status: 'Online', bottlesCollected: 2100, totalPoints: 10500, lastMaintenance: '2025-01-15' },
     { id: 'RVM-AU-05', name: 'Gym RVM', locationId: 'LOC-001', areaId: 'AREA-004', area: 'Gymnasium', status: 'Maintenance', bottlesCollected: 3100, totalPoints: 15500, lastMaintenance: '2025-01-25' },
-    { id: 'RVM-AU-06', name: 'Nursing Bldg RVM', locationId: 'LOC-001', areaId: 'AREA-005', area: 'Nursing Building', status: 'Online', bottlesCollected: 1850, totalPoints: 9250, lastMaintenance: '2025-01-18' }
+    { id: 'RVM-AU-06', name: 'Nursing Bldg RVM', locationId: 'LOC-001', areaId: 'AREA-005', area: 'Nursing Building', status: 'Online', bottlesCollected: 1850, totalPoints: 9250, lastMaintenance: '2025-01-18' },
+    // LOC-002 Machines
+    { id: 'RVM-PU-01', name: 'Main Entrance RVM', locationId: 'LOC-002', areaId: 'AREA-009', area: 'Main Entrance', status: 'Online', bottlesCollected: 3200, totalPoints: 16000, lastMaintenance: '2025-01-19' },
+    { id: 'RVM-PU-02', name: 'Canteen RVM', locationId: 'LOC-002', areaId: 'AREA-010', area: 'Student Canteen', status: 'Online', bottlesCollected: 2900, totalPoints: 14500, lastMaintenance: '2025-01-21' },
+    { id: 'RVM-PU-03', name: 'Library RVM', locationId: 'LOC-002', areaId: 'AREA-011', area: 'Ninoy Aquino Library', status: 'Maintenance', bottlesCollected: 1800, totalPoints: 9000, lastMaintenance: '2025-01-24' },
+    { id: 'RVM-PU-04', name: 'Engineering RVM', locationId: 'LOC-002', areaId: 'AREA-013', area: 'Engineering Building', status: 'Online', bottlesCollected: 1970, totalPoints: 9850, lastMaintenance: '2025-01-17' }
 ];
 
 // ============================================================================
@@ -275,6 +323,12 @@ export const REWARDS = [
     { id: 'RWD-008', name: 'Priority Enrollment', sku: 'EP-PRIO', locationId: 'LOC-001', category: 'Education', points: 5000, stock: 10, status: 'Low Stock' },
     { id: 'RWD-009', name: 'Eco Notebook', sku: 'EP-NOTEBOOK', locationId: 'LOC-001', category: 'Sustainable', points: 120, stock: 150, status: 'Available' },
     { id: 'RWD-010', name: 'Laptop Sticker Pack', sku: 'EP-STICKER', locationId: 'LOC-001', category: 'Merchandise', points: 50, stock: 300, status: 'Available' },
+    // LOC-002 Rewards
+    { id: 'RWD-011', name: 'PUP Eco Tumbler', sku: 'PU-TUMBLER', locationId: 'LOC-002', category: 'Sustainable', points: 700, stock: 30, status: 'Available' },
+    { id: 'RWD-012', name: 'PUP T-Shirt', sku: 'PU-TSHIRT', locationId: 'LOC-002', category: 'Merchandise', points: 450, stock: 50, status: 'Available' },
+    { id: 'RWD-013', name: 'Cafeteria Voucher (P50)', sku: 'PU-VOUCHER-50', locationId: 'LOC-002', category: 'Voucher', points: 100, stock: 400, status: 'Available' },
+    { id: 'RWD-014', name: 'Cafeteria Voucher (P100)', sku: 'PU-VOUCHER-100', locationId: 'LOC-002', category: 'Voucher', points: 200, stock: 250, status: 'Available' },
+    { id: 'RWD-015', name: 'Reusable Straw Kit', sku: 'PU-STRAW', locationId: 'LOC-002', category: 'Sustainable', points: 120, stock: 180, status: 'Available' },
 ];
 
 // ============================================================================
@@ -357,13 +411,13 @@ const generateUsers = (count) => {
             department: department,
             yearLevel: yearLevel,
             section: section,
-            locationId: 'LOC-001',
+            locationId: i < 150 ? 'LOC-001' : 'LOC-002',
             status: status,
             accountHealth: accountHealth,
             points: getRandomInt(0, 5000),
-            joinDate: joinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            joinDate: formatDateOnly(joinDate),
             joinDateObj: joinDate,
-            lastActive: lastActive.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            lastActive: formatDateOnly(lastActive),
             lastActiveObj: lastActive,
             avatar: `${firstName[0]}${lastName[0]}`
         });
@@ -403,7 +457,7 @@ const generateBottleLogs = () => {
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - 30);
 
-    const conditions = ['With Label', 'No Label', 'Crushed', 'Rejected'];
+    const conditions = ['With Label', 'No Label', 'Rejected'];
 
     for (let i = 0; i < 500; i++) {
         const user = getRandomElement(USERS);
@@ -414,7 +468,7 @@ const generateBottleLogs = () => {
         const condition = getRandomElement(conditions);
         const logDate = getRandomDate(startDate, endDate);
 
-        const isRejected = condition === 'Rejected' || condition === 'Crushed' || volume >= 1001;
+        const isRejected = condition === 'Rejected' || volume >= 1001;
         const hasLabel = condition === 'With Label';
         const points = isRejected ? 0 : getPointsForBottle(volume, hasLabel);
         const status = isRejected ? 'Rejected' : 'Accepted';
@@ -427,7 +481,7 @@ const generateBottleLogs = () => {
             machineId: machine.id,
             machineName: machine.name,
             locationId: machine.locationId,
-            locationName: 'Arellano University',
+            locationName: LOCATIONS.find(l => l.id === machine.locationId)?.name || machine.locationId,
             areaId: machine.areaId,
             area: area?.name || machine.area,
             bottleType: `${volume}ml PET`,
@@ -436,7 +490,7 @@ const generateBottleLogs = () => {
             volume: volume,
             condition: condition,
             pointsAwarded: points,
-            timestamp: logDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+            timestamp: formatDateShort(logDate),
             timestampObj: logDate,
             status: status
         });
@@ -480,7 +534,7 @@ const generateMachineLogs = () => {
             resolved: resolved,
             status: resolved ? 'Resolved' : 'Pending',
             notes: resolved ? 'Issue fixed successfully' : 'Awaiting parts/review',
-            timestamp: logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            timestamp: formatDateOnly(logDate),
             timestampObj: logDate
         });
     }
@@ -529,14 +583,14 @@ const generateAdminLogs = () => {
             adminRole: ROLES[admin.role]?.name || admin.role,
             duty: admin.duty || 'General',
             locationId: admin.locationId,
-            locationName: admin.locationId ? 'Arellano University' : 'All Locations',
+            locationName: admin.locationId ? (LOCATIONS.find(l => l.id === admin.locationId)?.name || admin.locationId) : 'All Locations',
             areaId: area.id,
             area: area.name,
             action: actionData.action,
             target: target,
             category: actionData.category,
             notes: `${actionData.action} performed successfully`,
-            timestamp: logDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+            timestamp: formatDateShort(logDate),
             timestampObj: logDate,
             status: 'Success'
         });
@@ -562,7 +616,7 @@ const generateRewardsLogs = () => {
     const statusWeights = [0.7, 0.2, 0.1]; // 70% redeemed, 20% pending, 10% cancelled
 
     const getWeightedStatus = () => {
-        const rand = Math.random();
+        const rand = seededRandom();
         let cumulative = 0;
         for (let i = 0; i < statuses.length; i++) {
             cumulative += statusWeights[i];
@@ -589,7 +643,7 @@ const generateRewardsLogs = () => {
             rewardId: reward.id,
             rewardName: reward.name,
             rewardSku: reward.sku,
-            pointsCost: reward.pointsCost,
+            pointsCost: reward.points,
             quantity: 1,
             machineId: machine.id,
             machineName: machine.name,

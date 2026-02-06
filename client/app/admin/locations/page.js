@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
+import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
 import { LOCATIONS, BOTTLE_LOGS } from '../../../src/data/mockData';
 import {
@@ -211,7 +212,9 @@ export default function LocationsPage() {
 
     return (
         <>
+            <ViewOnlyBanner />
             {/* Page Header with Add Button */}
+            <ViewOnlyWrapper>
             <div className="mb-8 flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">
@@ -223,12 +226,13 @@ export default function LocationsPage() {
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20"
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus size={18} />
                     Add Location
                 </button>
             </div>
+            </ViewOnlyWrapper>
 
             {/* Global Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -353,8 +357,8 @@ export default function LocationsPage() {
                                     <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{location.machineCount}</p>
                                 </div>
                                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
-                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Users</p>
-                                    <p className="text-lg font-black text-blue-600 dark:text-blue-400">{location.userCount}</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Total Points</p>
+                                    <p className="text-lg font-black text-blue-600 dark:text-blue-400">{(BOTTLE_LOGS.filter(log => log.locationId === location.id).reduce((sum, log) => sum + (log.pointsAwarded || 0), 0)).toLocaleString()}</p>
                                 </div>
                                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Bottles</p>
@@ -373,9 +377,12 @@ export default function LocationsPage() {
                                     <Eye size={14} />
                                     View As
                                 </button>
-                                <button className="flex items-center justify-center p-2 rounded-lg
+                                <button
+                                    onClick={() => alert(`Edit location: ${location.name}\n\nThis feature will allow editing location details such as name, address, and contact information.`)}
+                                    className="flex items-center justify-center p-2 rounded-lg
                                     bg-slate-100 text-slate-600 hover:bg-slate-200
-                                    dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors">
+                                    dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                    title="Edit Location">
                                     <Edit2 size={14} />
                                 </button>
                             </div>

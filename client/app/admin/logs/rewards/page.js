@@ -1,8 +1,9 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { REWARDS_LOGS, REWARDS, LOCATIONS } from '../../../../src/data/mockData';
+import { REWARDS_LOGS, REWARDS, LOCATIONS, getLocationName } from '../../../../src/data/mockData';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Gift, User, MapPin } from 'lucide-react';
 
 const allRewardsLogs = REWARDS_LOGS;
@@ -106,6 +107,22 @@ export default function RewardsLogsPage() {
         return styles[status] || 'bg-slate-100 text-slate-600';
     };
 
+    const exportToCSV = () => {
+        const headers = ['Date', 'Log ID', 'User', 'Email', 'Reward', 'SKU', 'Points', 'Machine', 'Location', 'Status'];
+        const rows = filteredLogs.map(log => [
+            log.timestamp, log.id, log.userName, log.userEmail, log.rewardName,
+            log.rewardSku, log.pointsCost, log.machineName, getLocationName(log.locationId), log.status
+        ]);
+        const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `rewards-logs-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <>
             <div className="mb-8 flex justify-between items-end">
@@ -113,7 +130,7 @@ export default function RewardsLogsPage() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Rewards Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">Reward redemption history and transactions</p>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
+                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} />
                     Export CSV
                 </button>
@@ -146,29 +163,9 @@ export default function RewardsLogsPage() {
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                         {/* Filter Row */}
                         <div className="flex flex-wrap gap-3 items-center mb-3">
-                            <div className="relative">
-                                <select value={filterReward} onChange={(e) => handleFilterChange(setFilterReward, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Rewards</option>
-                                    {rewardNames.map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Statuses</option>
-                                    <option value="Redeemed">Redeemed</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterLocation} onChange={(e) => handleFilterChange(setFilterLocation, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Locations</option>
-                                    {LOCATIONS.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
+                            <CustomDropdown value={filterReward} onChange={(v) => handleFilterChange(setFilterReward, v)} options={rewardNames} placeholder="All Rewards" />
+                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={['Redeemed', 'Pending', 'Cancelled']} placeholder="All Statuses" />
+                            <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
 
@@ -272,7 +269,7 @@ export default function RewardsLogsPage() {
                                     )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationId}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{getLocationName(log.locationId)}</span>
                                         </td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">

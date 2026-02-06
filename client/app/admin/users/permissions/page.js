@@ -1,10 +1,11 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import AdminLayout from '../../../../src/Components/AdminLayout';
+import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
-import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, UserCheck, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 // ============================================================================
 // USING ADMIN_USERS FROM MOCKDATA - Connected to School A & B accounts
@@ -88,15 +89,6 @@ const PERMISSION_MODULES = [
     { key: 'settings', label: 'System Settings', icon: Settings, actions: ['view', 'edit'] },
 ];
 
-// Action icons mapping
-const ACTION_ICONS = {
-    view: Eye,
-    edit: Edit2,
-    create: Plus,
-    delete: Trash2,
-    export: Download
-};
-
 // ============================================================================
 // COMPONENTS
 // ============================================================================
@@ -117,14 +109,12 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
     const colorClasses = {
         purple: 'from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700',
         blue: 'from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700',
-        blue: 'from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700',
         emerald: 'from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700',
         amber: 'from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700',
     };
 
     const badgeColors = {
         purple: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
-        blue: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
         blue: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
         emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
         amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
@@ -204,7 +194,6 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
 
     const roleOptions = [
         { id: 'head_admin', name: 'Head Admin' },
-        { id: 'auditor', name: 'Auditor' },
         { id: 'auditor', name: 'Auditor' },
         { id: 'inventory_officer', name: 'Inventory Officer' },
         { id: 'technician', name: 'Technician' },
@@ -297,19 +286,14 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
     );
 };
 
-// Helper function for handling edit/delete in table
-const UserAccountRowWithActions = ({ user, onEdit, onDelete }) => (
-    <UserAccountRow user={user} onEdit={onEdit} onDelete={onDelete} />
-);
-
 // ============================================================================
 
 export default function PermissionsPage() {
-    const { user: currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [roles] = useState(ROLES_DATA);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     // Use ADMIN_USERS from mockData (filter out super_admin for local admins only)
-    const [allUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
+    const [allUsers, setAllUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
 
     // Search, Filter, Pagination state
     const [searchQuery, setSearchQuery] = useState('');
@@ -467,7 +451,9 @@ export default function PermissionsPage() {
 
     // Handle role change for a user
     const handleRoleChange = async (userId, newRole) => {
-        // This would update in a real app
+        setAllUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, role: newRole, permissions: ROLES[newRole]?.permissions || u.permissions } : u
+        ));
     };
 
     const getColorClasses = (color) => ({
@@ -479,12 +465,15 @@ export default function PermissionsPage() {
 
     return (
         <>
+            <ViewOnlyBanner />
             {/* Page Header */}
+            <ViewOnlyWrapper>
             <div className="mb-8 flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Admins</h1>
                     <p className="text-slate-500 dark:text-slate-400">Manage roles and permissions for admin users</p>
                 </div>
+                {(isSuperAdmin || currentUser?.permissions?.users?.create) && (
                 <button
                     onClick={() => setIsAddModalOpen(true)}
                     className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
@@ -492,7 +481,9 @@ export default function PermissionsPage() {
                     <Plus size={18} />
                     Add Admin
                 </button>
+                )}
             </div>
+            </ViewOnlyWrapper>
 
 
             {/* Role & Permission Matrix */}
@@ -629,31 +620,9 @@ export default function PermissionsPage() {
                 {/* Filter Panel */}
                 {showFilter && (
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-3 items-center">
-                        <div className="relative">
-                            <select value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value="">All Locations</option>
-                                {LOCATIONS.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                        <div className="relative">
-                            <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value="">All Roles</option>
-                                <option value="head_admin">Head Admin</option>
-                                <option value="auditor">Auditor</option>
-                                <option value="inventory_officer">Inventory Officer</option>
-                                <option value="technician">Technician</option>
-                            </select>
-                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                        <div className="relative">
-                            <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value="">All Status</option>
-                                <option value="Online">Online</option>
-                                <option value="Offline">Offline</option>
-                            </select>
-                            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
+                        <CustomDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setCurrentPage(1); }} options={LOCATIONS.map(loc => ({ value: loc.id, label: loc.name }))} placeholder="All Locations" />
+                        <CustomDropdown value={filterRole} onChange={(v) => { setFilterRole(v); setCurrentPage(1); }} options={[{ value: 'head_admin', label: 'Head Admin' }, { value: 'auditor', label: 'Auditor' }, { value: 'inventory_officer', label: 'Inventory Officer' }, { value: 'technician', label: 'Technician' }]} placeholder="All Roles" />
+                        <CustomDropdown value={filterStatus} onChange={(v) => { setFilterStatus(v); setCurrentPage(1); }} options={['Online', 'Offline']} placeholder="All Status" />
                         {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
                     </div>
                 )}
@@ -753,12 +722,7 @@ export default function PermissionsPage() {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onUserAdded={(newUser) => {
-                    // In a real app, you'd add to DB and refresh
-                    // Here we just update local state if needed or show success
-                    console.log("Admin Added", newUser);
-                    // For demo purposes, we might want to update allUsers if we can access setAllUsers
-                    // But allUsers is derived from MockData which we can't easily mutate from here persistenty.
-                    // We'll just close for now.
+                    setAllUsers(prev => [newUser, ...prev]);
                 }}
             />
 

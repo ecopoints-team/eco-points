@@ -1,12 +1,37 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf } from 'lucide-react';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf, Bell, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { ROLES } from '../data/mockData';
+import { ROLES, ADMIN_LOGS } from '../data/mockData';
+
+// View-Only Banner for non-admin roles
+export const ViewOnlyBanner = () => {
+    const { canManage } = useAuth();
+    if (canManage) return null;
+    return (
+        <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 system:bg-amber-500/10 system:border-amber-500/30 system:text-amber-400">
+            <ShieldAlert size={18} />
+            <span className="text-sm font-medium">View-only mode — Your role does not have permission to make changes on this page.</span>
+        </div>
+    );
+};
+
+// Wrapper that disables interactive elements for view-only users
+export const ViewOnlyWrapper = ({ children }) => {
+    const { canManage } = useAuth();
+    if (canManage) return <>{children}</>;
+    return (
+        <div className="relative">
+            <div className="pointer-events-none opacity-60 select-none">
+                {children}
+            </div>
+        </div>
+    );
+};
 
 // 4-Way Theme Toggle Component
 const ThemeToggle = ({ theme, setTheme }) => {
@@ -75,6 +100,7 @@ export default function AdminLayout({ children }) {
   // Auth Context
   const {
     currentUser,
+    isInitialized,
     switchUser,
     allAdminUsers,
     allLocations,
@@ -84,6 +110,14 @@ export default function AdminLayout({ children }) {
     viewAsLocationId,
     setViewAsLocation
   } = useAuth();
+
+  // Auth guard — redirect to login if not authenticated
+  const router = useRouter();
+  useEffect(() => {
+    if (isInitialized && !currentUser) {
+      router.push('/login');
+    }
+  }, [isInitialized, currentUser, router]);
 
   // Load sidebar state from localStorage after mount (client-only)
   useEffect(() => {
@@ -109,6 +143,9 @@ export default function AdminLayout({ children }) {
     if (path === '/admin/rewards') return { main: 'Rewards', sub: 'Inventory' };
     if (path === '/admin/logs/bottles') return { main: 'System', sub: 'Bottle Logs' };
     if (path === '/admin/logs/access') return { main: 'System', sub: 'Access Logs' };
+    if (path === '/admin/logs/machines') return { main: 'System', sub: 'Machine Logs' };
+    if (path === '/admin/logs/rewards') return { main: 'System', sub: 'Reward Logs' };
+    if (path === '/admin/leaderboards') return { main: 'Leaderboards', sub: 'Overview' };
     if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
     if (path === '/admin/profile') return { main: 'My', sub: 'Profile' };
     return { main: 'Admin', sub: 'Panel' };
@@ -156,8 +193,25 @@ export default function AdminLayout({ children }) {
 
   // Refs for click outside detection
   const profileRef = React.useRef(null);
-
   const locationRef = React.useRef(null);
+  const notificationRef = useRef(null);
+
+  // Notification state
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [readNotifications, setReadNotifications] = useState([]);
+
+  // Get recent notifications from admin logs (last 10)
+  const notifications = ADMIN_LOGS.slice(0, 10).map(log => ({
+    id: log.id,
+    title: log.action,
+    description: `${log.adminName} — ${log.target !== '-' ? log.target : log.category}`,
+    time: log.timestamp,
+    category: log.category,
+    read: readNotifications.includes(log.id),
+  }));
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const markAllRead = () => setReadNotifications(notifications.map(n => n.id));
+  const markRead = (id) => setReadNotifications(prev => prev.includes(id) ? prev : [...prev, id]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -169,10 +223,19 @@ export default function AdminLayout({ children }) {
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setIsLocationSelectorOpen(false);
       }
+
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Auth guard — don't render admin layout if not logged in 
+  if (!isInitialized || !currentUser) {
+    return null;
+  }
 
   return (
     <div className={`${themeClass} flex h-screen overflow-hidden transition-colors duration-700 ease-in-out`}>
@@ -315,6 +378,75 @@ export default function AdminLayout({ children }) {
               <span className="text-xs font-bold tracking-wider text-emerald-700 dark:text-emerald-400">ONLINE</span>
             </div>
 
+            {/* NOTIFICATION BELL */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="relative p-2 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:bg-slate-700/50 transition-colors"
+                title="Notifications"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationOpen && (
+                <div className={`absolute right-0 mt-3 w-80 z-50 origin-top-right rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 overflow-hidden
+                  ${theme === 'light' ? 'bg-white border border-gray-100' :
+                    theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
+                      'bg-[#1e293b] border-slate-700'}`}>
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700/50 flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button onClick={markAllRead} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">No notifications</div>
+                    ) : (
+                      notifications.map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => markRead(n.id)}
+                          className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-slate-700/30 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/30
+                            ${!n.read ? 'bg-emerald-50/50 dark:bg-emerald-500/5' : ''}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!n.read ? 'bg-emerald-500' : 'bg-transparent'}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${!n.read ? 'font-semibold text-slate-800 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>
+                                {n.title}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{n.description}</p>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{n.time}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="px-4 py-2 border-t border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/50">
+                    <Link href="/admin/logs/access">
+                      <button
+                        onClick={() => setIsNotificationOpen(false)}
+                        className="w-full text-center text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline py-1"
+                      >
+                        View All Activity →
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* THEME TOGGLE */}
+            <ThemeToggle theme={theme} setTheme={setTheme} />
 
             {/* PROFILE DROPDOWN */}
             <div className="relative" ref={profileRef}>

@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import AdminLayout from '../../../src/Components/AdminLayout';
+import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation } from '../../../src/data/mockData';
+import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation, BOTTLE_LOGS } from '../../../src/data/mockData';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
@@ -396,7 +396,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 };
 
 // Machine Card Component
-const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) => (
+const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, currentUser }) => (
     <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${machine.status === 'Maintenance'
         ? 'border-red-300 dark:border-red-500/30'
         : machine.status === 'Full'
@@ -443,8 +443,8 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) 
                 <p className="text-xl font-black text-slate-800 dark:text-white">{machine.bottlesCollected.toLocaleString()}</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Last Sync</p>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">{machine.lastSync}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Points</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{(BOTTLE_LOGS.filter(log => log.machineId === machine.id).reduce((sum, log) => sum + (log.pointsAwarded || 0), 0)).toLocaleString()}</p>
             </div>
         </div>
 
@@ -452,13 +452,13 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) 
 
         {/* Actions */}
         <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium
+            <button onClick={() => onViewDetails(machine)} className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium
                 bg-slate-100 text-slate-600 hover:bg-slate-200
                 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors">
                 <Eye size={16} />
                 View Details
             </button>
-            {['super_admin', 'head_admin', 'technician'].includes(currentUser?.role) && (
+            {hasPermission('machines', 'edit') && (
                 <button
                     onClick={() => onOpenMaintenance(machine)}
                     className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium
@@ -469,9 +469,10 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) 
                     Maintenance
                 </button>
             )}
-            <button className="flex items-center justify-center p-2 rounded-lg
+            <button onClick={() => onViewDetails(machine)} className="flex items-center justify-center p-2 rounded-lg
                 bg-slate-100 text-slate-600 hover:bg-slate-200
-                dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors">
+                dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors"
+                title="Machine Settings">
                 <Settings size={16} />
             </button>
         </div>
@@ -483,7 +484,7 @@ const MachineCard = ({ machine, onOpenMaintenance, locationName, currentUser }) 
 // ============================================================================
 
 export default function MachinesPage() {
-    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser } = useAuth();
+    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
 
     // Filter machines by location
     const filteredMachines = useMemo(() => {
@@ -494,19 +495,33 @@ export default function MachinesPage() {
     const [selectedMachine, setSelectedMachine] = useState(null);
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const cardsPerPage = 9;
 
     // Update machines when location changes
     React.useEffect(() => {
         setMachines(getMachinesByLocation(effectiveLocationId));
+        setSearchQuery('');
         setCurrentPage(1);
     }, [effectiveLocationId]);
 
+    // Filter machines by search
+    const displayedMachines = useMemo(() => {
+        if (!searchQuery) return machines;
+        const q = searchQuery.toLowerCase();
+        return machines.filter(m =>
+            m.name.toLowerCase().includes(q) ||
+            m.location.toLowerCase().includes(q) ||
+            m.id.toLowerCase().includes(q) ||
+            m.status.toLowerCase().includes(q)
+        );
+    }, [machines, searchQuery]);
+
     // Pagination
-    const totalPages = Math.ceil(machines.length / cardsPerPage);
+    const totalPages = Math.ceil(displayedMachines.length / cardsPerPage);
     const startIndex = (currentPage - 1) * cardsPerPage;
-    const currentMachines = machines.slice(startIndex, startIndex + cardsPerPage);
+    const currentMachines = displayedMachines.slice(startIndex, startIndex + cardsPerPage);
 
     const onlineCount = machines.filter(m => m.status === 'Online').length;
     const fullCount = machines.filter(m => m.status === 'Full').length;
@@ -516,6 +531,10 @@ export default function MachinesPage() {
     const handleOpenMaintenance = (machine) => {
         setSelectedMachine(machine);
         setShowMaintenanceModal(true);
+    };
+
+    const handleViewDetails = (machine) => {
+        setSelectedMachine(machine);
     };
 
     const handleAddMaintenanceLog = (machineId, newLog) => {
@@ -547,7 +566,9 @@ export default function MachinesPage() {
 
     return (
         <>
+            <ViewOnlyBanner />
             {/* Page Header */}
+            <ViewOnlyWrapper>
             <div className="mb-8 flex justify-between items-end">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -566,16 +587,29 @@ export default function MachinesPage() {
                             : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
                     </p>
                 </div>
-                {isSuperAdmin && (
+                <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search machines..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all w-64"
+                        />
+                    </div>
+                    {(isSuperAdmin || hasPermission('machines', 'create')) && (
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20"
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
                     >
                         <Plus size={18} />
                         Add Machine
                     </button>
-                )}
+                    )}
+                </div>
             </div>
+            </ViewOnlyWrapper>
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -634,6 +668,7 @@ export default function MachinesPage() {
                                 key={machine.id}
                                 machine={machine}
                                 onOpenMaintenance={handleOpenMaintenance}
+                                onViewDetails={handleViewDetails}
                                 locationName={isSuperAdmin && !effectiveLocationId ? getLocationName(machine.locationId) : null}
                                 currentUser={currentUser}
                             />

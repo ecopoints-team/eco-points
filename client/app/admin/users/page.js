@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout from '../../../src/Components/AdminLayout';
+import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../src/Components/CustomDropdown';
 import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 import { USERS, getUsersByLocation, getDepartmentName } from '../../../src/data/mockData';
@@ -205,7 +206,9 @@ export default function ManageUsersPage() {
 
     return (
         <>
+            <ViewOnlyBanner />
             {/* Page Header */}
+            <ViewOnlyWrapper>
             <div className="mb-8 flex justify-between items-center">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -222,8 +225,17 @@ export default function ManageUsersPage() {
                             : `View and manage users at ${currentLocation?.name || 'your location'}`}
                     </p>
                 </div>
+                {canCreate && (
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                    >
+                        <UserPlus size={18} />
+                        <span className="hidden sm:inline">Add User</span>
+                    </button>
+                )}
             </div>
-
+            </ViewOnlyWrapper>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
@@ -306,41 +318,13 @@ export default function ManageUsersPage() {
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                         {/* Filter Row */}
                         <div className="flex flex-wrap gap-3 items-center mb-3">
-                            <div className="relative">
-                                <select value={filterRole} onChange={(e) => handleFilterChange(setFilterRole, e.target.value)}
-                                    className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Roles</option>
-                                    {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)}
-                                    className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Status</option>
-                                    {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterAccountHealth} onChange={(e) => handleFilterChange(setFilterAccountHealth, e.target.value)}
-                                    className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Account Health</option>
-                                    {accountHealthOptions.map(h => <option key={h} value={h}>{h}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
+                            <CustomDropdown value={filterRole} onChange={(v) => handleFilterChange(setFilterRole, v)} options={roles} placeholder="All Roles" />
+                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Status" />
+                            <CustomDropdown value={filterAccountHealth} onChange={(v) => handleFilterChange(setFilterAccountHealth, v)} options={accountHealthOptions} placeholder="All Account Health" />
 
                             {/* School Filter (Super Admin) */}
                             {isSuperAdmin && !effectiveLocationId && (
-                                <div className="relative">
-                                    <select value={filterSchool} onChange={(e) => handleFilterChange(setFilterSchool, e.target.value)}
-                                        className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                        <option value="">All Schools</option>
-                                        {allLocations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                    </select>
-                                    <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                </div>
+                                <CustomDropdown value={filterSchool} onChange={(v) => handleFilterChange(setFilterSchool, v)} options={allLocations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Schools" />
                             )}
 
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}

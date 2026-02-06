@@ -174,35 +174,31 @@ export default function UserRewards() {
         <div className="flex flex-col lg:grid lg:grid-cols-4 justify-center">
           <span className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             HI! User
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
+            {/* TODO: Connect to user data from DB */}
             <span className="">
-              <p>TANGA</p>
+              <p>&mdash;</p>
             </span>
-            {/*  */}
           </span>
           <span className="relative order-2 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             SUMMARY OF POINTS:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
+            {/* TODO: Connect to points data from DB */}
             <span className="">
-              <p>TANGA</p>
+              <p>&mdash;</p>
             </span>
-            {/*  */}
           </span>
           <span className="relative order-3 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             POINTS OBTAINED TODAY:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
+            {/* TODO: Connect to daily points from DB */}
             <span className="">
-              <p>TANGA</p>
+              <p>&mdash;</p>
             </span>
-            {/*  */}
           </span>
           <span className="relative order-4 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             STREAK:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
+            {/* TODO: Connect to streak data from DB */}
             <span className="">
-              <p>TANGA</p>
+              <p>&mdash;</p>
             </span>
-            {/*  */}
           </span>
         </div>
       </div>

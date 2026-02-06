@@ -1,8 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, ChevronDown } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, ChevronDown, Search, GraduationCap, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../data/mockData';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -49,12 +50,17 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('Student');
     const [locationId, setLocationId] = useState(currentLocation?.id || '');
-    const [schoolSearch, setSchoolSearch] = useState('');
-    const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+    const [educLevel, setEducLevel] = useState('');
+    const [strand, setStrand] = useState('');
+    const [department, setDepartment] = useState('');
+    const [deptSearch, setDeptSearch] = useState('');
+    const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+    const [yearLevel, setYearLevel] = useState('');
 
-    // Mock schools for search
-    const filteredSchools = ["Arellano University - Andres Bonifacio Pasig Campus"].filter(s =>
-        s.toLowerCase().includes(schoolSearch.toLowerCase())
+    // Filtered college departments for searchable dropdown
+    const filteredDepts = COLLEGE_DEPARTMENTS.filter(d =>
+        d.name.toLowerCase().includes(deptSearch.toLowerCase()) ||
+        d.abbreviation.toLowerCase().includes(deptSearch.toLowerCase())
     );
 
     const [isLoading, setIsLoading] = useState(false);
@@ -76,10 +82,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
             return;
         }
 
-        if (isSuperAdmin && !locationId && !schoolSearch) {
-            // For super admin, need to specify location. For now just relying on locationId or school string.
-            // We'll map school string back to location if needed, or just store the string.
-            // Mock data uses locationId.
+        if (isSuperAdmin && !locationId && !educLevel) {
             if (!locationId) {
                 setError('Please select a location');
                 return;
@@ -97,6 +100,10 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
             status: 'Active',
             points: 0,
             locationId: locationId || currentLocation?.id,
+            educLevel: educLevel || null,
+            strand: educLevel === 'SHS' ? strand : null,
+            department: educLevel === 'College' ? department : null,
+            yearLevel: yearLevel || null,
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         };
 
@@ -115,7 +122,11 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         setPassword('');
         setConfirmPassword('');
         setRole('Student');
-        setSchoolSearch('');
+        setEducLevel('');
+        setStrand('');
+        setDepartment('');
+        setDeptSearch('');
+        setYearLevel('');
         setError('');
     };
 
@@ -169,6 +180,96 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><ChevronDown size={16} /></div>
                             </div>
                         </div>
+                    )}
+
+                    {/* Educational Level */}
+                    {role === 'Student' && (
+                        <>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Educational Level</label>
+                                <div className="relative">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><GraduationCap size={18} /></div>
+                                    <select value={educLevel} onChange={(e) => { setEducLevel(e.target.value); setStrand(''); setDepartment(''); setDeptSearch(''); setYearLevel(''); }} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pl-10 pr-4 py-3 appearance-none cursor-pointer outline-none">
+                                        <option value="">Select level...</option>
+                                        <option value="SHS">Senior High School</option>
+                                        <option value="College">College</option>
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><ChevronDown size={16} /></div>
+                                </div>
+                            </div>
+
+                            {/* SHS Strand */}
+                            {educLevel === 'SHS' && (
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">SHS Strand</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><BookOpen size={18} /></div>
+                                        <select value={strand} onChange={(e) => setStrand(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pl-10 pr-4 py-3 appearance-none cursor-pointer outline-none">
+                                            <option value="">Select strand...</option>
+                                            {SHS_STRANDS.map(s => (
+                                                <option key={s.id} value={s.id}>{s.abbreviation} — {s.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><ChevronDown size={16} /></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* College Department (searchable) */}
+                            {educLevel === 'College' && (
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">College Department</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search size={18} /></div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search department..."
+                                            value={deptSearch}
+                                            onChange={(e) => { setDeptSearch(e.target.value); setShowDeptDropdown(true); }}
+                                            onFocus={() => setShowDeptDropdown(true)}
+                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pl-10 pr-4 py-3 outline-none"
+                                        />
+                                        {showDeptDropdown && filteredDepts.length > 0 && (
+                                            <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                                {filteredDepts.map(d => (
+                                                    <button key={d.id} type="button" onClick={() => { setDepartment(d.id); setDeptSearch(d.abbreviation + ' — ' + d.name); setShowDeptDropdown(false); }}
+                                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors ${department === d.id ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-medium' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                        <span className="font-medium">{d.abbreviation}</span> — {d.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Year Level */}
+                            {educLevel && (
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Year Level</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><GraduationCap size={18} /></div>
+                                        <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent pl-10 pr-4 py-3 appearance-none cursor-pointer outline-none">
+                                            <option value="">Select year...</option>
+                                            {educLevel === 'SHS' ? (
+                                                <>
+                                                    <option value="Grade 11">Grade 11</option>
+                                                    <option value="Grade 12">Grade 12</option>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value="1st Year">1st Year</option>
+                                                    <option value="2nd Year">2nd Year</option>
+                                                    <option value="3rd Year">3rd Year</option>
+                                                    <option value="4th Year">4th Year</option>
+                                                </>
+                                            )}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><ChevronDown size={16} /></div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <InputField type="password" placeholder="Password" icon={Lock} showToggle={true} value={password} onChange={(e) => setPassword(e.target.value)} label="Password *" />

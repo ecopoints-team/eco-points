@@ -11,16 +11,14 @@ export default function NavBar({ onLoginClick }) {
 
   // Nav Color Change (Scrolled)
   const [color, setColor] = useState(false);
-  const changeColor = () => {
-    if (window.scrollY >= 90) {
-      setColor(true);
-    } else {
-      setColor(false);
-    }
-  };
 
-  // Event Listener (Scroll)
-  window.addEventListener("scroll", changeColor);
+  useEffect(() => {
+    const changeColor = () => {
+      setColor(window.scrollY >= 90);
+    };
+    window.addEventListener("scroll", changeColor);
+    return () => window.removeEventListener("scroll", changeColor);
+  }, []);
 
   // Navigation Links
   const navLinks = [
