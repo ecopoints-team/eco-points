@@ -396,7 +396,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 };
 
 // Machine Card Component
-const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, currentUser }) => (
+const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, currentUser, hasPermission }) => (
     <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${machine.status === 'Maintenance'
         ? 'border-red-300 dark:border-red-500/30'
         : machine.status === 'Full'
@@ -569,46 +569,46 @@ export default function MachinesPage() {
             <ViewOnlyBanner />
             {/* Page Header */}
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-end">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-2xl font-black text-slate-800 dark:text-white">
-                            Machines (RVM)
-                        </h1>
-                        {currentLocation && (
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-                                {currentLocation.name}
-                            </span>
+                <div className="mb-8 flex justify-between items-end">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-2xl font-black text-slate-800 dark:text-white">
+                                Machines (RVM)
+                            </h1>
+                            {currentLocation && (
+                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                    {currentLocation.name}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            {isSuperAdmin && !effectiveLocationId
+                                ? 'Viewing all machines across all locations'
+                                : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search machines..."
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all w-64"
+                            />
+                        </div>
+                        {(isSuperAdmin || hasPermission('machines', 'create')) && (
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                            >
+                                <Plus size={18} />
+                                Add Machine
+                            </button>
                         )}
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        {isSuperAdmin && !effectiveLocationId
-                            ? 'Viewing all machines across all locations'
-                            : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
-                    </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search machines..."
-                            value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all w-64"
-                        />
-                    </div>
-                    {(isSuperAdmin || hasPermission('machines', 'create')) && (
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-                    >
-                        <Plus size={18} />
-                        Add Machine
-                    </button>
-                    )}
-                </div>
-            </div>
             </ViewOnlyWrapper>
 
             {/* Stats Overview */}
@@ -671,6 +671,7 @@ export default function MachinesPage() {
                                 onViewDetails={handleViewDetails}
                                 locationName={isSuperAdmin && !effectiveLocationId ? getLocationName(machine.locationId) : null}
                                 currentUser={currentUser}
+                                hasPermission={hasPermission}
                             />
                         ))}
                     </div>
