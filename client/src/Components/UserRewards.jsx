@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { Search, Mic } from "lucide-react";
+import Link from "next/link";
 export default function UserRewards() {
   const features = [
     {
@@ -317,6 +318,11 @@ export default function UserRewards() {
                 <div className="grid-flow-row row-start-3">PLACEHOLDER</div>
               </div>
             </div>
+          </div>
+          <div className="mb-8">
+            <Link href="/" className="text-white/80 hover:text-orange-400">
+               Back to Home
+            </Link>
           </div>
         </div>
       </section>

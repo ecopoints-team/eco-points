@@ -131,6 +131,10 @@
     animation: scaleOut 0.2s ease-in forwards;
   }
 
+  .button {
+    cursor: pointer;
+  }
+
   /* Main Color Palette (Reusable) */
 
   /* Fresh Mint */
@@ -302,19 +306,19 @@ html.system .dark\:bg-slate-800\/50,
 html.system .dark\:bg-slate-800,
 html.system [class*="dark:bg-slate-800"],
 html.system [class*="dark:bg-\[#1e293b\]"] {
-  background-color: #1A2E1F !important;
+  background-color: #1a2e1f !important;
   border-color: rgba(123, 160, 91, 0.2) !important;
 }
 
 /* System theme — Table headers */
 html.system [class*="dark:bg-slate-900"] {
-  background-color: #0F1B11 !important;
+  background-color: #0f1b11 !important;
 }
 
 /* System theme — Accent colors (emerald → system green) */
 html.system .dark\:text-emerald-400,
 html.system [class*="dark:text-emerald-400"] {
-  color: #7BA05B !important;
+  color: #7ba05b !important;
 }
 
 html.system .dark\:bg-emerald-500\/20,
@@ -342,26 +346,26 @@ html.system tr:hover {
 
 /* System theme — Active/selected elements */
 html.system .bg-emerald-600 {
-  background-color: #5C8A3E !important;
+  background-color: #5c8a3e !important;
 }
 html.system .bg-emerald-600:hover {
-  background-color: #7BA05B !important;
+  background-color: #7ba05b !important;
 }
 
 /* System theme — Badge refinements */
 html.system .dark\:text-white,
 html.system [class*="dark:text-white"] {
-  color: #E1E4E1 !important;
+  color: #e1e4e1 !important;
 }
 
 html.system .dark\:text-slate-300,
 html.system [class*="dark:text-slate-300"] {
-  color: #C5C9C5 !important;
+  color: #c5c9c5 !important;
 }
 
 html.system .dark\:text-slate-400,
 html.system [class*="dark:text-slate-400"] {
-  color: #9BA09B !important;
+  color: #9ba09b !important;
 }
 
 /* System theme — Input/select fields */
@@ -372,20 +376,20 @@ html.system input[type="number"],
 html.system input[type="password"],
 html.system input[type="search"],
 html.system textarea {
-  background-color: #1A2E1F !important;
+  background-color: #1a2e1f !important;
   border-color: rgba(123, 160, 91, 0.2) !important;
-  color: #E1E4E1 !important;
+  color: #e1e4e1 !important;
 }
 
 html.system select:focus,
 html.system input:focus,
 html.system textarea:focus {
-  border-color: #7BA05B !important;
+  border-color: #7ba05b !important;
   box-shadow: 0 0 0 2px rgba(123, 160, 91, 0.2) !important;
 }
 
 /* System theme — Stat cards & overview cards */
 html.system .dark\:bg-slate-800\/60,
 html.system [class*="dark:bg-slate-800\/"] {
-  background-color: #1A2E1F !important;
+  background-color: #1a2e1f !important;
 }

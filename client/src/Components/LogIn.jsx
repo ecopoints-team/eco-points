@@ -64,7 +64,7 @@ import {
   CheckCircle,
   SkipForward,
 } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
+// import ReCAPTCHA from "react-google-recaptcha";
 
 import { ADMIN_USERS } from "../data/mockData";
 
@@ -185,8 +185,6 @@ const COLLEGE_DEPARTMENTS = [
   },
   { id: "DM", name: "Diploma in Midwifery", abbreviation: "DM" },
 ];
-
-
 
 // ============================================================================
 // Reusable Input Field Component
@@ -609,7 +607,7 @@ export default function LogIn({ onClose }) {
     const matchedUser = ADMIN_USERS.find(
       (user) =>
         user.email.toLowerCase() === loginEmail.toLowerCase() &&
-        user.password === loginPassword
+        user.password === loginPassword,
     );
 
     if (matchedUser) {
@@ -622,9 +620,7 @@ export default function LogIn({ onClose }) {
 
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
-    setError(
-      "Invalid email or password. Please try again.",
-    );
+    setError("Invalid email or password. Please try again.");
 
     // Reset CAPTCHA for next attempt
     if (recaptchaRef.current) {
@@ -676,8 +672,6 @@ export default function LogIn({ onClose }) {
       setIsSignUp(false);
     }, 500);
   };
-
-
 
   const [isClosing, setIsClosing] = useState(false);
 
@@ -820,12 +814,13 @@ export default function LogIn({ onClose }) {
           absolute top-0 left-0 h-full w-full md:w-1/2 
           flex flex-col items-center bg-white
           transition-all duration-700 ease-in-out overflow-y-auto mt-3
-          ${isMobile
+          ${
+            isMobile
               ? !isSignUp
                 ? "opacity-100 z-20 justify-end pb-10 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
-            }
+          }
         `}
         >
           <div
@@ -950,8 +945,6 @@ export default function LogIn({ onClose }) {
                 )}
               </button>
             </form>
-
-
           </div>
         </div>
 
@@ -962,12 +955,13 @@ export default function LogIn({ onClose }) {
           flex flex-col items-center 
           bg-white
           transition-all duration-700 ease-in-out
-          ${isMobile
+          ${
+            isMobile
               ? isSignUp
                 ? "opacity-100 z-20 pt-4 pb-40 px-6 overflow-y-auto no-scrollbar justify-start"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6 overflow-y-auto"
-            }
+          }
         `}
         >
           <div
@@ -1360,24 +1354,27 @@ export default function LogIn({ onClose }) {
           absolute z-50 overflow-hidden
           transition-all duration-[800ms] cubic-bezier(0.65, 0, 0.35, 1) text-white
           
-          ${isMobile
+          ${
+            isMobile
               ? `w-full left-0
-               ${isExpanding
-                ? isSignUp
-                  ? "h-full bottom-0 top-auto rounded-[2rem]"
-                  : "h-full top-0 rounded-[2rem]"
-                : isSignUp
-                  ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
-                  : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
-              }`
+               ${
+                 isExpanding
+                   ? isSignUp
+                     ? "h-full bottom-0 top-auto rounded-[2rem]"
+                     : "h-full top-0 rounded-[2rem]"
+                   : isSignUp
+                     ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
+                     : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
+               }`
               : `top-0 h-full
-                ${isExpanding
-                ? "w-full left-0 rounded-[2rem]"
-                : isSignUp
-                  ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
-                  : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
-              }`
-            }
+                ${
+                  isExpanding
+                    ? "w-full left-0 rounded-[2rem]"
+                    : isSignUp
+                      ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
+                      : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
+                }`
+          }
         `}
         >
           <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center flex-col">

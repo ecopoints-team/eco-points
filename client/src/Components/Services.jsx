@@ -21,23 +21,15 @@ export default function Services() {
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="w-full hover:translate-y-2 transition-transform duration-300 hover:scale-102">
             <div className="relative secondary-color backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
-              <div className="bg-gray-900/20 backdrop-blur-sm rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[450px] border border-white/5">
+              {/* h-[280px] sm:h-[350px] lg:h-[450px] */}
+              <div className="bg-gray-900/20 backdrop-blur-sm rounded-lg overflow-hidden h-[450px] sm:h-[500px] lg:h-[600px] border border-white/5">
                 {/* Container */}
-                <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
-                  <div className="flex items-center space-x-2">
-                    {/* Three Circles */}
-                    {/* <div className="flex items-center space-x-1 sm:space-x-2">
-                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-300" />
-                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-400" />
-                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-600" />
-                    </div> */}
-                    <span className="text-cs font-medium sm:text-sm text-white"></span>
-                  </div>
-                  <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                </div>
                 {/* IMAGE SECTION */}
-                <div className="pt-4 sm:pt-8 px-2 sm:px-2 lg:px-4">
-                  <img src="/StockPhoto.webp" />
+                <div className="pt-4 sm:pt-4 px-2 sm:px-2 lg:px-4">
+                  <img
+                    src="/SampleReward-Stickers.jpg"
+                    className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-115 lg:w-150 lg:h-140 py-2 px-2"
+                  />
                 </div>
               </div>
             </div>
@@ -60,7 +52,7 @@ export default function Services() {
             </p>
             {/* Button */}
             <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 lg:mb-8 sm:mb-12 ">
                 <Link
                   href="/rewards"
                   className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
