@@ -64,7 +64,7 @@ import {
   CheckCircle,
   SkipForward,
 } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
+// import ReCAPTCHA from "react-google-recaptcha";
 
 import { ADMIN_USERS } from "../data/mockData";
 
@@ -185,8 +185,6 @@ const COLLEGE_DEPARTMENTS = [
   },
   { id: "DM", name: "Diploma in Midwifery", abbreviation: "DM" },
 ];
-
-
 
 // ============================================================================
 // Reusable Input Field Component
@@ -627,7 +625,7 @@ export default function LogIn({ onClose }) {
     const matchedUser = ADMIN_USERS.find(
       (user) =>
         user.email.toLowerCase() === loginEmail.toLowerCase() &&
-        user.password === loginPassword
+        user.password === loginPassword,
     );
 
     if (matchedUser) {
@@ -642,9 +640,7 @@ export default function LogIn({ onClose }) {
     // Failed login — increment attempts, keep name/email intact
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
-    setError(
-      "Invalid email or password. Please try again.",
-    );
+    setError("Invalid email or password. Please try again.");
 
     // Reset CAPTCHA for next attempt
     if (recaptchaRef.current) {
@@ -696,8 +692,6 @@ export default function LogIn({ onClose }) {
       setIsSignUp(false);
     }, 500);
   };
-
-
 
   const [isClosing, setIsClosing] = useState(false);
 
@@ -971,8 +965,6 @@ export default function LogIn({ onClose }) {
                 )}
               </button>
             </form>
-
-
           </div>
         </div>
 
