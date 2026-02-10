@@ -56,6 +56,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const [deptSearch, setDeptSearch] = useState('');
     const [showDeptDropdown, setShowDeptDropdown] = useState(false);
     const [yearLevel, setYearLevel] = useState('');
+    const [passwordShake, setPasswordShake] = useState(false);
 
     // Filtered college departments for searchable dropdown
     const filteredDepts = COLLEGE_DEPARTMENTS.filter(d =>
@@ -79,6 +80,8 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
 
         if (password !== confirmPassword) {
             setError('Passwords do not match.');
+            setPasswordShake(true);
+            setTimeout(() => setPasswordShake(false), 600);
             return;
         }
 
@@ -127,6 +130,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         setDepartment('');
         setDeptSearch('');
         setYearLevel('');
+        setPasswordShake(false);
         setError('');
     };
 
@@ -272,8 +276,12 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                         </>
                     )}
 
-                    <InputField type="password" placeholder="Password" icon={Lock} showToggle={true} value={password} onChange={(e) => setPassword(e.target.value)} label="Password *" />
-                    <InputField type="password" placeholder="Confirm Password" icon={Lock} showToggle={true} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} label="Confirm Password *" />
+                    <div className={passwordShake ? 'animate-shake' : ''}>
+                        <InputField type="password" placeholder="Password" icon={Lock} showToggle={true} value={password} onChange={(e) => setPassword(e.target.value)} label="Password *" />
+                    </div>
+                    <div className={passwordShake ? 'animate-shake' : ''}>
+                        <InputField type="password" placeholder="Confirm Password" icon={Lock} showToggle={true} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} label="Confirm Password *" />
+                    </div>
 
                     {error && <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm border border-red-200">{error}</div>}
 

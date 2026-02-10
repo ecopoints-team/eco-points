@@ -158,6 +158,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordShake, setPasswordShake] = useState(false);
     const [locationId, setLocationId] = useState(currentLocation?.id || '');
 
     // Form state - Permissions tab (no default selection)
@@ -244,6 +246,14 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
             return;
         }
 
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            setPasswordShake(true);
+            setActiveTab('information');
+            setTimeout(() => setPasswordShake(false), 600);
+            return;
+        }
+
         if (!locationId && isSuperAdmin) {
             setError('Please select a location.');
             setActiveTab('information');
@@ -301,6 +311,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         setName('');
         setEmail('');
         setPassword('');
+        setConfirmPassword('');
+        setPasswordShake(false);
         setSelectedRole(''); // Reset to no selection
         setActiveTab('information');
         setError('');
@@ -395,15 +407,28 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                                 onChange={(e) => setEmail(e.target.value)}
                                 label="Email Address *"
                             />
-                            <InputField
-                                type="password"
-                                placeholder="Enter password"
-                                icon={Lock}
-                                showToggle={true}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                label="Password *"
-                            />
+                            <div className={passwordShake ? 'animate-shake' : ''}>
+                                <InputField
+                                    type="password"
+                                    placeholder="Enter password"
+                                    icon={Lock}
+                                    showToggle={true}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    label="Password *"
+                                />
+                            </div>
+                            <div className={passwordShake ? 'animate-shake' : ''}>
+                                <InputField
+                                    type="password"
+                                    placeholder="Re-enter password"
+                                    icon={Lock}
+                                    showToggle={true}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    label="Confirm Password *"
+                                />
+                            </div>
 
                             {/* Location (Super Admin Only) */}
                             {isSuperAdmin && (

@@ -2,11 +2,11 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import { LOCATIONS, BOTTLE_LOGS } from '../../../src/data/mockData';
+import { LOCATIONS, BOTTLE_LOGS, USERS, getUsersByLocation, CITIES, getCityName } from '../../../src/data/mockData';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Trophy, Plus, Search,
-    ChevronLeft, ChevronRight, X, Coins
+    ChevronLeft, ChevronRight, X, Coins, User
 } from 'lucide-react';
 
 // ============================================================================
@@ -16,7 +16,9 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
     const [formData, setFormData] = useState({
         name: '',
         fullName: '',
-        address: '',
+        cityId: '',
+        streetAddress: '',
+        contactPerson: '',
         contactEmail: '',
         contactPhone: '',
         status: 'Active'
@@ -27,7 +29,9 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = 'Short name is required';
         if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        if (!formData.address.trim()) newErrors.address = 'Address is required';
+        if (!formData.cityId) newErrors.cityId = 'City is required';
+        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
+        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
         if (!formData.contactEmail.trim()) {
             newErrors.contactEmail = 'Email is required';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
@@ -55,7 +59,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                 totalPoints: 0,
                 ranking: LOCATIONS.length + 1
             });
-            setFormData({ name: '', fullName: '', address: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setFormData({ name: '', fullName: '', cityId: '', streetAddress: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             onClose();
         }
     };
@@ -78,7 +82,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Short Name *</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Display Name *</label>
                         <input
                             type="text"
                             value={formData.name}
@@ -100,15 +104,43 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                         {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address *</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
+                        <select
+                            value={formData.cityId}
+                            onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.cityId ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer`}
+                        >
+                            <option value="">Select city...</option>
+                            {CITIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                        {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Street Address *</label>
                         <input
                             type="text"
-                            value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            placeholder="Full address"
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.address ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                            value={formData.streetAddress}
+                            onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
+                            placeholder="Full street address"
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.streetAddress ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
                         />
-                        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                        {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Person *</label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><User size={16} /></div>
+                            <input
+                                type="text"
+                                value={formData.contactPerson}
+                                onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                                placeholder="e.g., Admin Officer"
+                                className={`w-full pl-10 pr-4 py-2 rounded-lg border ${errors.contactPerson ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                            />
+                        </div>
+                        {errors.contactPerson && <p className="text-red-500 text-xs mt-1">{errors.contactPerson}</p>}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -176,9 +208,17 @@ export default function LocationsPage() {
         return locations.filter(loc =>
             loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             loc.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.address.toLowerCase().includes(searchQuery.toLowerCase())
+            loc.streetAddress.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [locations, searchQuery]);
+
+    // User count by location
+    const userCountByLocation = useMemo(() => {
+        return USERS.reduce((acc, user) => {
+            acc[user.locationId] = (acc[user.locationId] || 0) + 1;
+            return acc;
+        }, {});
+    }, []);
 
     // Pagination
     const totalPages = Math.ceil(filteredLocations.length / cardsPerPage);
@@ -215,23 +255,23 @@ export default function LocationsPage() {
             <ViewOnlyBanner />
             {/* Page Header with Add Button */}
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">
-                        Location Management
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        Manage all deployment sites and their resources
-                    </p>
+                <div className="mb-8 flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">
+                            Location Management
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            Manage all deployment sites and their resources
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                    >
+                        <Plus size={18} />
+                        Add Location
+                    </button>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-                >
-                    <Plus size={18} />
-                    Add Location
-                </button>
-            </div>
             </ViewOnlyWrapper>
 
             {/* Global Stats */}
@@ -342,7 +382,7 @@ export default function LocationsPage() {
                             <div className="space-y-2 mb-4 text-sm">
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <MapPin size={14} className="text-slate-400 flex-shrink-0" />
-                                    <span className="truncate">{location.address}</span>
+                                    <span className="truncate">{location.streetAddress}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <Calendar size={14} className="text-slate-400" />
@@ -351,7 +391,13 @@ export default function LocationsPage() {
                             </div>
 
                             {/* Stats Grid */}
-                            <div className="grid grid-cols-3 gap-2 mb-4">
+                            <div className="grid grid-cols-4 gap-2 mb-4">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Users</p>
+                                    <p className="text-lg font-black text-purple-600 dark:text-purple-400">
+                                        {userCountByLocation[location.id] || 0}
+                                    </p>
+                                </div>
                                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Machines</p>
                                     <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{location.machineCount}</p>

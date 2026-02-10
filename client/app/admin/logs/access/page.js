@@ -16,7 +16,6 @@ export default function AdminAccessLogsPage() {
     const [filterAdmin, setFilterAdmin] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterDuty, setFilterDuty] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [filterArea, setFilterArea] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,7 +44,6 @@ export default function AdminAccessLogsPage() {
     // Column visibility
     const [showLocation, setShowLocation] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
-    const duties = [...new Set(allAdminLogs.map(log => log.duty))];
     const locations = LOCATIONS;
     const areas = useMemo(() => {
         if (filterLocation) return AREAS.filter(a => a.locationId === filterLocation);
@@ -79,11 +77,10 @@ export default function AdminAccessLogsPage() {
             const matchesAdmin = filterAdmin === '' || log.adminName === filterAdmin;
             const matchesCategory = filterCategory === '' || log.category === filterCategory;
             const matchesStatus = filterStatus === '' || log.status === filterStatus;
-            const matchesDuty = filterDuty === '' || log.adminRole === filterDuty;
             const matchesLocation = filterLocation === '' || log.locationId === filterLocation;
             const matchesArea = filterArea === '' || log.areaId === filterArea;
 
-            return matchesSearch && matchesAdmin && matchesCategory && matchesStatus && matchesDuty && matchesLocation && matchesArea;
+            return matchesSearch && matchesAdmin && matchesCategory && matchesStatus && matchesLocation && matchesArea;
         }).sort((a, b) => {
             let aVal = a[sortColumn];
             let bVal = b[sortColumn];
@@ -92,7 +89,7 @@ export default function AdminAccessLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterAdmin, filterCategory, filterStatus, filterDuty, filterLocation, filterArea, effectiveLocationId, sortColumn, sortDirection]);
+    }, [searchQuery, filterAdmin, filterCategory, filterStatus, filterLocation, filterArea, effectiveLocationId, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -108,8 +105,8 @@ export default function AdminAccessLogsPage() {
         return pages;
     };
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setFilterStatus(''); setFilterDuty(''); setFilterLocation(''); setFilterArea(''); setSearchQuery(''); setSortColumn('timestampObj'); setSortDirection('desc'); setCurrentPage(1); };
-    const hasActiveFilters = filterAdmin || filterCategory || filterStatus || filterDuty || filterLocation || filterArea || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
+    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setFilterStatus(''); setFilterLocation(''); setFilterArea(''); setSearchQuery(''); setSortColumn('timestampObj'); setSortDirection('desc'); setCurrentPage(1); };
+    const hasActiveFilters = filterAdmin || filterCategory || filterStatus || filterLocation || filterArea || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const getCategoryColor = (cat) => {
         const colors = { 'Users': 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', 'Rewards': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Machines': 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400', 'Settings': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300', 'Auth': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Permissions': 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400' };
@@ -144,9 +141,9 @@ export default function AdminAccessLogsPage() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'Admin ID', 'Admin', 'Role', 'Duty', 'Action', 'Target', 'Category', 'Location', 'Area', 'Status', 'Notes'];
+        const headers = ['Date', 'Log ID', 'Admin ID', 'Admin', 'Role', 'Action', 'Target', 'Category', 'Location', 'Area', 'Status', 'Notes'];
         const rows = filteredLogs.map(log => [
-            log.timestamp, log.id, log.adminId, log.adminName, log.adminRole, log.duty,
+            log.timestamp, log.id, log.adminId, log.adminName, log.adminRole,
             log.action, log.target, log.category, log.locationName || getLocationName(log.locationId),
             log.areaName || '', log.status, log.notes
         ]);
@@ -206,7 +203,6 @@ export default function AdminAccessLogsPage() {
                             <CustomDropdown value={filterAdmin} onChange={(v) => handleFilterChange(setFilterAdmin, v)} options={admins} placeholder="All Admins" />
                             <CustomDropdown value={filterCategory} onChange={(v) => handleFilterChange(setFilterCategory, v)} options={categories} placeholder="All Categories" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Status" />
-                            <CustomDropdown value={filterDuty} onChange={(v) => handleFilterChange(setFilterDuty, v)} options={duties} placeholder="All Duties" />
                             <CustomDropdown value={filterLocation} onChange={(v) => { handleFilterChange(setFilterLocation, v); setFilterArea(''); }} options={locations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             <CustomDropdown value={filterArea} onChange={(v) => handleFilterChange(setFilterArea, v)} options={areas.map(a => ({ value: a.id, label: a.name }))} placeholder="All Areas" />
                             {hasActiveFilters && <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 font-medium flex items-center gap-1 hover:bg-red-50 transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
@@ -291,7 +287,7 @@ export default function AdminAccessLogsPage() {
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('adminName')}>
                                     <div className="flex items-center gap-1">Username <SortIcon column="adminName" /></div>
                                 </th>
-                                <th className="px-3 py-3 whitespace-nowrap">Duty</th>
+                                <th className="px-3 py-3 whitespace-nowrap">Role</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Action</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Target</th>
                                 {showCategory && <th className="px-3 py-3 whitespace-nowrap">Category</th>}

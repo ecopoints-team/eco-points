@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation, BOTTLE_LOGS } from '../../../src/data/mockData';
+import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation, ADMIN_USERS, BOTTLE_LOGS } from '../../../src/data/mockData';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
@@ -15,7 +15,6 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
         name: '',
         locationId: '',
         areaId: '',
-        location: '',
         status: 'Online'
     });
     const [errors, setErrors] = useState({});
@@ -29,7 +28,6 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = 'Machine name is required';
         if (!formData.locationId) newErrors.locationId = 'Location is required';
-        if (!formData.location.trim()) newErrors.location = 'Specific location is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -39,12 +37,12 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
         if (validateForm()) {
             onSubmit({
                 ...formData,
-                id: `RVM-${Date.now().toString().slice(-6)}`,
+                id: `RVM - ${Date.now().toString().slice(-6)} `,
                 bottlesCollected: 0,
                 lastSync: 'Just now',
                 maintenanceLogs: []
             });
-            setFormData({ name: '', locationId: '', areaId: '', location: '', status: 'Online' });
+            setFormData({ name: '', locationId: '', areaId: '', status: 'Online' });
             onClose();
         }
     };
@@ -102,17 +100,6 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
                             </select>
                         </div>
                     )}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Specific Location *</label>
-                        <input
-                            type="text"
-                            value={formData.location}
-                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                            placeholder="e.g., Building A, Floor 2"
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.location ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
-                        />
-                        {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
-                    </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
                         <select
@@ -182,31 +169,46 @@ const StatusBadge = ({ status }) => {
 const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newLog, setNewLog] = useState({
-        technician: '',
+        technicianId: '',
         issue: '',
         cost: '',
+        notes: '',
         resolved: false
     });
+
+    // Get technicians at the machine's location
+    const technicians = useMemo(() => {
+        if (!machine) return [];
+        return ADMIN_USERS.filter(a =>
+            a.role === 'technician' &&
+            a.locationId === machine.locationId &&
+            a.accountHealth === 'Active'
+        );
+    }, [machine]);
 
     if (!isOpen || !machine) return null;
 
     const handleSubmit = () => {
-        if (!newLog.technician || !newLog.issue) return;
+        if (!newLog.technicianId || !newLog.issue) return;
+        const tech = ADMIN_USERS.find(a => a.id === newLog.technicianId);
 
         onAddLog(machine.id, {
             id: Date.now(),
             date: new Date().toISOString().split('T')[0],
-            technician: newLog.technician,
+            technicianId: newLog.technicianId,
+            technician: tech ? tech.name : 'Unknown',
             issue: newLog.issue,
             cost: parseFloat(newLog.cost) || 0,
+            notes: newLog.notes || '',
             resolved: newLog.resolved
         });
 
-        setNewLog({ technician: '', issue: '', cost: '', resolved: false });
+        setNewLog({ technicianId: '', issue: '', cost: '', notes: '', resolved: false });
         setShowAddForm(false);
     };
 
-    const totalCost = machine.maintenanceLogs.reduce((sum, log) => sum + log.cost, 0);
+    const logs = machine.maintenanceLogs || [];
+    const totalCost = logs.reduce((sum, log) => sum + log.cost, 0);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -233,7 +235,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                     <div className="text-center">
-                        <p className="text-2xl font-black text-slate-800 dark:text-white">{machine.maintenanceLogs.length}</p>
+                        <p className="text-2xl font-black text-slate-800 dark:text-white">{logs.length}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">Total Logs</p>
                     </div>
                     <div className="text-center">
@@ -242,7 +244,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                     </div>
                     <div className="text-center">
                         <p className="text-2xl font-black text-slate-800 dark:text-white">
-                            {machine.maintenanceLogs.filter(l => l.resolved).length}/{machine.maintenanceLogs.length}
+                            {logs.filter(l => l.resolved).length}/{logs.length}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">Resolved</p>
                     </div>
@@ -270,17 +272,20 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        Technician Name *
+                                        Technician *
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={newLog.technician}
-                                        onChange={(e) => setNewLog(p => ({ ...p, technician: e.target.value }))}
+                                    <select
+                                        value={newLog.technicianId}
+                                        onChange={(e) => setNewLog(p => ({ ...p, technicianId: e.target.value }))}
                                         className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 
                                             bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
-                                            focus:border-emerald-500 dark:focus:border-emerald-500"
-                                        placeholder="e.g., John Smith"
-                                    />
+                                            focus:border-emerald-500 dark:focus:border-emerald-500 cursor-pointer"
+                                    >
+                                        <option value="">Select technician...</option>
+                                        {technicians.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -309,6 +314,20 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                         bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
                                         focus:border-emerald-500 dark:focus:border-emerald-500"
                                     placeholder="e.g., Sensor Replacement"
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Notes
+                                </label>
+                                <textarea
+                                    value={newLog.notes}
+                                    onChange={(e) => setNewLog(p => ({ ...p, notes: e.target.value }))}
+                                    rows={2}
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 
+                                        bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
+                                        focus:border-emerald-500 dark:focus:border-emerald-500 resize-none"
+                                    placeholder="Additional notes..."
                                 />
                             </div>
                             <div className="flex items-center gap-4 mb-4">
@@ -343,7 +362,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 
                     {/* Maintenance Log List */}
                     <div className="space-y-3">
-                        {machine.maintenanceLogs.map(log => (
+                        {logs.map(log => (
                             <div
                                 key={log.id}
                                 className={`p-4 rounded-xl border transition-colors ${log.resolved
@@ -430,10 +449,10 @@ const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, 
             </div>
         )}
 
-        {/* Location */}
+        {/* Area */}
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-4">
             <MapPin size={14} className="text-slate-400" />
-            {machine.location}
+            {machine.area || 'Unassigned'}
         </div>
 
         {/* Stats */}
@@ -512,7 +531,8 @@ export default function MachinesPage() {
         const q = searchQuery.toLowerCase();
         return machines.filter(m =>
             m.name.toLowerCase().includes(q) ||
-            m.location.toLowerCase().includes(q) ||
+            (m.area || '').toLowerCase().includes(q) ||
+            getLocationName(m.locationId).toLowerCase().includes(q) ||
             m.id.toLowerCase().includes(q) ||
             m.status.toLowerCase().includes(q)
         );
@@ -584,7 +604,7 @@ export default function MachinesPage() {
                         <p className="text-slate-500 dark:text-slate-400">
                             {isSuperAdmin && !effectiveLocationId
                                 ? 'Viewing all machines across all locations'
-                                : `Manage and monitor machines at ${currentLocation?.name || 'your location'}`}
+                                : `Manage and monitor machines at ${currentLocation?.name || 'your location'} `}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">

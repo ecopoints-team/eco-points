@@ -13,6 +13,7 @@ export default function ManageUsersPage() {
     // Get initial users based on location
     const getInitialUsers = () => getUsersByLocation(effectiveLocationId);
 
+
     const [users, setUsers] = useState(getInitialUsers);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
@@ -209,32 +210,32 @@ export default function ManageUsersPage() {
             <ViewOnlyBanner />
             {/* Page Header */}
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-center">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-2xl font-black text-slate-800 dark:text-white">Manage Users</h1>
-                        {currentLocation && (
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-                                {currentLocation.name}
-                            </span>
-                        )}
+                <div className="mb-8 flex justify-between items-center">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-2xl font-black text-slate-800 dark:text-white">Manage Users</h1>
+                            {currentLocation && (
+                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                    {currentLocation.name}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            {isSuperAdmin && !effectiveLocationId
+                                ? 'Viewing all users across all locations'
+                                : `View and manage users at ${currentLocation?.name || 'your location'}`}
+                        </p>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        {isSuperAdmin && !effectiveLocationId
-                            ? 'Viewing all users across all locations'
-                            : `View and manage users at ${currentLocation?.name || 'your location'}`}
-                    </p>
+                    {canCreate && (
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            <UserPlus size={18} />
+                            <span className="hidden sm:inline">Add User</span>
+                        </button>
+                    )}
                 </div>
-                {canCreate && (
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-                    >
-                        <UserPlus size={18} />
-                        <span className="hidden sm:inline">Add User</span>
-                    </button>
-                )}
-            </div>
             </ViewOnlyWrapper>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

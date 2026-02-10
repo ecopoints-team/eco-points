@@ -99,7 +99,7 @@ export default function RewardsInventoryPage() {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        pointsCost: '',
+        points: '',
         stock: '',
         category: 'Merchandise',
         image: null,
@@ -141,7 +141,7 @@ export default function RewardsInventoryPage() {
                 let valA, valB;
                 switch (sortColumn) {
                     case 'name': valA = a.name; valB = b.name; break;
-                    case 'pointsCost': valA = a.pointsCost; valB = b.pointsCost; break;
+                    case 'points': valA = a.points; valB = b.points; break;
                     case 'stock': valA = a.stock; valB = b.stock; break;
                     case 'category': valA = a.category; valB = b.category; break;
                     default: return 0;
@@ -193,7 +193,7 @@ export default function RewardsInventoryPage() {
     // Modal handlers
     const openAddModal = () => {
         setEditingReward(null);
-        setFormData({ name: '', description: '', pointsCost: '', stock: '', category: 'Merchandise', image: null, sku: '' });
+        setFormData({ name: '', description: '', points: '', stock: '', category: 'Merchandise', image: null, sku: '' });
         setShowModal(true);
     };
 
@@ -202,7 +202,7 @@ export default function RewardsInventoryPage() {
         setFormData({
             name: r.name,
             description: r.description,
-            pointsCost: r.pointsCost.toString(),
+            points: r.points.toString(),
             stock: r.stock.toString(),
             category: r.category,
             image: r.image || null,
@@ -221,14 +221,14 @@ export default function RewardsInventoryPage() {
     };
 
     const handleSubmit = () => {
-        if (!formData.name || !formData.pointsCost || !formData.stock || !formData.sku || !formData.category) return;
+        if (!formData.name || !formData.points || !formData.stock || !formData.sku || !formData.category) return;
         const stock = parseInt(formData.stock);
 
         if (editingReward) {
             setRewards(prev => prev.map(r => r.id === editingReward.id ? {
                 ...r,
                 ...formData,
-                pointsCost: parseInt(formData.pointsCost),
+                points: parseInt(formData.points),
                 stock
             } : r));
         } else {
@@ -236,7 +236,7 @@ export default function RewardsInventoryPage() {
             setRewards(prev => [{
                 id: newId,
                 ...formData,
-                pointsCost: parseInt(formData.pointsCost),
+                points: parseInt(formData.points),
                 stock,
                 dispensed: 0,
                 locationId: effectiveLocationId || 'LOC-001'
@@ -275,32 +275,32 @@ export default function RewardsInventoryPage() {
             <ViewOnlyBanner />
             {/* Page Header */}
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-center">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-2xl font-black text-slate-800 dark:text-white">Rewards Inventory</h1>
-                        {currentLocation && (
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-                                {currentLocation.name}
-                            </span>
-                        )}
+                <div className="mb-8 flex justify-between items-center">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-2xl font-black text-slate-800 dark:text-white">Rewards Inventory</h1>
+                            {currentLocation && (
+                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+                                    {currentLocation.name}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            {isSuperAdmin && !effectiveLocationId
+                                ? 'Viewing rewards across all locations'
+                                : `Manage reward items and stock at ${currentLocation?.name || 'your location'}`}
+                        </p>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        {isSuperAdmin && !effectiveLocationId
-                            ? 'Viewing rewards across all locations'
-                            : `Manage reward items and stock at ${currentLocation?.name || 'your location'}`}
-                    </p>
+                    {(isSuperAdmin || hasPermission('rewards', 'create')) && (
+                        <button
+                            onClick={openAddModal}
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            <Plus size={18} />
+                            Add Reward
+                        </button>
+                    )}
                 </div>
-                {(isSuperAdmin || hasPermission('rewards', 'create')) && (
-                <button
-                    onClick={openAddModal}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-                >
-                    <Plus size={18} />
-                    Add Reward
-                </button>
-                )}
-            </div>
             </ViewOnlyWrapper>
 
             {/* Stats Overview */}
@@ -407,7 +407,7 @@ export default function RewardsInventoryPage() {
 
                         {hasActiveFilters && (
                             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10">
-                                <X size={14} /> Clear Filters
+                                <X size={14} /> Clear
                             </button>
                         )}
                     </div>
@@ -449,8 +449,8 @@ export default function RewardsInventoryPage() {
                                 <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">Category <SortIcon column="category" /></div>
                                 </th>
-                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsCost')}>
-                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsCost" /></div>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('points')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="points" /></div>
                                 </th>
                                 <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('stock')}>
                                     <div className="flex items-center gap-1">Stock <SortIcon column="stock" /></div>
@@ -496,7 +496,7 @@ export default function RewardsInventoryPage() {
                                             <CategoryBadge category={r.category} />
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{r.pointsCost} pts</span>
+                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{r.points} pts</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
@@ -635,7 +635,7 @@ export default function RewardsInventoryPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Points Cost *</label>
-                                    <input type="number" value={formData.pointsCost} onChange={(e) => setFormData(p => ({ ...p, pointsCost: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none" />
+                                    <input type="number" value={formData.points} onChange={(e) => setFormData(p => ({ ...p, points: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock *</label>

@@ -26,7 +26,7 @@ export default function ProfilePage() {
                 location: (() => {
                     if (currentUser.locationId) {
                         const loc = LOCATIONS.find(l => l.id === currentUser.locationId);
-                        return loc ? loc.name + ', ' + loc.address : currentUser.location || '';
+                        return loc ? loc.name + ', ' + loc.streetAddress : currentUser.location || '';
                     }
                     return currentUser.location || '';
                 })(),
