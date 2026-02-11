@@ -1,17 +1,21 @@
 import uuid
-from . import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
+
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from . import db
 
 
 class UserRole(Enum):
+    """Enumeration of user roles within the system."""
     ADMIN = 'admin'
     USER = 'user'
     MODERATOR = 'moderator'
 
 
 class User(db.Model):
+    """User model for storing registration and point balance details."""
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -20,10 +24,10 @@ class User(db.Model):
     full_name = db.Column(db.String(120))
     role = db.Column(db.String(20), default=UserRole.USER.value, nullable=False)
     points_balance = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True)
-    public_id = db.Column(db.String(36), unique=True, default=lambda: str(uuid.uuid4())) # This prevents people from guessing User IDs
+    public_id = db.Column(db.String(36), unique=True, default=lambda: str(uuid.uuid4()))
     # Relationship
     scans = db.relationship('QRScan', backref='user', lazy=True)
     recycling_sessions = db.relationship('RecyclingSession', backref='user', lazy=True)
@@ -42,6 +46,7 @@ class User(db.Model):
 
 
 class QRScan(db.Model):
+    """Model for tracking QR code scans of recyclable items."""
     __tablename__ = 'qr_scans'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -51,13 +56,14 @@ class QRScan(db.Model):
     points_earned = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default='completed')  # completed, pending, failed
     location = db.Column(db.String(200))
-    scanned_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    scanned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
     def __repr__(self):
         return f'<QRScan {self.id} by User {self.user_id}>'
 
 
 class Transaction(db.Model):
+    """Model for recording point transactions (earn/redeem)."""
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -69,8 +75,8 @@ class Transaction(db.Model):
     reference_type = db.Column(db.String(50))  # qr_scan, reward_redemption, manual, transfer
     reference_id = db.Column(db.Integer)  # ID of related record (scan_id, reward_id, etc.)
     status = db.Column(db.String(20), default='completed')  # completed, pending, failed, reversed
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
     # Relationship
     user = db.relationship('User', backref=db.backref('transactions', lazy=True))
     
@@ -79,6 +85,7 @@ class Transaction(db.Model):
 
 
 class Reward(db.Model):
+    """Model for rewards available for point redemption."""
     __tablename__ = 'rewards'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -88,8 +95,8 @@ class Reward(db.Model):
     stock_quantity = db.Column(db.Integer)
     image_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     partner_id = db.Column(db.Integer, db.ForeignKey('partners.id'))
     
     # Relationship
@@ -98,7 +105,9 @@ class Reward(db.Model):
     def __repr__(self):
         return f'<Reward {self.name}: {self.points_required} points>'
 
+
 class Partner(db.Model):
+    """Model for business partners offering rewards."""
     __tablename__ = 'partners'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False) # e.g., "Bulacan Rice Farmers Coop"
@@ -116,7 +125,9 @@ class Partner(db.Model):
         foreign_keys='RewardRedemption.claimed_by_partner_id'
     )
 
+
 class RewardRedemption(db.Model):
+    """Model for tracking user redemptions of rewards."""
     __tablename__ = 'reward_redemptions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -124,7 +135,7 @@ class RewardRedemption(db.Model):
     points_spent = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, claimed, cancelled, expired
     redemption_code = db.Column(db.String(50), unique=True)
-    redeemed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    redeemed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     claimed_at = db.Column(db.DateTime)
     expires_at = db.Column(db.DateTime)
     claimed_by_partner_id = db.Column(db.Integer, db.ForeignKey('partners.id'))
@@ -144,19 +155,23 @@ class RewardRedemption(db.Model):
     def __repr__(self):
         return f'<RewardRedemption {self.id}: User {self.user_id} - Reward {self.reward_id}>'
 
+
 class RecyclingSession(db.Model):
+    """Model for a single user session at a Reverse Vending Machine (RVM)."""
     __tablename__ = 'recycling_sessions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'))
-    start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    start_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     end_time = db.Column(db.DateTime)
     total_points_earned = db.Column(db.Integer, default=0)
     item_count = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20)) # 'active', 'completed', 'timed_out'
     items = db.relationship('RecyclingItem', backref='session', lazy=True, cascade='all, delete-orphan')
 
+
 class RVM(db.Model):
+    """Model for Reverse Vending Machine hardware units."""
     __tablename__ = 'rvms'
     id = db.Column(db.Integer, primary_key=True)
     machine_uuid = db.Column(db.String(100), unique=True) # Unique ID for the Pi
@@ -168,13 +183,14 @@ class RVM(db.Model):
 
 
 class RecyclingItem(db.Model):
+    """Model for individual items deposited during a recycling session."""
     __tablename__ = 'recycling_items'
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('recycling_sessions.id'), nullable=False)
     item_type = db.Column(db.String(100), nullable=False)
     weight_grams = db.Column(db.Float)
     points_awarded = db.Column(db.Integer, nullable=False)
-    deposited_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deposited_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f'<RecyclingItem {self.id} session={self.session_id} points={self.points_awarded}>'

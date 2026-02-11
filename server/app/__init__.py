@@ -5,26 +5,28 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
 
+# Initialize Extensions
 load_dotenv()
-
 db = SQLAlchemy()
 migrate = Migrate()
 
 
 class Config:
+    """Standard Flask configuration class."""
     # kept for backwards-compat in case someone imports from app
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL', 'postgresql+psycopg2://postgres:admin@127.0.0.1:5433/ecopoints'
+        'DATABASE_URL', 'postgresql+psycopg://postgres:admin@127.0.0.1:5433/ecopoints'
     )
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 def create_app():
+    """Application factory for the EcoPoints Flask server."""
     app = Flask(__name__, instance_relative_config=False)
     # Load Config from environment or defaults
     app.config.from_object(Config)
-    
+
     # Enable CORS for frontend and Raspberry Pi
     allowed_origins = [
         "http://localhost:3000",
@@ -33,7 +35,7 @@ def create_app():
         "https://www.ecopoints.org",
         "https://rewards.ecopoints.org",
     ]
-    
+
     # Add additional origins from environment variable if provided
     if os.environ.get('CORS_ORIGINS'):
         allowed_origins.extend(os.environ.get('CORS_ORIGINS').split(','))
@@ -54,7 +56,7 @@ def create_app():
     with app.app_context():
         # Import routes and models so they are registered
         from . import routes, models  # noqa: F401
-        
+
         # Register blueprints
         from .controllers.web_controller import web_bp
         from .controllers.rpi_controller import rpi_bp

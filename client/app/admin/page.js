@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation, getOnlineUsersCount } from '../../src/data/mockData';
+import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation } from '../../src/data/mockData';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -117,7 +117,7 @@ const PieTooltip = ({ active, payload }) => {
 };
 
 export default function AdminDashboard() {
-    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser } = useAuth();
+    const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
     const [timeRange, setTimeRange] = useState('week');
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
         const totalBottles = machines.reduce((sum, m) => sum + m.bottlesCollected, 0);
         const onlineMachines = machines.filter(m => m.status === 'Online').length;
         const totalMachines = machines.length;
-        const activeUsers = users.filter(u => u.status === 'Active').length;
+        const activeUsers = users.filter(u => u.status === 'Online').length;
         const totalPoints = users.reduce((sum, u) => sum + u.points, 0);
         const totalRewards = rewards.length;
         const totalStock = rewards.reduce((sum, r) => sum + r.stock, 0);
@@ -628,20 +628,20 @@ export default function AdminDashboard() {
                     Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Role-based Shortcuts - Always show all 4 for super admins */}
-                    {['super_admin', 'head_admin', 'inventory_officer'].includes(currentUser?.role) && (
+                    {/* Permission-based Shortcuts */}
+                    {(isSuperAdmin || hasPermission('rewards', 'view')) && (
                         <ShortcutBtn label="Rewards" icon={Trophy} color="purple" href="/admin/rewards" />
                     )}
 
-                    {['super_admin', 'head_admin'].includes(currentUser?.role) && (
+                    {(isSuperAdmin || hasPermission('users', 'view')) && (
                         <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
                     )}
 
-                    {['super_admin', 'head_admin', 'auditor'].includes(currentUser?.role) && (
+                    {(isSuperAdmin || hasPermission('logs', 'view')) && (
                         <ShortcutBtn label="Admin Logs" icon={FileText} color="blue" href="/admin/logs/access" />
                     )}
 
-                    {['super_admin', 'head_admin'].includes(currentUser?.role) && (
+                    {(isSuperAdmin || hasPermission('machines', 'view')) && (
                         <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
                     )}
                 </div>
@@ -701,9 +701,9 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                                log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                    log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
-                                                        'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                            log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
+                                                    'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>{log.condition}</span>
                                     </td>
                                     <td className="px-3 py-3">

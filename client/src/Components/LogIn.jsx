@@ -1,3 +1,45 @@
+// ============================================================================
+// ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
+// ============================================================================
+// SUPER ADMINS:
+//   - System Administrator     | superadmin@ecopoints.com
+//   - Chief Technology Officer  | cto@ecopoints.com
+//
+// HEAD ADMINS (LOC-001 — Arellano University):
+//   - Maria Santos              | head@arellano.edu.ph
+//   - Roberto Garcia            | rgarcia@arellano.edu.ph
+//   - Elena Cruz                | ecruz@arellano.edu.ph
+//
+// HEAD ADMIN (LOC-002 — Polytechnic University):
+//   - Rosa Aquino               | head@pup.edu.ph
+//
+// AUDITORS (LOC-001):
+//   - Juan Dela Cruz            | auditor@arellano.edu.ph
+//   - Angela Reyes              | areyes@arellano.edu.ph
+//   - Mark Gonzales             | mgonzales@arellano.edu.ph
+//
+// AUDITOR (LOC-002):
+//   - Leo Bautista              | auditor@pup.edu.ph
+//
+// INVENTORY OFFICERS (LOC-001):
+//   - Ana Lim                   | inventory@arellano.edu.ph
+//   - Patricia Tan              | ptan@arellano.edu.ph
+//   - Jose Mendoza              | jmendoza@arellano.edu.ph
+//
+// INVENTORY OFFICER (LOC-002):
+//   - Carmen Diaz               | inventory@pup.edu.ph
+//
+// TECHNICIANS (LOC-001):
+//   - Carlos Reyes              | tech@arellano.edu.ph
+//   - Miguel Santos             | msantos@arellano.edu.ph
+//   - Fernando Lopez            | flopez@arellano.edu.ph
+//   - David Villanueva          | dvillanueva@arellano.edu.ph
+//
+// TECHNICIANS (LOC-002):
+//   - Rico Fernandez            | tech@pup.edu.ph
+//   - Lorna Gutierrez           | tech2@pup.edu.ph
+// ============================================================================
+
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +56,6 @@ import {
   Users,
   Zap,
   ArrowRight,
-  Leaf,
   Search,
   GraduationCap,
   BookOpen,
@@ -25,7 +66,7 @@ import {
 } from "lucide-react";
 // import ReCAPTCHA from "react-google-recaptcha";
 
-import { ADMIN_USERS, ROLES } from "../data/mockData";
+import { ADMIN_USERS } from "../data/mockData";
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments
@@ -144,26 +185,6 @@ const COLLEGE_DEPARTMENTS = [
   },
   { id: "DM", name: "Diploma in Midwifery", abbreviation: "DM" },
 ];
-
-// Only Super Admin demo account
-const TEST_ACCOUNTS = ADMIN_USERS.filter(
-  (user) => user.role === "super_admin",
-).map((user) => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  role: ROLES[user.role]?.name || "Super Admin",
-  location: user.locationId ? "Arellano University" : "All Locations",
-  color: ROLES[user.role]?.color || "red",
-}));
-
-// Role badge colors
-const roleColors = {
-  red: "bg-red-500/20 text-red-400 border-red-500/30",
-  purple: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  blue: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-};
 
 // ============================================================================
 // Reusable Input Field Component
@@ -375,14 +396,18 @@ export default function LogIn({ onClose }) {
     "Arellano University - Andres Bonifacio Pasig Campus",
   ]);
   const [error, setError] = useState("");
-  const [showAccountPicker, setShowAccountPicker] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
 
   // CAPTCHA states
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [showCaptchaPopup, setShowCaptchaPopup] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const recaptchaRef = useRef(null);
+
+  // Password mismatch shake
+  const [passwordMismatchShake, setPasswordMismatchShake] = useState(false);
 
   // Saved signup data for restore functionality
   const [savedSignUpData, setSavedSignUpData] = useState(null);
@@ -398,11 +423,12 @@ export default function LogIn({ onClose }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Show CAPTCHA after failed attempts
+  // Show CAPTCHA after failed attempts — auto-open popup
   useEffect(() => {
     if (failedAttempts >= 1) {
       setShowCaptcha(true);
       setCaptchaVerified(false);
+      setShowCaptchaPopup(true);
     }
   }, [failedAttempts]);
 
@@ -434,6 +460,7 @@ export default function LogIn({ onClose }) {
     setLoginConfirmPassword("");
     setFailedAttempts(0);
     setShowCaptcha(false);
+    setShowCaptchaPopup(false);
     setCaptchaVerified(false);
   };
 
@@ -511,23 +538,18 @@ export default function LogIn({ onClose }) {
     setPendingModeSwitch(false);
 
     setTimeout(() => {
-      const wasSignUp = isSignUp;
       setIsSignUp((prev) => !prev);
       setError("");
-      setShowAccountPicker(false);
 
-      // Reset the form we're leaving
-      if (wasSignUp) {
-        // Was on signup, going to login - reset login form
-        resetLoginForm();
+      // Always reset BOTH forms completely
+      resetLoginForm();
+      resetSignUpForm();
+
+      // If restoring signup data, re-apply it after clearing
+      if (restoreData && savedSignUpData) {
+        restoreSignUpData(savedSignUpData);
       } else {
-        // Was on login, going to signup
-        if (restoreData && savedSignUpData) {
-          restoreSignUpData(savedSignUpData);
-        } else {
-          resetSignUpForm();
-          setSavedSignUpData(null);
-        }
+        setSavedSignUpData(null);
       }
 
       setTimeout(() => {
@@ -548,27 +570,49 @@ export default function LogIn({ onClose }) {
   const handleCaptchaChange = (value) => {
     if (value) {
       setCaptchaVerified(true);
-      // On mobile, fade out the CAPTCHA popup after a short delay
-      if (isMobile) {
-        setTimeout(() => {
-          setShowCaptcha(false);
-        }, 800);
-      }
+      setError(''); // Clear error — user has verified, they can retry now
+      // Fade out the CAPTCHA popup after a short delay
+      setTimeout(() => {
+        setShowCaptchaPopup(false);
+      }, 800);
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Check CAPTCHA if required
-    if (showCaptcha && !captchaVerified) {
-      setError("Please complete the CAPTCHA verification");
+    // Step 1: Validate all fields are filled
+    if (!fullName.trim()) {
+      setError("Full name is required");
       return;
     }
 
-    // Check confirm password matches
+    if (!loginEmail.trim()) {
+      setError("Email is required");
+      return;
+    }
+
+    if (!loginPassword.trim()) {
+      setError("Password is required");
+      return;
+    }
+
+    if (!loginConfirmPassword.trim()) {
+      setError("Please confirm your password");
+      return;
+    }
+
+    // Step 2: Check passwords match
     if (loginPassword !== loginConfirmPassword) {
       setError("Passwords do not match!");
+      setPasswordMismatchShake(true);
+      setTimeout(() => setPasswordMismatchShake(false), 600);
+      return;
+    }
+
+    // Step 3: Check CAPTCHA if required (after failed attempt)
+    if (showCaptcha && !captchaVerified) {
+      setShowCaptchaPopup(true);
       return;
     }
 
@@ -577,30 +621,32 @@ export default function LogIn({ onClose }) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Check credentials (full name, email, and password)
-    if (
-      fullName.toLowerCase() === "admin" &&
-      loginEmail === "superadmin@ecopoints.com" &&
-      loginPassword === "admin123"
-    ) {
-      localStorage.setItem("ecopoints_current_user", "ADM-SUPER-001");
+    // Step 4: Check credentials against ADMIN_USERS
+    const matchedUser = ADMIN_USERS.find(
+      (user) =>
+        user.email.toLowerCase() === loginEmail.toLowerCase() &&
+        user.password === loginPassword,
+    );
+
+    if (matchedUser) {
+      localStorage.setItem("ecopoints_current_user", matchedUser.id);
       setFailedAttempts(0);
       setShowCaptcha(false);
+      setShowCaptchaPopup(false);
       router.push("/admin");
       return;
     }
 
+    // Failed login — increment attempts, keep name/email intact
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
-    setError(
-      "Invalid credentials! Use: admin / superadmin@ecopoints.com / admin123",
-    );
+    setError("Invalid email or password. Please try again.");
 
     // Reset CAPTCHA for next attempt
     if (recaptchaRef.current) {
       recaptchaRef.current.reset();
-      setCaptchaVerified(false);
     }
+    setCaptchaVerified(false);
   };
 
   const handleSignUpPhase1 = async (e) => {
@@ -645,13 +691,6 @@ export default function LogIn({ onClose }) {
       resetAllFields();
       setIsSignUp(false);
     }, 500);
-  };
-
-  const handleQuickLogin = async (account) => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    localStorage.setItem("ecopoints_current_user", account.id);
-    router.push("/admin");
   };
 
   const [isClosing, setIsClosing] = useState(false);
@@ -706,6 +745,17 @@ export default function LogIn({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+      {/* Shake animation styles */}
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
       {/* Transparent Blurred Backdrop - No click to close */}
       <div
         className={`absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"}`}
@@ -744,37 +794,47 @@ export default function LogIn({ onClose }) {
         </div>
       )}
 
-      {/* Mobile CAPTCHA Popup */}
-      {isMobile && showCaptcha && !captchaVerified && (
+      {/* CAPTCHA Popup (all devices) */}
+      {showCaptchaPopup && showCaptcha && (
         <div
-          className={`fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300 ${captchaVerified ? "opacity-0" : "opacity-100"}`}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300"
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
           <div className="relative bg-white rounded-2xl shadow-2xl p-5 animate-scale-in max-w-sm w-full">
-            <h3 className="text-base font-bold text-gray-800 mb-3 text-center">
-              Verify You're Human
-            </h3>
-
-            {/* Error message in popup */}
-            {error && !isSignUp && (
-              <div className="mb-3 p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
-                <AlertCircle size={14} />
-                <span>{error}</span>
+            {captchaVerified ? (
+              /* Verified state — shown briefly before popup closes */
+              <div className="flex flex-col items-center justify-center py-6 gap-2">
+                <CheckCircle size={40} className="text-lime-500" />
+                <p className="text-sm font-bold text-lime-700">Verified!</p>
               </div>
-            )}
+            ) : (
+              <>
+                <h3 className="text-base font-bold text-gray-800 mb-3 text-center">
+                  Verify You're Human
+                </h3>
 
-            <div className="flex justify-center">
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={
-                  process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-                  "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                }
-                onChange={handleCaptchaChange}
-                size="normal"
-                theme="light"
-              />
-            </div>
+                {/* Error message in popup */}
+                {error && !isSignUp && (
+                  <div className="mb-3 p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
+                    <AlertCircle size={14} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-center">
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={
+                      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
+                      "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                    }
+                    onChange={handleCaptchaChange}
+                    size="normal"
+                    theme="light"
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -794,14 +854,13 @@ export default function LogIn({ onClose }) {
           className={`
           absolute top-0 left-0 h-full w-full md:w-1/2 
           flex flex-col items-center bg-white
-          transition-all duration-700 ease-in-out overflow-y-auto mt-3
-          ${
-            isMobile
+          transition-all duration-700 ease-in-out overflow-y-auto
+          ${isMobile
               ? !isSignUp
                 ? "opacity-100 z-20 justify-end pb-10 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
-          }
+            }
         `}
         >
           <div
@@ -824,6 +883,7 @@ export default function LogIn({ onClose }) {
                 icon={<User size={16} />}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                required
               />
 
               {/* Email Field */}
@@ -833,6 +893,7 @@ export default function LogIn({ onClose }) {
                 icon={<Mail size={16} />}
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
+                required
               />
 
               {/* Password Field */}
@@ -843,59 +904,38 @@ export default function LogIn({ onClose }) {
                 showToggle={true}
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
+                required
               />
 
               {/* Confirm Password Field */}
-              <InputField
-                type="password"
-                placeholder="Confirm Password"
-                icon={<Lock size={16} />}
-                showToggle={true}
-                value={loginConfirmPassword}
-                onChange={(e) => setLoginConfirmPassword(e.target.value)}
-              />
+              <div className={passwordMismatchShake ? 'animate-shake' : ''}>
+                <InputField
+                  type="password"
+                  placeholder="Confirm Password"
+                  icon={<Lock size={16} />}
+                  showToggle={true}
+                  value={loginConfirmPassword}
+                  onChange={(e) => setLoginConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-              {/* CAPTCHA - Popup on mobile, inline on desktop */}
-              {showCaptcha && !isMobile && (
-                <div
-                  className="flex justify-center overflow-hidden w-full"
-                  style={{ maxHeight: "74px" }}
-                >
-                  <div className="transform scale-[0.9] origin-top">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={
-                        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-                        "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                      }
-                      onChange={handleCaptchaChange}
-                      size="normal"
-                      theme="light"
-                    />
-                  </div>
+              {/* Error message */}
+              {error && !isSignUp && !showCaptchaPopup && (
+                <div className={`p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? 'animate-shake' : ''}`}>
+                  <AlertCircle size={14} />
+                  <span>{error}</span>
                 </div>
               )}
 
-              {/* Mobile CAPTCHA verified indicator */}
-              {isMobile && captchaVerified && (
+              {/* CAPTCHA verified indicator (all devices) */}
+              {captchaVerified && (
                 <div className="flex items-center justify-center gap-2 py-2 px-3 bg-lime-50 border border-lime-200 rounded-lg">
                   <CheckCircle size={16} className="text-lime-600" />
                   <span className="text-xs font-medium text-lime-700">
                     Verified
                   </span>
                 </div>
-              )}
-
-              {/* Mobile: Show button to open CAPTCHA popup if not verified */}
-              {isMobile && showCaptcha && !captchaVerified && (
-                <button
-                  type="button"
-                  onClick={() => setShowCaptcha(true)}
-                  className="w-full py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs font-medium flex items-center justify-center gap-2"
-                >
-                  <AlertCircle size={14} />
-                  Tap to complete CAPTCHA verification
-                </button>
               )}
 
               <div className="w-full text-right">
@@ -925,12 +965,6 @@ export default function LogIn({ onClose }) {
                 )}
               </button>
             </form>
-
-            <p className="text-[10px] text-center text-gray-400 mt-2">
-              Demo: <span className="font-medium">admin</span> /{" "}
-              <span className="font-medium">superadmin@ecopoints.com</span> /{" "}
-              <span className="font-medium">admin123</span>
-            </p>
           </div>
         </div>
 
@@ -941,13 +975,12 @@ export default function LogIn({ onClose }) {
           flex flex-col items-center 
           bg-white
           transition-all duration-700 ease-in-out
-          ${
-            isMobile
+          ${isMobile
               ? isSignUp
                 ? "opacity-100 z-20 pt-4 pb-40 px-6 overflow-y-auto no-scrollbar justify-start"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6 overflow-y-auto"
-          }
+            }
         `}
         >
           <div
@@ -1340,27 +1373,24 @@ export default function LogIn({ onClose }) {
           absolute z-50 overflow-hidden
           transition-all duration-[800ms] cubic-bezier(0.65, 0, 0.35, 1) text-white
           
-          ${
-            isMobile
+          ${isMobile
               ? `w-full left-0
-               ${
-                 isExpanding
-                   ? isSignUp
-                     ? "h-full bottom-0 top-auto rounded-[2rem]"
-                     : "h-full top-0 rounded-[2rem]"
-                   : isSignUp
-                     ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
-                     : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
-               }`
+               ${isExpanding
+                ? isSignUp
+                  ? "h-full bottom-0 top-auto rounded-[2rem]"
+                  : "h-full top-0 rounded-[2rem]"
+                : isSignUp
+                  ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
+                  : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
+              }`
               : `top-0 h-full
-                ${
-                  isExpanding
-                    ? "w-full left-0 rounded-[2rem]"
-                    : isSignUp
-                      ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
-                      : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
-                }`
-          }
+                ${isExpanding
+                ? "w-full left-0 rounded-[2rem]"
+                : isSignUp
+                  ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
+                  : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
+              }`
+            }
         `}
         >
           <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center flex-col">
@@ -1402,50 +1432,6 @@ export default function LogIn({ onClose }) {
                     Already have an account? Sign in.
                   </p>
 
-                  <div className="w-full hidden md:block">
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountPicker(!showAccountPicker)}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-full font-medium text-sm
-                        hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                      <Users size={16} />
-                      Demo Account
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform ${showAccountPicker ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    {showAccountPicker && (
-                      <div className="mt-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-32 overflow-y-auto">
-                        {TEST_ACCOUNTS.map((account) => (
-                          <button
-                            key={account.id}
-                            type="button"
-                            onClick={() => handleQuickLogin(account)}
-                            className="w-full p-2 flex items-center gap-2 hover:bg-white/20 transition-colors border-b border-white/10 last:border-0"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                              {account.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-xs font-medium">
-                                {account.name}
-                              </p>
-                              <p className="text-[10px] text-white/70">
-                                {account.role}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   <button
                     onClick={toggleMode}
                     className="px-5 py-2 bg-transparent border-2 border-white text-white rounded-full font-semibold uppercase tracking-wider text-xs hover:bg-white hover:text-lime-600 transition-all duration-300 shadow-lg"
@@ -1466,50 +1452,6 @@ export default function LogIn({ onClose }) {
                   >
                     Sign up and start your journey!
                   </p>
-
-                  <div className="w-full hidden md:block">
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountPicker(!showAccountPicker)}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-full font-medium text-sm
-                        hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                      <Users size={16} />
-                      Demo Account
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform ${showAccountPicker ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    {showAccountPicker && (
-                      <div className="mt-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden max-h-32 overflow-y-auto">
-                        {TEST_ACCOUNTS.map((account) => (
-                          <button
-                            key={account.id}
-                            type="button"
-                            onClick={() => handleQuickLogin(account)}
-                            className="w-full p-2 flex items-center gap-2 hover:bg-white/20 transition-colors border-b border-white/10 last:border-0"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                              {account.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <p className="text-xs font-medium">
-                                {account.name}
-                              </p>
-                              <p className="text-[10px] text-white/70">
-                                {account.role}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
                   <button
                     onClick={toggleMode}

@@ -1,10 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -138,17 +138,20 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
     const { theme } = useTheme();
     // Accordion state: only one menu can be expanded at a time
     const [activeMenuKey, setActiveMenuKey] = useState(null);
+    const router = useRouter();
 
     // Get auth context
     let currentUser = null;
     let hasPermission = () => false;
     let isSuperAdmin = false;
+    let logout = () => {};
 
     try {
         const auth = useAuth();
         currentUser = auth.currentUser;
         hasPermission = auth.hasPermission;
         isSuperAdmin = auth.isSuperAdmin;
+        logout = auth.logout;
     } catch (e) {
         // AuthContext not available yet, use defaults
     }
@@ -200,6 +203,12 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             hidden: !hasPermission('rewards', 'view')
         },
         {
+            type: 'item',
+            label: 'Leaderboards',
+            icon: Trophy,
+            href: '/admin/leaderboards',
+        },
+        {
             type: 'group',
             key: 'logs',
             label: 'System Logs',
@@ -208,7 +217,8 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             children: [
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
                 { label: 'Machine Logs', href: '/admin/logs/machines' },
-                { label: 'Admin Logs', href: '/admin/logs/access', hidden: !isSuperAdmin && currentUser?.role !== 'head_admin' },
+                { label: 'Rewards Logs', href: '/admin/logs/rewards' },
+                { label: 'Admin Logs', href: '/admin/logs/access', hidden: !isSuperAdmin && !hasPermission('logs', 'view') },
             ]
         },
         {
@@ -357,10 +367,10 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                     ? 'border-[rgba(123,160,91,0.2)] bg-[#0F1B11]'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]'
                     }`}>
-                    <Link
-                        href="/"
+                    <button
+                        onClick={() => { logout(); router.push('/'); }}
                         className={`
-                            relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group
+                            relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group w-full
                             ${theme === 'system'
                                 ? 'text-[#E1E4E1]/60 hover:bg-red-900/20 hover:text-red-400'
                                 : 'text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/10 dark:hover:text-red-400'}
@@ -384,7 +394,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                                 <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${theme === 'system' ? 'bg-[#1A2E1F]' : 'bg-slate-800'}`}></div>
                             </div>
                         )}
-                    </Link>
+                    </button>
                 </div>
             </aside>
         </>
