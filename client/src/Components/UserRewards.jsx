@@ -2,10 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { Search, Mic } from "lucide-react";
-<<<<<<< HEAD
-=======
 import Link from "next/link";
->>>>>>> 245ca45bd21571618ca5a9444b83b5e4563c5643
 export default function UserRewards() {
   const features = [
     {
@@ -178,37 +175,6 @@ export default function UserRewards() {
         <div className="flex flex-col lg:grid lg:grid-cols-4 justify-center">
           <span className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
             HI! User
-<<<<<<< HEAD
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
-            <span className="">
-              <p>TANGA</p>
-            </span>
-            {/*  */}
-          </span>
-          <span className="relative order-2 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            SUMMARY OF POINTS:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
-            <span className="">
-              <p>TANGA</p>
-            </span>
-            {/*  */}
-          </span>
-          <span className="relative order-3 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            POINTS OBTAINED TODAY:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
-            <span className="">
-              <p>TANGA</p>
-            </span>
-            {/*  */}
-          </span>
-          <span className="relative order-4 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            STREAK:
-            {/* DITO MO LAGAY UNG MISMONG PAG CONNECT SA DB */}
-            <span className="">
-              <p>TANGA</p>
-            </span>
-            {/*  */}
-=======
             {/* TODO: Connect to user data from DB */}
             <span className="">
               <p>&mdash;</p>
@@ -234,7 +200,6 @@ export default function UserRewards() {
             <span className="">
               <p>&mdash;</p>
             </span>
->>>>>>> 245ca45bd21571618ca5a9444b83b5e4563c5643
           </span>
         </div>
       </div>
