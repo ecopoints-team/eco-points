@@ -1,21 +1,12 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { BOTTLE_LOGS } from '../../../../src/data/mockData';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { BOTTLE_LOGS, LOCATIONS } from '../../../../src/data/mockData';
+import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 const allBottleLogs = BOTTLE_LOGS;
-
-// Calculate real stats
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-const todayLogs = allBottleLogs.filter(log => log.timestampObj >= today);
-const stats = {
-    todayTransactions: todayLogs.length,
-    acceptedBottles: allBottleLogs.filter(log => log.status === 'Accepted').length,
-    rejectedBottles: allBottleLogs.filter(log => log.status === 'Rejected').length
-};
 
 export default function BottleLogsPage() {
     const { user, isSuperAdmin, viewAsLocationId } = useAuth();
@@ -28,6 +19,10 @@ export default function BottleLogsPage() {
     const [filterLocation, setFilterLocation] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
+
+    // Column visibility toggles
+    const [showMachine, setShowMachine] = useState(true);
+    const [showLocation, setShowLocation] = useState(true);
 
     // Sortable column state
     const [sortColumn, setSortColumn] = useState('timestampObj');
@@ -52,6 +47,21 @@ export default function BottleLogsPage() {
     const machines = [...new Set(allBottleLogs.map(log => log.machineName))];
     const bottleTypes = [...new Set(allBottleLogs.map(log => log.bottleType))];
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
+
+    // Stats computed from filtered logs (responds to location scope)
+    const stats = useMemo(() => {
+        let logs = allBottleLogs;
+        if (viewAsLocationId) {
+            logs = logs.filter(log => log.locationId === viewAsLocationId);
+        } else if (user?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === user.locationId);
+        }
+        return {
+            todayTransactions: logs.length,
+            acceptedBottles: logs.filter(log => log.status === 'Accepted').length,
+            rejectedBottles: logs.filter(log => log.status === 'Rejected').length
+        };
+    }, [viewAsLocationId, user, isSuperAdmin]);
 
     const filteredLogs = useMemo(() => {
         let logs = allBottleLogs;
@@ -106,6 +116,23 @@ export default function BottleLogsPage() {
         return pages;
     };
 
+    const exportToCSV = () => {
+        const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Brand', 'Volume', 'Type', 'Condition', 'Points', 'Status'];
+        const rows = filteredLogs.map(log => [
+            log.timestamp, log.id, log.userName, log.userEmail, log.machineName,
+            log.locationName || log.locationId, log.brand, log.volume, log.bottleType,
+            log.condition, log.pointsAwarded, log.status
+        ]);
+        const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bottle-logs-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <>
             <div className="mb-8 flex justify-between items-end">
@@ -113,7 +140,7 @@ export default function BottleLogsPage() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bottle Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">View all bottle recycling transactions and activity logs</p>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
+                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} />
                     Export CSV
                 </button>
@@ -152,18 +179,45 @@ export default function BottleLogsPage() {
                 </div>
 
                 {showFilter && (
-                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-4 items-center">
-                        <div className="flex flex-wrap gap-3 flex-1">
-                            <div className="relative"><select value={filterMachine} onChange={(e) => handleFilterChange(setFilterMachine, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Machines</option>{machines.map(m => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
-                            <div className="relative"><select value={filterBottleType} onChange={(e) => handleFilterChange(setFilterBottleType, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Sizes</option>{bottleTypes.map(b => <option key={b} value={b}>{b}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
-                            <div className="relative"><select value={filterCondition} onChange={(e) => handleFilterChange(setFilterCondition, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Conditions</option>{['Perfect', 'Good', 'Crushed', 'Dirty (Rejected)'].map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
-                            <div className="relative"><select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Statuses</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        {/* Filter Row */}
+                        <div className="flex flex-wrap gap-3 items-center mb-3">
+                            <CustomDropdown value={filterMachine} onChange={(v) => handleFilterChange(setFilterMachine, v)} options={machines} placeholder="All Machines" />
+                            <CustomDropdown value={filterBottleType} onChange={(v) => handleFilterChange(setFilterBottleType, v)} options={bottleTypes} placeholder="All Sizes" />
+                            <CustomDropdown value={filterCondition} onChange={(v) => handleFilterChange(setFilterCondition, v)} options={['With Label', 'No Label', 'Rejected']} placeholder="All Conditions" />
+                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Statuses" />
 
                             {isSuperAdmin && !viewAsLocationId && (
-                                <div className="relative"><select value={filterLocation} onChange={(e) => handleFilterChange(setFilterLocation, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer"><option value="">All Locations</option><option value="LOC-001">School A</option><option value="LOC-002">School B</option></select><ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" /></div>
+                                <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             )}
+
+                            {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
-                        {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
+
+                        {/* Column Visibility Toggles */}
+                        <div className="flex items-center gap-4 text-xs">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Show columns:</span>
+                            <button
+                                onClick={() => setShowMachine(!showMachine)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showMachine
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showMachine ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Machine
+                            </button>
+                            <button
+                                onClick={() => setShowLocation(!showLocation)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showLocation
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showLocation ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Location
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -200,7 +254,8 @@ export default function BottleLogsPage() {
                                     <div className="flex items-center gap-1">Username <SortIcon column="userName" /></div>
                                 </th>
                                 <th className="px-3 py-3">Email</th>
-                                <th className="px-3 py-3">Location</th>
+                                {showMachine && <th className="px-3 py-3">Machine</th>}
+                                {showLocation && <th className="px-3 py-3">Location</th>}
                                 <th className="px-3 py-3">Bottle Type</th>
                                 <th className="px-3 py-3">Condition</th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
@@ -224,12 +279,16 @@ export default function BottleLogsPage() {
                                     <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.userId}</span></td>
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.userName}</span></td>
                                     <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.userEmail || '-'}</span></td>
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                    {showMachine && (
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.machineName || '-'}</span></td>
+                                    )}
+                                    {showLocation && (
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                    )}
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
                                             log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
                                                     'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>{log.condition}</span>
                                     </td>

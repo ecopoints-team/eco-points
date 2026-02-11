@@ -37,6 +37,7 @@ export default function SlotCounter({ value, duration = 2000 }) {
     return () => cancelAnimationFrame(animationFrame);
   }, [value, duration]);
 
-  // Format with commas (e.g., 1,200)
-  return <span className="font-mono">{count.toLocaleString()}</span>;
+  // Format with commas (e.g., 1,200) — deterministic to avoid hydration mismatch
+  const formatted = String(count).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return <span className="font-mono">{formatted}</span>;
 }

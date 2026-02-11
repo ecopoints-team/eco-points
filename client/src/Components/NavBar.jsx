@@ -11,16 +11,14 @@ export default function NavBar({ onLoginClick }) {
 
   // Nav Color Change (Scrolled)
   const [color, setColor] = useState(false);
-  const changeColor = () => {
-    if (window.scrollY >= 90) {
-      setColor(true);
-    } else {
-      setColor(false);
-    }
-  };
 
-  // Event Listener (Scroll)
-  window.addEventListener("scroll", changeColor);
+  useEffect(() => {
+    const changeColor = () => {
+      setColor(window.scrollY >= 90);
+    };
+    window.addEventListener("scroll", changeColor);
+    return () => window.removeEventListener("scroll", changeColor);
+  }, []);
 
   // Navigation Links
   const navLinks = [
@@ -105,7 +103,7 @@ export default function NavBar({ onLoginClick }) {
             </Link>
 
             {/* DESKTOP NAV LINKS - CENTERED ABSOLUTELY */}
-            <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 font-medium text-white">
+            <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 font-body-black text-white">
               {navLinks.map((link) => {
                 const isActive = activeSection === link.target;
                 return (
@@ -132,7 +130,7 @@ export default function NavBar({ onLoginClick }) {
 
             {/* DESKTOP LOGIN BUTTON */}
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8 group cursor-pointer">
-              <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 font-light transition-all duration-100 hover:bg-amber-700/80 hover:font-medium">
+              <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 transition-all duration-100 font-body-regular hover:font-body-bold hover:bg-amber-700/80">
                 <button
                   type="button"
                   onClick={onLoginClick}

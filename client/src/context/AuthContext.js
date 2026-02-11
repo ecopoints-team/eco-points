@@ -33,7 +33,9 @@ export function AuthProvider({ children }) {
     // Save current user to localStorage whenever it changes
     useEffect(() => {
         if (isInitialized && typeof window !== 'undefined') {
-            localStorage.setItem('ecopoints_current_user', currentUser.id);
+            if (currentUser) {
+                localStorage.setItem('ecopoints_current_user', currentUser.id);
+            }
         }
     }, [currentUser, isInitialized]);
 
@@ -70,6 +72,7 @@ export function AuthProvider({ children }) {
     // Check permission for current user
     const hasPermission = (module, action) => {
         if (!currentUser || !currentUser.permissions) return false;
+        if (isSuperAdmin(currentUser)) return true;
         return currentUser.permissions[module]?.[action] || false;
     };
 
@@ -89,7 +92,7 @@ export function AuthProvider({ children }) {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('ecopoints_current_user');
         }
-        setCurrentUser(ADMIN_USERS[0]); // Reset to default
+        setCurrentUser(null);
         setViewAsLocationId(null);
     };
 
@@ -99,6 +102,7 @@ export function AuthProvider({ children }) {
         setCurrentUser,
         switchUser,
         logout,
+        isInitialized,
 
         // Location state
         effectiveLocationId,
@@ -110,6 +114,7 @@ export function AuthProvider({ children }) {
         hasPermission,
         canAccessLocation,
         isSuperAdmin: isSuperAdmin(currentUser),
+        canManage: isSuperAdmin(currentUser) || currentUser?.role === 'head_admin',
 
         // Data filtering
         filterDataByLocation,

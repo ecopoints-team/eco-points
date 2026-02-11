@@ -1,20 +1,23 @@
 'use client';
 import React, { useState, useMemo } from 'react';
+import { ADMIN_LOGS, ADMIN_USERS, getLocationName, LOCATIONS, AREAS } from '../../../../src/data/mockData';
 import AdminLayout from '../../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { ADMIN_LOGS, ADMIN_USERS, getLocationName } from '../../../../src/data/mockData';
 import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 const allAdminLogs = ADMIN_LOGS;
 const activeAdmins = ADMIN_USERS.filter(a => a.accountHealth === 'Active').length;
 
 export default function AdminAccessLogsPage() {
-    const { effectiveLocationId } = useAuth(); // Get filtering context
+    const { effectiveLocationId, isSuperAdmin } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterAdmin, setFilterAdmin] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterLocation, setFilterLocation] = useState('');
+    const [filterArea, setFilterArea] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
 
@@ -41,10 +44,17 @@ export default function AdminAccessLogsPage() {
     // Column visibility
     const [showLocation, setShowLocation] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
-
+    const locations = LOCATIONS;
+    const areas = useMemo(() => {
+        if (filterLocation) return AREAS.filter(a => a.locationId === filterLocation);
+        return AREAS;
+    }, [filterLocation]);
     const admins = [...new Set(allAdminLogs.map(log => log.adminName))];
     const categories = [...new Set(allAdminLogs.map(log => log.category))];
     const statuses = ['Completed', 'Failed'];
+
+    const [showCategory, setShowCategory] = useState(false);
+    const [showArea, setShowArea] = useState(false);
 
     const filteredLogs = useMemo(() => {
         return allAdminLogs.filter(log => {
@@ -67,8 +77,10 @@ export default function AdminAccessLogsPage() {
             const matchesAdmin = filterAdmin === '' || log.adminName === filterAdmin;
             const matchesCategory = filterCategory === '' || log.category === filterCategory;
             const matchesStatus = filterStatus === '' || log.status === filterStatus;
+            const matchesLocation = filterLocation === '' || log.locationId === filterLocation;
+            const matchesArea = filterArea === '' || log.areaId === filterArea;
 
-            return matchesSearch && matchesAdmin && matchesCategory && matchesStatus;
+            return matchesSearch && matchesAdmin && matchesCategory && matchesStatus && matchesLocation && matchesArea;
         }).sort((a, b) => {
             let aVal = a[sortColumn];
             let bVal = b[sortColumn];
@@ -77,7 +89,7 @@ export default function AdminAccessLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterAdmin, filterCategory, filterStatus, effectiveLocationId, sortColumn, sortDirection]);
+    }, [searchQuery, filterAdmin, filterCategory, filterStatus, filterLocation, filterArea, effectiveLocationId, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -93,8 +105,8 @@ export default function AdminAccessLogsPage() {
         return pages;
     };
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setFilterStatus(''); setSearchQuery(''); setSortColumn('timestampObj'); setSortDirection('desc'); setCurrentPage(1); };
-    const hasActiveFilters = filterAdmin || filterCategory || filterStatus || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
+    const clearFilters = () => { setFilterAdmin(''); setFilterCategory(''); setFilterStatus(''); setFilterLocation(''); setFilterArea(''); setSearchQuery(''); setSortColumn('timestampObj'); setSortDirection('desc'); setCurrentPage(1); };
+    const hasActiveFilters = filterAdmin || filterCategory || filterStatus || filterLocation || filterArea || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const getCategoryColor = (cat) => {
         const colors = { 'Users': 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', 'Rewards': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400', 'Machines': 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400', 'Settings': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300', 'Auth': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', 'Permissions': 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400' };
@@ -128,6 +140,23 @@ export default function AdminAccessLogsPage() {
         return colors[duty] || 'bg-slate-100 text-slate-600 dark:bg-slate-600 dark:text-slate-300';
     };
 
+    const exportToCSV = () => {
+        const headers = ['Date', 'Log ID', 'Admin ID', 'Admin', 'Role', 'Action', 'Target', 'Category', 'Location', 'Area', 'Status', 'Notes'];
+        const rows = filteredLogs.map(log => [
+            log.timestamp, log.id, log.adminId, log.adminName, log.adminRole,
+            log.action, log.target, log.category, log.locationName || getLocationName(log.locationId),
+            log.areaName || '', log.status, log.notes
+        ]);
+        const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `admin-logs-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <>
             <div className="mb-8 flex justify-between items-end">
@@ -135,7 +164,7 @@ export default function AdminAccessLogsPage() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">Track all administrative actions</p>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
+                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} />
                     Export CSV
                 </button>
@@ -171,24 +200,11 @@ export default function AdminAccessLogsPage() {
                 {showFilter && (
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                         <div className="flex flex-wrap gap-3 items-center mb-3">
-                            <div className="relative">
-                                <select value={filterAdmin} onChange={(e) => handleFilterChange(setFilterAdmin, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Admins</option>{admins.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterCategory} onChange={(e) => handleFilterChange(setFilterCategory, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                            <div className="relative">
-                                <select value={filterStatus} onChange={(e) => handleFilterChange(setFilterStatus, e.target.value)} className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value="">All Status</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
+                            <CustomDropdown value={filterAdmin} onChange={(v) => handleFilterChange(setFilterAdmin, v)} options={admins} placeholder="All Admins" />
+                            <CustomDropdown value={filterCategory} onChange={(v) => handleFilterChange(setFilterCategory, v)} options={categories} placeholder="All Categories" />
+                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Status" />
+                            <CustomDropdown value={filterLocation} onChange={(v) => { handleFilterChange(setFilterLocation, v); setFilterArea(''); }} options={locations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
+                            <CustomDropdown value={filterArea} onChange={(v) => handleFilterChange(setFilterArea, v)} options={areas.map(a => ({ value: a.id, label: a.name }))} placeholder="All Areas" />
                             {hasActiveFilters && <button onClick={clearFilters} className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 font-medium flex items-center gap-1 hover:bg-red-50 transition-colors dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
                         </div>
 
@@ -214,6 +230,26 @@ export default function AdminAccessLogsPage() {
                             >
                                 {showNotes ? <Eye size={12} /> : <EyeOff size={12} />}
                                 Notes
+                            </button>
+                            <button
+                                onClick={() => setShowCategory(!showCategory)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showCategory
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showCategory ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Category
+                            </button>
+                            <button
+                                onClick={() => setShowArea(!showArea)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showArea
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showArea ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Area
                             </button>
                         </div>
                     </div>
@@ -251,10 +287,12 @@ export default function AdminAccessLogsPage() {
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('adminName')}>
                                     <div className="flex items-center gap-1">Username <SortIcon column="adminName" /></div>
                                 </th>
-                                <th className="px-3 py-3 whitespace-nowrap">Duty</th>
+                                <th className="px-3 py-3 whitespace-nowrap">Role</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Action</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Target</th>
+                                {showCategory && <th className="px-3 py-3 whitespace-nowrap">Category</th>}
                                 {showLocation && <th className="px-3 py-3 whitespace-nowrap">Location</th>}
+                                {showArea && <th className="px-3 py-3 whitespace-nowrap">Area</th>}
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('timestampObj')}>
                                     <div className="flex items-center gap-1">Date/Time <SortIcon column="timestampObj" /></div>
                                 </th>
@@ -279,10 +317,24 @@ export default function AdminAccessLogsPage() {
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap"><span className="font-mono text-xs text-slate-500 dark:text-slate-400">{log.target}</span></td>
+                                    {showCategory && (
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getCategoryColor(log.category)}`}>
+                                                {log.category || '-'}
+                                            </span>
+                                        </td>
+                                    )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-xs text-slate-600 dark:text-slate-400">
                                                 {log.locationName || getLocationName(log.locationId) || '-'}
+                                            </span>
+                                        </td>
+                                    )}
+                                    {showArea && (
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className="text-xs text-slate-600 dark:text-slate-400">
+                                                {log.areaName || '-'}
                                             </span>
                                         </td>
                                     )}
