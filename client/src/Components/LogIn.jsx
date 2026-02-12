@@ -1,43 +1,44 @@
 // ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
+// Sign in with: username + email + password
 // ============================================================================
 // SUPER ADMINS:
-//   - System Administrator     | superadmin@ecopoints.com
-//   - Chief Technology Officer  | cto@ecopoints.com
+//   - System Administrator     | sysadmin     | superadmin@ecopoints.com
+//   - Chief Technology Officer  | cto          | cto@ecopoints.com
 //
 // HEAD ADMINS (LOC-001 — Arellano University):
-//   - Maria Santos              | head@arellano.edu.ph
-//   - Roberto Garcia            | rgarcia@arellano.edu.ph
-//   - Elena Cruz                | ecruz@arellano.edu.ph
+//   - Maria Santos              | msantos      | head@arellano.edu.ph
+//   - Roberto Garcia            | rgarcia      | rgarcia@arellano.edu.ph
+//   - Elena Cruz                | ecruz        | ecruz@arellano.edu.ph
 //
 // HEAD ADMIN (LOC-002 — Polytechnic University):
-//   - Rosa Aquino               | head@pup.edu.ph
+//   - Rosa Aquino               | raquino      | head@pup.edu.ph
 //
 // AUDITORS (LOC-001):
-//   - Juan Dela Cruz            | auditor@arellano.edu.ph
-//   - Angela Reyes              | areyes@arellano.edu.ph
-//   - Mark Gonzales             | mgonzales@arellano.edu.ph
+//   - Juan Dela Cruz            | jdelacruz    | auditor@arellano.edu.ph
+//   - Angela Reyes              | areyes       | areyes@arellano.edu.ph
+//   - Mark Gonzales             | mgonzales    | mgonzales@arellano.edu.ph
 //
 // AUDITOR (LOC-002):
-//   - Leo Bautista              | auditor@pup.edu.ph
+//   - Leo Bautista              | lbautista    | auditor@pup.edu.ph
 //
 // INVENTORY OFFICERS (LOC-001):
-//   - Ana Lim                   | inventory@arellano.edu.ph
-//   - Patricia Tan              | ptan@arellano.edu.ph
-//   - Jose Mendoza              | jmendoza@arellano.edu.ph
+//   - Ana Lim                   | alim         | inventory@arellano.edu.ph
+//   - Patricia Tan              | ptan         | ptan@arellano.edu.ph
+//   - Jose Mendoza              | jmendoza     | jmendoza@arellano.edu.ph
 //
 // INVENTORY OFFICER (LOC-002):
-//   - Carmen Diaz               | inventory@pup.edu.ph
+//   - Carmen Diaz               | cdiaz        | inventory@pup.edu.ph
 //
 // TECHNICIANS (LOC-001):
-//   - Carlos Reyes              | tech@arellano.edu.ph
-//   - Miguel Santos             | msantos@arellano.edu.ph
-//   - Fernando Lopez            | flopez@arellano.edu.ph
-//   - David Villanueva          | dvillanueva@arellano.edu.ph
+//   - Carlos Reyes              | creyes       | tech@arellano.edu.ph
+//   - Miguel Santos             | misantos     | msantos@arellano.edu.ph
+//   - Fernando Lopez            | flopez       | flopez@arellano.edu.ph
+//   - David Villanueva          | dvillanueva  | dvillanueva@arellano.edu.ph
 //
 // TECHNICIANS (LOC-002):
-//   - Rico Fernandez            | tech@pup.edu.ph
-//   - Lorna Gutierrez           | tech2@pup.edu.ph
+//   - Rico Fernandez            | rfernandez   | tech@pup.edu.ph
+//   - Lorna Gutierrez           | lgutierrez   | tech2@pup.edu.ph
 // ============================================================================
 
 "use client";
@@ -56,6 +57,7 @@ import {
   Users,
   Zap,
   ArrowRight,
+  Leaf,
   Search,
   GraduationCap,
   BookOpen,
@@ -64,7 +66,7 @@ import {
   CheckCircle,
   SkipForward,
 } from "lucide-react";
-// import ReCAPTCHA from "react-google-recaptcha";
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { ADMIN_USERS } from "../data/mockData";
 
@@ -376,13 +378,14 @@ export default function LogIn({ onClose }) {
   const [signUpPhase, setSignUpPhase] = useState(1); // 1 = Basic, 2 = User Info
 
   // Form states
+  const [loginUsername, setLoginUsername] = useState("");
   const [fullName, setFullName] = useState("");
+  const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loginConfirmPassword, setLoginConfirmPassword] = useState(""); // New: Confirm password for login
   const [role, setRole] = useState("");
   const [school, setSchool] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
@@ -435,6 +438,8 @@ export default function LogIn({ onClose }) {
   // Check if signup form has data
   const hasSignUpData = () => {
     return (
+      fullName ||
+      signUpUsername ||
       email ||
       password ||
       confirmPassword ||
@@ -449,15 +454,14 @@ export default function LogIn({ onClose }) {
 
   // Check if login form has data
   const hasLoginData = () => {
-    return fullName || loginEmail || loginPassword || loginConfirmPassword;
+    return loginUsername || loginEmail || loginPassword;
   };
 
   // Reset login form
   const resetLoginForm = () => {
-    setFullName("");
+    setLoginUsername("");
     setLoginEmail("");
     setLoginPassword("");
-    setLoginConfirmPassword("");
     setFailedAttempts(0);
     setShowCaptcha(false);
     setShowCaptchaPopup(false);
@@ -466,6 +470,8 @@ export default function LogIn({ onClose }) {
 
   // Reset signup form
   const resetSignUpForm = () => {
+    setFullName("");
+    setSignUpUsername("");
     setEmail("");
     setPassword("");
     setConfirmPassword("");
@@ -483,6 +489,8 @@ export default function LogIn({ onClose }) {
   // Save current signup data
   const saveSignUpData = () => {
     return {
+      fullName,
+      signUpUsername,
       email,
       password,
       confirmPassword,
@@ -500,6 +508,8 @@ export default function LogIn({ onClose }) {
 
   // Restore saved signup data
   const restoreSignUpData = (data) => {
+    setFullName(data.fullName || "");
+    setSignUpUsername(data.signUpUsername || "");
     setEmail(data.email || "");
     setPassword(data.password || "");
     setConfirmPassword(data.confirmPassword || "");
@@ -581,38 +591,15 @@ export default function LogIn({ onClose }) {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Step 1: Validate all fields are filled
-    if (!fullName.trim()) {
-      setError("Full name is required");
+    // Check CAPTCHA if required
+    if (showCaptcha && !captchaVerified) {
+      setError("Please complete the CAPTCHA verification");
       return;
     }
 
-    if (!loginEmail.trim()) {
-      setError("Email is required");
-      return;
-    }
-
-    if (!loginPassword.trim()) {
-      setError("Password is required");
-      return;
-    }
-
-    if (!loginConfirmPassword.trim()) {
-      setError("Please confirm your password");
-      return;
-    }
-
-    // Step 2: Check passwords match
+    // Check confirm password matches
     if (loginPassword !== loginConfirmPassword) {
       setError("Passwords do not match!");
-      setPasswordMismatchShake(true);
-      setTimeout(() => setPasswordMismatchShake(false), 600);
-      return;
-    }
-
-    // Step 3: Check CAPTCHA if required (after failed attempt)
-    if (showCaptcha && !captchaVerified) {
-      setShowCaptchaPopup(true);
       return;
     }
 
@@ -621,15 +608,13 @@ export default function LogIn({ onClose }) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Step 4: Check credentials against ADMIN_USERS
-    const matchedUser = ADMIN_USERS.find(
-      (user) =>
-        user.email.toLowerCase() === loginEmail.toLowerCase() &&
-        user.password === loginPassword,
-    );
-
-    if (matchedUser) {
-      localStorage.setItem("ecopoints_current_user", matchedUser.id);
+    // Check credentials (full name, email, and password)
+    if (
+      fullName.toLowerCase() === "admin" &&
+      loginEmail === "superadmin@ecopoints.com" &&
+      loginPassword === "admin123"
+    ) {
+      localStorage.setItem("ecopoints_current_user", "ADM-SUPER-001");
       setFailedAttempts(0);
       setShowCaptcha(false);
       setShowCaptchaPopup(false);
@@ -637,10 +622,11 @@ export default function LogIn({ onClose }) {
       return;
     }
 
-    // Failed login — increment attempts, keep name/email intact
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
-    setError("Invalid email or password. Please try again.");
+    setError(
+      "Invalid credentials! Use: admin / superadmin@ecopoints.com / admin123",
+    );
 
     // Reset CAPTCHA for next attempt
     if (recaptchaRef.current) {
@@ -704,13 +690,14 @@ export default function LogIn({ onClose }) {
 
   // Full reset of all form fields
   const resetAllFields = () => {
+    setLoginUsername("");
     setFullName("");
+    setSignUpUsername("");
     setEmail("");
     setLoginEmail("");
     setPassword("");
     setLoginPassword("");
     setConfirmPassword("");
-    setLoginConfirmPassword("");
     setRole("");
     setSchool("");
     setEducationLevel("");
@@ -743,19 +730,20 @@ export default function LogIn({ onClose }) {
     setYearLevel("");
   }, [role]);
 
+  // Mouse tracking for parallax
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 2;
+      const y = (e.clientY / window.innerHeight - 0.5) * 2;
+      setMousePos({ x, y });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-      {/* Shake animation styles */}
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-          20%, 40%, 60%, 80% { transform: translateX(4px); }
-        }
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-      `}</style>
       {/* Transparent Blurred Backdrop - No click to close */}
       <div
         className={`absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"}`}
@@ -876,14 +864,13 @@ export default function LogIn({ onClose }) {
             </p>
 
             <form onSubmit={handleLogin} className="w-full space-y-2">
-              {/* Full Name Field */}
+              {/* Username Field */}
               <InputField
                 type="text"
                 placeholder="Full Name"
                 icon={<User size={16} />}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                required
               />
 
               {/* Email Field */}
@@ -904,27 +891,36 @@ export default function LogIn({ onClose }) {
                 showToggle={true}
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
-                required
               />
 
               {/* Confirm Password Field */}
-              <div className={passwordMismatchShake ? 'animate-shake' : ''}>
-                <InputField
-                  type="password"
-                  placeholder="Confirm Password"
-                  icon={<Lock size={16} />}
-                  showToggle={true}
-                  value={loginConfirmPassword}
-                  onChange={(e) => setLoginConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
+              <InputField
+                type="password"
+                placeholder="Confirm Password"
+                icon={<Lock size={16} />}
+                showToggle={true}
+                value={loginConfirmPassword}
+                onChange={(e) => setLoginConfirmPassword(e.target.value)}
+              />
 
-              {/* Error message */}
-              {error && !isSignUp && !showCaptchaPopup && (
-                <div className={`p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? 'animate-shake' : ''}`}>
-                  <AlertCircle size={14} />
-                  <span>{error}</span>
+              {/* CAPTCHA - Popup on mobile, inline on desktop */}
+              {showCaptcha && !isMobile && (
+                <div
+                  className="flex justify-center overflow-hidden w-full"
+                  style={{ maxHeight: "74px" }}
+                >
+                  <div className="transform scale-[0.9] origin-top">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={
+                        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
+                        "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                      }
+                      onChange={handleCaptchaChange}
+                      size="normal"
+                      theme="light"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1027,6 +1023,15 @@ export default function LogIn({ onClose }) {
                   icon={<User size={18} />}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+
+                <InputField
+                  type="text"
+                  placeholder="Username"
+                  icon={<AtSign size={18} />}
+                  value={signUpUsername}
+                  onChange={(e) => setSignUpUsername(e.target.value)}
                   required
                 />
 

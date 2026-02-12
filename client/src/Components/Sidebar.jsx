@@ -144,7 +144,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
     let currentUser = null;
     let hasPermission = () => false;
     let isSuperAdmin = false;
-    let logout = () => {};
+    let logout = () => { };
 
     try {
         const auth = useAuth();
@@ -207,6 +207,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             label: 'Leaderboards',
             icon: Trophy,
             href: '/admin/leaderboards',
+            hidden: !hasPermission('leaderboards', 'view')
         },
         {
             type: 'group',
@@ -368,7 +369,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]'
                     }`}>
                     <button
-                        onClick={() => { logout(); router.push('/'); }}
+                        onClick={() => { logout(); router.push('/login'); }}
                         className={`
                             relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group w-full
                             ${theme === 'system'
