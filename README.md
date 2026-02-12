@@ -26,15 +26,15 @@ This group manages *who* is using the system and *where* they belong.
         - `Admin`: Campus Administrator (e.g., Dean, Head of Student Affairs).
         - `User` (Primary): The main account holder (e.g., Student, Faculty Member). Requires email/password for web access.
         - `Maintenance`: Facilities Staff (e.g., Janitors, Technicians). Requires email for reporting tools.
-        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use physical credentials (fobs) to contribute to the central department/organization account.
+        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use printed QR codes to contribute to the central department/organization account.
 
-- **AccessCredential**: Decouples login from physical presence. Stores data for **QR Codes** or **RFID Fobs**, allowing users (especially Dependents) to log in at an RVM without credentials.
+- **AccessCredential**: Decouples login from physical presence. Stores data for **QR Codes**, allowing users (especially Dependents) to log in at an RVM without credentials.
 
 ### 2. Hardware & IoT (The RVM Operations)
 This group manages the physical machines and the act of recycling.
 - **RVM**: The physical Reverse Vending Machine. Tracks status, location, and capacity.
 - **MaintenanceLog**: Records actions performed by **Maintenance Staff** (e.g., emptying bins, cleaning sensors).
-- **RecyclingSession**: A user's interaction with a machine (Tap in -> Deposit -> Tap out).
+- **RecyclingSession**: A user's interaction with a machine (Scan QR -> Deposit -> Finish).
 - **RecyclingItem**: Detailed log of each item deposited (Type, Material, Weight, Points).
 
 ### 3. The Economy (Points & Rewards)
@@ -45,9 +45,9 @@ This group manages the "gamification" and value exchange.
 
 ## Key Features
 
-- **QR Code & RFID Integration**:
+- **QR Code Integration**:
     - **User Login**: Users can display a QR code (from `AccessCredential`) to log in to an RVM.
-    - **Dependent Onboarding**: Dependents can be issued cheap 10-peso RFID tags linked to the Household Account.
+    - **Dependent Onboarding**: Dependents can be issued printed QR badges linked to the Household Account.
     - **Reward Redemption**: Users show a redemption QR code (from `RewardRedemption`) to claim perks.
 - **Maintenance Tracking**:
     - Designated **Maintenance** staff manage RVMs.
