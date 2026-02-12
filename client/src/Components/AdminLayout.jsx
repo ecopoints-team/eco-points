@@ -233,7 +233,8 @@ export default function AdminLayout({ children }) {
     }, []);
 
     // Auth guard — don't render admin layout if not logged in 
-    if (!isInitialized || !currentUser) {
+    const isAuth = isInitialized && currentUser;
+    if (!isAuth) {
         return null;
     }
 

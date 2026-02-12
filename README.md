@@ -16,9 +16,9 @@ The core logic of the application is defined in `server/app/models.py`. The sche
 This group manages *who* is using the system and *where* they belong.
 
 - **Organization**: The top-level client (e.g., University, Corporation, HOA).
-- **CommunityGroup**: Sub-groups for competition (e.g., Department, Building Block).
-    - **Concept**: This acts as a shared "Pool" for points. A university department or student organization can act as a single Account.
-    - **Pooling Logic**: When a Dependent (e.g., service staff, guest) recycles, the points seamlessly flow into this shared Account, contributing to the main organization's balance (e.g., for purchasing communal equipment).
+- **CommunityGroup**: Sub-groups for identification and logical separation (e.g., Department, Building Block).
+    - **Concept**: Acts as a container to organize users within an Organization.
+    - **Purpose**: Primarily used to isolate and identify distinct groups for management and reporting. It allows for aggregating usage data across a specific subset of the organization.
 
 - **User**: The individual human interacting with the system.
     - **Roles**:
@@ -26,7 +26,7 @@ This group manages *who* is using the system and *where* they belong.
         - `Admin`: Campus Administrator (e.g., Dean, Head of Student Affairs).
         - `User` (Primary): The main account holder (e.g., Student, Faculty Member). Requires email/password for web access.
         - `Maintenance`: Facilities Staff (e.g., Janitors, Technicians). Requires email for reporting tools.
-        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use physical credentials (fobs) to contribute to the central department/organization account.
+        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use **printed QR codes or RFID fobs** to contribute to the central department/organization account.
 
 - **AccessCredential**: Decouples login from physical presence. Stores data for **QR Codes** or **RFID Fobs**, allowing users (especially Dependents) to log in at an RVM without credentials.
 
@@ -34,7 +34,7 @@ This group manages *who* is using the system and *where* they belong.
 This group manages the physical machines and the act of recycling.
 - **RVM**: The physical Reverse Vending Machine. Tracks status, location, and capacity.
 - **MaintenanceLog**: Records actions performed by **Maintenance Staff** (e.g., emptying bins, cleaning sensors).
-- **RecyclingSession**: A user's interaction with a machine (Tap in -> Deposit -> Tap out).
+- **RecyclingSession**: A user's interaction with a machine (Scan QR/Tap RFID -> Deposit -> Finish).
 - **RecyclingItem**: Detailed log of each item deposited (Type, Material, Weight, Points).
 
 ### 3. The Economy (Points & Rewards)
@@ -46,8 +46,8 @@ This group manages the "gamification" and value exchange.
 ## Key Features
 
 - **QR Code & RFID Integration**:
-    - **User Login**: Users can display a QR code (from `AccessCredential`) to log in to an RVM.
-    - **Dependent Onboarding**: Dependents can be issued cheap 10-peso RFID tags linked to the Household Account.
+    - **User Login**: Users can display a QR code or tap an RFID fob (from `AccessCredential`) to log in to an RVM.
+    - **Dependent Onboarding**: Dependents can be issued printed QR badges or cheap RFID tags linked to the Household Account.
     - **Reward Redemption**: Users show a redemption QR code (from `RewardRedemption`) to claim perks.
 - **Maintenance Tracking**:
     - Designated **Maintenance** staff manage RVMs.
