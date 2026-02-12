@@ -47,9 +47,30 @@ export default function Features() {
       id="features"
       className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative scroll-mt-28 background-color"
     >
+      {/* Root Div */}
       <div className="max-w-6xl mx-auto">
-        <div className="text-center font-header mb-12 sm:mb-16 lg:mb-20">
-          <h2 className="text-6xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6">
+        {/* LEAF BORDER LEFT  */}
+        <div dir="ltr">
+          <div className="absolute lg:start-0 lg:top-10 sm:top-12 sm:start-0 md:start-0 md:top-20">
+            <img
+              src="/Leaf-Border-Left.png"
+              className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+            />
+          </div>
+        </div>
+        {/* LEAF BORDER RIGHT */}
+        <div dir="rtl">
+          <div className="absolute lg:start-0 lg:top-8 sm:top-15 sm:start-0 md:start-0 md:top-20">
+            <img
+              src="/Leaf-Border-Right.png"
+              className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+            />
+          </div>
+        </div>
+        {/* UPPER HEADER */}
+        <div className="static text-center font-header mb-12 sm:mb-16 lg:mb-20">
+          {/* Text Content */}
+          <h2 className="relative text-6xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6">
             <span className="text-color bg-clip-text text-transparent">
               Our Capstone
             </span>
@@ -78,32 +99,18 @@ export default function Features() {
               }`}
             >
               {/* Image Section */}
-              <div className="flex-1 w-full hover:translate-y-5 transition-transform duration-300 hover:scale-110">
+              <div className="flex-1 w-full transition-transform duration-300 hover:scale-110 overflow-hidden group-hover:shadow-2xl transition-shadow duration-300">
                 <div className="relative group">
-                  {/* Outer-Container */}
-                  <div className="absolute inset-0 primary-color rounded-xl sm:rounded-2xl transition-all duration-500" />
-                  <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:shadow-2xl transition-shadow duration-300">
-                    {/* Inner-Container (Image) */}
-                    <div className="bg-gray-900/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm ">
-                      <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4">
-                        {/* <div className="flex items-center space-x-1 sm:space-x-2">
-                          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-300" />
-                          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-400" />
-                          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-600" />
-                        </div> */}
-                        <span className="font-body-bold text-white ml-2 sm:ml-4 text-cs sm:text-sm">
-                          {feature.title}
-                        </span>
-                      </div>
-                      {/* Pictures */}
-                      <div>
-                        {/* If mag lalagay ng Photo dito ilalagay */}
-                        <img
-                          src={feature.image}
-                          alt={feature.image}
-                          className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70"
-                        />
-                      </div>
+                  {/* Inner-Container (Image) */}
+                  <div className="secondary-color rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
+                    {/* Pictures */}
+                    <div>
+                      {/* If mag lalagay ng Photo dito ilalagay */}
+                      <img
+                        src={feature.image}
+                        alt={feature.image}
+                        className="rounded-lg sm:w-200 sm:h-80 md:w-450 md:h-60 lg:w-150 lg:h-70"
+                      />
                     </div>
                   </div>
                 </div>
@@ -111,10 +118,10 @@ export default function Features() {
               {/* TEXT SECTION */}
               <div className="flex-1 w-full">
                 <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                  <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
+                  <h3 className="text-4xl sm:text-3xl lg:text-4xl font-body-black mb-4 sm:mb-6 text-color">
                     {feature.title}
                   </h3>
-                  <p className="text-shadow-lg text-color font-body-regular text-xl text-justify sm:text-lg leading-relaxed">
+                  <p className="text-shadow-lg text-color font-body-bold text-xl text-justify sm:text-lg leading-relaxed">
                     {feature.description}
                   </p>
                 </div>

@@ -20,17 +20,15 @@ export default function Services() {
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="w-full hover:translate-y-2 transition-transform duration-300 hover:scale-102">
-            <div className="relative secondary-color backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
+            <div className="relative primary-color backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
               {/* h-[280px] sm:h-[350px] lg:h-[450px] */}
-              <div className="bg-gray-900/20 backdrop-blur-sm rounded-lg overflow-hidden h-[450px] sm:h-[500px] lg:h-[600px] border border-white/5">
-                {/* Container */}
-                {/* IMAGE SECTION */}
-                <div className="pt-4 sm:pt-4 px-2 sm:px-2 lg:px-4">
-                  <img
-                    src="/SampleReward-Stickers.jpg"
-                    className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-115 lg:w-150 lg:h-140 py-2 px-2"
-                  />
-                </div>
+              {/* Container */}
+              {/* IMAGE SECTION */}
+              <div className="">
+                <img
+                  src="/SampleReward-Stickers.jpg"
+                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-140"
+                />
               </div>
             </div>
           </div>
@@ -38,8 +36,8 @@ export default function Services() {
           {/* Grid #1 */}
           <div>
             {/* Header Text */}
-            <h1 className="text-5xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold font-header mb-4 sm:mb-6">
-              <span className="text-color font-header bg-clip-text text-transparent block mb-1 sm:2">
+            <h1 className="sm:text-5xl md:text-5xl lg:text-6xl font-header lg:mb-4 sm:mb-6">
+              <span className="text-color bg-clip-text text-transparent">
                 Services on EcoPoints
               </span>
             </h1>
@@ -55,7 +53,7 @@ export default function Services() {
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 lg:mb-8 sm:mb-12 ">
                 <Link
                   href="/rewards"
-                  className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-110 hover:border text-center"
+                  className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 primary-color rounded-lg font-body-black hover:scale-115 text-center transition-all duration-500"
                 >
                   Continue to Rewards
                 </Link>

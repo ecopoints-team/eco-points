@@ -96,7 +96,7 @@ export default function NavBar({ onLoginClick }) {
                   <img
                     src="/EcoPoints Logo Mark with Name (Light Version).png"
                     alt="Logo"
-                    className="w-auto h-7 sm:h-11 md:h-13"
+                    className="w-auto lg:h-15 sm:h-12 md:h-12"
                   />
                 </span>
               </div>
