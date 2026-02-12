@@ -206,6 +206,7 @@ class MaintenanceLog(db.Model):
     action_type = db.Column(db.String(50), nullable=False)  # e.g., "emptied_bin", "cleaned_sensor"
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     notes = db.Column(db.Text)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=True) # Link to the payment/reward for this task
 
     def __repr__(self):
         return f'<MaintenanceLog {self.action_type} by User {self.performed_by_id}>'
