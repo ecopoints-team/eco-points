@@ -16,9 +16,9 @@ The core logic of the application is defined in `server/app/models.py`. The sche
 This group manages *who* is using the system and *where* they belong.
 
 - **Organization**: The top-level client (e.g., University, Corporation, HOA).
-- **CommunityGroup**: Sub-groups for competition (e.g., Department, Building Block).
-    - **Concept**: This acts as a shared "Pool" for points. A university department or student organization can act as a single Account.
-    - **Pooling Logic**: When a Dependent (e.g., service staff, guest) recycles, the points seamlessly flow into this shared Account, contributing to the main organization's balance (e.g., for purchasing communal equipment).
+- **CommunityGroup**: Sub-groups for identification and logical separation (e.g., Department, Building Block).
+    - **Concept**: Acts as a container to organize users within an Organization.
+    - **Purpose**: Primarily used to isolate and identify distinct groups for management and reporting. It allows for aggregating usage data across a specific subset of the organization.
 
 - **User**: The individual human interacting with the system.
     - **Roles**:
