@@ -26,7 +26,7 @@ This group manages *who* is using the system and *where* they belong.
         - `Admin`: Campus Administrator (e.g., Dean, Head of Student Affairs).
         - `User` (Primary): The main account holder (e.g., Student, Faculty Member). Requires email/password for web access.
         - `Maintenance`: Facilities Staff (e.g., Janitors, Technicians). Requires email for reporting tools.
-        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use **printed QR codes or RFID fobs** to contribute to the central department/organization account.
+        - `Dependent`: Restricted Members (e.g., Service Personnel, Event Guests). No email required. They use **QR codes or RFID fobs** to contribute to the central department/organization account.
 
 - **AccessCredential**: Decouples login from physical presence. Stores data for **QR Codes** or **RFID Fobs**, allowing users (especially Dependents) to log in at an RVM without credentials.
 
@@ -47,7 +47,7 @@ This group manages the "gamification" and value exchange.
 
 - **QR Code & RFID Integration**:
     - **User Login**: Users can display a QR code or tap an RFID fob (from `AccessCredential`) to log in to an RVM.
-    - **Dependent Onboarding**: Dependents can be issued printed QR badges or cheap RFID tags linked to the Household Account.
+    - **Dependent Onboarding**: Dependents can be issued QR codes or cheap RFID tags linked to the Household Account.
     - **Reward Redemption**: Users show a redemption QR code (from `RewardRedemption`) to claim perks.
 - **Maintenance Tracking**:
     - Designated **Maintenance** staff manage RVMs.
