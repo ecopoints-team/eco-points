@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
+import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
@@ -468,21 +469,21 @@ export default function PermissionsPage() {
             <ViewOnlyBanner />
             {/* Page Header */}
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Admins</h1>
-                    <p className="text-slate-500 dark:text-slate-400">Manage roles and permissions for admin users</p>
+                <div className="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Manage Admins</h1>
+                        <p className="text-slate-500 dark:text-slate-400">Manage roles and permissions for admin users</p>
+                    </div>
+                    {(isSuperAdmin || currentUser?.permissions?.users?.create) && (
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            <Plus size={18} />
+                            Add Admin
+                        </button>
+                    )}
                 </div>
-                {(isSuperAdmin || currentUser?.permissions?.users?.create) && (
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                >
-                    <Plus size={18} />
-                    Add Admin
-                </button>
-                )}
-            </div>
             </ViewOnlyWrapper>
 
 
@@ -632,10 +633,7 @@ export default function PermissionsPage() {
                     <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
                         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
-                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
-                            </select>
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
@@ -689,13 +687,7 @@ export default function PermissionsPage() {
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-4">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{filteredUsers.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length} admins</span>
-                            <div className="flex items-center gap-2">
-                                <span>Rows:</span>
-                                <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                    className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                    <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
-                                </select>
-                            </div>
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
@@ -770,57 +762,49 @@ export default function PermissionsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Role <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.role}
-                                        onChange={(e) => handleEditChange('role', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-purple-500"
-                                    >
-                                        <option value="head_admin">Head Admin</option>
-                                        <option value="auditor">Auditor</option>
-                                        <option value="inventory_officer">Inventory Officer</option>
-                                        <option value="technician">Technician</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('role', v)}
+                                        options={[
+                                            { value: 'head_admin', label: 'Head Admin' },
+                                            { value: 'auditor', label: 'Auditor' },
+                                            { value: 'inventory_officer', label: 'Inventory Officer' },
+                                            { value: 'technician', label: 'Technician' }
+                                        ]}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.status}
-                                        onChange={(e) => handleEditChange('status', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-purple-500"
-                                    >
-                                        <option value="Online">Online</option>
-                                        <option value="Offline">Offline</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('status', v)}
+                                        options={['Online', 'Offline']}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Health <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.accountHealth}
-                                        onChange={(e) => handleEditChange('accountHealth', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-purple-500"
-                                    >
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('accountHealth', v)}
+                                        options={['Active', 'Inactive']}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Location <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.locationId}
-                                        onChange={(e) => handleEditChange('locationId', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-purple-500"
-                                    >
-                                        {LOCATIONS.map(loc => (
-                                            <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(v) => handleEditChange('locationId', v)}
+                                        options={LOCATIONS.map(loc => ({ value: loc.id, label: loc.name }))}
+                                        placeholder="Select Location"
+                                        searchable
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                             </div>
                         </div>

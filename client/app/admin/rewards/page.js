@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
+import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import { REWARDS, getRewardsByLocation } from '../../../src/data/mockData';
 import {
@@ -419,10 +420,7 @@ export default function RewardsInventoryPage() {
                     <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
                         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filteredRewards.length)}</strong> of {filteredRewards.length}</span>
-                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
-                            </select>
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
@@ -564,10 +562,7 @@ export default function RewardsInventoryPage() {
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-4">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{(currentPage - 1) * rowsPerPage + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(currentPage * rowsPerPage, filteredRewards.length)}</strong> of {filteredRewards.length} rewards</span>
-                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                className="px-2 py-1 text-sm rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                <option value={20}>20</option><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option><option value={200}>200</option>
-                            </select>
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 rounded-lg border disabled:opacity-50 bg-white dark:bg-slate-800 dark:border-slate-700">
@@ -593,13 +588,18 @@ export default function RewardsInventoryPage() {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                                {editingReward ? 'Edit Reward' : 'Add Reward'}
-                            </h3>
-                            <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400">
-                                <X size={20} />
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
+                                    <Package size={20} className="text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                                    {editingReward ? 'Edit Reward' : 'Add Reward'}
+                                </h2>
+                            </div>
+                            <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <X size={20} className="text-slate-500" />
                             </button>
                         </div>
                         <div className="p-6 space-y-4">
@@ -611,7 +611,7 @@ export default function RewardsInventoryPage() {
                                     </div>
                                     <div>
                                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                        <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium">
+                                        <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                                             <Upload size={16} />
                                             Upload
                                         </button>
@@ -621,49 +621,41 @@ export default function RewardsInventoryPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
-                                    <input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" />
+                                    <input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock Keeping Unit (SKU) *</label>
-                                    <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" placeholder="Item Name (SKU-123)" />
+                                    <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Item Name (SKU-123)" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                                <textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 h-20 resize-none outline-none" />
+                                <textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white h-20 resize-none outline-none focus:ring-2 focus:ring-emerald-500" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Points Cost *</label>
-                                    <input type="number" value={formData.points} onChange={(e) => setFormData(p => ({ ...p, points: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none" />
+                                    <input type="number" value={formData.points} onChange={(e) => setFormData(p => ({ ...p, points: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock *</label>
-                                    <input type="number" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none" />
+                                    <input type="number" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category *</label>
-                                <input
-                                    list="category-list"
+                                <CustomDropdown
                                     value={formData.category}
-                                    onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none"
-                                    placeholder="Select or type a category..."
+                                    onChange={(v) => setFormData(p => ({ ...p, category: v }))}
+                                    options={[...new Set(['Merchandise', 'Vouchers', 'Experience', ...categories])]}
+                                    placeholder="Select a category..."
+                                    size="md"
                                 />
-                                <datalist id="category-list">
-                                    <option value="Merchandise" />
-                                    <option value="Vouchers" />
-                                    <option value="Experience" />
-                                    {categories.filter(c => !['Merchandise', 'Vouchers', 'Experience'].includes(c)).map(c => (
-                                        <option key={c} value={c} />
-                                    ))}
-                                </datalist>
                             </div>
                         </div>
-                        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-                            <button onClick={() => setShowModal(false)} className="px-5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
-                            <button onClick={handleSubmit} className="px-5 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
+                        <div className="flex gap-3 p-6 pt-0">
+                            <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">Cancel</button>
+                            <button type="button" onClick={handleSubmit} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
                         </div>
                     </div>
                 </div>

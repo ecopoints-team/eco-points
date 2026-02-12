@@ -5,14 +5,16 @@ import { ChevronDown, Check } from 'lucide-react';
 // ============================================================================
 // PAGE SIZE SELECTOR COMPONENT
 // A compact custom dropdown for selecting rows-per-page in tables.
-// Opens upward (since it's typically at the bottom of tables).
+// direction='up' (default) → opens upward (bottom pagination)
+// direction='down' → opens downward (top pagination)
 // ============================================================================
 
 export default function PageSizeSelector({
     value,
     onChange,
-    options = [5, 10, 20, 50, 100, 150, 200],
+    options = [20, 50, 100, 150, 200],
     label = 'Rows:',
+    direction = 'up',
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -32,6 +34,10 @@ export default function PageSizeSelector({
         onChange(val);
         setIsOpen(false);
     };
+
+    const positionClass = direction === 'up'
+        ? 'bottom-full mb-1'
+        : 'top-full mt-1';
 
     return (
         <div className="flex items-center gap-2">
@@ -57,12 +63,11 @@ export default function PageSizeSelector({
                     />
                 </button>
 
-                {/* Dropdown - opens UPWARD */}
+                {/* Dropdown */}
                 {isOpen && (
-                    <div className="absolute bottom-full mb-1 right-0 min-w-[80px] rounded-xl border shadow-xl overflow-hidden z-50
-                        bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700
-                        animate-in slide-in-from-bottom duration-200">
-                        <div className="py-1">
+                    <div className={`absolute ${positionClass} right-0 min-w-[80px] rounded-xl border shadow-xl overflow-hidden z-50
+                        bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700`}>
+                        <div className="py-1 max-h-48 overflow-y-auto">
                             {options.map(opt => (
                                 <button
                                     key={opt}

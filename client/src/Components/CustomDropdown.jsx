@@ -18,6 +18,7 @@ export default function CustomDropdown({
     size = 'sm',         // 'sm' | 'md'
     searchable = false,  // Enable search within dropdown
     disabled = false,
+    showPlaceholder = true, // Show "All" / clear option in dropdown
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -122,18 +123,20 @@ export default function CustomDropdown({
                     {/* Options List */}
                     <div className="max-h-56 overflow-y-auto py-1">
                         {/* "All" / placeholder option */}
-                        <button
-                            type="button"
-                            onClick={() => handleSelect('')}
-                            className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors
+                        {showPlaceholder && (
+                            <button
+                                type="button"
+                                onClick={() => handleSelect('')}
+                                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors
                                 ${value === ''
-                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-medium'
-                                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                                }`}
-                        >
-                            <span>{placeholder}</span>
-                            {value === '' && <Check size={14} className="text-emerald-600 dark:text-emerald-400" />}
-                        </button>
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-medium'
+                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                    }`}
+                            >
+                                <span>{placeholder}</span>
+                                {value === '' && <Check size={14} className="text-emerald-600 dark:text-emerald-400" />}
+                            </button>
+                        )}
 
                         {filteredOptions.map(opt => (
                             <button

@@ -232,7 +232,7 @@ export default function LeaderboardsPage() {
     // State
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [sortBy, setSortBy] = useState('POINTS');
-    const [roleFilter, setRoleFilter] = useState('All');
+    const [roleFilter, setRoleFilter] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -247,7 +247,7 @@ export default function LeaderboardsPage() {
     // Reset filters on tab change
     useEffect(() => {
         setSearchQuery('');
-        setRoleFilter('All');
+        setRoleFilter('');
         setSelectedDepartment('');
         setSelectedStrand('');
         setSelectedSection('');
@@ -331,7 +331,7 @@ export default function LeaderboardsPage() {
         }
 
         // Role filter
-        if (roleFilter !== 'All') {
+        if (roleFilter !== '') {
             filtered = filtered.filter(u => u.role === roleFilter);
         }
 
@@ -590,26 +590,21 @@ export default function LeaderboardsPage() {
                             </h3>
                             <div className="flex flex-wrap gap-3 w-full lg:w-auto items-center">
                                 {/* Sort */}
-                                <select
+                                <CustomDropdown
                                     value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                    className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer font-medium"
-                                >
-                                    {SORT_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
+                                    onChange={(v) => setSortBy(v || 'POINTS')}
+                                    options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                                    placeholder="Sort By"
+                                    showPlaceholder={false}
+                                />
 
                                 {/* Role Filter */}
-                                <select
+                                <CustomDropdown
                                     value={roleFilter}
-                                    onChange={(e) => setRoleFilter(e.target.value)}
-                                    className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer font-medium"
-                                >
-                                    {ROLE_OPTIONS.map(role => (
-                                        <option key={role} value={role}>{role === 'All' ? 'All Roles' : role}</option>
-                                    ))}
-                                </select>
+                                    onChange={(v) => setRoleFilter(v)}
+                                    options={['Student', 'Faculty', 'Staff']}
+                                    placeholder="All Roles"
+                                />
 
                                 {/* Search with easter egg hint */}
                                 <div className="relative group flex-1 lg:w-56">
@@ -659,10 +654,7 @@ export default function LeaderboardsPage() {
                             <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
                                 <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                                     <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length}</span>
-                                    <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                        className="px-2 py-1 text-xs rounded border border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 outline-none cursor-pointer">
-                                        <option value={5}>5</option><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option>
-                                    </select>
+                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} options={[5, 10, 20, 50]} label={null} direction="down" />
                                 </div>
                                 <div className="flex gap-1">
                                     <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}

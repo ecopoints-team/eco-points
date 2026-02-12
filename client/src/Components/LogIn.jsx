@@ -67,8 +67,7 @@ import {
   SkipForward,
   AtSign,
 } from "lucide-react";
-// Comment ko muna, Hindi kasi gumagana sakin IDK why outdated daw ung Next.js(?) ~ Steven
-// import ReCAPTCHA from "react-google-recaptcha";
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { ADMIN_USERS } from "../data/mockData";
 
@@ -593,15 +592,25 @@ export default function LogIn({ onClose }) {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Check CAPTCHA if required
-    if (showCaptcha && !captchaVerified) {
-      setError("Please complete the CAPTCHA verification");
+    // Step 1: Validate all fields are filled
+    if (!loginUsername.trim()) {
+      setError("Username is required");
       return;
     }
 
-    // Check confirm password matches
-    if (loginPassword !== loginConfirmPassword) {
-      setError("Passwords do not match!");
+    if (!loginEmail.trim()) {
+      setError("Email is required");
+      return;
+    }
+
+    if (!loginPassword.trim()) {
+      setError("Password is required");
+      return;
+    }
+
+    // Step 2: Check CAPTCHA if required (after failed attempt)
+    if (showCaptcha && !captchaVerified) {
+      setShowCaptchaPopup(true);
       return;
     }
 
@@ -610,13 +619,16 @@ export default function LogIn({ onClose }) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Check credentials (full name, email, and password)
-    if (
-      fullName.toLowerCase() === "admin" &&
-      loginEmail === "superadmin@ecopoints.com" &&
-      loginPassword === "admin123"
-    ) {
-      localStorage.setItem("ecopoints_current_user", "ADM-SUPER-001");
+    // Step 3: Check credentials against ADMIN_USERS (username + email + password)
+    const matchedUser = ADMIN_USERS.find(
+      (user) =>
+        user.username?.toLowerCase() === loginUsername.toLowerCase() &&
+        user.email.toLowerCase() === loginEmail.toLowerCase() &&
+        user.password === loginPassword,
+    );
+
+    if (matchedUser) {
+      localStorage.setItem("ecopoints_current_user", matchedUser.id);
       setFailedAttempts(0);
       setShowCaptcha(false);
       setShowCaptchaPopup(false);
@@ -624,11 +636,10 @@ export default function LogIn({ onClose }) {
       return;
     }
 
+    // Failed login — increment attempts, keep username/email intact
     setIsLoading(false);
     setFailedAttempts((prev) => prev + 1);
-    setError(
-      "Invalid credentials! Use: admin / superadmin@ecopoints.com / admin123",
-    );
+    setError("Invalid credentials. Please try again.");
 
     // Reset CAPTCHA for next attempt
     if (recaptchaRef.current) {
@@ -1034,10 +1045,10 @@ export default function LogIn({ onClose }) {
               {/* Username Field */}
               <InputField
                 type="text"
-                placeholder="Full Name"
-                icon={<User size={16} />}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Username"
+                icon={<AtSign size={16} />}
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
               />
 
               {/* Email Field */}

@@ -1,8 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Check, Shield, ChevronRight } from 'lucide-react';
+import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 
 // Admin duty roles (not user types like Student/Faculty)
 const ADMIN_ROLES = [
@@ -72,21 +72,18 @@ const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange
     const inputType = type === 'password' && showToggle ? (showPassword ? 'text' : 'password') : type;
 
     return (
-        <div className="space-y-1">
-            {label && <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>}
+        <div>
+            {label && <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>}
             <div className="relative group">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-                    <Icon size={18} />
+                    <Icon size={16} />
                 </div>
                 <input
                     type={inputType}
                     placeholder={placeholder}
                     value={value}
                     onChange={onChange}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
-                        text-slate-800 dark:text-white text-sm rounded-xl 
-                        focus:ring-2 focus:ring-emerald-500 focus:border-transparent 
-                        pl-10 pr-10 py-3 transition-all outline-none"
+                    className="w-full pl-10 pr-10 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 {showToggle && (
                     <button
@@ -94,7 +91,7 @@ const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                     >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                 )}
             </div>
@@ -104,10 +101,6 @@ const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange
 
 // Permission Toggle (3-state like in screenshot: Grant / Inherit / Deny)
 const PermissionToggle = ({ value, onChange }) => {
-    // value: 'grant' | 'inherit' | 'deny'
-    const states = ['grant', 'inherit', 'deny'];
-    const stateIndex = states.indexOf(value);
-
     return (
         <div className="flex gap-1">
             <button
@@ -149,7 +142,6 @@ const PermissionToggle = ({ value, onChange }) => {
 
 export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     const { allLocations, isSuperAdmin, currentLocation } = useAuth();
-    const { theme } = useTheme();
 
     // Tab state
     const [activeTab, setActiveTab] = useState('information');
@@ -331,35 +323,25 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose}></div>
-
-            {/* Modal */}
-            <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-scale-in ${theme === 'light' ? 'bg-white' :
-                theme === 'neutral' ? 'bg-gray-600' :
-                    'bg-[#1e293b]'
-                }`}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header with Tabs */}
-                <div className={`border-b ${theme === 'light' ? 'border-slate-200 bg-slate-50' :
-                    theme === 'neutral' ? 'border-gray-500 bg-gray-700' :
-                        'border-slate-700 bg-slate-800/50'
-                    }`}>
-                    <div className="px-6 py-4 flex items-center justify-between">
+                <div className="border-b border-slate-200 dark:border-slate-700">
+                    <div className="p-6 pb-0 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                                <User size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
+                                <Shield size={20} className="text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-800 dark:text-white">Add Admin User</h2>
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Add Admin User</h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Create a new admin account with permissions</p>
                             </div>
                         </div>
                         <button
                             onClick={handleClose}
-                            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         >
-                            <X size={20} />
+                            <X size={20} className="text-slate-500" />
                         </button>
                     </div>
 
@@ -387,177 +369,163 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                 </div>
 
                 {/* Form Content */}
-                <form onSubmit={handleSubmit} className="max-h-[60vh] overflow-y-auto">
-                    {/* Information Tab */}
-                    {activeTab === 'information' && (
-                        <div className="p-6 space-y-4">
-                            <InputField
-                                type="text"
-                                placeholder="John Doe"
-                                icon={User}
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                label="Full Name *"
-                            />
-                            <InputField
-                                type="email"
-                                placeholder="john@ecopoints.com"
-                                icon={Mail}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                label="Email Address *"
-                            />
-                            <div className={passwordShake ? 'animate-shake' : ''}>
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Information Tab */}
+                        {activeTab === 'information' && (
+                            <div className="p-6 space-y-4">
                                 <InputField
-                                    type="password"
-                                    placeholder="Enter password"
-                                    icon={Lock}
-                                    showToggle={true}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    label="Password *"
+                                    type="text"
+                                    placeholder="John Doe"
+                                    icon={User}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    label="Full Name *"
                                 />
-                            </div>
-                            <div className={passwordShake ? 'animate-shake' : ''}>
                                 <InputField
-                                    type="password"
-                                    placeholder="Re-enter password"
-                                    icon={Lock}
-                                    showToggle={true}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    label="Confirm Password *"
+                                    type="email"
+                                    placeholder="john@ecopoints.com"
+                                    icon={Mail}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    label="Email Address *"
                                 />
-                            </div>
+                                <div className={passwordShake ? 'animate-shake' : ''}>
+                                    <InputField
+                                        type="password"
+                                        placeholder="Enter password"
+                                        icon={Lock}
+                                        showToggle={true}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        label="Password *"
+                                    />
+                                </div>
+                                <div className={passwordShake ? 'animate-shake' : ''}>
+                                    <InputField
+                                        type="password"
+                                        placeholder="Re-enter password"
+                                        icon={Lock}
+                                        showToggle={true}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        label="Confirm Password *"
+                                    />
+                                </div>
 
-                            {/* Location (Super Admin Only) */}
-                            {isSuperAdmin && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Location *</label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                                            <Building2 size={18} />
-                                        </div>
-                                        <select
+                                {/* Location (Super Admin Only) */}
+                                {isSuperAdmin && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
+                                        <CustomDropdown
                                             value={locationId}
-                                            onChange={(e) => setLocationId(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
-                                                text-slate-800 dark:text-white text-sm rounded-xl 
-                                                focus:ring-2 focus:ring-emerald-500 focus:border-transparent 
-                                                pl-10 pr-4 py-3 transition-all outline-none appearance-none cursor-pointer"
-                                        >
-                                            <option value="">Select a location...</option>
-                                            {allLocations.map(loc => (
-                                                <option key={loc.id} value={loc.id}>{loc.name} - {loc.fullName}</option>
-                                            ))}
-                                        </select>
+                                            onChange={(v) => setLocationId(v)}
+                                            options={allLocations.map(loc => ({ value: loc.id, label: `${loc.name} - ${loc.fullName}` }))}
+                                            placeholder="Select a location..."
+                                            searchable
+                                            icon={Building2}
+                                            size="md"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Next button */}
+                                <div className="pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('permissions')}
+                                        className="w-full py-2 rounded-lg font-medium text-white
+                                            bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600
+                                            transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        Next: Set Permissions
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Permissions Tab */}
+                        {activeTab === 'permissions' && (
+                            <div className="p-6 space-y-6">
+                                {/* Info Banner */}
+                                <div className="p-4 rounded-lg bg-cyan-500 text-white text-sm">
+                                    We strongly suggest using Permission Groups (Roles) instead of assigning individual permissions for easier management.
+                                </div>
+
+                                {/* Role Selection */}
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Admin Role</label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {ADMIN_ROLES.map(role => (
+                                            <button
+                                                key={role.id}
+                                                type="button"
+                                                onClick={() => applyRoleDefaults(role.id)}
+                                                className={`p-4 rounded-lg text-left transition-all border-2 ${selectedRole === role.id
+                                                    ? roleColors[role.color]
+                                                    : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-800 dark:text-white">{role.name}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{role.description}</p>
+                                                    </div>
+                                                    {selectedRole === role.id && (
+                                                        <Check size={20} className="text-emerald-500" />
+                                                    )}
+                                                </div>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Next button */}
-                            <div className="pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('permissions')}
-                                    className="w-full py-3 rounded-xl font-medium text-white
-                                        bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600
-                                        transition-colors flex items-center justify-center gap-2"
-                                >
-                                    Next: Set Permissions
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Permissions Tab */}
-                    {activeTab === 'permissions' && (
-                        <div className="p-6 space-y-6">
-                            {/* Info Banner */}
-                            <div className="p-4 rounded-xl bg-cyan-500 text-white text-sm">
-                                We strongly suggest using Permission Groups (Roles) instead of assigning individual permissions for easier management.
-                            </div>
-
-                            {/* Role Selection */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Admin Role</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {ADMIN_ROLES.map(role => (
-                                        <button
-                                            key={role.id}
-                                            type="button"
-                                            onClick={() => applyRoleDefaults(role.id)}
-                                            className={`p-4 rounded-xl text-left transition-all border-2 ${selectedRole === role.id
-                                                ? roleColors[role.color]
-                                                : 'bg-slate-50 dark:bg-slate-800 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-semibold text-slate-800 dark:text-white">{role.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{role.description}</p>
+                                {/* Individual Permissions */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fine-tune Permissions</label>
+                                    <div className="space-y-1">
+                                        {/* Filter out Super User if not Super Admin */}
+                                        {PERMISSION_MODULES
+                                            .filter(mod => isSuperAdmin || mod.key !== 'superUser')
+                                            .map(mod => (
+                                                <div key={mod.key} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-between gap-4">
+                                                    <div className="flex-1">
+                                                        <p className="font-medium text-slate-800 dark:text-white">{mod.name}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
+                                                    </div>
+                                                    <PermissionToggle
+                                                        value={permissions[mod.key]}
+                                                        onChange={(val) => handlePermissionChange(mod.key, val)}
+                                                    />
                                                 </div>
-                                                {selectedRole === role.id && (
-                                                    <Check size={20} className="text-emerald-500" />
-                                                )}
-                                            </div>
-                                        </button>
-                                    ))}
+                                            ))}
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Individual Permissions */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Fine-tune Permissions</label>
-                                <div className="space-y-1">
-                                    {/* Filter out Super User if not Super Admin */}
-                                    {PERMISSION_MODULES
-                                        .filter(mod => isSuperAdmin || mod.key !== 'superUser')
-                                        .map(mod => (
-                                            <div key={mod.key} className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-between gap-4">
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-slate-800 dark:text-white">{mod.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
-                                                </div>
-                                                <PermissionToggle
-                                                    value={permissions[mod.key]}
-                                                    onChange={(val) => handlePermissionChange(mod.key, val)}
-                                                />
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     {/* Error Message */}
                     {error && (
-                        <div className="mx-6 mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm">
+                        <div className="mx-6 mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm">
                             {error}
                         </div>
                     )}
 
-                    {/* Actions */}
-                    <div className={`p-6 border-t flex gap-3 ${theme === 'light' ? 'border-slate-200 bg-slate-50' :
-                        theme === 'neutral' ? 'border-gray-500 bg-gray-700' :
-                            'border-slate-700 bg-slate-800/50'
-                        }`}>
+                    {/* Footer Actions */}
+                    <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex gap-3">
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 
-                                bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 rounded-xl font-bold text-white
-                                bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500
-                                shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2
-                                disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
                                 <>
@@ -573,7 +541,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                         </button>
                     </div>
                 </form>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

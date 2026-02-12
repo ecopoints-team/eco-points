@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { LOCATIONS, BOTTLE_LOGS, USERS, getUsersByLocation, CITIES, getCityName } from '../../../src/data/mockData';
 import {
@@ -105,16 +106,14 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                        <select
+                        <CustomDropdown
                             value={formData.cityId}
-                            onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.cityId ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer`}
-                        >
-                            <option value="">Select city...</option>
-                            {CITIES.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                            onChange={(v) => setFormData({ ...formData, cityId: v })}
+                            options={CITIES.map(c => ({ value: c.id, label: c.name }))}
+                            placeholder="Select city..."
+                            searchable
+                            size="md"
+                        />
                         {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
                     </div>
                     <div>
@@ -168,14 +167,13 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
-                        >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
+                            onChange={(v) => setFormData({ ...formData, status: v })}
+                            options={['Active', 'Inactive']}
+                            showPlaceholder={false}
+                            size="md"
+                        />
                     </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">

@@ -374,7 +374,7 @@ export default function ManageUsersPage() {
                     <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
                         <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{startIndex + 1}-{Math.min(endIndex, filteredUsers.length)}</strong> of {filteredUsers.length}</span>
-                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} options={[20, 50, 100, 150, 200]} label={null} />
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
@@ -483,7 +483,7 @@ export default function ManageUsersPage() {
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-4">
                             <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{filteredUsers.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, filteredUsers.length)}</strong> of {filteredUsers.length} users</span>
-                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} options={[20, 50, 100, 150, 200]} />
+                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
                         </div>
                         <div className="flex gap-1">
                             <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
@@ -558,43 +558,33 @@ export default function ManageUsersPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Role <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.role}
-                                        onChange={(e) => handleEditChange('role', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
-                                    >
-                                        <option value="Student">Student</option>
-                                        <option value="Faculty">Faculty</option>
-                                        <option value="Staff">Staff</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('role', v)}
+                                        options={['Student', 'Faculty', 'Staff']}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.status}
-                                        onChange={(e) => handleEditChange('status', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
-                                    >
-                                        <option value="Online">Online</option>
-                                        <option value="Offline">Offline</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('status', v)}
+                                        options={['Online', 'Offline']}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Health <span className="text-red-500">*</span></label>
-                                    <select
+                                    <CustomDropdown
                                         value={editFormData.accountHealth}
-                                        onChange={(e) => handleEditChange('accountHealth', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none cursor-pointer focus:border-emerald-500"
-                                    >
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
+                                        onChange={(v) => handleEditChange('accountHealth', v)}
+                                        options={['Active', 'Inactive']}
+                                        showPlaceholder={false}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Strand <span className="text-red-500">*</span></label>

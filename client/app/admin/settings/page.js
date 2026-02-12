@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle, Palette, Plus, X, Send, Mail, Smartphone, Trash2, Clock } from 'lucide-react';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { BOTTLE_PRICING } from '../../../src/data/mockData';
@@ -68,10 +69,10 @@ export default function SettingsPage() {
         <>
             <ViewOnlyBanner />
             <ViewOnlyWrapper>
-            <div className="mb-8 flex justify-between items-center">
-                <div><h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Settings</h1><p className="text-slate-500 dark:text-slate-400">Configure system settings</p></div>
-                {hasChanges && <button onClick={handleSave} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg"><Save size={18} /> Save</button>}
-            </div>
+                <div className="mb-8 flex justify-between items-center">
+                    <div><h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Settings</h1><p className="text-slate-500 dark:text-slate-400">Configure system settings</p></div>
+                    {hasChanges && <button onClick={handleSave} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg"><Save size={18} /> Save</button>}
+                </div>
             </ViewOnlyWrapper>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1">
@@ -89,8 +90,8 @@ export default function SettingsPage() {
                             <div className="p-6 space-y-6">
                                 <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Site Name</label><input type="text" value={settings.siteName} onChange={(e) => updateSetting('siteName', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" /></div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Timezone</label><select value={settings.timezone} onChange={(e) => updateSetting('timezone', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none"><option value="Asia/Manila">Asia/Manila</option><option value="UTC">UTC</option></select></div>
-                                    <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Language</label><select value={settings.language} onChange={(e) => updateSetting('language', e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none"><option value="en">English</option><option value="fil">Filipino</option></select></div>
+                                    <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Timezone</label><CustomDropdown value={settings.timezone} onChange={(v) => updateSetting('timezone', v)} options={[{ value: 'Asia/Manila', label: 'Asia/Manila' }, { value: 'UTC', label: 'UTC' }]} showPlaceholder={false} /></div>
+                                    <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Language</label><CustomDropdown value={settings.language} onChange={(v) => updateSetting('language', v)} options={[{ value: 'en', label: 'English' }, { value: 'fil', label: 'Filipino' }]} showPlaceholder={false} /></div>
                                 </div>
                                 <ToggleSwitch enabled={settings.maintenanceMode} onChange={() => updateSetting('maintenanceMode', !settings.maintenanceMode)} label="Maintenance Mode" description="Disable public access" />
                             </div>
@@ -103,7 +104,7 @@ export default function SettingsPage() {
                                 </div>
                                 <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Coming Soon</h4>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
-                                    Appearance styles such as Retro, Eco, and more will be available in a future update. 
+                                    Appearance styles such as Retro, Eco, and more will be available in a future update.
                                     For theme mode (Light, Neutral, Dark, System), use the toggle at the top of the dashboard.
                                 </p>
                             </div>
@@ -202,11 +203,10 @@ export default function SettingsPage() {
                                             <div className="flex gap-3">
                                                 {[{ id: 'email', label: 'Email OTP', icon: Mail }, { id: 'sms', label: 'SMS OTP', icon: Smartphone }, { id: 'authenticator', label: 'Authenticator App', icon: Shield }].map(method => (
                                                     <button key={method.id} onClick={() => updateSetting('twoFactorMethod', method.id)}
-                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                                                            settings.twoFactorMethod === method.id
+                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${settings.twoFactorMethod === method.id
                                                                 ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50'
                                                                 : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                                                        }`}>
+                                                            }`}>
                                                         <method.icon size={16} />
                                                         {method.label}
                                                     </button>
@@ -229,11 +229,10 @@ export default function SettingsPage() {
                                         <div className="flex gap-2 ml-4">
                                             {[15, 30, 60].map(v => (
                                                 <button key={v} onClick={() => updateSetting('sessionTimeout', v)}
-                                                    className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                                                        settings.sessionTimeout === v
+                                                    className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${settings.sessionTimeout === v
                                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                                                             : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300'
-                                                    }`}>
+                                                        }`}>
                                                     {v}m
                                                 </button>
                                             ))}

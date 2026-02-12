@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation, ADMIN_USERS, BOTTLE_LOGS } from '../../../src/data/mockData';
 import {
@@ -76,40 +77,38 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Campus/Location *</label>
-                        <select
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
+                        <CustomDropdown
                             value={formData.locationId}
-                            onChange={(e) => setFormData({ ...formData, locationId: e.target.value, areaId: '' })}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.locationId ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
-                        >
-                            <option value="">Select Location</option>
-                            {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                        </select>
+                            onChange={(v) => setFormData({ ...formData, locationId: v, areaId: '' })}
+                            options={locations.map(l => ({ value: l.id, label: l.name }))}
+                            placeholder="Select Location"
+                            searchable
+                            size="md"
+                        />
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
                     {filteredAreas.length > 0 && (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area (Optional)</label>
-                            <select
+                            <CustomDropdown
                                 value={formData.areaId}
-                                onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
-                            >
-                                <option value="">Select Area</option>
-                                {filteredAreas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                            </select>
+                                onChange={(v) => setFormData({ ...formData, areaId: v })}
+                                options={filteredAreas.map(a => ({ value: a.id, label: a.name }))}
+                                placeholder="Select Area"
+                                size="md"
+                            />
                         </div>
                     )}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
-                        >
-                            <option value="Online">Online</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
+                            onChange={(v) => setFormData({ ...formData, status: v })}
+                            options={['Online', 'Maintenance']}
+                            showPlaceholder={false}
+                            size="md"
+                        />
                     </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
@@ -274,18 +273,13 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                         Technician *
                                     </label>
-                                    <select
+                                    <CustomDropdown
                                         value={newLog.technicianId}
-                                        onChange={(e) => setNewLog(p => ({ ...p, technicianId: e.target.value }))}
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 
-                                            bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
-                                            focus:border-emerald-500 dark:focus:border-emerald-500 cursor-pointer"
-                                    >
-                                        <option value="">Select technician...</option>
-                                        {technicians.map(t => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(v) => setNewLog(p => ({ ...p, technicianId: v }))}
+                                        options={technicians.map(t => ({ value: t.id, label: t.name }))}
+                                        placeholder="Select technician..."
+                                        searchable
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
