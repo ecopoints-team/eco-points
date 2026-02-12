@@ -66,7 +66,8 @@ import {
   CheckCircle,
   SkipForward,
 } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
+// Comment ko muna, Hindi kasi gumagana sakin IDK why outdated daw ung Next.js(?) ~ Steven
+// import ReCAPTCHA from "react-google-recaptcha";
 
 import { ADMIN_USERS } from "../data/mockData";
 
@@ -580,7 +581,7 @@ export default function LogIn({ onClose }) {
   const handleCaptchaChange = (value) => {
     if (value) {
       setCaptchaVerified(true);
-      setError(''); // Clear error — user has verified, they can retry now
+      setError(""); // Clear error — user has verified, they can retry now
       // Fade out the CAPTCHA popup after a short delay
       setTimeout(() => {
         setShowCaptchaPopup(false);
@@ -738,16 +739,183 @@ export default function LogIn({ onClose }) {
       const y = (e.clientY / window.innerHeight - 0.5) * 2;
       setMousePos({ x, y });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-      {/* Transparent Blurred Backdrop - No click to close */}
+      {/* Animation styles */}
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+        @keyframes float-1 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(30px, -40px) rotate(90deg); }
+          50% { transform: translate(-20px, -80px) rotate(180deg); }
+          75% { transform: translate(40px, -30px) rotate(270deg); }
+        }
+        @keyframes float-2 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          33% { transform: translate(-50px, -60px) rotate(120deg) scale(1.2); }
+          66% { transform: translate(30px, -40px) rotate(240deg) scale(0.8); }
+        }
+        @keyframes float-3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(20px, -50px) scale(1.1); }
+        }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-30px) rotate(10deg); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        @keyframes drift-up {
+          0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+      `}</style>
+
+      {/* ===== PARALLAX BACKGROUND ===== */}
       <div
-        className={`absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"}`}
-      ></div>
+        className={`absolute inset-0 transition-opacity duration-500 ${isClosing ? "opacity-0" : "opacity-100"}`}
+      >
+        {/* Base gradient mesh */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0a2f1f] via-[#0d3b2d] to-[#061f15]" />
+
+        {/* Animated gradient orbs - react to mouse */}
+        <div
+          className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
+          style={{
+            background: "radial-gradient(circle, #10b981 0%, transparent 70%)",
+            top: "10%",
+            left: "15%",
+            transform: `translate(${mousePos.x * 30}px, ${mousePos.y * 20}px)`,
+            transition: "transform 0.3s ease-out",
+            animation: "pulse-glow 8s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[100px]"
+          style={{
+            background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)",
+            bottom: "5%",
+            right: "10%",
+            transform: `translate(${mousePos.x * -25}px, ${mousePos.y * -15}px)`,
+            transition: "transform 0.3s ease-out",
+            animation: "pulse-glow 10s ease-in-out infinite 2s",
+          }}
+        />
+        <div
+          className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[80px]"
+          style={{
+            background: "radial-gradient(circle, #84cc16 0%, transparent 70%)",
+            top: "50%",
+            left: "60%",
+            transform: `translate(${mousePos.x * 20}px, ${mousePos.y * 25}px)`,
+            transition: "transform 0.3s ease-out",
+            animation: "pulse-glow 12s ease-in-out infinite 4s",
+          }}
+        />
+
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+            transform: `translate(${mousePos.x * 5}px, ${mousePos.y * 5}px)`,
+            transition: "transform 0.4s ease-out",
+          }}
+        />
+
+        {/* Floating particles layer 1 - leaves/circles */}
+        <div
+          style={{
+            transform: `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)`,
+            transition: "transform 0.4s ease-out",
+          }}
+        >
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={`leaf-${i}`}
+              className="absolute"
+              style={{
+                width: `${12 + (i % 3) * 8}px`,
+                height: `${12 + (i % 3) * 8}px`,
+                borderRadius: i % 2 === 0 ? "50% 0 50% 0" : "50%",
+                background: `rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, ${0.1 + (i % 3) * 0.05})`,
+                border: `1px solid rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, 0.15)`,
+                top: `${10 + ((i * 12) % 80)}%`,
+                left: `${5 + ((i * 13) % 90)}%`,
+                animation: `float-${(i % 3) + 1} ${15 + i * 3}s ease-in-out infinite ${i * 2}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Floating particles layer 2 - small dots (deeper parallax) */}
+        <div
+          style={{
+            transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 8}px)`,
+            transition: "transform 0.6s ease-out",
+          }}
+        >
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={`dot-${i}`}
+              className="absolute rounded-full"
+              style={{
+                width: `${3 + (i % 4) * 2}px`,
+                height: `${3 + (i % 4) * 2}px`,
+                background: `rgba(16, 185, 129, ${0.15 + (i % 3) * 0.1})`,
+                top: `${(i * 8.3) % 100}%`,
+                left: `${(i * 7.7) % 100}%`,
+                animation: `float-slow ${10 + i * 2}s ease-in-out infinite ${i * 1.5}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Rising particles - bottles/eco motif */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={`rise-${i}`}
+              className="absolute"
+              style={{
+                width: `${6 + (i % 3) * 4}px`,
+                height: `${6 + (i % 3) * 4}px`,
+                borderRadius: "50%",
+                background: `rgba(132, 204, 22, ${0.15 + (i % 3) * 0.08})`,
+                boxShadow: `0 0 ${8 + i * 2}px rgba(132, 204, 22, 0.1)`,
+                left: `${10 + ((i * 15) % 80)}%`,
+                animation: `drift-up ${20 + i * 5}s linear infinite ${i * 4}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Vignette overlay for depth */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)",
+          }}
+        />
+      </div>
 
       {/* Restore Dialog Popup */}
       {showRestoreDialog && (
@@ -784,9 +952,7 @@ export default function LogIn({ onClose }) {
 
       {/* CAPTCHA Popup (all devices) */}
       {showCaptchaPopup && showCaptcha && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300"
-        >
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
           <div className="relative bg-white rounded-2xl shadow-2xl p-5 animate-scale-in max-w-sm w-full">
             {captchaVerified ? (
@@ -843,12 +1009,13 @@ export default function LogIn({ onClose }) {
           absolute top-0 left-0 h-full w-full md:w-1/2 
           flex flex-col items-center bg-white
           transition-all duration-700 ease-in-out overflow-y-auto
-          ${isMobile
+          ${
+            isMobile
               ? !isSignUp
                 ? "opacity-100 z-20 justify-end pb-10 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
-            }
+          }
         `}
         >
           <div
@@ -891,36 +1058,16 @@ export default function LogIn({ onClose }) {
                 showToggle={true}
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
+                required
               />
 
-              {/* Confirm Password Field */}
-              <InputField
-                type="password"
-                placeholder="Confirm Password"
-                icon={<Lock size={16} />}
-                showToggle={true}
-                value={loginConfirmPassword}
-                onChange={(e) => setLoginConfirmPassword(e.target.value)}
-              />
-
-              {/* CAPTCHA - Popup on mobile, inline on desktop */}
-              {showCaptcha && !isMobile && (
+              {/* Error message */}
+              {error && !isSignUp && !showCaptchaPopup && (
                 <div
-                  className="flex justify-center overflow-hidden w-full"
-                  style={{ maxHeight: "74px" }}
+                  className={`p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? "animate-shake" : ""}`}
                 >
-                  <div className="transform scale-[0.9] origin-top">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={
-                        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-                        "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                      }
-                      onChange={handleCaptchaChange}
-                      size="normal"
-                      theme="light"
-                    />
-                  </div>
+                  <AlertCircle size={14} />
+                  <span>{error}</span>
                 </div>
               )}
 
@@ -971,12 +1118,13 @@ export default function LogIn({ onClose }) {
           flex flex-col items-center 
           bg-white
           transition-all duration-700 ease-in-out
-          ${isMobile
+          ${
+            isMobile
               ? isSignUp
                 ? "opacity-100 z-20 pt-4 pb-40 px-6 overflow-y-auto no-scrollbar justify-start"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6 overflow-y-auto"
-            }
+          }
         `}
         >
           <div
@@ -1378,24 +1526,27 @@ export default function LogIn({ onClose }) {
           absolute z-50 overflow-hidden
           transition-all duration-[800ms] cubic-bezier(0.65, 0, 0.35, 1) text-white
           
-          ${isMobile
+          ${
+            isMobile
               ? `w-full left-0
-               ${isExpanding
-                ? isSignUp
-                  ? "h-full bottom-0 top-auto rounded-[2rem]"
-                  : "h-full top-0 rounded-[2rem]"
-                : isSignUp
-                  ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
-                  : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
-              }`
+               ${
+                 isExpanding
+                   ? isSignUp
+                     ? "h-full bottom-0 top-auto rounded-[2rem]"
+                     : "h-full top-0 rounded-[2rem]"
+                   : isSignUp
+                     ? "h-[18%] min-h-[140px] bottom-0 top-auto rounded-t-[3rem] rounded-b-[2rem]"
+                     : "h-[18%] min-h-[140px] top-0 rounded-b-[3rem] rounded-t-[2rem]"
+               }`
               : `top-0 h-full
-                ${isExpanding
-                ? "w-full left-0 rounded-[2rem]"
-                : isSignUp
-                  ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
-                  : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
-              }`
-            }
+                ${
+                  isExpanding
+                    ? "w-full left-0 rounded-[2rem]"
+                    : isSignUp
+                      ? "w-1/2 left-0 rounded-r-[50px] rounded-l-[2rem]"
+                      : "w-1/2 left-1/2 rounded-l-[50px] rounded-r-[2rem]"
+                }`
+          }
         `}
         >
           <div className="relative w-full h-full bg-gradient-to-br from-lime-600 via-emerald-600 to-green-700 text-white flex items-center justify-center flex-col">

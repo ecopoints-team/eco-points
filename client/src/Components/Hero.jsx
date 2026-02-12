@@ -116,13 +116,13 @@ export default function Hero() {
             </span>
           </h2>
           <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
               FOR ECOPOINTS
             </span>
           </h2>
-          <h2 className="text-4xl sm:text2xl md:text-3xl lg:text-4xl xl:text-5xl text-left lg:py-15 sm:py-8 font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center">
-              C O N C E P T
+          <h2 className="text-4xl sm:text2xl md:text-3xl lg:text-4xl xl:text-5xl text-left lg:py-5 sm:py-8 font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.5em]">
+              Concept
             </span>
           </h2>
           <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
@@ -141,6 +141,7 @@ export default function Hero() {
             your recycling history, and monitor your EcoPoints balance.
           </p>
         </div>
+        {/* LEAF BORDER */}
       </div>
     </section>
   );
