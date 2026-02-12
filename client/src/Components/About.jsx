@@ -21,7 +21,7 @@ export default function About() {
     >
       <div className="max-w-5xl mx-auto space-y-10 text-center lg:text-left">
         <div className="space-y-4">
-          <p className="text-3xl sm:text-5xl font-bold uppercase tracking-[0.3em] text-color font-['Montserrat']">
+          <p className="text-3xl sm:text-5xl font-header uppercase tracking-[0.3em] text-color ">
             About EcoPoints
           </p>
           <h2 className="text-4xl sm:text-3xl font-bold text-color">
