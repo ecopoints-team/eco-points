@@ -166,7 +166,6 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
 
 const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
     const { user: currentUser, isSuperAdmin } = useAuth();
-    const [isChangingRole, setIsChangingRole] = useState(false);
 
     // Check if current logged in user has permission to edit users
     const canEditUsers = isSuperAdmin || currentUser?.permissions?.users?.edit;
@@ -174,14 +173,12 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
     const roleColors = {
         head_admin: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
         auditor: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
-        auditor: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
         inventory_officer: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
         technician: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
     };
 
     const roleNames = {
         head_admin: 'Head Admin',
-        auditor: 'Auditor',
         auditor: 'Auditor',
         inventory_officer: 'Inventory Officer',
         technician: 'Technician',
@@ -191,25 +188,6 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
     const getLocationName = (locationId) => {
         const loc = LOCATIONS.find(l => l.id === locationId);
         return loc ? loc.name : 'All Locations';
-    };
-
-    const roleOptions = [
-        { id: 'head_admin', name: 'Head Admin' },
-        { id: 'auditor', name: 'Auditor' },
-        { id: 'inventory_officer', name: 'Inventory Officer' },
-        { id: 'technician', name: 'Technician' },
-    ];
-
-    const handleRoleChange = async (newRole) => {
-        if (newRole === user.role) {
-            setIsChangingRole(false);
-            return;
-        }
-
-        if (onRoleChange) {
-            await onRoleChange(user.id, newRole);
-        }
-        setIsChangingRole(false);
     };
 
     return (
@@ -227,32 +205,9 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
                 <span className="text-xs text-slate-600 dark:text-slate-300">{getLocationName(user.locationId)}</span>
             </td>
             <td className="px-3 py-3">
-                {isChangingRole ? (
-                    <select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(e.target.value)}
-                        onBlur={() => setIsChangingRole(false)}
-                        autoFocus
-                        className="px-2 py-1 text-xs font-bold rounded-lg border border-emerald-500 
-                            bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200
-                            outline-none cursor-pointer"
-                    >
-                        {roleOptions.map(role => (
-                            <option key={role.id} value={role.id}>{role.name}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <button
-                        onClick={() => canEditUsers && setIsChangingRole(true)}
-                        className={`px-2 py-0.5 rounded-full text-xs font-bold ${roleColors[user.role]} 
-                            ${canEditUsers ? 'hover:ring-2 hover:ring-offset-1 hover:ring-emerald-500 cursor-pointer' : 'cursor-default opacity-80'} 
-                            transition-all`}
-                        title={canEditUsers ? "Click to change role" : "You don't have permission to change roles"}
-                        disabled={!canEditUsers}
-                    >
-                        {roleNames[user.role]}
-                    </button>
-                )}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${roleColors[user.role]}`}>
+                    {roleNames[user.role]}
+                </span>
             </td>
             <td className="px-3 py-3">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.status === 'Online'
@@ -446,7 +401,7 @@ export default function PermissionsPage() {
         setSortColumn('');
         setCurrentPage(1);
     };
-    const hasActiveFilters = filterLocation || filterRole || filterStatus;
+    const hasActiveFilters = filterLocation || filterRole || filterStatus || sortColumn;
 
     const [selectedRole, setSelectedRole] = useState(roles[0]);
 
@@ -480,7 +435,7 @@ export default function PermissionsPage() {
                             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                         >
                             <Plus size={18} />
-                            Add Admin
+                            <span className="hidden sm:inline">Add Admin</span>
                         </button>
                     )}
                 </div>

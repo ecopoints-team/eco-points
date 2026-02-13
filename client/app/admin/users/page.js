@@ -36,7 +36,7 @@ export default function ManageUsersPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
-        name: '', email: '', role: '', status: '', accountHealth: '', departmentId: '', strand: ''
+        name: '', email: '', role: '', status: '', accountHealth: '', department: '', strand: ''
     });
 
     // Handle Edit
@@ -48,7 +48,7 @@ export default function ManageUsersPage() {
             role: user.role || '',
             status: user.status || '',
             accountHealth: user.accountHealth || '',
-            departmentId: user.departmentId || '',
+            department: user.department || '',
             strand: user.strand || ''
         });
         setIsEditModalOpen(true);
@@ -311,7 +311,7 @@ export default function ManageUsersPage() {
                                 ${showFilter || hasActiveFilters
                                     ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
-                            <Filter size={16} />Filter
+                            <Filter size={16} />Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
                         </button>
                     </div>
                 </div>
@@ -428,7 +428,7 @@ export default function ManageUsersPage() {
                                     </td>
                                     {showDepartment && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{getDepartmentName(user.departmentId) || '—'}</span>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">{getDepartmentName(user.department) || '—'}</span>
                                         </td>
                                     )}
                                     {showStrand && (

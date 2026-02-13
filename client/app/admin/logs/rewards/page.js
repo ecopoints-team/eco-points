@@ -72,7 +72,7 @@ export default function RewardsLogsPage() {
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
     const clearFilters = () => { setFilterReward(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterReward || filterStatus || filterLocation;
+    const hasActiveFilters = filterReward || filterStatus || filterLocation || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const handleSort = (column) => {
         if (sortColumn === column) {

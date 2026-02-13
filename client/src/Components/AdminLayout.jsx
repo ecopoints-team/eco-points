@@ -323,10 +323,7 @@ export default function AdminLayout({ children }) {
                             <div className="relative" ref={locationRef}>
                                 <button
                                     onClick={() => setIsLocationSelectorOpen(!isLocationSelectorOpen)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' :
-                                        theme === 'neutral' ? 'bg-gray-500 text-gray-200 hover:bg-gray-400' :
-                                            'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                        }`}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30`}
                                 >
                                     <Eye size={14} />
                                     <span className="hidden sm:inline">View as: {viewAsLocationId ? allLocations.find(l => l.id === viewAsLocationId)?.name : 'All'}</span>
@@ -335,10 +332,7 @@ export default function AdminLayout({ children }) {
 
                                 {isLocationSelectorOpen && (
                                     <>
-                                        <div className={`absolute right-0 mt-2 w-48 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 ${theme === 'light' ? 'bg-white border border-gray-100' :
-                                            theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
-                                                'bg-[#1e293b] border-slate-700'
-                                            }`}>
+                                        <div className={`absolute right-0 mt-2 w-48 z-50 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 bg-white border border-slate-200 dark:bg-[#1e293b] dark:border-slate-700`}>
                                             <div className="py-1">
                                                 <button
                                                     onClick={() => { setViewAsLocation(null); setIsLocationSelectorOpen(false); }}
@@ -396,9 +390,7 @@ export default function AdminLayout({ children }) {
 
                             {isNotificationOpen && (
                                 <div className={`absolute right-0 mt-3 w-80 z-50 origin-top-right rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 overflow-hidden
-                  ${theme === 'light' ? 'bg-white border border-gray-100' :
-                                        theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
-                                            'bg-[#1e293b] border-slate-700'}`}>
+                   bg-white border border-slate-200 dark:bg-[#1e293b] dark:border-slate-700`}>
                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700/50 flex items-center justify-between">
                                         <h3 className="text-sm font-bold text-slate-800 dark:text-white">Notifications</h3>
                                         {unreadCount > 0 && (
@@ -456,10 +448,7 @@ export default function AdminLayout({ children }) {
                                 className="flex items-center gap-2 focus:outline-none group"
                             >
                                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 p-[2px] shadow-md group-hover:shadow-lg transition-all">
-                                    <div className={`w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors ${theme === 'light' ? 'bg-white text-slate-700' :
-                                        theme === 'neutral' ? 'bg-gray-600 text-white' :
-                                            'bg-slate-900 text-white'
-                                        }`}>
+                                    <div className={`w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors bg-white text-slate-700 dark:bg-slate-900 dark:text-white`}>
                                         {currentUser?.avatar || 'AD'}
                                     </div>
                                 </div>
@@ -470,10 +459,7 @@ export default function AdminLayout({ children }) {
                             {isProfileOpen && (
                                 <>
                                     <div className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none 
-                      animate-in fade-in slide-in-from-top-2 duration-200 ${theme === 'light' ? 'bg-white border border-gray-100' :
-                                            theme === 'neutral' ? 'bg-gray-600 border border-gray-500' :
-                                                'bg-[#1e293b] border-slate-700'
-                                        }`}>
+                      animate-in fade-in slide-in-from-top-2 duration-200 bg-white border border-slate-200 dark:bg-[#1e293b] dark:border-slate-700`}>
 
                                         <div className="py-1">
                                             <div className="px-4 py-3 border-b mb-1 border-gray-100 dark:border-slate-700/50">

@@ -74,7 +74,7 @@ export default function MachineLogsPage() {
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
     const clearFilters = () => { setFilterMachine(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterMachine || filterStatus || filterLocation;
+    const hasActiveFilters = filterMachine || filterStatus || filterLocation || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const handleSort = (column) => {
         if (sortColumn === column) {

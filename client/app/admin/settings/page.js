@@ -118,22 +118,20 @@ export default function SettingsPage() {
                                     { size: 'Large', range: BOTTLE_PRICING.large.volumeLabel, withKey: 'largeWithLabel', noKey: 'largeNoLabel' },
                                 ].map(item => (
                                     <div key={item.size} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <Recycle size={18} className="text-emerald-600 dark:text-emerald-400" />
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200">{item.size}</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">({item.range})</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">With Label</span>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Recycle size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200">{item.size}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">({item.range})</span>
+                                            </div>
+                                            <div className="flex items-center gap-6">
                                                 <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-slate-600 dark:text-slate-400">With Label</span>
                                                     <input type="number" value={settings[item.withKey]} onChange={(e) => updateSetting(item.withKey, parseInt(e.target.value) || 0)} className="w-16 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-center font-bold text-emerald-600 dark:text-emerald-400 outline-none" />
                                                     <span className="text-sm text-slate-500 dark:text-slate-400">pts</span>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">No Label</span>
                                                 <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-slate-600 dark:text-slate-400">No Label</span>
                                                     <input type="number" value={settings[item.noKey]} onChange={(e) => updateSetting(item.noKey, parseInt(e.target.value) || 0)} className="w-16 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-center font-bold text-amber-600 dark:text-amber-400 outline-none" />
                                                     <span className="text-sm text-slate-500 dark:text-slate-400">pts</span>
                                                 </div>
@@ -204,8 +202,8 @@ export default function SettingsPage() {
                                                 {[{ id: 'email', label: 'Email OTP', icon: Mail }, { id: 'sms', label: 'SMS OTP', icon: Smartphone }, { id: 'authenticator', label: 'Authenticator App', icon: Shield }].map(method => (
                                                     <button key={method.id} onClick={() => updateSetting('twoFactorMethod', method.id)}
                                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${settings.twoFactorMethod === method.id
-                                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50'
-                                                                : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50'
+                                                            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                                                             }`}>
                                                         <method.icon size={16} />
                                                         {method.label}
@@ -230,8 +228,8 @@ export default function SettingsPage() {
                                             {[15, 30, 60].map(v => (
                                                 <button key={v} onClick={() => updateSetting('sessionTimeout', v)}
                                                     className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${settings.sessionTimeout === v
-                                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                                            : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300'
+                                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                                        : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300'
                                                         }`}>
                                                     {v}m
                                                 </button>

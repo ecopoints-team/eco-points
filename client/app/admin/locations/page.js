@@ -267,7 +267,7 @@ export default function LocationsPage() {
                         className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
                     >
                         <Plus size={18} />
-                        Add Location
+                        <span className="hidden sm:inline">Add Location</span>
                     </button>
                 </div>
             </ViewOnlyWrapper>
@@ -336,6 +336,38 @@ export default function LocationsPage() {
                     Showing {currentLocations.length} of {filteredLocations.length} locations
                 </span>
             </div>
+
+            {/* Top Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mb-6">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
+                                ? 'bg-emerald-600 text-white shadow-md'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+                                }`}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border disabled:opacity-50 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                </div>
+            )}
 
             {/* Locations Grid - 3 columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">

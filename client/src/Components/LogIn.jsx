@@ -1,6 +1,6 @@
 // ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
-// Sign in with: username + email + password
+// Sign in with: username OR email + password
 // ============================================================================
 // SUPER ADMINS:
 //   - System Administrator     | sysadmin     | superadmin@ecopoints.com
@@ -379,11 +379,10 @@ export default function LogIn({ onClose }) {
   const [signUpPhase, setSignUpPhase] = useState(1); // 1 = Basic, 2 = User Info
 
   // Form states
-  const [loginUsername, setLoginUsername] = useState("");
+  const [loginCredential, setLoginCredential] = useState(""); // username OR email
   const [fullName, setFullName] = useState("");
   const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -455,13 +454,12 @@ export default function LogIn({ onClose }) {
 
   // Check if login form has data
   const hasLoginData = () => {
-    return loginUsername || loginEmail || loginPassword;
+    return loginCredential || loginPassword;
   };
 
   // Reset login form
   const resetLoginForm = () => {
-    setLoginUsername("");
-    setLoginEmail("");
+    setLoginCredential("");
     setLoginPassword("");
     setFailedAttempts(0);
     setShowCaptcha(false);
@@ -593,13 +591,8 @@ export default function LogIn({ onClose }) {
     e.preventDefault();
 
     // Step 1: Validate all fields are filled
-    if (!loginUsername.trim()) {
-      setError("Username is required");
-      return;
-    }
-
-    if (!loginEmail.trim()) {
-      setError("Email is required");
+    if (!loginCredential.trim()) {
+      setError("Username or email is required");
       return;
     }
 
@@ -619,11 +612,12 @@ export default function LogIn({ onClose }) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Step 3: Check credentials against ADMIN_USERS (username + email + password)
+    // Step 3: Check credentials against ADMIN_USERS (username OR email + password)
+    const credential = loginCredential.toLowerCase();
     const matchedUser = ADMIN_USERS.find(
       (user) =>
-        user.username?.toLowerCase() === loginUsername.toLowerCase() &&
-        user.email.toLowerCase() === loginEmail.toLowerCase() &&
+        (user.username?.toLowerCase() === credential ||
+          user.email.toLowerCase() === credential) &&
         user.password === loginPassword,
     );
 
@@ -697,17 +691,20 @@ export default function LogIn({ onClose }) {
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
-      onClose();
+      if (onClose) {
+        onClose();
+      } else {
+        router.push('/');
+      }
     }, 200);
   };
 
   // Full reset of all form fields
   const resetAllFields = () => {
-    setLoginUsername("");
+    setLoginCredential("");
     setFullName("");
     setSignUpUsername("");
     setEmail("");
-    setLoginEmail("");
     setPassword("");
     setLoginPassword("");
     setConfirmPassword("");
@@ -743,16 +740,43 @@ export default function LogIn({ onClose }) {
     setYearLevel("");
   }, [role]);
 
-  // Mouse tracking for parallax
+  // Mouse tracking for parallax + cursor trail
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [rawMousePos, setRawMousePos] = useState({ x: 0, y: 0 });
+  const [cursorTrail, setCursorTrail] = useState([]);
+  const trailTimerRef = useRef(null);
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 2;
       const y = (e.clientY / window.innerHeight - 0.5) * 2;
       setMousePos({ x, y });
+      setRawMousePos({ x: e.clientX, y: e.clientY });
+
+      // Add to cursor trail
+      setCursorTrail(prev => {
+        const newTrail = [...prev, { x: e.clientX, y: e.clientY, id: Date.now() + Math.random() }];
+        return newTrail.slice(-20); // Keep last 20 positions
+      });
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Fade out trail dots over time
+  useEffect(() => {
+    trailTimerRef.current = setInterval(() => {
+      setCursorTrail(prev => prev.length > 0 ? prev.slice(1) : prev);
+    }, 50);
+    return () => clearInterval(trailTimerRef.current);
+  }, []);
+
+  // Force remove dark/neutral theme class from <html> when login is mounted
+  // This prevents dark-themed form fields after admin signout
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove('dark', 'neutral', 'system');
+    if (!html.classList.contains('light')) html.classList.add('light');
   }, []);
 
   return (
@@ -852,57 +876,72 @@ export default function LogIn({ onClose }) {
           }}
         />
 
-        {/* Floating particles layer 1 - leaves/circles */}
+        {/* Floating particles layer 1 - leaves/circles — spread evenly */}
         <div
+          className="absolute inset-0 pointer-events-none"
           style={{
             transform: `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)`,
             transition: "transform 0.4s ease-out",
           }}
         >
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={`leaf-${i}`}
-              className="absolute"
-              style={{
-                width: `${12 + (i % 3) * 8}px`,
-                height: `${12 + (i % 3) * 8}px`,
-                borderRadius: i % 2 === 0 ? "50% 0 50% 0" : "50%",
-                background: `rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, ${0.1 + (i % 3) * 0.05})`,
-                border: `1px solid rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, 0.15)`,
-                top: `${10 + ((i * 12) % 80)}%`,
-                left: `${5 + ((i * 13) % 90)}%`,
-                animation: `float-${(i % 3) + 1} ${15 + i * 3}s ease-in-out infinite ${i * 2}s`,
-              }}
-            />
-          ))}
+          {[...Array(20)].map((_, i) => {
+            // Golden-angle distribution for even spread
+            const row = Math.floor(i / 5);
+            const col = i % 5;
+            const topPos = row * 22 + 5 + (col % 2) * 8;
+            const leftPos = col * 18 + 3 + (row % 2) * 7;
+            return (
+              <div
+                key={`leaf-${i}`}
+                className="absolute"
+                style={{
+                  width: `${14 + (i % 3) * 8}px`,
+                  height: `${14 + (i % 3) * 8}px`,
+                  borderRadius: i % 2 === 0 ? "50% 0 50% 0" : "50%",
+                  background: `rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, ${0.12 + (i % 3) * 0.06})`,
+                  border: `1px solid rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, 0.18)`,
+                  top: `${topPos}%`,
+                  left: `${leftPos}%`,
+                  animation: `float-${(i % 3) + 1} ${15 + i * 3}s ease-in-out infinite ${i * 1.5}s`,
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* Floating particles layer 2 - small dots (deeper parallax) */}
+        {/* Floating particles layer 2 - small dots — spread evenly */}
         <div
+          className="absolute inset-0 pointer-events-none"
           style={{
             transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 8}px)`,
             transition: "transform 0.6s ease-out",
           }}
         >
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={`dot-${i}`}
-              className="absolute rounded-full"
-              style={{
-                width: `${3 + (i % 4) * 2}px`,
-                height: `${3 + (i % 4) * 2}px`,
-                background: `rgba(16, 185, 129, ${0.15 + (i % 3) * 0.1})`,
-                top: `${(i * 8.3) % 100}%`,
-                left: `${(i * 7.7) % 100}%`,
-                animation: `float-slow ${10 + i * 2}s ease-in-out infinite ${i * 1.5}s`,
-              }}
-            />
-          ))}
+          {[...Array(28)].map((_, i) => {
+            const row = Math.floor(i / 7);
+            const col = i % 7;
+            const topPos = row * 22 + 2 + (col % 2) * 8;
+            const leftPos = col * 13 + 2 + (row % 2) * 5;
+            return (
+              <div
+                key={`dot-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: `${3 + (i % 4) * 2}px`,
+                  height: `${3 + (i % 4) * 2}px`,
+                  background: `rgba(16, 185, 129, ${0.15 + (i % 3) * 0.1})`,
+                  top: `${topPos}%`,
+                  left: `${leftPos}%`,
+                  animation: `float-slow ${10 + i * 2}s ease-in-out infinite ${i * 1.2}s`,
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* Rising particles - bottles/eco motif */}
+        {/* Rising particles - bottles/eco motif — spread wider */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(14)].map((_, i) => (
             <div
               key={`rise-${i}`}
               className="absolute"
@@ -912,11 +951,34 @@ export default function LogIn({ onClose }) {
                 borderRadius: "50%",
                 background: `rgba(132, 204, 22, ${0.15 + (i % 3) * 0.08})`,
                 boxShadow: `0 0 ${8 + i * 2}px rgba(132, 204, 22, 0.1)`,
-                left: `${10 + ((i * 15) % 80)}%`,
-                animation: `drift-up ${20 + i * 5}s linear infinite ${i * 4}s`,
+                left: `${5 + (i * 12) % 90}%`,
+                animation: `drift-up ${18 + i * 4}s linear infinite ${i * 3}s`,
               }}
             />
           ))}
+        </div>
+
+        {/* === CURSOR TRAIL === */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {cursorTrail.map((point, i) => {
+            const opacity = ((i + 1) / cursorTrail.length) * 0.6;
+            const size = 4 + ((i + 1) / cursorTrail.length) * 8;
+            return (
+              <div
+                key={point.id}
+                className="absolute rounded-full"
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  left: `${point.x - size / 2}px`,
+                  top: `${point.y - size / 2}px`,
+                  background: `radial-gradient(circle, rgba(16, 185, 129, ${opacity}) 0%, rgba(132, 204, 22, ${opacity * 0.5}) 60%, transparent 100%)`,
+                  boxShadow: `0 0 ${size * 2}px rgba(16, 185, 129, ${opacity * 0.5})`,
+                  transition: 'opacity 0.15s ease-out',
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* Vignette overlay for depth */}
@@ -1023,7 +1085,7 @@ export default function LogIn({ onClose }) {
           transition-all duration-700 ease-in-out overflow-y-auto
           ${isMobile
               ? !isSignUp
-                ? "opacity-100 z-20 justify-end pb-10 pt-4 px-5"
+                ? "opacity-100 z-20 justify-end pb-35 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
             }
@@ -1042,23 +1104,13 @@ export default function LogIn({ onClose }) {
             </p>
 
             <form onSubmit={handleLogin} className="w-full space-y-2">
-              {/* Username Field */}
+              {/* Username or Email Field */}
               <InputField
                 type="text"
-                placeholder="Username"
+                placeholder="Username or Email"
                 icon={<AtSign size={16} />}
-                value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
-              />
-
-              {/* Email Field */}
-              <InputField
-                type="email"
-                placeholder="Email"
-                icon={<Mail size={16} />}
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
+                value={loginCredential}
+                onChange={(e) => setLoginCredential(e.target.value)}
               />
 
               {/* Password Field */}

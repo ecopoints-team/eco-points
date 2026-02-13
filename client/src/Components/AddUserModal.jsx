@@ -435,8 +435,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                                         type="button"
                                         onClick={() => setActiveTab('permissions')}
                                         className="w-full py-2 rounded-lg font-medium text-white
-                                            bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600
-                                            transition-colors flex items-center justify-center gap-2"
+                                            bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500
+                                            transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
                                     >
                                         Next: Set Permissions
                                         <ChevronRight size={18} />

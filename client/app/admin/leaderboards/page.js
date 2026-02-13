@@ -12,7 +12,7 @@ import {
     Trophy, Medal, Award, Crown, Search, Filter, ChevronLeft, ChevronRight,
     Flame, Recycle, Star, TrendingUp, Users as UsersIcon, GraduationCap,
     Building2, X, ChevronsUpDown, ChevronUp, ChevronDown, School, Info,
-    Sparkles, Zap, Target
+    Sparkles, Zap, Target, MapPin
 } from 'lucide-react';
 
 // ============================================================================
@@ -34,6 +34,7 @@ const SUPER_ADMIN_TABS = [
 
 // Tabs for other admin roles: full set
 const ADMIN_TABS = [
+    { id: 'OVERALL', label: 'Overall', icon: Trophy },
     { id: 'MY_LOCATION', label: 'My Location', icon: Building2 },
     { id: 'TOP_SCHOOLS', label: 'Top Schools', icon: School },
     { id: 'BY_DEPARTMENT', label: 'By Department', icon: GraduationCap },
@@ -235,11 +236,15 @@ export default function LeaderboardsPage() {
     const [roleFilter, setRoleFilter] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [selectedStrand, setSelectedStrand] = useState('');
     const [selectedSection, setSelectedSection] = useState('');
     const [showSearchHint, setShowSearchHint] = useState(false);
+    const [schoolSortBy, setSchoolSortBy] = useState('POINTS');
+    const [expandedSchool, setExpandedSchool] = useState(null);
+    const [campusUserSort, setCampusUserSort] = useState('POINTS');
+    const [campusRoleFilter, setCampusRoleFilter] = useState('');
 
     // Reset page on filter change
     useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand, selectedSection]);
@@ -255,9 +260,9 @@ export default function LeaderboardsPage() {
 
     // Get base user list
     const allUsers = useMemo(() => {
-        if ((activeTab === 'OVERALL') && isSuperAdmin) return USERS;
+        if (activeTab === 'OVERALL') return USERS;
         return getUsersByLocation(effectiveLocationId);
-    }, [activeTab, effectiveLocationId, isSuperAdmin]);
+    }, [activeTab, effectiveLocationId]);
 
     // Sorting function with tiebreakers
     const sortUsers = (users) => {
@@ -287,10 +292,25 @@ export default function LeaderboardsPage() {
                 avgStreak: locUsers.length > 0 ? Math.round(locUsers.reduce((sum, u) => sum + (u.streak || 0), 0) / locUsers.length) : 0,
             };
         }).sort((a, b) => {
-            if (sortBy === 'BOTTLES') return b.totalBottles - a.totalBottles;
+            if (schoolSortBy === 'BOTTLES') return b.totalBottles - a.totalBottles;
             return b.totalPoints - a.totalPoints;
         });
-    }, [sortBy]);
+    }, [schoolSortBy]);
+
+    // Top 5 users per campus (for dropdown)
+    const getCampusTopUsers = (locationId) => {
+        let users = USERS.filter(u => u.locationId === locationId);
+        if (campusRoleFilter && campusRoleFilter !== 'All') {
+            users = users.filter(u => u.role === campusRoleFilter);
+        }
+        return [...users].sort((a, b) => {
+            switch (campusUserSort) {
+                case 'BOTTLES': return (b.bottlesCollected || 0) - (a.bottlesCollected || 0);
+                case 'STREAK': return (b.streak || 0) - (a.streak || 0);
+                default: return (b.points || 0) - (a.points || 0);
+            }
+        }).slice(0, 5);
+    };
 
     // Available departments for current location
     const availableDepartments = useMemo(() => {
@@ -390,8 +410,11 @@ export default function LeaderboardsPage() {
         avgStreak: leaderboardData.length > 0 ? Math.round(leaderboardData.reduce((sum, u) => sum + (u.streak || 0), 0) / leaderboardData.length) : 0,
     };
 
-    const hasActiveFilters = roleFilter !== 'All' || searchQuery || selectedDepartment || selectedStrand || selectedSection;
-    const clearFilters = () => { setRoleFilter('All'); setSearchQuery(''); setSelectedDepartment(''); setSelectedStrand(''); setSelectedSection(''); };
+    const hasActiveFilters = (roleFilter !== '' && roleFilter !== 'All') || searchQuery || selectedDepartment || selectedStrand || selectedSection;
+    const clearFilters = () => { setRoleFilter(''); setSearchQuery(''); setSelectedDepartment(''); setSelectedStrand(''); setSelectedSection(''); };
+
+    // Hide section column when Faculty or Staff is selected
+    const showSectionColumn = roleFilter !== 'Faculty' && roleFilter !== 'Staff';
 
     return (
         <>
@@ -551,18 +574,128 @@ export default function LeaderboardsPage() {
 
             {/* TOP SCHOOLS VIEW */}
             {activeTab === 'TOP_SCHOOLS' ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
+                    {/* School Sort Filter */}
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Sort by:</span>
+                        {[{ value: 'POINTS', label: 'Most EcoPoints', icon: Star }, { value: 'BOTTLES', label: 'Most Bottles', icon: Recycle }].map(opt => {
+                            const Icon = opt.icon;
+                            return (
+                                <button key={opt.value} onClick={() => setSchoolSortBy(opt.value)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${schoolSortBy === opt.value
+                                        ? 'bg-emerald-600 text-white shadow-md'
+                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'}`}>
+                                    <Icon size={14} /> {opt.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* School Podium (2nd-1st-3rd) */}
+                    {schoolRankings.length >= 2 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div className="md:mb-0">
+                                <SchoolRankCard school={schoolRankings[1]} rank={2} sortBy={schoolSortBy} />
+                            </div>
+                            <div className="md:-mt-4 md:scale-105 z-10">
+                                <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
+                            </div>
+                            {schoolRankings.length >= 3 ? (
+                                <div className="md:mb-0">
+                                    <SchoolRankCard school={schoolRankings[2]} rank={3} sortBy={schoolSortBy} />
+                                </div>
+                            ) : <div />}
+                        </div>
+                    ) : schoolRankings.length === 1 && (
+                        <div className="max-w-md mx-auto">
+                            <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
+                        </div>
+                    )}
+
+                    {/* Campus Rankings List */}
                     <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl backdrop-blur-xl">
-                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
                                 <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
                                 Campus Rankings
                             </h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500 dark:text-slate-400">User Sort:</span>
+                                <CustomDropdown value={campusUserSort} onChange={(v) => setCampusUserSort(v || 'POINTS')}
+                                    options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                                    placeholder="Sort Users" showPlaceholder={false} />
+                                <CustomDropdown value={campusRoleFilter} onChange={(v) => setCampusRoleFilter(v)}
+                                    options={['Student', 'Faculty', 'Staff']} placeholder="All Roles" />
+                            </div>
                         </div>
                         <div className="p-5 space-y-3">
-                            {schoolRankings.map((school, idx) => (
-                                <SchoolRankCard key={school.id} school={school} rank={idx + 1} sortBy={sortBy} />
-                            ))}
+                            {schoolRankings.map((school, idx) => {
+                                const isExpanded = expandedSchool === school.id;
+                                const topUsers = isExpanded ? getCampusTopUsers(school.id) : [];
+                                return (
+                                    <div key={school.id}>
+                                        <button onClick={() => setExpandedSchool(isExpanded ? null : school.id)}
+                                            className={`w-full text-left rounded-2xl border transition-all ${isExpanded
+                                                ? 'border-emerald-300 dark:border-emerald-500/50 ring-1 ring-emerald-200 dark:ring-emerald-500/20'
+                                                : 'border-slate-200 dark:border-slate-700/50 hover:border-emerald-200 dark:hover:border-emerald-500/30'}
+                                                bg-white dark:bg-[#1e293b]/60 p-4 backdrop-blur-xl shadow-md ${idx < 2 ? (idx === 0 ? 'ring-2 ring-amber-300/60 dark:ring-amber-500/40' : 'ring-2 ring-slate-300/60 dark:ring-slate-500/40') : ''}`}>
+                                            <div className="flex items-center gap-4">
+                                                <RankBadge rank={idx + 1} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-slate-800 dark:text-white truncate">{school.name}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{school.userCount} users</p>
+                                                </div>
+                                                <div className="text-right mr-3">
+                                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                                                        {schoolSortBy === 'BOTTLES' ? school.totalBottles?.toLocaleString() : school.totalPoints?.toLocaleString()}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                        {schoolSortBy === 'BOTTLES' ? 'Bottles' : 'EcoPoints'}
+                                                    </p>
+                                                </div>
+                                                <ChevronDown size={18} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                            </div>
+                                        </button>
+                                        {isExpanded && (
+                                            <div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                                                <div className="mt-2 ml-12 mr-4 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden bg-slate-50 dark:bg-slate-800/50">
+                                                    <div className="px-4 py-2 bg-slate-100 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                                        <Trophy size={12} className="text-amber-500" /> Top 5 Users
+                                                    </div>
+                                                    {topUsers.length === 0 ? (
+                                                        <div className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">No users found</div>
+                                                    ) : (
+                                                        <table className="w-full text-left">
+                                                            <thead className="text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                                                <tr>
+                                                                    <th className="px-4 py-2 w-10">#</th>
+                                                                    <th className="px-4 py-2">Name</th>
+                                                                    <th className="px-4 py-2">Role</th>
+                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Star size={10} className="text-amber-500" /> Points</div></th>
+                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Recycle size={10} className="text-emerald-500" /> Bottles</div></th>
+                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Flame size={10} className="text-orange-500" /> Streak</div></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                                                {topUsers.map((u, uIdx) => (
+                                                                    <tr key={u.id} className="hover:bg-white dark:hover:bg-slate-700/30 transition-colors">
+                                                                        <td className="px-4 py-2"><RankBadge rank={uIdx + 1} /></td>
+                                                                        <td className="px-4 py-2 text-sm font-medium text-slate-800 dark:text-white">{u.name}</td>
+                                                                        <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(u.role)}`}>{u.role}</span></td>
+                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'POINTS' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.points?.toLocaleString()}</td>
+                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'BOTTLES' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.bottlesCollected || 0}</td>
+                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'STREAK' ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.streak || 0}d</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -570,10 +703,22 @@ export default function LeaderboardsPage() {
                 <>
                     {/* TOP 3 PODIUM CARDS — Always visible, even during search */}
                     {topThree.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            {topThree.map((user, idx) => (
-                                <PodiumCard key={user.id} user={user} rank={idx + 1} sortBy={sortBy} />
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+                            {topThree.length > 1 && (
+                                <div className="md:mb-0">
+                                    <PodiumCard user={topThree[1]} rank={2} sortBy={sortBy} />
+                                </div>
+                            )}
+                            {topThree.length > 0 && (
+                                <div className="md:-mt-4 md:scale-105 z-10">
+                                    <PodiumCard user={topThree[0]} rank={1} sortBy={sortBy} />
+                                </div>
+                            )}
+                            {topThree.length > 2 && (
+                                <div className="md:mb-0">
+                                    <PodiumCard user={topThree[2]} rank={3} sortBy={sortBy} />
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -654,7 +799,7 @@ export default function LeaderboardsPage() {
                             <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
                                 <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                                     <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length}</span>
-                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} options={[5, 10, 20, 50]} label={null} direction="down" />
+                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
                                 </div>
                                 <div className="flex gap-1">
                                     <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
@@ -679,7 +824,7 @@ export default function LeaderboardsPage() {
                                         <th className="px-4 py-3 whitespace-nowrap">User</th>
                                         <th className="px-4 py-3 whitespace-nowrap">Role</th>
                                         <th className="px-4 py-3 whitespace-nowrap">Dept / Strand</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">Section</th>
+                                        {showSectionColumn && <th className="px-4 py-3 whitespace-nowrap">Section</th>}
                                         <th className="px-4 py-3 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <Flame size={12} className="text-orange-500" /> Streak
@@ -723,9 +868,11 @@ export default function LeaderboardsPage() {
                                                         {getUserDeptDisplay(user)}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className="text-xs text-slate-600 dark:text-slate-300">{user.section || '—'}</span>
-                                                </td>
+                                                {showSectionColumn && (
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <span className="text-xs text-slate-600 dark:text-slate-300">{user.section || '—'}</span>
+                                                    </td>
+                                                )}
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <div className={`flex items-center gap-1.5 ${isHighlightSort('STREAK') ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
                                                         <Flame size={14} className={isHighlightSort('STREAK') ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'} />
@@ -763,7 +910,7 @@ export default function LeaderboardsPage() {
                             <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                                 <div className="flex items-center gap-4">
                                     <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length} users</span>
-                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} options={[5, 10, 20, 50]} />
+                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
                                 </div>
                                 <div className="flex gap-1">
                                     <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}

@@ -19,6 +19,7 @@ export default function CustomDropdown({
     searchable = false,  // Enable search within dropdown
     disabled = false,
     showPlaceholder = true, // Show "All" / clear option in dropdown
+    direction = 'down',     // 'down' | 'up' — direction the panel opens
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -101,9 +102,9 @@ export default function CustomDropdown({
 
             {/* Dropdown Panel */}
             {isOpen && (
-                <div className="absolute z-50 mt-1 w-full min-w-[180px] rounded-xl border shadow-xl overflow-hidden
+                <div className={`absolute z-50 w-full min-w-[180px] rounded-xl border shadow-xl overflow-hidden
                     bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700
-                    animate-in slide-in-from-top duration-200">
+                    ${direction === 'up' ? 'bottom-full mb-1 animate-in slide-in-from-bottom duration-200' : 'mt-1 animate-in slide-in-from-top duration-200'}`}>
 
                     {/* Search Input */}
                     {searchable && (

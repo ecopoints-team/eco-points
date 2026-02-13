@@ -98,7 +98,7 @@ export default function BottleLogsPage() {
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
     const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterCondition(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation;
+    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const getStatusColor = (s) => {
         switch (s) {
