@@ -64,7 +64,6 @@ import {
   Briefcase,
   AlertCircle,
   CheckCircle,
-  SkipForward,
   AtSign,
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -190,7 +189,7 @@ const COLLEGE_DEPARTMENTS = [
 ];
 
 // ============================================================================
-// Reusable Input Field Component
+// Reusable Input Field Component — Floating Label with Eco-Glow
 // ============================================================================
 const InputField = ({
   type,
@@ -202,6 +201,7 @@ const InputField = ({
   required = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputType =
     type === "password" && showToggle
       ? showPassword
@@ -209,21 +209,49 @@ const InputField = ({
         : "password"
       : type;
 
+  const isFloating = isFocused || (value && value.length > 0);
+
   return (
     <div className="relative group w-full">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+      {/* Icon — scales up & glows when floating */}
+      <div
+        className={`absolute left-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
+          isFloating
+            ? "text-lime-500 scale-110 drop-shadow-[0_0_6px_rgba(132,204,22,0.4)]"
+            : "text-gray-400 scale-100"
+        }`}
+      >
         {icon}
       </div>
+
+      {/* The actual input — no placeholder, label handles it */}
       <input
         type={inputType}
-        placeholder={placeholder}
         value={value}
         onChange={onChange}
         required={required}
-        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
-          focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-          block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className={`w-full bg-gray-50 border text-gray-800 text-sm rounded-lg 
+          block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none peer
+          ${
+            isFloating
+              ? "border-lime-400 ring-2 ring-lime-500/30 bg-white shadow-[0_0_0_3px_rgba(132,204,22,0.08)]"
+              : "border-gray-200 hover:bg-white"
+          }`}
       />
+
+      {/* Floating Label — sits on the border line with eco-glow pill */}
+      <label
+        className={`absolute left-9 transition-all duration-300 pointer-events-none select-none ${
+          isFloating
+            ? "-top-2.5 text-[10px] font-semibold text-lime-600 bg-gradient-to-r from-lime-50 to-emerald-50 px-2 py-0.5 rounded-full shadow-sm border border-lime-200/50 z-10"
+            : "top-1/2 -translate-y-1/2 text-sm text-gray-400"
+        }`}
+      >
+        {placeholder}
+      </label>
+
       {showToggle && (
         <button
           type="button"
@@ -590,18 +618,9 @@ export default function LogIn({ onClose }) {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Step 1: Validate all fields are filled
-    if (!loginCredential.trim()) {
-      setError("Username or email is required");
-      return;
-    }
+    // HTML required attributes handle empty-field validation natively
 
-    if (!loginPassword.trim()) {
-      setError("Password is required");
-      return;
-    }
-
-    // Step 2: Check CAPTCHA if required (after failed attempt)
+    // Check CAPTCHA if required (after failed attempt)
     if (showCaptcha && !captchaVerified) {
       setShowCaptchaPopup(true);
       return;
@@ -672,18 +691,6 @@ export default function LogIn({ onClose }) {
     alert("Account created successfully! Please sign in.");
     resetAllFields();
     setIsSignUp(false);
-  };
-
-  const handleSkipPhase2 = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert(
-        "Account created! You can complete your profile later to access leaderboards.",
-      );
-      resetAllFields();
-      setIsSignUp(false);
-    }, 500);
   };
 
   const [isClosing, setIsClosing] = useState(false);
@@ -1111,6 +1118,7 @@ export default function LogIn({ onClose }) {
                 icon={<AtSign size={16} />}
                 value={loginCredential}
                 onChange={(e) => setLoginCredential(e.target.value)}
+                required
               />
 
               {/* Password Field */}
@@ -1296,12 +1304,6 @@ export default function LogIn({ onClose }) {
             {/* PHASE 2: User Information (User Type, School, Department/Strand) */}
             {signUpPhase === 2 && (
               <form onSubmit={handleSignUpPhase2} className="w-full space-y-2">
-                {/* Note about leaderboards */}
-                <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs text-center mb-1">
-                  <span className="font-medium">📊 NOTE:</span> To see
-                  leaderboards, you must complete user information 😊
-                </div>
-
                 {/* USER TYPE DROPDOWN (Moved to Phase 2) */}
                 <div className="relative w-full group">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
@@ -1310,6 +1312,7 @@ export default function LogIn({ onClose }) {
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
+                    required
                     className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
                                             focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                             block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
@@ -1336,6 +1339,7 @@ export default function LogIn({ onClose }) {
                     type="text"
                     placeholder="Select School / Campus"
                     value={school}
+                    required
                     onChange={(e) => {
                       const val = e.target.value;
                       setSchool(val);
@@ -1414,6 +1418,7 @@ export default function LogIn({ onClose }) {
                       <select
                         value={educationLevel}
                         onChange={(e) => setEducationLevel(e.target.value)}
+                        required
                         className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
                                                     focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                                     block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
@@ -1432,21 +1437,48 @@ export default function LogIn({ onClose }) {
 
                     {/* SHS Strand Dropdown (Searchable, UPWARD) */}
                     {educationLevel === "shs" && (
-                      <FloatingSearchDropdown
-                        placeholder="Select Strand"
-                        icon={<BookOpen size={18} />}
-                        value={strandSearch}
-                        onChange={setStrandSearch}
-                        options={SHS_STRANDS}
-                        onSelect={(option) => {
-                          setStrand(option.id);
-                          setStrandSearch(option.name);
-                        }}
-                        searchKey="name"
-                        displayKey="name"
-                        subtitleKey="fullName"
-                        emptyMessage="No strand found"
-                      />
+                      <>
+                        <FloatingSearchDropdown
+                          placeholder="Select Strand"
+                          icon={<BookOpen size={18} />}
+                          value={strandSearch}
+                          onChange={setStrandSearch}
+                          options={SHS_STRANDS}
+                          onSelect={(option) => {
+                            setStrand(option.id);
+                            setStrandSearch(option.name);
+                          }}
+                          searchKey="name"
+                          displayKey="name"
+                          subtitleKey="fullName"
+                          emptyMessage="No strand found"
+                        />
+
+                        {/* Year Level (for Senior High School) */}
+                        <div className="relative w-full group">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                            <Zap size={18} />
+                          </div>
+                          <select
+                            value={yearLevel}
+                            onChange={(e) => setYearLevel(e.target.value)}
+                            required
+                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                                            block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                                            ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
+                          >
+                            <option value="" disabled>
+                              Select Year Level
+                            </option>
+                            <option value="11">Grade 11</option>
+                            <option value="12">Grade 12</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                            <ChevronDown size={16} />
+                          </div>
+                        </div>
+                      </>
                     )}
 
                     {/* College Department Dropdown (Searchable, UPWARD) */}
@@ -1476,6 +1508,7 @@ export default function LogIn({ onClose }) {
                           <select
                             value={yearLevel}
                             onChange={(e) => setYearLevel(e.target.value)}
+                            required
                             className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
                                                             focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                                             block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
@@ -1535,23 +1568,13 @@ export default function LogIn({ onClose }) {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={handleSkipPhase2}
-                    disabled={isLoading}
-                    className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-medium text-sm
-                                            hover:bg-gray-200 transition-all duration-300 flex items-center justify-center gap-1"
-                  >
-                    <SkipForward size={14} />
-                    Skip
-                  </button>
+                {/* Action Button */}
+                <div className="mt-2">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 py-2.5 bg-lime-600 text-white rounded-lg font-bold shadow-lg text-sm
-                                            hover:bg-lime-700 hover:shadow-xl 
+                    className="w-full py-2.5 bg-lime-600 text-white rounded-lg font-bold shadow-lg text-sm
+                                            hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5
                                             transition-all duration-300 flex items-center justify-center gap-1
                                             disabled:opacity-70 disabled:cursor-not-allowed"
                   >

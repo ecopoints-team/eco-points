@@ -33,24 +33,22 @@ const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
             system:bg-[#1A2E1F] system:border-[rgba(123,160,91,0.2)] system:shadow-[0_0_20px_rgba(123,160,91,0.1)] system:hover:shadow-[0_0_25px_rgba(123,160,91,0.2)]
         `}>
             <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full blur-[50px] opacity-0 dark:opacity-20 system:opacity-20 group-hover:opacity-10 dark:group-hover:opacity-40 system:group-hover:opacity-40 transition-opacity duration-700 ${glowColor}`}></div>
-            <div className="relative z-10 flex justify-between items-start">
-                <div>
-                    <p className="text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 text-xs font-bold uppercase tracking-wider mb-2">{title}</p>
-                    <h3 className="text-3xl font-black text-slate-800 dark:text-white system:text-[#E1E4E1] font-sans tracking-tight flex items-baseline gap-1">
-                        <SlotCounter value={parseInt(String(value).replace(/,/g, ''))} />
-                    </h3>
-                </div>
-                <div className={`p-3 rounded-xl border ${themeClass} group-hover:scale-110 transition-transform duration-500`}>
+            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
+                <div className={`p-3 rounded-xl border ${themeClass} group-hover:scale-110 transition-transform duration-500 mb-3`}>
                     <Icon size={24} strokeWidth={1.5} />
                 </div>
+                <p className="text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 text-xs font-bold uppercase tracking-wider mb-1">{title}</p>
+                <h3 className="text-3xl font-black text-slate-800 dark:text-white system:text-[#E1E4E1] font-sans tracking-tight flex items-baseline gap-1">
+                    <SlotCounter value={parseInt(String(value).replace(/,/g, ''))} />
+                </h3>
+                {subtext && (
+                    <div className="mt-2 flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded border ${themeClass}`}>
+                            {subtext}
+                        </span>
+                    </div>
+                )}
             </div>
-            {subtext && (
-                <div className="relative z-10 mt-4 flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded border ${themeClass}`}>
-                        {subtext}
-                    </span>
-                </div>
-            )}
         </div>
     );
 };
@@ -58,10 +56,10 @@ const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
 // SHORTCUT BUTTON COMPONENT - Full Width Layout
 const ShortcutBtn = ({ label, icon: Icon, color, href }) => {
     const colors = {
-        emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 dark:hover:border-emerald-500 system:bg-[#1A2E1F] system:text-emerald-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 dark:hover:border-blue-500 system:bg-[#1A2E1F] system:text-blue-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 dark:hover:border-amber-500 system:bg-[#1A2E1F] system:text-amber-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:hover:border-purple-500 system:bg-[#1A2E1F] system:text-purple-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
+        emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 dark:hover:border-emerald-500 system:bg-transparent system:text-emerald-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
+        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 dark:hover:border-blue-500 system:bg-transparent system:text-blue-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
+        amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 dark:hover:border-amber-500 system:bg-transparent system:text-amber-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
+        purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:hover:border-purple-500 system:bg-transparent system:text-purple-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
     };
     const style = colors[color] || colors.emerald;
 
@@ -313,13 +311,13 @@ export default function AdminDashboard() {
 
             {/* Super Admin Global Stats Banner */}
             {isSuperAdmin && !effectiveLocationId && (
-                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-500/30 flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-red-100 dark:bg-red-500/20">
-                        <Building2 size={24} className="text-red-600 dark:text-red-400" />
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-lime-50 to-emerald-50 dark:from-lime-900/20 dark:to-emerald-900/20 border border-lime-300 dark:border-lime-500/30 system:border-[rgba(123,160,91,0.3)] system:bg-[#1A2E1F] flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-lime-100 dark:bg-lime-500/20 system:bg-[rgba(123,160,91,0.2)]">
+                        <Building2 size={24} className="text-lime-600 dark:text-lime-400 system:text-[#7BA05B]" />
                     </div>
                     <div>
-                        <p className="font-bold text-red-800 dark:text-red-300">Global Super Admin View</p>
-                        <p className="text-sm text-red-700 dark:text-red-400">
+                        <p className="font-bold text-lime-800 dark:text-lime-300 system:text-[#7BA05B]">Global Super Admin View</p>
+                        <p className="text-sm text-lime-700 dark:text-lime-400 system:text-[#E1E4E1]/70">
                             Viewing aggregated data across <strong>{allLocations.length} locations</strong>. Use "View as" to filter by specific school.
                         </p>
                     </div>
@@ -469,7 +467,7 @@ export default function AdminDashboard() {
                                     tick={{ fill: '#9ca3af' }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
+                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" formatter={(value) => <span style={{ marginRight: '12px', color: '#9ca3af' }}>{value}</span>} />
                                 <Line
                                     type="monotone"
                                     dataKey="accepted"
@@ -516,7 +514,7 @@ export default function AdminDashboard() {
                                     content={<CustomTooltip />}
                                     cursor={{ fill: 'rgba(156, 163, 175, 0.15)' }}
                                 />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
+                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" formatter={(value) => <span style={{ marginRight: '12px', color: '#9ca3af' }}>{value}</span>} />
                                 <Bar
                                     dataKey="accepted"
                                     fill="#10b981"

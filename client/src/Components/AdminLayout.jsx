@@ -309,10 +309,11 @@ export default function AdminLayout({ children }) {
                             </div>
                         ) : !isOnLocationsPage && isSuperAdmin && (
                             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
-                bg-red-100 border border-red-200
-                dark:bg-red-500/10 dark:border-red-500/20">
-                                <Building2 size={14} className="text-red-600 dark:text-red-400" />
-                                <span className="text-xs font-bold tracking-wider text-red-700 dark:text-red-400">
+                bg-lime-100 border border-lime-300
+                dark:bg-lime-500/10 dark:border-lime-500/20
+                system:bg-[rgba(123,160,91,0.15)] system:border-[rgba(123,160,91,0.3)]">
+                                <Building2 size={14} className="text-lime-600 dark:text-lime-400 system:text-[#7BA05B]" />
+                                <span className="text-xs font-bold tracking-wider text-lime-700 dark:text-lime-400 system:text-[#7BA05B]">
                                     ALL LOCATIONS
                                 </span>
                             </div>
