@@ -16,6 +16,24 @@ export default function Services() {
       id="services"
       className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28 background-color"
     >
+      {/* CIRCUIT-LINE BORDER LEFT  */}
+      <div dir="ltr">
+        <div className="absolute lg:start-0 lg:top-10 sm:top-12 sm:start-0 md:start-0 md:top-20">
+          <img
+            src="/SampleBorder(Circuit-Line-Left).png"
+            className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+          />
+        </div>
+      </div>
+      {/* CIRCUIT-LINE BORDER RIGHT */}
+      <div dir="rtl">
+        <div className="absolute lg:start-0 lg:top-0 sm:top-15 sm:start-0 md:start-0 md:top-20">
+          <img
+            src="/SampleBorder(Circuit-Line-Right).png"
+            className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+          />
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto text-center relative w-full">
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #2 EXAMPLE CONTAINER */}
