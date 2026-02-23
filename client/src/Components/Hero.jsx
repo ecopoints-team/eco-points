@@ -42,7 +42,6 @@ export default function Hero() {
       {/*  */}
       {/* Grid Container Hero Section */}
       {/*  */}
-
       <div className="max-w-7xl mx-auto text-center relative w-full">
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #1 */}

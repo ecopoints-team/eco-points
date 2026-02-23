@@ -2,7 +2,7 @@ const features = [
   {
     title: "Vision System",
     description:
-      "The prototype is equipped with intelligent sensors that act as its “eyes”. When you insert an item, the Vision System instantly scans and analyzes it to verify that it is a valid PET bottle and reject anything that says otherwise. This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
+      "The prototype is equipped with intelligent sensors that act as its “Eyes”. Scans and Analyzes to verify that it is a valid PET bottle and reject anything that says otherwise. This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
     image: "/SampleImage-Features.webp",
     imageDetails: "Camera and Image Processing",
     imagePosition: "left",
@@ -26,7 +26,7 @@ const features = [
   {
     title: "Reverse Vending Machine (RVM)",
     description:
-      "RVM is the...   Lorem ipsum dolor, sit amet consectetur adipisicing elit. Rerum atque harum, illo impedit, libero nostrum error dicta ut, omnis reiciendis ipsam minima et culpa aliquid? Hic sunt ea earum. Tenetur?",
+      "EcoPoints redefines recycling through an automated, hardware-integrated solution. Our Reverse Vending Machine (RVM) acts as an autonomous collection point capable of identifying valid PET materials and rejecting contaminants. Equipped with an industrial-grade internal compactor, the unit efficiently reduces bottle volume to maximize storage, offering a scalable and technology-driven alternative to manual waste sorting.",
     image: "/SampleImage-Features-four.jpg",
     imageDetails: "RVM-Showcase",
     imagePosition: "right",
