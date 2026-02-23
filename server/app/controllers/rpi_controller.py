@@ -1,13 +1,20 @@
 """
 Raspberry Pi Controller
-Handles API endpoints for Raspberry Pi 5 hardware
+Handles API endpoints for Raspberry Pi 5 hardware.
+
+Phase 1: Fixed model references to match the 15-table schema.
 """
 from flask import Blueprint, request, jsonify
-from ..models import User, RecyclingSession, RecyclingItem, RVM, Transaction
+from ..models import (
+    AccessCredential, Account, RecyclingSession, RecyclingItem,
+    RVM, Transaction
+)
 from .. import db
-from datetime import datetime
+from datetime import datetime, timezone
+
 
 rpi_bp = Blueprint('rpi', __name__, url_prefix='/api/rpi')
+
 
 def _get_machine(machine_uuid: str):
     """Fetch an RVM by UUID, returning None if not found."""
@@ -15,11 +22,12 @@ def _get_machine(machine_uuid: str):
         return None
     return RVM.query.filter_by(machine_uuid=machine_uuid).first()
 
+
 def _serialize_session(session: RecyclingSession):
     """Return minimal session payload for API responses."""
     return {
         'session_id': session.id,
-        'user_id': session.user_id,
+        'account_id': session.account_id,
         'rvm_id': session.rvm_id,
         'status': session.status,
         'item_count': session.item_count,
@@ -36,20 +44,15 @@ def handle_scan():
         data = request.get_json()
         bottle_type = data.get('bottle_type')
         qr_code = data.get('qr_code')
-        timestamp = data.get('timestamp', datetime.utcnow().isoformat())
-        
+        timestamp = data.get('timestamp', datetime.now(timezone.utc).isoformat())
+
         if not bottle_type or not qr_code:
             return jsonify({
                 'success': False,
                 'error': 'bottle_type and qr_code are required'
             }), 400
-        
+
         # TODO: Process bottle scan and award points
-        # This is where you'd add logic to:
-        # 1. Validate the QR code
-        # 2. Award points to the user
-        # 3. Log the transaction
-        
         return jsonify({
             'success': True,
             'message': 'Scan processed successfully',
@@ -57,7 +60,7 @@ def handle_scan():
                 'bottle_type': bottle_type,
                 'qr_code': qr_code,
                 'timestamp': timestamp,
-                'points_awarded': 10  # Example
+                'points_awarded': 10  # Placeholder
             }
         }), 200
     except Exception as e:
@@ -66,25 +69,35 @@ def handle_scan():
 
 @rpi_bp.route('/authenticate', methods=['POST'])
 def authenticate_user():
-    """Authenticate user via QR code scan"""
+    """Authenticate user via QR code or RFID scan.
+    Looks up AccessCredential → Account → User(s).
+    """
     try:
         data = request.get_json()
-        qr_code = data.get('qr_code')
-        
-        if not qr_code:
-            return jsonify({'success': False, 'error': 'qr_code is required'}), 400
-        
-        # TODO: Implement QR code authentication
-        # This is where you'd validate the QR code and return user info
-        
+        tag_id = data.get('qr_code') or data.get('tag_id')
+
+        if not tag_id:
+            return jsonify({'success': False, 'error': 'qr_code or tag_id is required'}), 400
+
+        cred = AccessCredential.query.filter_by(tag_id=tag_id, is_active=True).first()
+        if not cred:
+            return jsonify({'success': False, 'error': 'Credential not recognized'}), 404
+
+        account = cred.account
+        primary_user = account.users[0] if account.users else None
+
         return jsonify({
             'success': True,
             'authenticated': True,
+            'account': {
+                'id': account.id,
+                'name': account.account_name,
+                'points_balance': account.points_balance,
+            },
             'user': {
-                'id': 1,
-                'name': 'Example User',
-                'qr_code': qr_code
-            }
+                'id': primary_user.id,
+                'name': primary_user.name,
+            } if primary_user else None
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -94,11 +107,10 @@ def authenticate_user():
 def get_status():
     """Get Raspberry Pi system status"""
     try:
-        # TODO: Add actual system status checks
         return jsonify({
             'success': True,
             'status': 'online',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'message': 'RVM is operational'
         }), 200
     except Exception as e:
@@ -112,13 +124,13 @@ def log_event():
         data = request.get_json()
         event_type = data.get('event_type')
         message = data.get('message')
-        
+
         if not event_type:
             return jsonify({'success': False, 'error': 'event_type is required'}), 400
-        
+
         # TODO: Store log in database
         print(f"[RPI LOG] {event_type}: {message}")
-        
+
         return jsonify({
             'success': True,
             'message': 'Log recorded'
@@ -136,49 +148,51 @@ def health_check():
         'status': 'healthy'
     }), 200
 
+
 @rpi_bp.route('/session/start', methods=['POST'])
 def start_session():
-    """Start a recycling session once a QR code is validated."""
+    """Start a recycling session once a QR/RFID credential is validated."""
     data = request.get_json() or {}
     machine_uuid = data.get('machine_uuid')
-    user_qr = data.get('user_qr')
+    tag_id = data.get('user_qr') or data.get('tag_id')
 
-    if not machine_uuid or not user_qr:
-        return jsonify({'success': False, 'error': 'machine_uuid and user_qr are required'}), 400
+    if not machine_uuid or not tag_id:
+        return jsonify({'success': False, 'error': 'machine_uuid and user_qr/tag_id are required'}), 400
 
     machine = _get_machine(machine_uuid)
     if not machine:
         return jsonify({'success': False, 'error': 'RVM not registered'}), 404
 
-    user = User.query.filter_by(public_id=user_qr).first()
-    if not user:
-        return jsonify({'success': False, 'error': 'User QR not recognized'}), 404
+    cred = AccessCredential.query.filter_by(tag_id=tag_id, is_active=True).first()
+    if not cred:
+        return jsonify({'success': False, 'error': 'Credential not recognized'}), 404
+
+    account = cred.account
 
     try:
         session = RecyclingSession(
-            user_id=user.id,
+            account_id=account.id,
             rvm_id=machine.id,
             status='active',
-            start_time=datetime.utcnow()
         )
         machine.is_online = True
-        machine.last_heartbeat = datetime.utcnow()
+        machine.last_heartbeat = datetime.now(timezone.utc)
         db.session.add(session)
         db.session.commit()
 
         return jsonify({
             'success': True,
             'session': _serialize_session(session),
-            'user': {
-                'id': user.id,
-                'public_id': user.public_id,
-                'username': user.username,
-                'points_balance': user.points_balance
+            'account': {
+                'id': account.id,
+                'name': account.account_name,
+                'points_balance': account.points_balance,
             }
         }), 201
     except Exception as exc:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @rpi_bp.route('/item/deposit', methods=['POST'])
 def deposit_item():
@@ -188,6 +202,10 @@ def deposit_item():
     item_type = data.get('item_type')
     points = data.get('points')
     weight_grams = data.get('weight_grams')
+    brand = data.get('brand')
+    volume_ml = data.get('volume_ml')
+    condition = data.get('condition')
+    size_category = data.get('size_category')
 
     if not session_id or not item_type or points is None:
         return jsonify({'success': False, 'error': 'session_id, item_type, and points are required'}), 400
@@ -202,13 +220,17 @@ def deposit_item():
         item = RecyclingItem(
             session_id=session.id,
             item_type=item_type,
+            brand=brand,
+            volume_ml=volume_ml,
+            condition=condition,
+            size_category=size_category,
             points_awarded=int(points),
-            weight_grams=weight_grams
+            weight_grams=weight_grams,
         )
         session.item_count = (session.item_count or 0) + 1
         session.total_points_earned = (session.total_points_earned or 0) + int(points)
         if machine:
-            machine.last_heartbeat = datetime.utcnow()
+            machine.last_heartbeat = datetime.now(timezone.utc)
         db.session.add(item)
         db.session.commit()
 
@@ -218,6 +240,7 @@ def deposit_item():
             'item': {
                 'id': item.id,
                 'item_type': item.item_type,
+                'brand': item.brand,
                 'points_awarded': item.points_awarded,
                 'weight_grams': item.weight_grams,
                 'deposited_at': item.deposited_at.isoformat()
@@ -227,9 +250,10 @@ def deposit_item():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(exc)}), 500
 
+
 @rpi_bp.route('/session/end', methods=['POST'])
 def end_session():
-    """Finish a recycling session and credit the user."""
+    """Finish a recycling session and credit the account."""
     data = request.get_json() or {}
     session_id = data.get('session_id')
     machine_uuid = data.get('machine_uuid')
@@ -248,31 +272,31 @@ def end_session():
     try:
         total_points = sum(item.points_awarded for item in session.items)
         session.total_points_earned = total_points
-        session.end_time = datetime.utcnow()
+        session.end_time = datetime.now(timezone.utc)
         session.status = 'completed'
 
-        user = session.user
-        if not user:
-            raise ValueError('User missing for session')
+        account = session.account
+        if not account:
+            raise ValueError('Account missing for session')
 
-        balance_before = user.points_balance or 0
+        balance_before = account.points_balance or 0
         balance_after = balance_before + total_points
 
         transaction = Transaction(
-            user_id=user.id,
+            account_id=account.id,
             transaction_type='earn',
             amount=total_points,
             balance_before=balance_before,
             balance_after=balance_after,
             description=f'Recycling session {session.id}',
-            reference_type='recycling_session',
-            reference_id=session.id,
-            status='completed'
+            reference_id=str(session.id),
         )
 
-        user.points_balance = balance_after
+        account.points_balance = balance_after
+        account.bottles_collected = (account.bottles_collected or 0) + (session.item_count or 0)
         machine.total_items_collected = (machine.total_items_collected or 0) + (session.item_count or 0)
-        machine.last_heartbeat = datetime.utcnow()
+        machine.total_points_dispensed = (machine.total_points_dispensed or 0) + total_points
+        machine.last_heartbeat = datetime.now(timezone.utc)
 
         db.session.add(transaction)
         db.session.commit()
@@ -287,9 +311,9 @@ def end_session():
                 'balance_after': transaction.balance_after,
                 'created_at': transaction.created_at.isoformat()
             },
-            'user': {
-                'id': user.id,
-                'points_balance': user.points_balance
+            'account': {
+                'id': account.id,
+                'points_balance': account.points_balance,
             }
         }), 200
     except Exception as exc:

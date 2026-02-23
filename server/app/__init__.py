@@ -13,9 +13,11 @@ migrate = Migrate()
 
 class Config:
     """Standard Flask configuration class."""
-    # kept for backwards-compat in case someone imports from app
+    # Production: set DATABASE_URL to your Postgres connection string.
+    # Local dev fallback: SQLite file in the server/ directory.
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL', 'postgresql+psycopg://postgres:admin@127.0.0.1:5433/ecopoints'
+        'DATABASE_URL',
+        'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'ecopoints.db')
     )
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

@@ -1,12 +1,30 @@
 """
 Web Application Controller
-Handles API endpoints for the web frontend (Next.js)
+Handles API endpoints for the web frontend (Next.js).
+
+Phase 1: Minimal endpoints with correct model references.
+Full endpoint suite (~25 routes) will be added in Phase 3.
 """
 from flask import Blueprint, request, jsonify
-from ..models import User
+from ..models import User, Account
 from .. import db
 
 web_bp = Blueprint('web', __name__, url_prefix='/api/web')
+
+
+def _serialize_user(u):
+    """Return a frontend-compatible user dict."""
+    return {
+        'id': u.id,
+        'name': u.name,
+        'username': u.username,
+        'email': u.email,
+        'role': u.role,
+        'status': u.status,
+        'is_active': u.is_active,
+        'points_balance': u.account.points_balance if u.account else 0,
+        'created_at': u.created_at.isoformat() if u.created_at else None,
+    }
 
 
 @web_bp.route('/users', methods=['GET'])
@@ -16,54 +34,9 @@ def get_users():
         users = User.query.order_by(User.id.asc()).all()
         return jsonify({
             'success': True,
-            'users': [
-                {
-                    'id': u.id,
-                    'username': u.username,
-                    'full_name': u.full_name,
-                    'points_balance': u.points_balance,
-                    'created_at': u.created_at.isoformat()
-                }
-                for u in users
-            ]
+            'users': [_serialize_user(u) for u in users]
         }), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@web_bp.route('/users', methods=['POST'])
-def create_user():
-    """Create a new user from web application"""
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        full_name = data.get('full_name')
-
-        if not username or not email or not password:
-            return jsonify({'success': False, 'error': 'username, email, and password are required'}), 400
-
-        if User.query.filter((User.username == username) | (User.email == email)).first():
-            return jsonify({'success': False, 'error': 'User with that username or email already exists'}), 409
-
-        user = User(username=username, email=email, full_name=full_name)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'full_name': user.full_name,
-                'points_balance': user.points_balance,
-                'created_at': user.created_at.isoformat()
-            }
-        }), 201
-    except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -74,16 +47,10 @@ def get_user(user_id):
         user = User.query.get(user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-        
+
         return jsonify({
             'success': True,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'full_name': user.full_name,
-                'points_balance': user.points_balance,
-                'created_at': user.created_at.isoformat()
-            }
+            'user': _serialize_user(user)
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

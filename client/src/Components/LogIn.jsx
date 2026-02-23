@@ -189,7 +189,57 @@ const COLLEGE_DEPARTMENTS = [
 ];
 
 // ============================================================================
-// Reusable Input Field Component — Floating Label with Eco-Glow
+// Elastic Float Input — Sign In fields only
+// ============================================================================
+const ElasticInput = ({ id, type, label, icon, value, onChange, required = false, showToggle = false }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isActive = isFocused || (value && value.length > 0);
+  const inputType = type === 'password' && showToggle ? (showPassword ? 'text' : 'password') : type;
+
+  return (
+    <div className="relative flex items-center w-full h-12 border-b border-gray-300 group focus-within:border-lime-500 transition-colors z-10 mt-4">
+      <div className={`mr-3 transition-colors duration-300 ${isActive ? 'text-lime-500' : 'text-gray-400'}`}>
+        {icon}
+      </div>
+      <div className="relative flex-1 h-full flex items-center">
+        <input
+          id={id}
+          type={inputType}
+          value={value}
+          onChange={onChange}
+          required={required}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="w-full h-full bg-transparent text-gray-800 outline-none pb-1 text-sm"
+        />
+        <label
+          htmlFor={id}
+          className={`absolute left-0 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.26,1.55)] origin-left
+            ${isActive
+              ? '-translate-y-7 scale-75 text-lime-600 font-bold tracking-wide'
+              : 'translate-y-0 scale-100 text-gray-400'
+            }
+          `}
+        >
+          {label}
+        </label>
+      </div>
+      {showToggle && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="ml-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// Reusable Input Field Component — Sign Up fields
 // ============================================================================
 const InputField = ({
   type,
@@ -201,7 +251,6 @@ const InputField = ({
   required = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const inputType =
     type === "password" && showToggle
       ? showPassword
@@ -209,48 +258,25 @@ const InputField = ({
         : "password"
       : type;
 
-  const isFloating = isFocused || (value && value.length > 0);
-
   return (
     <div className="relative group w-full">
-      {/* Icon — scales up & glows when floating */}
-      <div
-        className={`absolute left-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
-          isFloating
-            ? "text-lime-500 scale-110 drop-shadow-[0_0_6px_rgba(132,204,22,0.4)]"
-            : "text-gray-400 scale-100"
-        }`}
-      >
+      {/* Icon */}
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
         {icon}
       </div>
 
-      {/* The actual input — no placeholder, label handles it */}
       <input
         type={inputType}
         value={value}
         onChange={onChange}
         required={required}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className={`w-full bg-gray-50 border text-gray-800 text-sm rounded-lg 
-          block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none peer
-          ${
-            isFloating
-              ? "border-lime-400 ring-2 ring-lime-500/30 bg-white shadow-[0_0_0_3px_rgba(132,204,22,0.08)]"
-              : "border-gray-200 hover:bg-white"
-          }`}
+        placeholder={placeholder}
+        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
+          block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none
+          placeholder:text-gray-400
+          focus:border-lime-400 focus:ring-2 focus:ring-lime-500/30 focus:bg-white focus:shadow-[0_0_0_3px_rgba(132,204,22,0.08)]
+          hover:bg-white"
       />
-
-      {/* Floating Label — sits on the border line with eco-glow pill */}
-      <label
-        className={`absolute left-9 transition-all duration-300 pointer-events-none select-none ${
-          isFloating
-            ? "-top-2.5 text-[10px] font-semibold text-lime-600 bg-gradient-to-r from-lime-50 to-emerald-50 px-2 py-0.5 rounded-full shadow-sm border border-lime-200/50 z-10"
-            : "top-1/2 -translate-y-1/2 text-sm text-gray-400"
-        }`}
-      >
-        {placeholder}
-      </label>
 
       {showToggle && (
         <button
@@ -1092,7 +1118,7 @@ export default function LogIn({ onClose }) {
           transition-all duration-700 ease-in-out overflow-y-auto
           ${isMobile
               ? !isSignUp
-                ? "opacity-100 z-20 justify-end pb-35 pt-4 px-5"
+                ? "opacity-100 z-20 justify-end pb-20 pt-4 px-5"
                 : "opacity-0 z-0 pointer-events-none justify-center"
               : "z-10 justify-center p-6"
             }
@@ -1112,9 +1138,10 @@ export default function LogIn({ onClose }) {
 
             <form onSubmit={handleLogin} className="w-full space-y-2">
               {/* Username or Email Field */}
-              <InputField
+              <ElasticInput
+                id="login-credential"
                 type="text"
-                placeholder="Username or Email"
+                label="Username or Email"
                 icon={<AtSign size={16} />}
                 value={loginCredential}
                 onChange={(e) => setLoginCredential(e.target.value)}
@@ -1122,9 +1149,10 @@ export default function LogIn({ onClose }) {
               />
 
               {/* Password Field */}
-              <InputField
+              <ElasticInput
+                id="login-password"
                 type="password"
-                placeholder="Password"
+                label="Password"
                 icon={<Lock size={16} />}
                 showToggle={true}
                 value={loginPassword}
