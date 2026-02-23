@@ -1,70 +1,70 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { Search, Mic } from "lucide-react";
+import { Search, Mic, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 export default function UserRewards() {
   const features = [
     {
       title: "Pencil",
       description: "",
-      image: "/Pencil.jpg",
+      image: "/SampleReward-Pencil.jpg",
       imagePosition: "left",
       id: 1,
     },
     {
       title: "Notebook",
       description: "",
-      image: "/Ntbk.jpg",
+      image: "/SampleReward-Ntbk.jpg",
       imagePosition: "left",
       id: 2,
     },
     {
       title: "Lanyard",
       description: "",
-      image: "/Lanyard.jpg",
+      image: "/SampleReward-Lanyard.jpg",
       imagePosition: "right",
       id: 3,
     },
     {
       title: "Tote Bag",
       description: "",
-      image: "/TBag.jpg",
+      image: "/SampleReward-ToteBag.jpg",
       imagePosition: "right",
       id: 4,
     },
     {
       title: "Shirt",
       description: "",
-      image: "/Stkrs.jpg",
+      image: "/SampleReward-Shirt.jpg",
       imagePosition: "right",
       id: 5,
     },
     {
       title: "Mug",
       description: "",
-      image: "/Stkrs.jpg",
+      image: "/SampleReward-Mug.jpg",
       imagePosition: "right",
       id: 6,
     },
     {
       title: "Stickers",
       description: "",
-      image: "/Stkrs.jpg",
+      image: "/SampleReward-Stickers.jpg",
       imagePosition: "right",
       id: 7,
     },
     {
       title: "Keychain",
       description: "",
-      image: "/Kychn.jpg",
+      image: "/SampleReward-Keychain.jpg",
       imagePosition: "right",
       id: 8,
     },
     {
       title: "Pins",
       description: "",
-      image: "/Stkrs.jpg",
+      image: "/SampleReward-Pins.jpg",
       imagePosition: "right",
       id: 9,
     },
@@ -145,18 +145,21 @@ export default function UserRewards() {
     };
   };
 
+  // HANDLES THE SEARCH BAR
   const handleSearch = useCallback(
     debounce((term) => {
-      if (term.trim() === "") {
+      if (!term.trim()) {
         setSearchResults([]);
-      } else {
-        const results = features.filter((item) =>
-          item.title.toLowerCase().includes(term.toLowerCase()),
-        );
-        setSearchResults(results);
+        return;
       }
+
+      const results = features.filter((item) =>
+        item.title.toLowerCase().includes(term.toLowerCase()),
+      );
+
+      setSearchResults(results);
     }, 300),
-    [],
+    [features],
   );
 
   useEffect(() => {
@@ -167,40 +170,69 @@ export default function UserRewards() {
     setSearchTerm(e.target.value);
   };
 
+  // EXAMPLE FOR PAGINATION
+  const [activeIdx, setActiveIdx] = useState(0);
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(features.length / itemsPerPage);
+
+  const next = () => {
+    setActiveIdx((prev) => (prev + 1) % totalPages);
+  };
+
+  const previous = () => {
+    setActiveIdx((prev) => (prev - 1 + totalPages) % totalPages);
+  };
+
   return (
     <section className="relative min-h-screen flex-row pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
       {/* USER SUMMARY SECTION */}
       <div className="accent-color-background relative">
-        {/* Content */}
-        <div className="flex flex-col lg:grid lg:grid-cols-4 justify-center">
-          <span className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            HI! User
-            {/* TODO: Connect to user data from DB */}
-            <span className="">
-              <p>&mdash;</p>
+        {/* CONTENT */}
+        <div className="flex flex-col lg:grid lg:grid-cols-4 px-12 py-12 justify-center">
+          {/* USER CLASS */}
+          <div className="lg:grid lg:grid-cols-2">
+            <img src="/SampleImage-UserIcon.png" />
+            <span className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl font-body-bold lg:mx-0 lg:mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+              HI! User
+              {/* TODO: Connect to user data from DB */}
+              <span className="">
+                <p>&mdash;</p>
+              </span>
             </span>
-          </span>
-          <span className="relative order-2 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            SUMMARY OF POINTS:
-            {/* TODO: Connect to points data from DB */}
-            <span className="">
-              <p>&mdash;</p>
+          </div>
+          {/* SUMMARY CLASS */}
+          <div className="lg:grid lg:grid-cols-2">
+            <img src="/SampleImage-EcoPoints.png" />
+            <span className="relative order-2 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl font-body-bold lg:mx-0 lg:mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+              SUMMARY OF POINTS:
+              {/* TODO: Connect to points data from DB */}
+              <span className="">
+                <p>&mdash;</p>
+              </span>
             </span>
-          </span>
-          <span className="relative order-3 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            POINTS OBTAINED TODAY:
-            {/* TODO: Connect to daily points from DB */}
-            <span className="">
-              <p>&mdash;</p>
+          </div>
+          {/* POINTS CLASS */}
+          <div className="lg:grid lg:grid-cols-2">
+            <img src="SampleImage-CurrentPoints.png" />
+            <span className="relative order-3 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl font-body-bold lg:mx-0 lg:mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+              TODAY'S POINTS:
+              {/* TODO: Connect to daily points from DB */}
+              <span className="">
+                <p>&mdash;</p>
+              </span>
             </span>
-          </span>
-          <span className="relative order-4 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            STREAK:
-            {/* TODO: Connect to streak data from DB */}
-            <span className="">
-              <p>&mdash;</p>
+          </div>
+          {/* STREAK CLASS */}
+          <div className="lg:grid lg:grid-cols-2">
+            <img src="SampleImage-Streak.png" />
+            <span className="relative order-4 text-shadow-lg text-xl sm:text-base lg:text-2xl text-white max-w-2xl font-body-bold lg:mx-0 lg:mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+              STREAK:
+              {/* TODO: Connect to streak data from DB */}
+              <span className="">
+                <p>&mdash;</p>
+              </span>
             </span>
-          </span>
+          </div>
         </div>
       </div>
       <section
@@ -237,19 +269,36 @@ export default function UserRewards() {
             </form>
             {/* SEARCH RESULT */}
             {searchResults.length > 0 && (
-              <div className="w-full max-w-2xl rounded-lg bg-white p-4 shadow-md">
-                <h2 className="mb-4 text-xl font-bold"> Search Results: </h2>
-                <ul>
-                  {searchResults.map((result) => (
-                    <li key={result.id} className="mb-2">
-                      <a
-                        href={result.url}
-                        className="text-blue-600 hover:underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {result.title}
-                      </a>
+              <div className="w-full max-w-2xl rounded-lg bg-white/20 p-4 shadow-md">
+                {/* <h2 className="mb-4 text-xl text-blue-600 font-bold">
+                  Search Results:
+                </h2> */}
+                <ul className="grid grid-cols-3 gap-4">
+                  {searchResults.map((feature) => (
+                    <li key={feature.id}>
+                      <div className="flex-1 w-full transition-transform duration-500 hover:scale-105">
+                        <div className="relative group">
+                          <div className="absolute inset-0 secondary-color rounded-xl transition-all duration-500" />
+                          <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 overflow-hidden">
+                            <div className="bg-gray-900/20 rounded-lg p-4 text-center">
+                              <img
+                                src={feature.image}
+                                alt={feature.title}
+                                className="mx-auto mb-4 max-h-40 object-contain"
+                              />
+
+                              <h3 className="text-2xl font-bold text-color mb-2">
+                                {feature.title}
+                              </h3>
+
+                              <p className="text-color text-sm">
+                                {feature.description ||
+                                  "No description available"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -288,34 +337,77 @@ export default function UserRewards() {
                 {/* GRID REWARDS */}
                 {/* COLUMN 2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 col-start-2 gap-2 sm:gap-3 lg:gap-5 space-y-4 sm:space-y-6 lg:space-y-6">
-                  {features.map((feature, key) => (
-                    <div key={`${feature.title}-${key}`}>
-                      <div className="flex-1 w-full hover:translate-y-2 transition-transform duration-500 hover:scale-105 transition-transform duration-500 hover:translate-x-1">
-                        <div className="relative group">
-                          <div className="absolute inset-0 secondary-color rounded-xl sm:rounded-2xl transition-all duration-500" />
-                          <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition">
-                            <div className="relative group bg-gray-900/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm ">
-                              <img src={feature.image} alt={feature.image} />
-                              <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
-                              <div className="flex-1 w-full">
-                                <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                                  <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
-                                    {feature.title}
-                                  </h3>
-                                  <p className="text-color text-base text-xl sm:text-lg leading-relaxed">
-                                    {feature.description}
-                                  </p>
+                  {features
+                    .slice(
+                      activeIdx * itemsPerPage,
+                      activeIdx * itemsPerPage + itemsPerPage,
+                    )
+                    .map((feature, key) => (
+                      <div key={`${feature.title}-${key}`}>
+                        {/* Container Contents */}
+                        <div className="flex-1 w-full hover:translate-y-2 hover:scale-105 transition-transform duration-500 hover:translate-x-1">
+                          <div className="relative group">
+                            {/* Outer Container */}
+                            <div className="absolute inset-0 secondary-color  rounded-xl sm:rounded-2xl transition-all duration-500" />
+                            <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition">
+                              {/* Inner Container */}
+                              <div className="relative group bg-gray-800/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm ">
+                                <img
+                                  src={feature.image}
+                                  alt={feature.image}
+                                  className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70"
+                                />
+                                <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
+                                <div className="flex-1 w-full">
+                                  {/* Title & Description */}
+                                  <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                                    <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
+                                      {feature.title}
+                                    </h3>
+                                    <p className="text-color text-base text-xl sm:text-lg leading-relaxed text-justify">
+                                      {feature.description}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
-                {/* PAGINATION AREA */}
-                <div className="grid-flow-row row-start-3">PLACEHOLDER</div>
+              </div>
+              {/* PAGINATION AREA */}
+              <div className="grid-flow-row row-start-3 col-start-2">
+                <div className="flex items-center justify-center gap-4 mt-8 mb-8">
+                  <button
+                    onClick={previous}
+                    className="p-3 rounded-full primary-color transition-all cursor-pointer"
+                  >
+                    <ChevronLeft />
+                  </button>
+
+                  <div className="flex gap-2">
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveIdx(idx)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          idx === activeIdx
+                            ? "w-8 primary-color"
+                            : "w-2 primary-color"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={next}
+                    className="p-3 rounded-full primary-color transition-all cursor-pointer"
+                  >
+                    <ChevronRight />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
