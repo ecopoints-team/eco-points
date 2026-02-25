@@ -260,6 +260,51 @@
     font-family: "Lato", sans-serif;
     font-style: italic;
   }
+
+  /* Sample Fonts */
+
+  .chewy-regular {
+    font-family: "Chewy", system-ui;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .sour-gummy-body {
+    font-family: "Sour Gummy", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+    font-variation-settings: 100;
+  }
+  .sour-gummy-body-300 {
+    font-family: "Sour Gummy", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+    font-variation-settings: 100;
+  }
+
+  .sour-gummy-body-400 {
+    font-family: "Sour Gummy", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: 100;
+  }
+  .sour-gummy-body-500 {
+    font-family: "Sour Gummy", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-variation-settings: 100;
+  }
+  .sour-gummy-body-600 {
+    font-family: "Sour Gummy", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-variation-settings: 100;
+  }
 }
 
 /* Custom Scrollar */

@@ -184,9 +184,9 @@ export default function UserRewards() {
   };
 
   return (
-    <section className="relative min-h-screen flex-row pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
+    <section className="relative min-h-screen pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
       {/* USER SUMMARY SECTION */}
-      <div className="accent-color-background relative">
+      <div className="secondary-color relative">
         {/* CONTENT */}
         <div className="flex flex-col lg:grid lg:grid-cols-4 px-12 py-12 justify-center">
           {/* USER CLASS */}

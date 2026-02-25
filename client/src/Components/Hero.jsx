@@ -1,40 +1,88 @@
 "use client";
 
-import {
-  ArrowRight,
-  BottleWine,
-  BottleWineIcon,
-  ChevronDown,
-  Play,
-  QrCodeIcon,
-  Sparkles,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, GraduationCapIcon } from "lucide-react";
+// import { useEffect, useState } from "react";
 
 export default function Hero() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    function handleMouseMove(e) {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    }
+  // useEffect(() => {
+  //   function handleMouseMove(e) {
+  //     setMousePosition({ x: e.clientX, y: e.clientY });
+  //   }
 
-    window.addEventListener("mousemove", handleMouseMove);
+  //   window.addEventListener("mousemove", handleMouseMove);
 
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  //   return () => window.removeEventListener("mousemove", handleMouseMove);
+  // }, []);
+  const concept = [
+    {
+      title: "Automation",
+      description:
+        " EcoPoints is an Automated Reverse Vending Machine (RVM) prototype designed to address the critical issue of plastic waste management.",
+      image: "/SampleImage-Features-four.jpg",
+    },
+    {
+      title: "QR-Based Authentication",
+      description:
+        "QR-Based User Authentication and Embedded Sensor Technology our machine verifies and compacts PET bottles, converting waste into digital currency.",
+      image: "/SampleImage-QRAuthentication.jpeg",
+    },
+    {
+      title: "User Portal",
+      description:
+        "This website serves as the user portal where you can register, track your recycling history, and monitor your EcoPoints balance.",
+      image: "/SampleImage-Tracking.jpg",
+    },
+  ];
+
+  const howItWorks = [
+    {
+      number: "01",
+      title: "Scan QR Code",
+      description: "Authenticate instantly with your unique QR code",
+      image: "/SampleImage-Scan.png",
+    },
+    {
+      number: "02",
+      title: "Insert Bottle",
+      description: "Place your clean PET bottle for automated verification",
+      image: "/SampleImage-Features-four.jpg",
+    },
+    {
+      number: "03",
+      title: "Earn Points",
+      description: "Points received is instantly credited to your account!",
+      image: "/SampleImage-CurrentPoints.png",
+    },
+    {
+      number: "04",
+      title: "Redeem Rewards",
+      description: "Browse catalog and redeem items with your points",
+      image: "/SampleImage-UserIcon.png",
+    },
+  ];
 
   return (
     <section
       id="home"
-      className="relative min-h-screen flex item-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28"
+      className="relative min-h-screen flex item-center justify-center sm:px-6 md:px-6 lg:px-20 pt-28 sm:pt-32 overflow-hidden scroll-mt-28"
     >
-      <div
+      <style>
+        @import
+        url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&display=swap');
+        @import
+        url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap');
+      </style>
+
+      {/* MOUSE GRADIENT */}
+      {/* <div
         className="absolute inset-0 opacity-30"
         style={{
           background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67d22b7, transparent 50%)`,
         }}
-      />
+      /> */}
+
       {/* Pulse Background */}
       {/* <div className="absolute top-30 left-4 sm:left-10 w-48 sm:w-72 h-48 sm: h-72 bg-teal-900/70 rounded-full blur-3xl animate-pulse"></div> */}
       {/* <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div> */}
@@ -47,23 +95,26 @@ export default function Hero() {
           {/* Grid #1 */}
           <div className="">
             {/* Introducing EcoPoints */}
-            <div className="inline-flex item-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
-              <QrCodeIcon className="w-5 h-5 text-white" />
-              <span className="font-header lg:text-sm sm:text-md text-white">
-                Introduction of EcoPoints
+            <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
+              <GraduationCapIcon className="lg:w-7 lg:h-7 md:w- md:w-6 sm:w-6 sm:h-6 text-white" />
+              <span className="sour-gummy-body-600 lg:text-lg md:text-sm sm:text-lg text-white text-center">
+                PUP Institute of Technology Research Project
               </span>
             </div>
             {/* Header Text */}
-            <h1 className="text-6xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="text-6xl sm:text-6xl md:text-5xl lg:text-7xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+              <span className="text-shadow-lg accent-color-text lg:text-9xl bg-clip-text text-transparent block mb-1 sm:2 ">
+                EcoPoints:
+              </span>
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
-                EcoPoints: A Smart
+                A Smart
               </span>
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
                 Recycling Initiative
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-shadow-lg text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed ">
+            <p className="sm:text-xl md:text-xl lg:text-3xl text-white text-center max-w-3xl mx-auto sour-gummy-body-300 lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed ">
               Bridging the gap between technology and environmental
               sustainability through an automated reward system.
             </p>
@@ -85,11 +136,11 @@ export default function Hero() {
           </div>
 
           {/* Grid #2 EXAMPLE CONTAINER */}
-          <div className="relative order-2 w-full hover:translate-y-2 transition-transform duration-300 hover:scale-102">
+          <div className="relative order-2 w-full transition-transform duration-300 hover:scale-102 hover:skew-1 hover:rotate-4 ">
             <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
               <div className="backdrop-blur-sm rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[450px] border border-white/5">
                 {/* Container */}
-                <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
+                <div className="flex items-center justify-between lg:px-3 sm:px-4 py-2 sm:py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
                   <div className="flex items-center space-x-2">
                     {/* Three Circles */}
                     {/* <div className="flex items-center space-x-1 sm:space-x-2">
@@ -108,37 +159,134 @@ export default function Hero() {
 
           {/* Floating Cards */}
         </div>
-        <div className="max-w-7xl px-3 sm:px-4 lg:py-20 sm:py-20 text-center relative w-full">
-          <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
-              WELCOME TO THE OFFICIAL PLATFORM
-            </span>
-          </h2>
-          <h2 className="text-5xl sm:text3xl md:text-4xl lg:text-3xl xl:text-6xl text-center font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
-              FOR ECOPOINTS
-            </span>
-          </h2>
-          <h2 className="text-4xl sm:text2xl md:text-3xl lg:text-4xl xl:text-5xl text-left lg:py-5 sm:py-8 font-header mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.5em]">
+        {/* HEADER SECTION */}
+        <div className="max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
+          {/* BACKGROUND IF MAGLALAGAY */}
+          <div className="">
+            <h2 className="sm:text-4xl md:text-5xl lg:text-3xl xl:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+              <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
+                WELCOME TO THE OFFICIAL PLATFORM
+              </span>
+            </h2>
+            <h2 className="sm:text-6xl md:text-7xl lg:text-3xl xl:text-7xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
+              <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
+                FOR ECOPOINTS
+              </span>
+            </h2>
+          </div>
+          {/* CONCEPT AREA */}
+          <h2 className="text-4xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
               Concept
             </span>
           </h2>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            EcoPoints is an Automated Reverse Vending Machine (RVM) prototype
-            designed to address the critical issue of plastic waste management.
-          </p>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            By utilizing QR-based user authentication and embedded sensor
-            technology, our machine verifies and compacts PET bottles,
-            converting waste into digital currency. This website serves as the
-            user portal where you can register, track your recycling history,
-            and monitor your EcoPoints balance.
-          </p>
-          <p className="text-shadow-lg text-md sm:text-base lg:text-2xl text-white max-w-auto mx-auto font-body-black text-justify lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-            This website serves as the user portal where you can register, track
-            your recycling history, and monitor your EcoPoints balance.
-          </p>
+          {/* CONTAINERS AREA*/}
+          {/* CONTAINER */}
+          <div className="flex lg:grid lg:grid-cols-3 secondary-color rounded-lg lg:w-auto lg:h-auto lg:p-6 mb-10 lg:space-y-4 lg:space-x-8 md:space-y-16 md:space-x-8 sm:space-y-32 sm:space-x-32">
+            {concept.map((concept) => (
+              <div className="">
+                {/* IMAGE SECTION */}
+                <div className="flex w-full overflow-hidden">
+                  <div className="relative group">
+                    {/* INNER-CONTAINER (IMAGE) */}
+                    {/* <div> secondary-color rounded-lg lg:w-auto lg:h-110 p-3 sm:p-4 font-mono text-xs sm:text-sm */}
+                    {/* PICTURES */}
+                    <div className="flex w-full transition-transform duration-300 hover:skew-2 hover:rotate-6 ">
+                      {/* If mag lalagay ng Photo dito ilalagay */}
+                      <img
+                        src={concept.image}
+                        alt={concept.image}
+                        className="rounded-lg sm:w-120 sm:h-30 md:w-100 md:h-40 lg:w-100 lg:h-50"
+                      />
+                    </div>
+                    {/* TEXT SECTION */}
+                    <div className="flex w-full">
+                      <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                        <h3 className="text-4xl sm:text-3xl lg:text-3xl chewy-regular text-center sm:mb-6 md:mb-6 lg:mb-2 lg:mt-2 text-color">
+                          {concept.title}
+                        </h3>
+                        <p className="text-shadow-lg text-color sour-gummy-body-500 text-center sm:text-lg md:text-md lg:text-xl">
+                          {concept.description}
+                        </p>
+                      </div>
+                    </div>
+                    {/* </div> */}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* HOW IT WORKS AREA */}
+          <h2 className="text-4xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
+              How it Works?
+            </span>
+          </h2>
+          {/* CONTAINERS AREA*/}
+          {/* CIRCUIT-LINE  */}
+          <div dir="ltr">
+            {/* FROM LEFT - 1ST LINE*/}
+            <div className="absolute lg:start-0 lg:top-310 sm:top-12 sm:start-0 md:start-0 md:top-20">
+              <img
+                src="/SampleBorder(Circuit-Line-Left).png"
+                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+              />
+            </div>
+            {/* 2ND LINE */}
+            <div className="absolute lg:start-45 lg:top-270 sm:top-12 sm:start-0 md:start-0 md:top-20">
+              <img
+                src="/SampleBorder(Circuit-Line-Left).png"
+                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+              />
+            </div>
+            {/* 3RD LINE */}
+            <div className="absolute lg:start-180 lg:top-290 sm:top-12 sm:start-0 md:start-0 md:top-20">
+              <img
+                src="/SampleBorder(Circuit-Line-Left).png"
+                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
+              />
+            </div>
+          </div>
+          <div className="flex flex-cols lg:grid lg:grid-cols-4 lg:space-y-32 lg:space-x-8 md:space-y-16 md:space-x-8 sm:space-y-32 sm:space-x-32">
+            {/* CONTAINER */}
+            {howItWorks.map((howItWorks) => (
+              <div className="">
+                {/* IMAGE SECTION */}
+                <div className="flex w-full ">
+                  <div className="relative group">
+                    {/* INNER-CONTAINER (IMAGE) */}
+                    <div className="secondary-color rounded-lg lg:w-auto lg:h-100 p-3 sm:p-4 font-mono text-xs sm:text-sm">
+                      {/* PICTURES */}
+                      <div className="accent-color-background px-2 py-2 transition-transform duration-700 hover:rotate-6 hover:scale-90 overflow-hidden shadow-xl transition-shadow">
+                        <div className="flex w-full ">
+                          {/* If mag lalagay ng Photo dito ilalagay */}
+                          <img
+                            src={howItWorks.image}
+                            alt={howItWorks.image}
+                            className="rounded-lg sm:w-120 sm:h-30 md:w-100 md:h-40 lg:w-100 lg:h-50"
+                          />
+                        </div>
+                      </div>
+                      {/* TEXT SECTION */}
+                      <div className="flex w-full">
+                        <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                          <h3 className="text-4xl sm:text-3xl lg:text-3xl chewy-regular text-center sm:mb-6 md:mb-6 lg:mb-2 lg:mt-2 text-color">
+                            {howItWorks.number}
+                          </h3>
+                          <h1 className="text-4xl sm:text-3xl lg:text-3xl chewy-regular text-center sm:mb-6 md:mb-6 lg:mb-2 lg:mt-2 text-color">
+                            {howItWorks.title}
+                          </h1>
+                          <p className="text-shadow-lg text-color sour-gummy-body-500 text-center sm:text-lg md:text-md lg:text-xl">
+                            {howItWorks.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         {/* LEAF BORDER */}
       </div>

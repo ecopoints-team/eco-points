@@ -99,7 +99,7 @@ export default function Features() {
               }`}
             >
               {/* Image Section */}
-              <div className="flex-1 w-full transition-transform duration-300 hover:scale-110 overflow-hidden group-hover:shadow-2xl transition-shadow duration-300">
+              <div className="flex w-full transition-transform duration-300 hover:scale-110 overflow-hidden group-hover:shadow-2xl transition-shadow duration-300">
                 <div className="relative group">
                   {/* Inner-Container (Image) */}
                   <div className="secondary-color rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
@@ -116,7 +116,7 @@ export default function Features() {
                 </div>
               </div>
               {/* TEXT SECTION */}
-              <div className="flex-1 w-full">
+              <div className="flex w-full">
                 <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                   <h3 className="text-4xl sm:text-3xl lg:text-4xl font-body-black mb-4 sm:mb-6 text-color">
                     {feature.title}
