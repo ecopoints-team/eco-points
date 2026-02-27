@@ -24,7 +24,7 @@ const SORT_OPTIONS = [
     { value: 'STREAK', label: 'Highest Streak', icon: Flame },
 ];
 
-const ROLE_OPTIONS = ['All', 'Student', 'Faculty', 'Staff'];
+const ROLE_OPTIONS = ['All', 'student', 'faculty', 'staff'];
 
 // Tabs for Super Admin: only Overall + Top Schools
 const SUPER_ADMIN_TABS = [
@@ -39,7 +39,6 @@ const ADMIN_TABS = [
     { id: 'TOP_SCHOOLS', label: 'Top Schools', icon: School },
     { id: 'BY_DEPARTMENT', label: 'By Department', icon: GraduationCap },
     { id: 'BY_STRAND', label: 'By Strand', icon: GraduationCap },
-    { id: 'BY_SECTION', label: 'By Section', icon: UsersIcon },
 ];
 
 // ============================================================================
@@ -47,9 +46,9 @@ const ADMIN_TABS = [
 // ============================================================================
 const getRoleBadge = (role) => {
     switch (role) {
-        case 'Student': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
-        case 'Faculty': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
-        case 'Staff': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
+        case 'student': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
+        case 'faculty': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
+        case 'staff': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
         default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
     }
 };
@@ -141,8 +140,8 @@ const PodiumCard = ({ user, rank, sortBy }) => {
                         {style.label}
                     </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.role)}`}>
-                    {user.role}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.userType)}`}>
+                    {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}
                 </span>
             </div>
 
@@ -239,7 +238,6 @@ export default function LeaderboardsPage() {
     const [rowsPerPage, setRowsPerPage] = useState(20);
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [selectedStrand, setSelectedStrand] = useState('');
-    const [selectedSection, setSelectedSection] = useState('');
     const [showSearchHint, setShowSearchHint] = useState(false);
     const [schoolSortBy, setSchoolSortBy] = useState('POINTS');
     const [expandedSchool, setExpandedSchool] = useState(null);
@@ -247,7 +245,7 @@ export default function LeaderboardsPage() {
     const [campusRoleFilter, setCampusRoleFilter] = useState('');
 
     // Reset page on filter change
-    useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand, selectedSection]);
+    useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand]);
 
     // Reset filters on tab change
     useEffect(() => {
@@ -255,7 +253,6 @@ export default function LeaderboardsPage() {
         setRoleFilter('');
         setSelectedDepartment('');
         setSelectedStrand('');
-        setSelectedSection('');
     }, [activeTab]);
 
     // Get base user list
@@ -301,7 +298,7 @@ export default function LeaderboardsPage() {
     const getCampusTopUsers = (locationId) => {
         let users = USERS.filter(u => u.locationId === locationId);
         if (campusRoleFilter && campusRoleFilter !== 'All') {
-            users = users.filter(u => u.role === campusRoleFilter);
+            users = users.filter(u => u.userType === campusRoleFilter);
         }
         return [...users].sort((a, b) => {
             switch (campusUserSort) {
@@ -330,11 +327,6 @@ export default function LeaderboardsPage() {
         });
     }, [allUsers]);
 
-    // Available sections
-    const availableSections = useMemo(() => {
-        return [...new Set(allUsers.filter(u => u.section).map(u => u.section))].sort();
-    }, [allUsers]);
-
     // Processed / filtered / sorted data
     const { leaderboardData, topThree } = useMemo(() => {
         let filtered = [...allUsers];
@@ -346,13 +338,10 @@ export default function LeaderboardsPage() {
         if (activeTab === 'BY_STRAND' && selectedStrand) {
             filtered = filtered.filter(u => u.strand === selectedStrand);
         }
-        if (activeTab === 'BY_SECTION' && selectedSection) {
-            filtered = filtered.filter(u => u.section === selectedSection);
-        }
 
         // Role filter
         if (roleFilter !== '') {
-            filtered = filtered.filter(u => u.role === roleFilter);
+            filtered = filtered.filter(u => u.userType === roleFilter);
         }
 
         // Sort
@@ -366,10 +355,9 @@ export default function LeaderboardsPage() {
             const q = searchQuery.toLowerCase().trim();
             const qUpper = searchQuery.trim().toUpperCase();
             const searched = sorted.filter(u => {
-                // Standard search: name, role, section, dept, strand
+                // Standard search: name, role, dept, strand
                 if (u.name?.toLowerCase().includes(q)) return true;
-                if (u.role?.toLowerCase().includes(q)) return true;
-                if (u.section?.toLowerCase().includes(q)) return true;
+                if (u.userType?.toLowerCase().includes(q)) return true;
                 if (getDepartmentName(u.department)?.toLowerCase().includes(q)) return true;
                 const strandAbbr = u.strand && DEPARTMENTS.find(d => d.id === u.strand)?.abbreviation;
                 if (strandAbbr?.toLowerCase().includes(q)) return true;
@@ -383,7 +371,7 @@ export default function LeaderboardsPage() {
         }
 
         return { leaderboardData: sorted, topThree: top3 };
-    }, [allUsers, activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand, selectedSection]);
+    }, [allUsers, activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand]);
 
     // Pagination
     const totalPages = Math.ceil(leaderboardData.length / rowsPerPage);
@@ -410,11 +398,8 @@ export default function LeaderboardsPage() {
         avgStreak: leaderboardData.length > 0 ? Math.round(leaderboardData.reduce((sum, u) => sum + (u.streak || 0), 0) / leaderboardData.length) : 0,
     };
 
-    const hasActiveFilters = (roleFilter !== '' && roleFilter !== 'All') || searchQuery || selectedDepartment || selectedStrand || selectedSection;
-    const clearFilters = () => { setRoleFilter(''); setSearchQuery(''); setSelectedDepartment(''); setSelectedStrand(''); setSelectedSection(''); };
-
-    // Hide section column when Faculty or Staff is selected
-    const showSectionColumn = roleFilter !== 'Faculty' && roleFilter !== 'Staff';
+    const hasActiveFilters = (roleFilter !== '' && roleFilter !== 'All') || searchQuery || selectedDepartment || selectedStrand;
+    const clearFilters = () => { setRoleFilter(''); setSearchQuery(''); setSelectedDepartment(''); setSelectedStrand(''); };
 
     return (
         <>
@@ -550,28 +535,6 @@ export default function LeaderboardsPage() {
                 </div>
             )}
 
-            {activeTab === 'BY_SECTION' && (
-                <div className="mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Section:</span>
-                        <div className="flex flex-wrap gap-2">
-                            {availableSections.map(sec => (
-                                <button
-                                    key={sec}
-                                    onClick={() => setSelectedSection(selectedSection === sec ? '' : sec)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedSection === sec
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                                        }`}
-                                >
-                                    Section {sec}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* TOP SCHOOLS VIEW */}
             {activeTab === 'TOP_SCHOOLS' ? (
                 <div className="space-y-6">
@@ -625,7 +588,7 @@ export default function LeaderboardsPage() {
                                     options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
                                     placeholder="Sort Users" showPlaceholder={false} />
                                 <CustomDropdown value={campusRoleFilter} onChange={(v) => setCampusRoleFilter(v)}
-                                    options={['Student', 'Faculty', 'Staff']} placeholder="All Roles" />
+                                    options={['student', 'faculty', 'staff']} placeholder="All Roles" />
                             </div>
                         </div>
                         <div className="p-5 space-y-3">
@@ -681,7 +644,7 @@ export default function LeaderboardsPage() {
                                                                     <tr key={u.id} className="hover:bg-white dark:hover:bg-slate-700/30 transition-colors">
                                                                         <td className="px-4 py-2"><RankBadge rank={uIdx + 1} /></td>
                                                                         <td className="px-4 py-2 text-sm font-medium text-slate-800 dark:text-white">{u.name}</td>
-                                                                        <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(u.role)}`}>{u.role}</span></td>
+                                                                        <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(u.userType)}`}>{u.userType ? u.userType.charAt(0).toUpperCase() + u.userType.slice(1) : '—'}</span></td>
                                                                         <td className={`px-4 py-2 text-sm ${campusUserSort === 'POINTS' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.points?.toLocaleString()}</td>
                                                                         <td className={`px-4 py-2 text-sm ${campusUserSort === 'BOTTLES' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.bottlesCollected || 0}</td>
                                                                         <td className={`px-4 py-2 text-sm ${campusUserSort === 'STREAK' ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.streak || 0}d</td>
@@ -747,7 +710,7 @@ export default function LeaderboardsPage() {
                                 <CustomDropdown
                                     value={roleFilter}
                                     onChange={(v) => setRoleFilter(v)}
-                                    options={['Student', 'Faculty', 'Staff']}
+                                    options={['student', 'faculty', 'staff']}
                                     placeholder="All Roles"
                                 />
 
@@ -824,7 +787,6 @@ export default function LeaderboardsPage() {
                                         <th className="px-4 py-3 whitespace-nowrap">User</th>
                                         <th className="px-4 py-3 whitespace-nowrap">Role</th>
                                         <th className="px-4 py-3 whitespace-nowrap">Dept / Strand</th>
-                                        {showSectionColumn && <th className="px-4 py-3 whitespace-nowrap">Section</th>}
                                         <th className="px-4 py-3 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <Flame size={12} className="text-orange-500" /> Streak
@@ -861,18 +823,13 @@ export default function LeaderboardsPage() {
                                                     <span className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</span>
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.role)}`}>{user.role}</span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.userType)}`}>{user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}</span>
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <span className="text-xs text-slate-600 dark:text-slate-300">
                                                         {getUserDeptDisplay(user)}
                                                     </span>
                                                 </td>
-                                                {showSectionColumn && (
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className="text-xs text-slate-600 dark:text-slate-300">{user.section || '—'}</span>
-                                                    </td>
-                                                )}
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <div className={`flex items-center gap-1.5 ${isHighlightSort('STREAK') ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
                                                         <Flame size={14} className={isHighlightSort('STREAK') ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'} />

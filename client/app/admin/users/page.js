@@ -36,7 +36,7 @@ export default function ManageUsersPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
-        name: '', email: '', role: '', status: '', accountHealth: '', department: '', strand: ''
+        name: '', email: '', userType: '', status: '', accountHealth: '', department: '', strand: ''
     });
 
     // Handle Edit
@@ -45,7 +45,7 @@ export default function ManageUsersPage() {
         setEditFormData({
             name: user.name || '',
             email: user.email || '',
-            role: user.role || '',
+            userType: user.userType || '',
             status: user.status || '',
             accountHealth: user.accountHealth || '',
             department: user.department || '',
@@ -108,7 +108,7 @@ export default function ManageUsersPage() {
         setCurrentPage(1);
     }, [effectiveLocationId]);
 
-    const roles = [...new Set(users.map(u => u.role))];
+    const roles = [...new Set(users.map(u => u.userType))];
     const statuses = ['Online', 'Offline'];
     const accountHealthOptions = ['Active', 'Inactive'];
 
@@ -118,7 +118,7 @@ export default function ManageUsersPage() {
                 user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.email.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesRole = filterRole === '' || user.role === filterRole;
+            const matchesRole = filterRole === '' || user.userType === filterRole;
             const matchesStatus = filterStatus === '' || user.status === filterStatus;
             const matchesAccountHealth = filterAccountHealth === '' || user.accountHealth === filterAccountHealth;
             const matchesSchool = filterSchool === '' || user.locationId === filterSchool;
@@ -194,9 +194,9 @@ export default function ManageUsersPage() {
 
     const getRoleColor = (role) => {
         switch (role) {
-            case 'Student': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
-            case 'Faculty': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
-            case 'Staff': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
+            case 'student': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
+            case 'faculty': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400';
+            case 'staff': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400';
             default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
         }
     };
@@ -439,7 +439,7 @@ export default function ManageUsersPage() {
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="text-xs text-slate-600 dark:text-slate-300">{getLocationName(user.locationId) || 'Arellano University'}</span>
                                     </td>
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleColor(user.role)}`}>{user.role}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleColor(user.userType)}`}>{user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${getStatusColor(user.status)}`}>
                                             {user.status === 'Online' ? <Wifi size={10} /> : <WifiOff size={10} />}
@@ -557,11 +557,11 @@ export default function ManageUsersPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Role <span className="text-red-500">*</span></label>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">User Type <span className="text-red-500">*</span></label>
                                     <CustomDropdown
-                                        value={editFormData.role}
-                                        onChange={(v) => handleEditChange('role', v)}
-                                        options={['Student', 'Faculty', 'Staff']}
+                                        value={editFormData.userType}
+                                        onChange={(v) => handleEditChange('userType', v)}
+                                        options={[{value: 'student', label: 'Student'}, {value: 'faculty', label: 'Faculty'}, {value: 'staff', label: 'Staff'}]}
                                         showPlaceholder={false}
                                     />
                                 </div>

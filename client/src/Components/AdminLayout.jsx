@@ -291,7 +291,7 @@ export default function AdminLayout({ children }) {
                         )}
 
                         <h2 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white transition-colors duration-500 flex flex-col sm:block leading-tight">
-                            {pageTitle.main} <span className="text-emerald-600 dark:text-emerald-400 font-light text-sm sm:text-xl">{pageTitle.sub}</span>
+                            {pageTitle.main} <span className="text-indigo-500 dark:text-indigo-400 system:text-indigo-400 font-light text-sm sm:text-xl">{pageTitle.sub}</span>
                         </h2>
                     </div>
 
@@ -378,7 +378,7 @@ export default function AdminLayout({ children }) {
                         <div className="relative" ref={notificationRef}>
                             <button
                                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                                className="relative p-2 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:bg-slate-700/50 transition-colors"
+                                className="relative p-2 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-amber-400 dark:hover:bg-slate-700/50 transition-colors"
                                 title="Notifications"
                             >
                                 <Bell size={20} />
@@ -395,7 +395,7 @@ export default function AdminLayout({ children }) {
                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700/50 flex items-center justify-between">
                                         <h3 className="text-sm font-bold text-slate-800 dark:text-white">Notifications</h3>
                                         {unreadCount > 0 && (
-                                            <button onClick={markAllRead} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                                            <button onClick={markAllRead} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
                                                 Mark all read
                                             </button>
                                         )}
@@ -409,10 +409,10 @@ export default function AdminLayout({ children }) {
                                                     key={n.id}
                                                     onClick={() => markRead(n.id)}
                                                     className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-slate-700/30 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/30
-                            ${!n.read ? 'bg-emerald-50/50 dark:bg-emerald-500/5' : ''}`}
+                            ${!n.read ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''}`}
                                                 >
                                                     <div className="flex items-start gap-3">
-                                                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!n.read ? 'bg-emerald-500' : 'bg-transparent'}`} />
+                                                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                         <div className="flex-1 min-w-0">
                                                             <p className={`text-sm ${!n.read ? 'font-semibold text-slate-800 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>
                                                                 {n.title}
@@ -429,7 +429,7 @@ export default function AdminLayout({ children }) {
                                         <Link href="/admin/logs/access">
                                             <button
                                                 onClick={() => setIsNotificationOpen(false)}
-                                                className="w-full text-center text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline py-1"
+                                                className="w-full text-center text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline py-1"
                                             >
                                                 View All Activity →
                                             </button>
@@ -448,12 +448,12 @@ export default function AdminLayout({ children }) {
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                                 className="flex items-center gap-2 focus:outline-none group"
                             >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 p-[2px] shadow-md group-hover:shadow-lg transition-all">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-[2px] shadow-md group-hover:shadow-lg transition-all">
                                     <div className={`w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors bg-white text-slate-700 dark:bg-slate-900 dark:text-white`}>
                                         {currentUser?.avatar || 'AD'}
                                     </div>
                                 </div>
-                                <ChevronDown size={14} className="transition-colors hidden sm:block text-slate-500 dark:text-slate-400 group-hover:text-emerald-500" />
+                                <ChevronDown size={14} className="transition-colors hidden sm:block text-slate-500 dark:text-slate-400 group-hover:text-indigo-500" />
                             </button>
 
                             {/* Dropdown Menu */}
@@ -475,8 +475,8 @@ export default function AdminLayout({ children }) {
 
                                             <Link href="/admin/profile">
                                                 <button onClick={() => setIsProfileOpen(false)} className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
-                            text-slate-700 hover:bg-gray-50 hover:text-emerald-600
-                            dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-emerald-400">
+                            text-slate-700 hover:bg-gray-50 hover:text-indigo-600
+                            dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-indigo-400">
                                                     <Settings size={16} />
                                                     Manage Profile
                                                 </button>

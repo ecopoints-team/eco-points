@@ -248,8 +248,8 @@ export default function PermissionsPage() {
     const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [roles] = useState(ROLES_DATA);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    // Use ADMIN_USERS from mockData (filter out super_admin for local admins only)
-    const [allUsers, setAllUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
+    // Use ADMIN_USERS from mockData (filter out superadmin for local admins only)
+    const [allUsers, setAllUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'superadmin'));
 
     // Search, Filter, Pagination state
     const [searchQuery, setSearchQuery] = useState('');
@@ -266,7 +266,7 @@ export default function PermissionsPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [adminUsers, setAdminUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'super_admin'));
+    const [adminUsers, setAdminUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'superadmin'));
     const [editFormData, setEditFormData] = useState({
         name: '', email: '', role: '', status: '', accountHealth: '', locationId: ''
     });

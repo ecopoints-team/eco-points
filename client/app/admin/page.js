@@ -10,10 +10,10 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 // DUAL-THEME STAT CARD
 const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
     const themeMap = {
-        emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 system:bg-[#1A2E1F] system:text-[#7BA05B] system:border-[rgba(123,160,91,0.3)]',
-        blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/30 system:bg-[#1A2E1F] system:text-cyan-400 system:border-[rgba(123,160,91,0.3)]',
-        amber: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30 system:bg-[#1A2E1F] system:text-amber-400 system:border-[rgba(123,160,91,0.3)]',
-        purple: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30 system:bg-[#1A2E1F] system:text-purple-400 system:border-[rgba(123,160,91,0.3)]',
+        emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 system:bg-emerald-500/10 system:text-emerald-400 system:border-emerald-500/20',
+        blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/30 system:bg-cyan-500/10 system:text-cyan-400 system:border-cyan-500/20',
+        amber: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30 system:bg-amber-500/10 system:text-amber-400 system:border-amber-500/20',
+        purple: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30 system:bg-purple-500/10 system:text-purple-400 system:border-purple-500/20',
     };
 
     const themeClass = themeMap[color] || themeMap.emerald;
@@ -25,12 +25,28 @@ const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
     };
     const glowColor = glowColorMap[color] || 'bg-emerald-500';
 
+    // Subtle gradient tint per card color
+    const cardGradient = {
+        emerald: 'from-emerald-50/80 to-white dark:from-emerald-500/5 dark:to-[#1e293b]/60 system:from-emerald-500/5 system:to-[#1A2E1F]',
+        blue: 'from-blue-50/80 to-white dark:from-cyan-500/5 dark:to-[#1e293b]/60 system:from-cyan-500/5 system:to-[#1A2E1F]',
+        amber: 'from-amber-50/80 to-white dark:from-amber-500/5 dark:to-[#1e293b]/60 system:from-amber-500/5 system:to-[#1A2E1F]',
+        purple: 'from-purple-50/80 to-white dark:from-purple-500/5 dark:to-[#1e293b]/60 system:from-purple-500/5 system:to-[#1A2E1F]',
+    };
+    const cardBorderColor = {
+        emerald: 'border-emerald-200/60 dark:border-emerald-500/20 system:border-emerald-500/15',
+        blue: 'border-blue-200/60 dark:border-cyan-500/20 system:border-cyan-500/15',
+        amber: 'border-amber-200/60 dark:border-amber-500/20 system:border-amber-500/15',
+        purple: 'border-purple-200/60 dark:border-purple-500/20 system:border-purple-500/15',
+    };
+
     return (
         <div className={`
             relative overflow-hidden p-6 rounded-2xl transition-all duration-500 group
-            bg-white border border-slate-200 shadow-sm hover:shadow-lg
-            dark:bg-[#1e293b]/60 dark:backdrop-blur-xl dark:border-slate-700/50 dark:shadow-lg dark:hover:shadow-[0_0_20px_rgba(0,0,0,0.5)]
-            system:bg-[#1A2E1F] system:border-[rgba(123,160,91,0.2)] system:shadow-[0_0_20px_rgba(123,160,91,0.1)] system:hover:shadow-[0_0_25px_rgba(123,160,91,0.2)]
+            bg-gradient-to-br ${cardGradient[color] || cardGradient.emerald}
+            border ${cardBorderColor[color] || cardBorderColor.emerald}
+            shadow-sm hover:shadow-lg
+            dark:backdrop-blur-xl dark:shadow-lg dark:hover:shadow-[0_0_20px_rgba(0,0,0,0.5)]
+            system:shadow-[0_0_15px_rgba(0,0,0,0.3)] system:hover:shadow-[0_0_25px_rgba(0,0,0,0.4)]
         `}>
             <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full blur-[50px] opacity-0 dark:opacity-20 system:opacity-20 group-hover:opacity-10 dark:group-hover:opacity-40 system:group-hover:opacity-40 transition-opacity duration-700 ${glowColor}`}></div>
             <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
@@ -56,10 +72,10 @@ const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
 // SHORTCUT BUTTON COMPONENT - Full Width Layout
 const ShortcutBtn = ({ label, icon: Icon, color, href }) => {
     const colors = {
-        emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 dark:hover:border-emerald-500 system:bg-transparent system:text-emerald-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 dark:hover:border-blue-500 system:bg-transparent system:text-blue-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 dark:hover:border-amber-500 system:bg-transparent system:text-amber-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
-        purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:hover:border-purple-500 system:bg-transparent system:text-purple-400 system:border-[rgba(123,160,91,0.2)] system:hover:bg-[#243a28] system:hover:border-[rgba(123,160,91,0.4)]',
+        emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 dark:hover:border-emerald-500 system:bg-emerald-500/5 system:text-emerald-400 system:border-emerald-500/15 system:hover:bg-emerald-500/10 system:hover:border-emerald-500/30',
+        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 dark:hover:border-blue-500 system:bg-blue-500/5 system:text-blue-400 system:border-blue-500/15 system:hover:bg-blue-500/10 system:hover:border-blue-500/30',
+        amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 dark:hover:border-amber-500 system:bg-amber-500/5 system:text-amber-400 system:border-amber-500/15 system:hover:bg-amber-500/10 system:hover:border-amber-500/30',
+        purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:hover:border-purple-500 system:bg-purple-500/5 system:text-purple-400 system:border-purple-500/15 system:hover:bg-purple-500/10 system:hover:border-purple-500/30',
     };
     const style = colors[color] || colors.emerald;
 
@@ -132,8 +148,8 @@ export default function AdminDashboard() {
         const users = getUsersByLocation(effectiveLocationId);
         const rewards = getRewardsByLocation(effectiveLocationId);
 
-        const totalBottles = machines.reduce((sum, m) => sum + m.bottlesCollected, 0);
-        const onlineMachines = machines.filter(m => m.status === 'Online').length;
+        const totalBottles = machines.reduce((sum, m) => sum + m.totalItemsCollected, 0);
+        const onlineMachines = machines.filter(m => m.isOnline).length;
         const totalMachines = machines.length;
         const activeUsers = users.filter(u => u.status === 'Online').length;
         const totalPoints = users.reduce((sum, u) => sum + u.points, 0);
@@ -276,7 +292,6 @@ export default function AdminDashboard() {
             machineId: log.machineId,
             machineName: log.machineName,
             bottleType: log.bottleType,
-            sizeCategory: log.sizeCategory,
             brand: log.brand,
             condition: log.condition,
             pointsAwarded: log.pointsAwarded,
@@ -311,13 +326,13 @@ export default function AdminDashboard() {
 
             {/* Super Admin Global Stats Banner */}
             {isSuperAdmin && !effectiveLocationId && (
-                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-lime-50 to-emerald-50 dark:from-lime-900/20 dark:to-emerald-900/20 border border-lime-300 dark:border-lime-500/30 system:border-[rgba(123,160,91,0.3)] system:bg-[#1A2E1F] flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-lime-100 dark:bg-lime-500/20 system:bg-[rgba(123,160,91,0.2)]">
-                        <Building2 size={24} className="text-lime-600 dark:text-lime-400 system:text-[#7BA05B]" />
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 system:from-indigo-900/20 system:to-blue-900/20 border border-indigo-200 dark:border-indigo-500/30 system:border-indigo-500/20 flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 system:bg-indigo-500/15">
+                        <Building2 size={24} className="text-indigo-600 dark:text-indigo-400 system:text-indigo-400" />
                     </div>
                     <div>
-                        <p className="font-bold text-lime-800 dark:text-lime-300 system:text-[#7BA05B]">Global Super Admin View</p>
-                        <p className="text-sm text-lime-700 dark:text-lime-400 system:text-[#E1E4E1]/70">
+                        <p className="font-bold text-indigo-800 dark:text-indigo-300 system:text-indigo-300">Global Super Admin View</p>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-400 system:text-indigo-400/70">
                             Viewing aggregated data across <strong>{allLocations.length} locations</strong>. Use "View as" to filter by specific school.
                         </p>
                     </div>
@@ -379,7 +394,7 @@ export default function AdminDashboard() {
                         <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
                             {/* Sliding Background */}
                             <div
-                                className="absolute top-1 bottom-1 w-8 rounded-md bg-emerald-500 shadow-md transition-transform duration-300 ease-out"
+                                className="absolute top-1 bottom-1 w-8 rounded-md bg-indigo-500 shadow-md transition-transform duration-300 ease-out"
                                 style={{
                                     transform: `translateX(${chartType === 'line' ? '0px' : chartType === 'bar' ? '32px' : '64px'})`,
                                 }}
@@ -593,7 +608,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 mb-1">
                             Peak {timeRange === 'week' ? 'Day' : timeRange === 'month' ? 'Week' : 'Month'}
                         </p>
-                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400 system:text-cyan-400">
+                        <p className="text-xl font-bold text-amber-600 dark:text-amber-400 system:text-amber-400">
                             {(() => {
                                 const totals = currentData.accepted.map((val, i) => val + currentData.rejected[i]);
                                 const maxIndex = totals.indexOf(Math.max(...totals));
@@ -603,7 +618,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 mb-1">Bottles Accepted</p>
-                        <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]">
+                        <p className="text-xl font-bold text-teal-600 dark:text-teal-400 system:text-teal-400">
                             {currentData.accepted.reduce((sum, val) => sum + val, 0).toLocaleString()}
                         </p>
                     </div>
@@ -622,7 +637,7 @@ export default function AdminDashboard() {
                 dark:bg-[#1e293b]/60 dark:backdrop-blur-md dark:border-slate-700/50
                 system:bg-[#1A2E1F] system:border-[rgba(123,160,91,0.2)] system:shadow-[0_0_20px_rgba(123,160,91,0.1)]">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white system:text-[#E1E4E1] mb-6 flex items-center gap-2">
-                    <Settings size={18} className="text-emerald-500 dark:text-emerald-400 system:text-[#7BA05B] animate-spin-slow" />
+                    <Settings size={18} className="text-violet-500 dark:text-violet-400 system:text-violet-400 animate-spin-slow" />
                     Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -649,10 +664,10 @@ export default function AdminDashboard() {
             <div className="bg-white dark:bg-slate-800/50 system:bg-[#1A2E1F] rounded-2xl border border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)] shadow-xl system:shadow-[0_0_20px_rgba(123,160,91,0.1)] overflow-hidden mt-6">
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)] flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 system:bg-[#0F1B11]/50">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white system:text-[#E1E4E1] flex items-center gap-3">
-                        <span className="w-1.5 h-6 bg-emerald-500 system:bg-[#7BA05B] rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981] system:shadow-[0_0_10px_rgba(123,160,91,0.5)]"></span>
+                        <span className="w-1.5 h-6 bg-cyan-500 system:bg-cyan-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#06b6d4] system:shadow-[0_0_10px_rgba(6,182,212,0.5)]"></span>
                         Real-Time Bottle Logs {currentLocation && <span className="text-sm font-normal text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">({currentLocation.name})</span>}
                     </h3>
-                    <Link href="/admin/logs/bottles" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 system:text-[#7BA05B] system:hover:text-[#8fb56a] transition-colors">
+                    <Link href="/admin/logs/bottles" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 system:text-indigo-400 system:hover:text-indigo-300 transition-colors">
                         View All →
                     </Link>
                 </div>
@@ -698,7 +713,7 @@ export default function AdminDashboard() {
                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{log.bottleType}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400' :
                                             log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
                                                 log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
                                                     'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
@@ -718,8 +733,8 @@ export default function AdminDashboard() {
                                     <td className="px-3 py-3">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold
                                             ${log.status === 'Accepted'
-                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 system:bg-[rgba(123,160,91,0.2)] system:text-[#7BA05B]'
-                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                                ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 system:bg-teal-500/15 system:text-teal-400'
+                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 system:bg-red-500/15 system:text-red-400'
                                             }`}>
                                             {log.status}
                                         </span>

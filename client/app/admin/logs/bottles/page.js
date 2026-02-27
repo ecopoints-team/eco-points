@@ -10,7 +10,7 @@ import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin
 const allBottleLogs = BOTTLE_LOGS;
 
 export default function BottleLogsPage() {
-    const { user, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
@@ -54,15 +54,15 @@ export default function BottleLogsPage() {
         let logs = allBottleLogs;
         if (viewAsLocationId) {
             logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (user?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === user.locationId);
+        } else if (currentUser?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === currentUser.locationId);
         }
         return {
             todayTransactions: logs.length,
             acceptedBottles: logs.filter(log => log.status === 'Accepted').length,
             rejectedBottles: logs.filter(log => log.status === 'Rejected').length
         };
-    }, [viewAsLocationId, user, isSuperAdmin]);
+    }, [viewAsLocationId, currentUser, isSuperAdmin]);
 
     const filteredLogs = useMemo(() => {
         let logs = allBottleLogs;
@@ -70,8 +70,8 @@ export default function BottleLogsPage() {
         // Filter by View As Location (or user's scoped location)
         if (viewAsLocationId) {
             logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (user?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === user.locationId);
+        } else if (currentUser?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === currentUser.locationId);
         }
 
         return logs.filter(log => {
@@ -90,7 +90,7 @@ export default function BottleLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, user, isSuperAdmin]);
+    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, currentUser, isSuperAdmin]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;

@@ -10,7 +10,7 @@ import { Search, Filter, ChevronLeft, ChevronRight, Wrench, User, Clock, MapPin,
 const allMachineLogs = MACHINE_LOGS;
 
 export default function MachineLogsPage() {
-    const { user, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
@@ -27,7 +27,6 @@ export default function MachineLogsPage() {
     const [showMachine, setShowMachine] = useState(true);
     const [showLocation, setShowLocation] = useState(true);
     const [showTechnician, setShowTechnician] = useState(true);
-    const [showCost, setShowCost] = useState(true);
 
     const machineNames = [...new Set(allMachineLogs.map(log => log.machineName))];
 
@@ -37,8 +36,8 @@ export default function MachineLogsPage() {
         // Filter by View As Location (or user's scoped location)
         if (viewAsLocationId) {
             logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (user?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === user.locationId);
+        } else if (currentUser?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === currentUser.locationId);
         }
 
         return logs.filter(log => {
@@ -46,7 +45,7 @@ export default function MachineLogsPage() {
                 log.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 log.technician.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 log.machineName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.issue.toLowerCase().includes(searchQuery.toLowerCase());
+                (log.actionType || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             const statusMatch = filterStatus === '' ? true :
                 filterStatus === 'Resolved' ? log.resolved : !log.resolved;
@@ -66,7 +65,7 @@ export default function MachineLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterMachine, filterStatus, filterLocation, sortColumn, sortDirection, user, isSuperAdmin, viewAsLocationId]);
+    }, [searchQuery, filterMachine, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -102,10 +101,10 @@ export default function MachineLogsPage() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Area', 'Technician', 'Issue', 'Cost', 'Status', 'Notes'];
+        const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Area', 'Technician', 'Action Type', 'Status', 'Notes'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.machineName, getLocationName(log.locationId),
-            log.area, log.technician, log.issue, log.cost, log.resolved ? 'Resolved' : 'Pending', log.notes
+            log.area, log.technician, log.actionType, log.resolved ? 'Resolved' : 'Pending', log.notes
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -177,9 +176,6 @@ export default function MachineLogsPage() {
                             <button onClick={() => setShowTechnician(!showTechnician)} className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showTechnician ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
                                 {showTechnician ? <Eye size={12} /> : <EyeOff size={12} />} Technician
                             </button>
-                            <button onClick={() => setShowCost(!showCost)} className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showCost ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
-                                {showCost ? <Eye size={12} /> : <EyeOff size={12} />} Cost
-                            </button>
                         </div>
                     </div>
                 )}
@@ -223,12 +219,7 @@ export default function MachineLogsPage() {
                                         <div className="flex items-center gap-1">Technician <SortIcon column="technician" /></div>
                                     </th>
                                 )}
-                                <th className="px-3 py-3 whitespace-nowrap">Issue</th>
-                                {showCost && (
-                                    <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('cost')}>
-                                        <div className="flex items-center gap-1">Cost <SortIcon column="cost" /></div>
-                                    </th>
-                                )}
+                                <th className="px-3 py-3 whitespace-nowrap">Action Type</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
                             </tr>
                         </thead>
@@ -249,10 +240,7 @@ export default function MachineLogsPage() {
                                     {showTechnician && (
                                         <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.technician}</span></td>
                                     )}
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-600 dark:text-slate-300">{log.issue}</span></td>
-                                    {showCost && (
-                                        <td className="px-3 py-3 whitespace-nowrap"><span className="font-bold text-emerald-600 dark:text-emerald-400">₱{log.cost.toLocaleString()}</span></td>
-                                    )}
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-600 dark:text-slate-300">{log.actionType}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${log.resolved
                                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'

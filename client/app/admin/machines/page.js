@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { MACHINES, LOCATIONS, AREAS, getMachinesByLocation, ADMIN_USERS, BOTTLE_LOGS } from '../../../src/data/mockData';
+import { MACHINES, LOCATIONS, getMachinesByLocation, ADMIN_USERS, BOTTLE_LOGS, MACHINE_LOGS } from '../../../src/data/mockData';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
@@ -11,19 +11,13 @@ import {
 } from 'lucide-react';
 
 // Add Machine Modal
-const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
+const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
     const [formData, setFormData] = useState({
         name: '',
         locationId: '',
-        areaId: '',
-        status: 'Online'
+        isOnline: true
     });
     const [errors, setErrors] = useState({});
-
-    const filteredAreas = useMemo(() => {
-        if (!formData.locationId) return [];
-        return areas.filter(a => a.locationId === formData.locationId);
-    }, [formData.locationId, areas]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -36,14 +30,15 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
+            const loc = locations.find(l => l.id === formData.locationId);
             onSubmit({
                 ...formData,
-                id: `RVM - ${Date.now().toString().slice(-6)} `,
-                bottlesCollected: 0,
-                lastSync: 'Just now',
-                maintenanceLogs: []
+                id: `RVM-${Date.now().toString().slice(-6)}`,
+                locationName: loc ? loc.name : '',
+                totalItemsCollected: 0,
+                lastSync: 'Just now'
             });
-            setFormData({ name: '', locationId: '', areaId: '', status: 'Online' });
+            setFormData({ name: '', locationId: '', isOnline: true });
             onClose();
         }
     };
@@ -80,7 +75,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
                         <CustomDropdown
                             value={formData.locationId}
-                            onChange={(v) => setFormData({ ...formData, locationId: v, areaId: '' })}
+                            onChange={(v) => setFormData({ ...formData, locationId: v })}
                             options={locations.map(l => ({ value: l.id, label: l.name }))}
                             placeholder="Select Location"
                             searchable
@@ -88,24 +83,12 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
                         />
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
-                    {filteredAreas.length > 0 && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area (Optional)</label>
-                            <CustomDropdown
-                                value={formData.areaId}
-                                onChange={(v) => setFormData({ ...formData, areaId: v })}
-                                options={filteredAreas.map(a => ({ value: a.id, label: a.name }))}
-                                placeholder="Select Area"
-                                size="md"
-                            />
-                        </div>
-                    )}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
                         <CustomDropdown
-                            value={formData.status}
-                            onChange={(v) => setFormData({ ...formData, status: v })}
-                            options={['Online', 'Maintenance']}
+                            value={formData.isOnline ? 'Online' : 'Offline'}
+                            onChange={(v) => setFormData({ ...formData, isOnline: v === 'Online' })}
+                            options={['Online', 'Offline']}
                             showPlaceholder={false}
                             size="md"
                         />
@@ -128,7 +111,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, areas }) => {
 // COMPONENTS
 // ============================================================================
 
-// Status Badge with 3 status types
+// Status Badge with 2 status types
 const StatusBadge = ({ status }) => {
     const statusConfig = {
         Online: {
@@ -137,17 +120,11 @@ const StatusBadge = ({ status }) => {
             icon: Wifi,
             label: 'Online'
         },
-        Full: {
-            bg: 'bg-amber-100 dark:bg-amber-500/20',
-            text: 'text-amber-700 dark:text-amber-400',
-            icon: AlertCircle,
-            label: 'Full - Needs Emptying'
-        },
-        Maintenance: {
+        Offline: {
             bg: 'bg-red-100 dark:bg-red-500/20',
             text: 'text-red-700 dark:text-red-400',
             icon: Wrench,
-            label: 'Maintenance'
+            label: 'Offline'
         }
     };
 
@@ -169,8 +146,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newLog, setNewLog] = useState({
         technicianId: '',
-        issue: '',
-        cost: '',
+        actionType: '',
         notes: '',
         resolved: false
     });
@@ -188,7 +164,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
     if (!isOpen || !machine) return null;
 
     const handleSubmit = () => {
-        if (!newLog.technicianId || !newLog.issue) return;
+        if (!newLog.technicianId || !newLog.actionType) return;
         const tech = ADMIN_USERS.find(a => a.id === newLog.technicianId);
 
         onAddLog(machine.id, {
@@ -196,18 +172,16 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
             date: new Date().toISOString().split('T')[0],
             technicianId: newLog.technicianId,
             technician: tech ? tech.name : 'Unknown',
-            issue: newLog.issue,
-            cost: parseFloat(newLog.cost) || 0,
+            actionType: newLog.actionType,
             notes: newLog.notes || '',
             resolved: newLog.resolved
         });
 
-        setNewLog({ technicianId: '', issue: '', cost: '', notes: '', resolved: false });
+        setNewLog({ technicianId: '', actionType: '', notes: '', resolved: false });
         setShowAddForm(false);
     };
 
-    const logs = machine.maintenanceLogs || [];
-    const totalCost = logs.reduce((sum, log) => sum + log.cost, 0);
+    const logs = machine ? MACHINE_LOGS.filter(l => l.machineId === machine.id) : [];
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -232,14 +206,10 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-2 gap-4 p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                     <div className="text-center">
                         <p className="text-2xl font-black text-slate-800 dark:text-white">{logs.length}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">Total Logs</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">₱{totalCost.toLocaleString()}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Total Cost</p>
                     </div>
                     <div className="text-center">
                         <p className="text-2xl font-black text-slate-800 dark:text-white">
@@ -281,29 +251,15 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                         searchable
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        Cost (₱)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={newLog.cost}
-                                        onChange={(e) => setNewLog(p => ({ ...p, cost: e.target.value }))}
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 
-                                            bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
-                                            focus:border-emerald-500 dark:focus:border-emerald-500"
-                                        placeholder="0"
-                                    />
-                                </div>
                             </div>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Issue Description *
+                                    Action Description *
                                 </label>
                                 <input
                                     type="text"
-                                    value={newLog.issue}
-                                    onChange={(e) => setNewLog(p => ({ ...p, issue: e.target.value }))}
+                                    value={newLog.actionType}
+                                    onChange={(e) => setNewLog(p => ({ ...p, actionType: e.target.value }))}
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 
                                         bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm outline-none
                                         focus:border-emerald-500 dark:focus:border-emerald-500"
@@ -367,7 +323,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                 <div className="flex items-start justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={14} className="text-slate-400" />
-                                        <span className="text-sm font-medium text-slate-800 dark:text-white">{log.date}</span>
+                                        <span className="text-sm font-medium text-slate-800 dark:text-white">{log.timestamp}</span>
                                     </div>
                                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${log.resolved
                                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
@@ -377,15 +333,11 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                         {log.resolved ? 'Resolved' : 'Pending'}
                                     </span>
                                 </div>
-                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{log.issue}</p>
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{log.actionType}</p>
                                 <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                                     <span className="flex items-center gap-1">
                                         <User size={12} />
                                         {log.technician}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <DollarSign size={12} />
-                                        ₱{log.cost.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
@@ -410,20 +362,16 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
 
 // Machine Card Component
 const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, currentUser, hasPermission }) => (
-    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${machine.status === 'Maintenance'
+    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 group ${!machine.isOnline
         ? 'border-red-300 dark:border-red-500/30'
-        : machine.status === 'Full'
-            ? 'border-amber-300 dark:border-amber-500/30'
-            : 'border-slate-200 dark:border-slate-700'
+        : 'border-slate-200 dark:border-slate-700'
         }`}>
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${machine.status === 'Maintenance'
+                <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${!machine.isOnline
                     ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
-                    : machine.status === 'Full'
-                        ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                        : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                     }`}>
                     <Package size={24} />
                 </div>
@@ -432,7 +380,7 @@ const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, 
                     <p className="text-xs text-slate-500 dark:text-slate-400">{machine.id}</p>
                 </div>
             </div>
-            <StatusBadge status={machine.status} />
+            <StatusBadge status={machine.isOnline ? 'Online' : 'Offline'} />
         </div>
 
         {/* Location Tag */}
@@ -443,17 +391,17 @@ const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, 
             </div>
         )}
 
-        {/* Area */}
+        {/* Location */}
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-4">
             <MapPin size={14} className="text-slate-400" />
-            {machine.area || 'Unassigned'}
+            {machine.locationName || 'Unassigned'}
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Bottles Collected</p>
-                <p className="text-xl font-black text-slate-800 dark:text-white">{machine.bottlesCollected.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Items Collected</p>
+                <p className="text-xl font-black text-slate-800 dark:text-white">{machine.totalItemsCollected.toLocaleString()}</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Points</p>
@@ -525,10 +473,9 @@ export default function MachinesPage() {
         const q = searchQuery.toLowerCase();
         return machines.filter(m =>
             m.name.toLowerCase().includes(q) ||
-            (m.area || '').toLowerCase().includes(q) ||
+            (m.locationName || '').toLowerCase().includes(q) ||
             getLocationName(m.locationId).toLowerCase().includes(q) ||
-            m.id.toLowerCase().includes(q) ||
-            m.status.toLowerCase().includes(q)
+            m.id.toLowerCase().includes(q)
         );
     }, [machines, searchQuery]);
 
@@ -537,10 +484,9 @@ export default function MachinesPage() {
     const startIndex = (currentPage - 1) * cardsPerPage;
     const currentMachines = displayedMachines.slice(startIndex, startIndex + cardsPerPage);
 
-    const onlineCount = machines.filter(m => m.status === 'Online').length;
-    const fullCount = machines.filter(m => m.status === 'Full').length;
-    const maintenanceCount = machines.filter(m => m.status === 'Maintenance').length;
-    const totalBottles = machines.reduce((sum, m) => sum + m.bottlesCollected, 0);
+    const onlineCount = machines.filter(m => m.isOnline).length;
+    const offlineCount = machines.filter(m => !m.isOnline).length;
+    const totalItems = machines.reduce((sum, m) => sum + m.totalItemsCollected, 0);
 
     const handleOpenMaintenance = (machine) => {
         setSelectedMachine(machine);
@@ -552,19 +498,9 @@ export default function MachinesPage() {
     };
 
     const handleAddMaintenanceLog = (machineId, newLog) => {
-        setMachines(prev => prev.map(m => {
-            if (m.id === machineId) {
-                return {
-                    ...m,
-                    maintenanceLogs: [newLog, ...m.maintenanceLogs]
-                };
-            }
-            return m;
-        }));
-        setSelectedMachine(prev => prev ? {
-            ...prev,
-            maintenanceLogs: [newLog, ...prev.maintenanceLogs]
-        } : null);
+        // Log is added to MACHINE_LOGS context (in real app, this would be an API call)
+        // For now just refresh the selected machine to show new log
+        setSelectedMachine(prev => prev ? { ...prev } : null);
     };
 
     // Add machine handler
@@ -640,23 +576,12 @@ export default function MachinesPage() {
                 </div>
                 <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
-                            <AlertCircle size={24} className="text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Full (Needs Emptying)</p>
-                            <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{fullCount}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20">
                             <Wrench size={24} className="text-red-600 dark:text-red-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400"> Under Maintenance</p>
-                            <p className="text-2xl font-black text-red-600 dark:text-red-400">{maintenanceCount}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Offline</p>
+                            <p className="text-2xl font-black text-red-600 dark:text-red-400">{offlineCount}</p>
                         </div>
                     </div>
                 </div>
@@ -666,8 +591,8 @@ export default function MachinesPage() {
                             <Package size={24} className="text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Bottles</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{totalBottles.toLocaleString()}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Items Collected</p>
+                            <p className="text-2xl font-black text-slate-800 dark:text-white">{totalItems.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -778,7 +703,6 @@ export default function MachinesPage() {
                 onClose={() => setShowAddModal(false)}
                 onSubmit={handleAddMachine}
                 locations={allLocations}
-                areas={AREAS}
             />
         </>
     );

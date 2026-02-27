@@ -10,7 +10,7 @@ import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, Re
 const allRewardsLogs = REWARDS_LOGS;
 
 export default function RewardsLogsPage() {
-    const { user, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterReward, setFilterReward] = useState('');
@@ -37,8 +37,8 @@ export default function RewardsLogsPage() {
         // Filter by View As Location (or user's scoped location)
         if (viewAsLocationId) {
             logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (user?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === user.locationId);
+        } else if (currentUser?.locationId && !isSuperAdmin) {
+            logs = logs.filter(log => log.locationId === currentUser.locationId);
         }
 
         return logs.filter(log => {
@@ -64,7 +64,7 @@ export default function RewardsLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection, user, isSuperAdmin, viewAsLocationId]);
+    }, [searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -101,18 +101,18 @@ export default function RewardsLogsPage() {
 
     const getStatusBadge = (status) => {
         const styles = {
-            Redeemed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
-            Pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
-            Cancelled: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+            claimed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+            pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+            expired: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
         };
         return styles[status] || 'bg-slate-100 text-slate-600';
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'User', 'Email', 'Reward', 'SKU', 'Points', 'Machine', 'Location', 'Status'];
+        const headers = ['Date', 'Log ID', 'User', 'Email', 'Reward', 'Points', 'Redemption Code', 'Location', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.rewardName,
-            log.rewardSku, log.pointsCost, log.machineName, getLocationName(log.locationId), log.status
+            log.pointsCost, log.redemptionCode || '', getLocationName(log.locationId), log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -165,7 +165,7 @@ export default function RewardsLogsPage() {
                         {/* Filter Row */}
                         <div className="flex flex-wrap gap-3 items-center mb-3">
                             <CustomDropdown value={filterReward} onChange={(v) => handleFilterChange(setFilterReward, v)} options={rewardNames} placeholder="All Rewards" />
-                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={['Redeemed', 'Pending', 'Cancelled']} placeholder="All Statuses" />
+                            <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={['claimed', 'pending', 'expired']} placeholder="All Statuses" />
                             <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
@@ -253,7 +253,7 @@ export default function RewardsLogsPage() {
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium text-slate-800 dark:text-white">{log.rewardName}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{log.rewardSku}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{log.redemptionCode || ''}</span>
                                             </div>
                                         </td>
                                     )}
@@ -262,7 +262,7 @@ export default function RewardsLogsPage() {
                                     </td>
                                     {showMachine && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-sm text-slate-600 dark:text-slate-300">{log.machineName}</span>
+                                            <span className="text-sm text-slate-600 dark:text-slate-300">{log.locationName || getLocationName(log.locationId)}</span>
                                         </td>
                                     )}
                                     {showLocation && (
@@ -272,7 +272,7 @@ export default function RewardsLogsPage() {
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(log.status)}`}>
-                                            {log.status}
+                                            {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
                                         </span>
                                     </td>
                                 </tr>

@@ -1,7 +1,7 @@
 // ============================================================================
 // ECOPOINTS - CENTRALIZED MOCK DATA
 // Multi-Tenant Location-Based Access Control
-// Phase 2.1 Update: Enhanced data structures with departments, areas, and pricing
+// Aligned with 14-table approved schema (no Area table, no BottlePricing table, no SKU)
 // ============================================================================
 
 // ============================================================================
@@ -39,8 +39,8 @@ function formatDateOnly(date) {
 // CITIES
 // ============================================================================
 export const CITIES = [
-    { id: 'CITY-001', name: 'Pasig City' },
-    { id: 'CITY-002', name: 'Manila' }
+    { id: 'CITY-001', name: 'Pasig City', province: 'Metro Manila', region: 'NCR' },
+    { id: 'CITY-002', name: 'Manila', province: 'Metro Manila', region: 'NCR' }
 ];
 
 export const getCityById = (id) => CITIES.find(c => c.id === id);
@@ -56,6 +56,8 @@ export const LOCATIONS = [
         fullName: 'Arellano University - Andres Bonifacio Pasig Campus',
         cityId: 'CITY-001',
         streetAddress: 'Pag-asa St, Caniogan, Pasig',
+        barangay: 'Caniogan',
+        zipCode: '1600',
         contactPerson: 'Admin Officer',
         contactEmail: 'admin@arellano.edu.ph',
         contactPhone: '+63 2 8734 7371',
@@ -73,6 +75,8 @@ export const LOCATIONS = [
         fullName: 'Polytechnic University of the Philippines - Sta. Mesa',
         cityId: 'CITY-002',
         streetAddress: 'Anonas St, Sta. Mesa, Manila',
+        barangay: 'Sta. Mesa',
+        zipCode: '1016',
         contactPerson: 'Campus Director',
         contactEmail: 'admin@pup.edu.ph',
         contactPhone: '+63 2 5335 1787',
@@ -128,27 +132,7 @@ export const SHS_STRANDS = DEPARTMENTS.filter(d => d.type === 'shs_strand');
 export const COLLEGE_DEPARTMENTS = DEPARTMENTS.filter(d => d.type === 'college');
 
 // ============================================================================
-// AREAS (Within Locations)
-// ============================================================================
-export const AREAS = [
-    { id: 'AREA-001', name: 'Main Gate', locationId: 'LOC-001' },
-    { id: 'AREA-002', name: 'Canteen', locationId: 'LOC-001' },
-    { id: 'AREA-003', name: 'Library', locationId: 'LOC-001' },
-    { id: 'AREA-004', name: 'Gymnasium', locationId: 'LOC-001' },
-    { id: 'AREA-005', name: 'Nursing Building', locationId: 'LOC-001' },
-    { id: 'AREA-006', name: 'Education Building', locationId: 'LOC-001' },
-    { id: 'AREA-007', name: 'IT Building', locationId: 'LOC-001' },
-    { id: 'AREA-008', name: 'Administration Building', locationId: 'LOC-001' },
-    // LOC-002 Areas
-    { id: 'AREA-009', name: 'Main Entrance', locationId: 'LOC-002' },
-    { id: 'AREA-010', name: 'Student Canteen', locationId: 'LOC-002' },
-    { id: 'AREA-011', name: 'Ninoy Aquino Library', locationId: 'LOC-002' },
-    { id: 'AREA-012', name: 'Gymnasium Complex', locationId: 'LOC-002' },
-    { id: 'AREA-013', name: 'Engineering Building', locationId: 'LOC-002' }
-];
-
-// ============================================================================
-// BOTTLE PRICING (Points Basis)
+// BOTTLE PRICING (App Config — not a DB table, used by settings page)
 // ============================================================================
 export const BOTTLE_PRICING = {
     small: { volumeRange: [290, 350], volumeLabel: '290-350ml', withLabel: 5, noLabel: 3 },
@@ -168,7 +152,7 @@ export const BOTTLE_VOLUMES = [350, 500, 750, 1000];
 // ROLE DEFINITIONS (with permission objects for hasPermission())
 // ============================================================================
 export const ROLES = {
-    super_admin: {
+    superadmin: {
         name: 'Super Admin',
         description: 'Global access to all locations and features',
         color: 'red',
@@ -256,13 +240,13 @@ export const ADMIN_USERS = [
         username: 'sysadmin',
         email: 'superadmin@ecopoints.com',
         password: 'test123',
-        role: 'super_admin',
+        role: 'superadmin',
         locationId: null,
         avatar: 'SA',
         status: 'Online',
         accountHealth: 'Active',
         lastLogin: '2024-06-15T08:30:00.000Z',
-        permissions: ROLES.super_admin.permissions
+        permissions: ROLES.superadmin.permissions
     },
     {
         id: 'ADM-SUPER-002',
@@ -270,13 +254,13 @@ export const ADMIN_USERS = [
         username: 'cto',
         email: 'cto@ecopoints.com',
         password: 'test123',
-        role: 'super_admin',
+        role: 'superadmin',
         locationId: null,
         avatar: 'CT',
         status: 'Offline',
         accountHealth: 'Active',
         lastLogin: '2024-06-13T14:20:00.000Z',
-        permissions: ROLES.super_admin.permissions
+        permissions: ROLES.superadmin.permissions
     },
 
     // HEAD ADMINS (3)
@@ -312,39 +296,39 @@ export const ADMIN_USERS = [
 // MACHINES (RVMs)
 // ============================================================================
 export const MACHINES = [
-    { id: 'RVM-AU-01', name: 'Main Gate RVM', locationId: 'LOC-001', areaId: 'AREA-001', area: 'Main Gate', status: 'Online', bottlesCollected: 4520, totalPoints: 22600, lastMaintenance: '2025-01-20' },
-    { id: 'RVM-AU-02', name: 'Canteen RVM-A', locationId: 'LOC-001', areaId: 'AREA-002', area: 'Canteen', status: 'Online', bottlesCollected: 3850, totalPoints: 19250, lastMaintenance: '2025-01-22' },
-    { id: 'RVM-AU-03', name: 'Canteen RVM-B', locationId: 'LOC-001', areaId: 'AREA-002', area: 'Canteen', status: 'Online', bottlesCollected: 2800, totalPoints: 14000, lastMaintenance: '2025-01-23' },
-    { id: 'RVM-AU-04', name: 'Library RVM', locationId: 'LOC-001', areaId: 'AREA-003', area: 'Library', status: 'Online', bottlesCollected: 2100, totalPoints: 10500, lastMaintenance: '2025-01-15' },
-    { id: 'RVM-AU-05', name: 'Gym RVM', locationId: 'LOC-001', areaId: 'AREA-004', area: 'Gymnasium', status: 'Maintenance', bottlesCollected: 3100, totalPoints: 15500, lastMaintenance: '2025-01-25' },
-    { id: 'RVM-AU-06', name: 'Nursing Bldg RVM', locationId: 'LOC-001', areaId: 'AREA-005', area: 'Nursing Building', status: 'Online', bottlesCollected: 1850, totalPoints: 9250, lastMaintenance: '2025-01-18' },
+    { id: 'RVM-AU-01', name: 'Main Gate RVM', locationId: 'LOC-001', locationName: 'Main Gate', isOnline: true, totalItemsCollected: 4520 },
+    { id: 'RVM-AU-02', name: 'Canteen RVM-A', locationId: 'LOC-001', locationName: 'Canteen', isOnline: true, totalItemsCollected: 3850 },
+    { id: 'RVM-AU-03', name: 'Canteen RVM-B', locationId: 'LOC-001', locationName: 'Canteen', isOnline: true, totalItemsCollected: 2800 },
+    { id: 'RVM-AU-04', name: 'Library RVM', locationId: 'LOC-001', locationName: 'Library', isOnline: true, totalItemsCollected: 2100 },
+    { id: 'RVM-AU-05', name: 'Gym RVM', locationId: 'LOC-001', locationName: 'Gymnasium', isOnline: false, totalItemsCollected: 3100 },
+    { id: 'RVM-AU-06', name: 'Nursing Bldg RVM', locationId: 'LOC-001', locationName: 'Nursing Building', isOnline: true, totalItemsCollected: 1850 },
     // LOC-002 Machines
-    { id: 'RVM-PU-01', name: 'Main Entrance RVM', locationId: 'LOC-002', areaId: 'AREA-009', area: 'Main Entrance', status: 'Online', bottlesCollected: 3200, totalPoints: 16000, lastMaintenance: '2025-01-19' },
-    { id: 'RVM-PU-02', name: 'Canteen RVM', locationId: 'LOC-002', areaId: 'AREA-010', area: 'Student Canteen', status: 'Online', bottlesCollected: 2900, totalPoints: 14500, lastMaintenance: '2025-01-21' },
-    { id: 'RVM-PU-03', name: 'Library RVM', locationId: 'LOC-002', areaId: 'AREA-011', area: 'Ninoy Aquino Library', status: 'Maintenance', bottlesCollected: 1800, totalPoints: 9000, lastMaintenance: '2025-01-24' },
-    { id: 'RVM-PU-04', name: 'Engineering RVM', locationId: 'LOC-002', areaId: 'AREA-013', area: 'Engineering Building', status: 'Online', bottlesCollected: 1970, totalPoints: 9850, lastMaintenance: '2025-01-17' }
+    { id: 'RVM-PU-01', name: 'Main Entrance RVM', locationId: 'LOC-002', locationName: 'Main Entrance', isOnline: true, totalItemsCollected: 3200 },
+    { id: 'RVM-PU-02', name: 'Canteen RVM', locationId: 'LOC-002', locationName: 'Student Canteen', isOnline: true, totalItemsCollected: 2900 },
+    { id: 'RVM-PU-03', name: 'Library RVM', locationId: 'LOC-002', locationName: 'Ninoy Aquino Library', isOnline: false, totalItemsCollected: 1800 },
+    { id: 'RVM-PU-04', name: 'Engineering RVM', locationId: 'LOC-002', locationName: 'Engineering Building', isOnline: true, totalItemsCollected: 1970 }
 ];
 
 // ============================================================================
 // REWARDS
 // ============================================================================
 export const REWARDS = [
-    { id: 'RWD-001', name: 'EcoPoints T-Shirt', sku: 'EP-TSHIRT-S', locationId: 'LOC-001', category: 'Merchandise', points: 500, stock: 45, status: 'Available' },
-    { id: 'RWD-002', name: 'Metal Straw Set', sku: 'EP-STRAW', locationId: 'LOC-001', category: 'Sustainable', points: 150, stock: 120, status: 'Available' },
-    { id: 'RWD-003', name: 'Bamboo Tumbler', sku: 'EP-TUMBLER', locationId: 'LOC-001', category: 'Sustainable', points: 800, stock: 20, status: 'Low Stock' },
-    { id: 'RWD-004', name: 'Canvas Tote Bag', sku: 'EP-TOTE', locationId: 'LOC-001', category: 'Merchandise', points: 300, stock: 68, status: 'Available' },
-    { id: 'RWD-005', name: 'School Supplies Kit', sku: 'EP-SCHOOL', locationId: 'LOC-001', category: 'Education', points: 200, stock: 200, status: 'Available' },
-    { id: 'RWD-006', name: 'Canteen Voucher (P50)', sku: 'EP-VOUCHER-50', locationId: 'LOC-001', category: 'Voucher', points: 100, stock: 500, status: 'Available' },
-    { id: 'RWD-007', name: 'Canteen Voucher (P100)', sku: 'EP-VOUCHER-100', locationId: 'LOC-001', category: 'Voucher', points: 200, stock: 350, status: 'Available' },
-    { id: 'RWD-008', name: 'Priority Enrollment', sku: 'EP-PRIO', locationId: 'LOC-001', category: 'Education', points: 5000, stock: 10, status: 'Low Stock' },
-    { id: 'RWD-009', name: 'Eco Notebook', sku: 'EP-NOTEBOOK', locationId: 'LOC-001', category: 'Sustainable', points: 120, stock: 150, status: 'Available' },
-    { id: 'RWD-010', name: 'Laptop Sticker Pack', sku: 'EP-STICKER', locationId: 'LOC-001', category: 'Merchandise', points: 50, stock: 300, status: 'Available' },
+    { id: 'RWD-001', name: 'EcoPoints T-Shirt', locationId: 'LOC-001', category: 'Merchandise', points: 500, stock: 45, isActive: true },
+    { id: 'RWD-002', name: 'Metal Straw Set', locationId: 'LOC-001', category: 'Sustainable', points: 150, stock: 120, isActive: true },
+    { id: 'RWD-003', name: 'Bamboo Tumbler', locationId: 'LOC-001', category: 'Sustainable', points: 800, stock: 20, isActive: true },
+    { id: 'RWD-004', name: 'Canvas Tote Bag', locationId: 'LOC-001', category: 'Merchandise', points: 300, stock: 68, isActive: true },
+    { id: 'RWD-005', name: 'School Supplies Kit', locationId: 'LOC-001', category: 'Education', points: 200, stock: 200, isActive: true },
+    { id: 'RWD-006', name: 'Canteen Voucher (P50)', locationId: 'LOC-001', category: 'Voucher', points: 100, stock: 500, isActive: true },
+    { id: 'RWD-007', name: 'Canteen Voucher (P100)', locationId: 'LOC-001', category: 'Voucher', points: 200, stock: 350, isActive: true },
+    { id: 'RWD-008', name: 'Priority Enrollment', locationId: 'LOC-001', category: 'Education', points: 5000, stock: 10, isActive: true },
+    { id: 'RWD-009', name: 'Eco Notebook', locationId: 'LOC-001', category: 'Sustainable', points: 120, stock: 150, isActive: true },
+    { id: 'RWD-010', name: 'Laptop Sticker Pack', locationId: 'LOC-001', category: 'Merchandise', points: 50, stock: 300, isActive: true },
     // LOC-002 Rewards
-    { id: 'RWD-011', name: 'PUP Eco Tumbler', sku: 'PU-TUMBLER', locationId: 'LOC-002', category: 'Sustainable', points: 700, stock: 30, status: 'Available' },
-    { id: 'RWD-012', name: 'PUP T-Shirt', sku: 'PU-TSHIRT', locationId: 'LOC-002', category: 'Merchandise', points: 450, stock: 50, status: 'Available' },
-    { id: 'RWD-013', name: 'Cafeteria Voucher (P50)', sku: 'PU-VOUCHER-50', locationId: 'LOC-002', category: 'Voucher', points: 100, stock: 400, status: 'Available' },
-    { id: 'RWD-014', name: 'Cafeteria Voucher (P100)', sku: 'PU-VOUCHER-100', locationId: 'LOC-002', category: 'Voucher', points: 200, stock: 250, status: 'Available' },
-    { id: 'RWD-015', name: 'Reusable Straw Kit', sku: 'PU-STRAW', locationId: 'LOC-002', category: 'Sustainable', points: 120, stock: 180, status: 'Available' },
+    { id: 'RWD-011', name: 'PUP Eco Tumbler', locationId: 'LOC-002', category: 'Sustainable', points: 700, stock: 30, isActive: true },
+    { id: 'RWD-012', name: 'PUP T-Shirt', locationId: 'LOC-002', category: 'Merchandise', points: 450, stock: 50, isActive: true },
+    { id: 'RWD-013', name: 'Cafeteria Voucher (P50)', locationId: 'LOC-002', category: 'Voucher', points: 100, stock: 400, isActive: true },
+    { id: 'RWD-014', name: 'Cafeteria Voucher (P100)', locationId: 'LOC-002', category: 'Voucher', points: 200, stock: 250, isActive: true },
+    { id: 'RWD-015', name: 'Reusable Straw Kit', locationId: 'LOC-002', category: 'Sustainable', points: 120, stock: 180, isActive: true },
 ];
 
 // ============================================================================
@@ -352,7 +336,6 @@ export const REWARDS = [
 // ============================================================================
 const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen', 'Miguel', 'Ana', 'Juan', 'Maria', 'Carlos', 'Sofia', 'Luis', 'Andrea', 'Jose', 'Isabella', 'Mark', 'Angela', 'Daniel', 'Christine', 'Paul', 'Katherine', 'Steven', 'Rachel', 'Kevin', 'Nicole'];
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Santos', 'Reyes', 'Cruz', 'Dela Cruz', 'Villanueva', 'Mendoza', 'Torres', 'Flores', 'Rivera', 'Ramos'];
-const sections = ['A', 'B', 'C', 'D'];
 const yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
 // ============================================================================
@@ -371,37 +354,30 @@ const generateUsers = (count) => {
 
         // Role distribution: 80% Student, 12% Faculty, 8% Staff
         const roleRoll = seededRandom();
-        let role, educationLevel, strand, department, yearLevel, section;
+        let userType, strand, department, yearLevel;
 
         if (roleRoll < 0.80) {
-            role = 'Student';
+            userType = 'student';
             // 40% SHS, 60% College for students
             if (seededRandom() < 0.4) {
-                educationLevel = 'shs';
                 strand = getRandomElement(SHS_STRANDS).id;
                 department = null;
                 yearLevel = seededRandom() < 0.5 ? 'Grade 11' : 'Grade 12';
             } else {
-                educationLevel = 'college';
                 strand = null;
                 department = getRandomElement(COLLEGE_DEPARTMENTS).id;
                 yearLevel = getRandomElement(yearLevels);
             }
-            section = getRandomElement(sections);
         } else if (roleRoll < 0.92) {
-            role = 'Faculty';
-            educationLevel = null;
+            userType = 'faculty';
             strand = null;
             department = getRandomElement(COLLEGE_DEPARTMENTS).id;
             yearLevel = null;
-            section = null;
         } else {
-            role = 'Staff';
-            educationLevel = null;
+            userType = 'staff';
             strand = null;
-            department = getRandomElement(COLLEGE_DEPARTMENTS).id;
+            department = null;
             yearLevel = null;
-            section = null;
         }
 
         const joinDate = getRandomDate(baseDate, endDate);
@@ -421,12 +397,10 @@ const generateUsers = (count) => {
             id: `USR-${String(20240000 + i).padStart(8, '0')}`,
             name: `${firstName} ${lastName}`,
             email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(' ', '')}@arellano.edu.ph`,
-            role: role,
-            educationLevel: educationLevel,
+            userType: userType,
             strand: strand,
             department: department,
             yearLevel: yearLevel,
-            section: section,
             locationId: i < 150 ? 'LOC-001' : 'LOC-002',
             status: status,
             accountHealth: accountHealth,
@@ -461,14 +435,6 @@ const getPointsForBottle = (volume, hasLabel) => {
     return 0;
 };
 
-const getSizeCategory = (volume) => {
-    if (volume >= 290 && volume <= 350) return 'Small';
-    if (volume >= 351 && volume <= 500) return 'Medium';
-    if (volume >= 750 && volume <= 1000) return 'Large';
-    if (volume >= 1001) return 'Invalid';
-    return 'Unknown';
-};
-
 const generateBottleLogs = () => {
     const logs = [];
     const endDate = new Date();
@@ -480,7 +446,6 @@ const generateBottleLogs = () => {
     for (let i = 0; i < 500; i++) {
         const user = getRandomElement(USERS);
         const machine = getRandomElement(MACHINES);
-        const area = AREAS.find(a => a.id === machine.areaId);
         const brand = getRandomElement(BOTTLE_BRANDS);
         const volume = getRandomElement(BOTTLE_VOLUMES);
         const condition = getRandomElement(conditions);
@@ -500,10 +465,8 @@ const generateBottleLogs = () => {
             machineName: machine.name,
             locationId: machine.locationId,
             locationName: LOCATIONS.find(l => l.id === machine.locationId)?.name || machine.locationId,
-            areaId: machine.areaId,
-            area: area?.name || machine.area,
+            area: machine.locationName,
             bottleType: `${volume}ml PET`,
-            sizeCategory: getSizeCategory(volume),
             brand: brand,
             volume: volume,
             condition: condition,
@@ -532,7 +495,6 @@ const generateMachineLogs = () => {
 
     for (let i = 0; i < 50; i++) {
         const machine = getRandomElement(MACHINES);
-        const area = AREAS.find(a => a.id === machine.areaId);
         const technician = getRandomElement(technicians);
         const issue = getRandomElement(issues);
         const logDate = getRandomDate(startDate, endDate);
@@ -543,14 +505,11 @@ const generateMachineLogs = () => {
             machineId: machine.id,
             machineName: machine.name,
             locationId: machine.locationId,
-            areaId: machine.areaId,
-            area: area?.name || machine.area,
+            area: machine.locationName,
             technicianId: technician.id,
             technician: technician.name,
-            issue: issue,
-            cost: getRandomInt(0, 2500),
+            actionType: issue,
             resolved: resolved,
-            status: resolved ? 'Resolved' : 'Pending',
             notes: resolved ? 'Issue fixed successfully' : 'Awaiting parts/review',
             timestamp: formatDateOnly(logDate),
             timestampObj: logDate
@@ -587,29 +546,25 @@ const generateAdminLogs = () => {
         const admin = getRandomElement(ADMIN_USERS);
         const actionData = getRandomElement(actions);
         const logDate = getRandomDate(startDate, endDate);
-        const area = getRandomElement(AREAS);
 
         let target = '-';
         if (actionData.category === 'Users') target = getRandomElement(USERS).id;
-        if (actionData.category === 'Rewards') target = getRandomElement(REWARDS).sku;
+        if (actionData.category === 'Rewards') target = getRandomElement(REWARDS).name;
         if (actionData.category === 'Machines') target = getRandomElement(MACHINES).name;
 
         logs.push({
             id: `LOG-A-${String(8000 + i).padStart(5, '0')}`,
-            adminId: admin.id,
+            adminUserId: admin.id,
             adminName: admin.name,
             adminRole: ROLES[admin.role]?.name || admin.role,
             locationId: admin.locationId,
             locationName: admin.locationId ? (LOCATIONS.find(l => l.id === admin.locationId)?.name || admin.locationId) : 'All Locations',
-            areaId: area.id,
-            area: area.name,
             action: actionData.action,
             target: target,
             category: actionData.category,
             notes: `${actionData.action} performed successfully`,
             timestamp: formatDateShort(logDate),
-            timestampObj: logDate,
-            status: 'Success'
+            timestampObj: logDate
         });
     }
     return logs.sort((a, b) => b.timestampObj - a.timestampObj);
@@ -629,8 +584,8 @@ const generateRewardsLogs = () => {
         'Jan 27, 2026', 'Jan 26, 2026', 'Jan 25, 2026', 'Jan 24, 2026', 'Jan 23, 2026'
     ];
 
-    const statuses = ['Redeemed', 'Pending', 'Cancelled'];
-    const statusWeights = [0.7, 0.2, 0.1]; // 70% redeemed, 20% pending, 10% cancelled
+    const statuses = ['claimed', 'pending', 'expired'];
+    const statusWeights = [0.7, 0.2, 0.1]; // 70% claimed, 20% pending, 10% expired
 
     const getWeightedStatus = () => {
         const rand = seededRandom();
@@ -645,7 +600,6 @@ const generateRewardsLogs = () => {
     for (let i = 0; i < 100; i++) {
         const user = getRandomElement(USERS);
         const reward = getRandomElement(REWARDS);
-        const machine = getRandomElement(MACHINES);
         const status = getWeightedStatus();
         const dateStr = staticDates[i % staticDates.length];
         const hour = getRandomInt(8, 20);
@@ -659,17 +613,13 @@ const generateRewardsLogs = () => {
             userEmail: user.email,
             rewardId: reward.id,
             rewardName: reward.name,
-            rewardSku: reward.sku,
             pointsCost: reward.points,
-            quantity: 1,
-            machineId: machine.id,
-            machineName: machine.name,
-            locationId: machine.locationId,
-            areaId: machine.areaId,
+            locationId: reward.locationId,
+            locationName: LOCATIONS.find(l => l.id === reward.locationId)?.name || reward.locationId,
+            redemptionCode: `RDM-${String(i).padStart(4, '0')}`,
             timestamp: `${dateStr} ${timeStr}`,
             timestampObj: new Date(`${dateStr} ${timeStr}`),
-            status: status,
-            notes: status === 'Cancelled' ? 'User cancelled request' : status === 'Pending' ? 'Awaiting approval' : 'Reward dispensed successfully'
+            status: status
         });
     }
     return logs.sort((a, b) => b.timestampObj - a.timestampObj);
@@ -684,22 +634,20 @@ export const getLocationById = (id) => LOCATIONS.find(l => l.id === id);
 export const getLocationName = (id) => getLocationById(id)?.name || 'All Locations';
 export const getDepartmentById = (id) => DEPARTMENTS.find(d => d.id === id);
 export const getDepartmentName = (id) => getDepartmentById(id)?.abbreviation || getDepartmentById(id)?.name || id;
-export const getAreaById = (id) => AREAS.find(a => a.id === id);
-export const getAreaName = (id) => getAreaById(id)?.name || id;
 export const filterByLocation = (data, id) => !id ? data : data.filter(item => item.locationId === id);
 export const getMachinesByLocation = (id) => filterByLocation(MACHINES, id);
 export const getRewardsByLocation = (id) => filterByLocation(REWARDS, id);
 export const getUsersByLocation = (id) => filterByLocation(USERS, id);
 export const hasPermission = (user, module, action) => user?.permissions?.[module]?.[action] || false;
-export const isSuperAdmin = (user) => user?.role === 'super_admin';
+export const isSuperAdmin = (user) => user?.role === 'superadmin';
 
 // Statistics helpers
 export const getOnlineUsersCount = () => USERS.filter(u => u.status === 'Online').length;
 export const getActiveUsersCount = () => USERS.filter(u => u.accountHealth === 'Active').length;
 export const getInactiveUsersCount = () => USERS.filter(u => u.accountHealth === 'Inactive').length;
-export const getStudentsCount = () => USERS.filter(u => u.role === 'Student').length;
-export const getFacultyCount = () => USERS.filter(u => u.role === 'Faculty').length;
-export const getStaffCount = () => USERS.filter(u => u.role === 'Staff').length;
+export const getStudentsCount = () => USERS.filter(u => u.userType === 'student').length;
+export const getFacultyCount = () => USERS.filter(u => u.userType === 'faculty').length;
+export const getStaffCount = () => USERS.filter(u => u.userType === 'staff').length;
 export const getAcceptedBottlesCount = () => BOTTLE_LOGS.filter(l => l.status === 'Accepted').length;
 export const getRejectedBottlesCount = () => BOTTLE_LOGS.filter(l => l.status === 'Rejected').length;
 export const getTotalPointsAwarded = () => BOTTLE_LOGS.reduce((sum, l) => sum + l.pointsAwarded, 0);

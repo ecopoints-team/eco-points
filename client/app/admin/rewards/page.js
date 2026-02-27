@@ -103,8 +103,7 @@ export default function RewardsInventoryPage() {
         points: '',
         stock: '',
         category: 'Merchandise',
-        image: null,
-        sku: ''
+        image: null
     });
     const fileInputRef = useRef(null);
 
@@ -127,7 +126,6 @@ export default function RewardsInventoryPage() {
         let result = rewards.filter(r => {
             const matchesSearch = searchQuery === '' ||
                 r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                r.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 r.category.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory = filterCategory === '' || r.category === filterCategory;
             const status = getStatus(r.stock);
@@ -183,7 +181,7 @@ export default function RewardsInventoryPage() {
     const totalStock = rewards.reduce((s, r) => s + r.stock, 0);
     const lowStockCount = rewards.filter(r => r.stock > 0 && r.stock < LOW_STOCK_THRESHOLD).length;
     const outOfStockCount = rewards.filter(r => r.stock === 0).length;
-    const totalDispensed = rewards.reduce((s, r) => s + r.dispensed, 0);
+    const totalDispensed = rewards.reduce((s, r) => s + (r.dispensed || 0), 0);
 
     // Get location name
     const getLocationName = (locationId) => {
@@ -194,7 +192,7 @@ export default function RewardsInventoryPage() {
     // Modal handlers
     const openAddModal = () => {
         setEditingReward(null);
-        setFormData({ name: '', description: '', points: '', stock: '', category: 'Merchandise', image: null, sku: '' });
+        setFormData({ name: '', description: '', points: '', stock: '', category: 'Merchandise', image: null });
         setShowModal(true);
     };
 
@@ -202,12 +200,11 @@ export default function RewardsInventoryPage() {
         setEditingReward(r);
         setFormData({
             name: r.name,
-            description: r.description,
+            description: r.description || '',
             points: r.points.toString(),
             stock: r.stock.toString(),
             category: r.category,
-            image: r.image || null,
-            sku: r.sku
+            image: r.image || null
         });
         setShowModal(true);
     };
@@ -222,7 +219,7 @@ export default function RewardsInventoryPage() {
     };
 
     const handleSubmit = () => {
-        if (!formData.name || !formData.points || !formData.stock || !formData.sku || !formData.category) return;
+        if (!formData.name || !formData.points || !formData.stock || !formData.category) return;
         const stock = parseInt(formData.stock);
 
         if (editingReward) {
@@ -379,7 +376,7 @@ export default function RewardsInventoryPage() {
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search by name, SKU, or category..."
+                                placeholder="Search by name or category..."
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 focus:border-emerald-500"
@@ -479,8 +476,7 @@ export default function RewardsInventoryPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="font-semibold text-slate-800 dark:text-white text-sm">{r.name}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">{r.description}</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">SKU: {r.sku}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">{r.description || ''}</p>
                                         </td>
                                         {isSuperAdmin && !effectiveLocationId && (
                                             <td className="px-6 py-4">
@@ -618,14 +614,10 @@ export default function RewardsInventoryPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
                                     <input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock Keeping Unit (SKU) *</label>
-                                    <input type="text" value={formData.sku} onChange={(e) => setFormData(p => ({ ...p, sku: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Item Name (SKU-123)" />
                                 </div>
                             </div>
                             <div>

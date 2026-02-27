@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -6,8 +5,25 @@ from . import db
 
 # ============================================================================
 # Group 1: Multi-Tenant Identity (The Core)
-# Maps to frontend: LOCATIONS, DEPARTMENTS, USERS, ADMIN_USERS
 # ============================================================================
+
+class City(db.Model):
+    """
+    3NF lookup table for city/municipality normalization.
+    Organizations reference this via city_id FK instead of storing flat city strings.
+    """
+    __tablename__ = 'cities'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)              # "Pasig City"
+    province = db.Column(db.String(200), nullable=True)           # "Metro Manila"
+    region = db.Column(db.String(200), nullable=True)             # "NCR"
+
+    # Relationships
+    organizations = db.relationship('Organization', backref='city', lazy=True)
+
+    def __repr__(self):
+        return f'<City {self.name}>'
+
 
 class Organization(db.Model):
     """
@@ -16,62 +32,49 @@ class Organization(db.Model):
     """
     __tablename__ = 'organizations'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)          # "Arellano University"
-    full_name = db.Column(db.String(500))                     # "Arellano University - Andres Bonifacio Pasig Campus"
-    org_type = db.Column(db.String(100), nullable=False)      # "University", "Corporation", "HOA"
-    city = db.Column(db.String(200))                          # "Pasig City"
-    street_address = db.Column(db.String(500))                # "Pag-asa St, Caniogan, Pasig"
+    name = db.Column(db.String(200), nullable=False)              # "Arellano University"
+    full_name = db.Column(db.String(500))                         # "Arellano University - Andres Bonifacio Pasig Campus"
+    org_type = db.Column(db.String(100), nullable=False)          # "University", "Corporation", "HOA"
+
+    # 3NF Address
+    street_address = db.Column(db.String(500))                    # "Pag-asa St, Caniogan"
+    barangay = db.Column(db.String(200), nullable=True)           # "Caniogan"
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=True)
+    zip_code = db.Column(db.String(10), nullable=True)            # "1600"
+
+    # Contact
     contact_person = db.Column(db.String(200))
     contact_email = db.Column(db.String(200))
     contact_phone = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='Active')       # Active, Inactive
+
+    status = db.Column(db.String(20), default='Active')           # Active, Inactive
     join_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    areas = db.relationship('Area', backref='organization', lazy=True, cascade='all, delete-orphan')
     community_groups = db.relationship('CommunityGroup', backref='organization', lazy=True, cascade='all, delete-orphan')
     rvms = db.relationship('RVM', backref='organization', lazy=True, cascade='all, delete-orphan')
     rewards = db.relationship('Reward', backref='organization', lazy=True, cascade='all, delete-orphan')
-    bottle_pricing = db.relationship('BottlePricing', backref='organization', lazy=True, cascade='all, delete-orphan')
-    admin_logs = db.relationship('AdminLog', backref='organization', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Organization {self.name}>'
 
 
-class Area(db.Model):
-    """
-    A physical zone within a location (e.g., Main Gate, Canteen, Library).
-    Frontend equivalent: AREAS[].
-    """
-    __tablename__ = 'areas'
-    id = db.Column(db.Integer, primary_key=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)          # "Main Gate", "Canteen"
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    # Relationships
-    rvms = db.relationship('RVM', backref='area', lazy=True)
-
-    def __repr__(self):
-        return f'<Area {self.name}>'
-
-
 class CommunityGroup(db.Model):
     """
     Dynamic sub-groups for leaderboards and user classification.
-    Frontend equivalent: DEPARTMENTS[] + SHS_STRANDS[] (group_type discriminates).
-    University: "BSIT" (college), "STEM" (shs_strand)
-    Village: "Block 4" (block)
-    Corporate: "Floor 12" (floor)
+    group_type values:
+      - 'shs_strand' : SHS strands (STEM, ABM, HUMSS, etc.)
+      - 'college'    : College departments (BSIT, BSN, etc.)
+      - 'staff'      : Catch-all group for campus staff (janitors, guards, etc.)
+    Each org gets one "Campus Staff" group with group_type='staff'.
     """
     __tablename__ = 'community_groups'
     id = db.Column(db.Integer, primary_key=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)          # "Bachelor of Science in IT"
-    abbreviation = db.Column(db.String(50))                   # "BSIT"
-    group_type = db.Column(db.String(50), nullable=False)     # "college", "shs_strand", "block", "floor", "admin"
+    name = db.Column(db.String(200), nullable=False)              # "Bachelor of Science in IT", "Campus Staff"
+    abbreviation = db.Column(db.String(50))                       # "BSIT", "STEM"
+    group_type = db.Column(db.String(50), nullable=False)         # "shs_strand", "college", "staff"
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -89,10 +92,9 @@ class Account(db.Model):
     __tablename__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True)
     community_group_id = db.Column(db.Integer, db.ForeignKey('community_groups.id'), nullable=False)
-    account_name = db.Column(db.String(200), nullable=False)  # "Juan Dela Cruz" or "CS Student Council"
+    account_name = db.Column(db.String(200), nullable=False)      # "Juan Dela Cruz" or "CS Student Council"
     points_balance = db.Column(db.Integer, default=0)
-    bottles_collected = db.Column(db.Integer, default=0)
-    streak = db.Column(db.Integer, default=0)
+    streak = db.Column(db.Integer, default=0)                     # Consecutive recycling days
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -109,45 +111,39 @@ class Account(db.Model):
 class User(db.Model):
     """
     A human who interacts with the system — admin or end-user.
-    Frontend equivalent: ADMIN_USERS[] (admin roles) + USERS[] (end-user roles).
 
-    Roles (matches frontend ROLES keys):
-      Admin roles:  super_admin, head_admin, auditor, inventory_officer, technician
-      End-user roles: user, maintenance, dependent
+    role (UserRole enum — 7 values):
+      Admin:    superadmin, head_admin, auditor, inventory_officer, technician
+      End-user: user, dependent
 
-    The permissions JSON column stores the same structure as mockData.ROLES[role].permissions:
-      { "dashboard": { "view": true, "edit": false }, "users": { ... }, ... }
-    Only populated for admin roles. End-users don't need granular permissions.
+    user_type (only for role='user'):
+      'student', 'faculty', 'staff'
+
+    year_level (only for students):
+      'Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'
+
+    Admin scoping: admin users belong to an Account → CommunityGroup → Organization
+    chain. Super-admins use a system-level community group with no org restriction.
     """
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=True)  # Scoped location for admins
 
     # Identity
     name = db.Column(db.String(200), nullable=False)
     username = db.Column(db.String(100), unique=True, nullable=True)
     email = db.Column(db.String(200), unique=True, nullable=True)  # Nullable for dependents/fob-only users
+    phone = db.Column(db.String(50), nullable=True)
     password_hash = db.Column(db.String(255), nullable=True)
-    avatar = db.Column(db.String(10))                              # Initials, e.g. "JD"
 
-    # Role & Permissions
+    # Role & Classification
     role = db.Column(db.String(30), default='user', nullable=False, index=True)
-    permissions = db.Column(db.JSON, nullable=True)                # Granular RBAC for admin roles
+    user_type = db.Column(db.String(20), nullable=True)            # "student", "faculty", "staff" (end-user sub-type)
+    year_level = db.Column(db.String(20), nullable=True)           # "1st Year", "Grade 11", etc.
 
     # Status
     is_active = db.Column(db.Boolean, default=True)
-    status = db.Column(db.String(20), default='Offline')           # Online, Offline
-    account_health = db.Column(db.String(20), default='Active')    # Active, Inactive
     last_login = db.Column(db.DateTime, nullable=True)
-
-    # Education (end-users at universities)
-    education_level = db.Column(db.String(20), nullable=True)      # "shs", "college", null
-    strand_id = db.Column(db.String(50), nullable=True)            # FK-like reference to community_group
-    department_id = db.Column(db.String(50), nullable=True)        # FK-like reference to community_group
-    year_level = db.Column(db.String(20), nullable=True)           # "1st Year", "Grade 11"
-    section = db.Column(db.String(10), nullable=True)              # "A", "B", "C"
-    user_role = db.Column(db.String(20), nullable=True)            # "Student", "Faculty", "Staff" (end-user sub-type)
 
     # Timestamps
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -157,6 +153,8 @@ class User(db.Model):
     # Relationships
     maintenance_logs = db.relationship('MaintenanceLog', backref='performed_by', lazy=True,
                                         foreign_keys='MaintenanceLog.performed_by_id')
+    admin_logs = db.relationship('AdminLog', backref='admin', lazy=True,
+                                  foreign_keys='AdminLog.admin_user_id')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -168,7 +166,7 @@ class User(db.Model):
 
     @property
     def is_admin(self):
-        return self.role in ('super_admin', 'head_admin', 'auditor', 'inventory_officer', 'technician')
+        return self.role in ('superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician')
 
     def __repr__(self):
         return f'<User {self.name} ({self.role})>'
@@ -197,7 +195,6 @@ class AccessCredential(db.Model):
 
 # ============================================================================
 # Group 2: Hardware & IoT (RVM Operations)
-# Maps to frontend: MACHINES, BOTTLE_LOGS, MACHINE_LOGS, BOTTLE_PRICING
 # ============================================================================
 
 class RVM(db.Model):
@@ -208,11 +205,10 @@ class RVM(db.Model):
     __tablename__ = 'rvms'
     id = db.Column(db.Integer, primary_key=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=True)
 
     machine_uuid = db.Column(db.String(100), unique=True, nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)              # "Main Gate RVM"
-    status = db.Column(db.String(20), default='Offline')          # Online, Offline, Maintenance
+    location_name = db.Column(db.String(200), nullable=True)      # "Main Gate", "Canteen" (descriptive)
     is_online = db.Column(db.Boolean, default=False)
     last_heartbeat = db.Column(db.DateTime)
 
@@ -220,10 +216,6 @@ class RVM(db.Model):
     current_capacity = db.Column(db.Integer, default=0)
     max_capacity = db.Column(db.Integer, default=100)
     total_items_collected = db.Column(db.Integer, default=0)
-    total_points_dispensed = db.Column(db.Integer, default=0)
-
-    # Maintenance
-    last_maintenance = db.Column(db.Date, nullable=True)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -232,7 +224,7 @@ class RVM(db.Model):
     maintenance_logs = db.relationship('MaintenanceLog', backref='rvm', lazy=True)
 
     def __repr__(self):
-        return f'<RVM {self.name} ({self.status})>'
+        return f'<RVM {self.name} ({"Online" if self.is_online else "Offline"})>'
 
 
 class RecyclingSession(db.Model):
@@ -267,39 +259,17 @@ class RecyclingItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('recycling_sessions.id'), nullable=False)
 
-    item_type = db.Column(db.String(100), nullable=False)         # "350ml PET"
-    brand = db.Column(db.String(100), nullable=True)              # "Coca-Cola"
-    volume_ml = db.Column(db.Integer, nullable=True)              # 350
-    condition = db.Column(db.String(20), nullable=True)           # "With Label", "No Label", "Rejected"
-    size_category = db.Column(db.String(20), nullable=True)       # "Small", "Medium", "Large", "Invalid"
+    item_type = db.Column(db.String(100), nullable=False)         # "PET Bottle"
     material = db.Column(db.String(100), default='Plastic')       # "Plastic", "Aluminum"
+    brand = db.Column(db.String(100), nullable=True)              # "Coca-Cola"
+    volume_ml = db.Column(db.Integer, nullable=True)              # 350, 500, 750, 1000
+    condition = db.Column(db.String(20), nullable=True)           # "With Label", "No Label", "Rejected"
     weight_grams = db.Column(db.Float, default=0.0)
     points_awarded = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(20), default='Accepted')         # "Accepted", "Rejected"
     deposited_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f'<RecyclingItem {self.item_type} | {self.points_awarded} pts>'
-
-
-class BottlePricing(db.Model):
-    """
-    Configurable points table per organization and size category.
-    Frontend equivalent: BOTTLE_PRICING (but per-org in DB).
-    """
-    __tablename__ = 'bottle_pricing'
-    id = db.Column(db.Integer, primary_key=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    size_category = db.Column(db.String(20), nullable=False)      # "small", "medium", "large", "invalid"
-    volume_min = db.Column(db.Integer, nullable=False)            # 290
-    volume_max = db.Column(db.Integer, nullable=False)            # 350
-    volume_label = db.Column(db.String(50))                       # "290-350ml"
-    points_with_label = db.Column(db.Integer, default=0)          # 5
-    points_no_label = db.Column(db.Integer, default=0)            # 3
-    is_rejected = db.Column(db.Boolean, default=False)            # True for "invalid" size
-
-    def __repr__(self):
-        return f'<BottlePricing {self.size_category} ({self.volume_label})>'
 
 
 class MaintenanceLog(db.Model):
@@ -312,11 +282,8 @@ class MaintenanceLog(db.Model):
     rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'), nullable=False)
     performed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    issue = db.Column(db.String(200), nullable=False)             # "Sensor Error", "Bin Full"
-    action_type = db.Column(db.String(50))                        # "emptied_bin", "cleaned_sensor"
-    cost = db.Column(db.Integer, default=0)                       # Repair cost in whole units
+    action_type = db.Column(db.String(200), nullable=False)       # "Sensor Error", "Bin Full", "Routine Checkup"
     resolved = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(20), default='Pending')          # "Resolved", "Pending"
     notes = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -324,12 +291,11 @@ class MaintenanceLog(db.Model):
     transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=True)
 
     def __repr__(self):
-        return f'<MaintenanceLog {self.issue} ({self.status})>'
+        return f'<MaintenanceLog {self.action_type} ({"Resolved" if self.resolved else "Pending"})>'
 
 
 # ============================================================================
 # Group 3: Economy (Points & Rewards)
-# Maps to frontend: Transactions, REWARDS, REWARDS_LOGS
 # ============================================================================
 
 class Transaction(db.Model):
@@ -357,20 +323,19 @@ class Reward(db.Model):
     """
     A redeemable item offered by a specific Organization.
     Frontend equivalent: REWARDS[].
+    No SKU — use formatted reward ID instead (e.g. "RWD-001").
     """
     __tablename__ = 'rewards'
     id = db.Column(db.Integer, primary_key=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
 
     name = db.Column(db.String(200), nullable=False)              # "EcoPoints T-Shirt"
-    sku = db.Column(db.String(50), nullable=True)                 # "EP-TSHIRT-S"
     description = db.Column(db.Text)
-    category = db.Column(db.String(100))                          # "Merchandise", "Voucher", "Sustainable"
+    category = db.Column(db.String(100))                          # "Merchandise", "Voucher", "Sustainable", "Education"
     points_required = db.Column(db.Integer, nullable=False)       # Cost in points
     stock_quantity = db.Column(db.Integer, nullable=True)          # Nullable = infinite digital goods
     image_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True)
-    status = db.Column(db.String(20), default='Available')        # "Available", "Low Stock", "Out of Stock"
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -391,10 +356,8 @@ class RewardRedemption(db.Model):
     reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False)
 
     points_spent = db.Column(db.Integer, nullable=False)
-    quantity = db.Column(db.Integer, default=1)
-    status = db.Column(db.String(20), default='Pending')          # "Redeemed", "Pending", "Cancelled", "Expired"
+    status = db.Column(db.String(20), default='pending')          # "pending", "claimed", "used", "expired"
     redemption_code = db.Column(db.String(50), unique=True, nullable=False)
-    notes = db.Column(db.Text, nullable=True)
     redeemed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     used_at = db.Column(db.DateTime, nullable=True)
 
@@ -408,30 +371,23 @@ class RewardRedemption(db.Model):
 
 # ============================================================================
 # Group 4: Audit Trail
-# Maps to frontend: ADMIN_LOGS
 # ============================================================================
 
 class AdminLog(db.Model):
     """
     Tracks all admin actions for accountability.
     Frontend equivalent: ADMIN_LOGS[].
+    No 'status' column — every logged action already succeeded.
     """
     __tablename__ = 'admin_logs'
     id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=True)
-    area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=True)
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    action = db.Column(db.String(100), nullable=False)            # "User Created", "Reward Added"
-    target = db.Column(db.String(200))                            # ID of affected entity
-    category = db.Column(db.String(50))                           # "Users", "Rewards", "Machines", "Settings"
+    action = db.Column(db.String(100), nullable=False)            # "User Created", "Maintenance Added"
+    target = db.Column(db.String(200))                            # ID or name of affected entity
+    category = db.Column(db.String(50))                           # "Users", "Machines", "Rewards", "Settings", "Logs"
     notes = db.Column(db.Text)
-    status = db.Column(db.String(20), default='Success')          # "Success", "Failed"
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Relationships
-    admin = db.relationship('User', backref='admin_logs', foreign_keys=[admin_id])
-    area = db.relationship('Area', backref='admin_logs', foreign_keys=[area_id])
-
     def __repr__(self):
-        return f'<AdminLog {self.action} by User {self.admin_id}>'
+        return f'<AdminLog {self.action} by User {self.admin_user_id}>'
