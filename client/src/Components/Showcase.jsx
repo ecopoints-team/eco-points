@@ -120,7 +120,7 @@ export default function Rewards() {
   ];
 
   const [activeIdx, setActiveIdx] = useState(0);
-  const itemsPerPage = 6;
+  const itemsPerPage = 3;
   const totalPages = Math.ceil(features.length / itemsPerPage);
 
   const next = () => {
@@ -198,7 +198,7 @@ export default function Rewards() {
             ))}
         </div>
         {/* Navigation */}
-        <div className="flex items-center justify-center gap-4 mt-8 mb-8">
+        <div className="flex items-center justify-center gap-4 mb-8">
           <button
             onClick={previous}
             className="p-3 rounded-full primary-color transition-all cursor-pointer"

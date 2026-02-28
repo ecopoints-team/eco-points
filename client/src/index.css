@@ -191,7 +191,7 @@
   }
 
   .accent-color-text {
-    color: #e67e22;
+    color: #ffcf56;
   }
 
   .accent-color-border {
@@ -206,6 +206,23 @@
   /* Deep Slate */
   .text-color {
     color: #102027;
+  }
+
+  /* SAMPLE COLOR PALETTE */
+
+  .deep-forest-bg {
+    background-color: #004f2d;
+  }
+
+  .text-color-content {
+    color: #f7e7ce;
+  }
+
+  .text-color-header {
+    color: #ffcf56;
+  }
+  .soft-sage-bg {
+    background-color: #55917f;
   }
 
   /* NAVIGATION BAR */

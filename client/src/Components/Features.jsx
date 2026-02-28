@@ -2,7 +2,11 @@ const features = [
   {
     title: "Vision System",
     description:
-      "The prototype is equipped with intelligent sensors that act as its “Eyes”. Scans and Analyzes to verify that it is a valid PET bottle and reject anything that says otherwise. This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
+      "The prototype is equipped with intelligent sensors that act as its “Eyes”",
+    description2:
+      "Scans and Analyzes to verify that it is a valid PET bottle and reject anything that says otherwise.",
+    description3:
+      "This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
     image: "/SampleImage-Features.webp",
     imageDetails: "Camera and Image Processing",
     imagePosition: "left",
@@ -123,6 +127,12 @@ export default function Features() {
                   </h3>
                   <p className="text-shadow-lg text-color font-body-bold text-xl text-justify sm:text-lg leading-relaxed">
                     {feature.description}
+                  </p>
+                  <p className="text-shadow-lg text-color font-body-bold text-xl text-justify sm:text-lg leading-relaxed">
+                    {feature.description2}
+                  </p>
+                  <p className="text-shadow-lg text-color font-body-bold text-xl text-justify sm:text-lg leading-relaxed">
+                    {feature.description3}
                   </p>
                 </div>
               </div>
