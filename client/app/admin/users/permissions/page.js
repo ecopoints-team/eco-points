@@ -5,7 +5,8 @@ import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { ADMIN_USERS as MOCK_ADMIN_USERS, LOCATIONS, ROLES } from '../../../../src/data/mockData';
+import { ROLES } from '../../../../src/data/mockData';
+import { users as usersApi } from '../../../../src/services/apiService';
 import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 // ============================================================================
@@ -165,7 +166,7 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
 };
 
 const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
-    const { user: currentUser, isSuperAdmin } = useAuth();
+    const { currentUser, isSuperAdmin, allLocations } = useAuth();
 
     // Check if current logged in user has permission to edit users
     const canEditUsers = isSuperAdmin || currentUser?.permissions?.users?.edit;
@@ -186,7 +187,7 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
 
     // Get location name from user's locationId
     const getLocationName = (locationId) => {
-        const loc = LOCATIONS.find(l => l.id === locationId);
+        const loc = allLocations.find(l => l.id === locationId);
         return loc ? loc.name : 'All Locations';
     };
 
@@ -245,11 +246,10 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
 // ============================================================================
 
 export default function PermissionsPage() {
-    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, allLocations } = useAuth();
     const [roles] = useState(ROLES_DATA);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    // Use ADMIN_USERS from mockData (filter out superadmin for local admins only)
-    const [allUsers, setAllUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'superadmin'));
+    const [allUsers, setAllUsers] = useState([]);
 
     // Search, Filter, Pagination state
     const [searchQuery, setSearchQuery] = useState('');
@@ -266,7 +266,33 @@ export default function PermissionsPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [adminUsers, setAdminUsers] = useState(MOCK_ADMIN_USERS.filter(u => u.role !== 'superadmin'));
+    const [adminUsers, setAdminUsers] = useState([]);
+
+    // Load admin users from API
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const raw = await usersApi.getAll({ isAdmin: true });
+                if (cancelled) return;
+                const mapped = raw
+                    .filter(u => u.role !== 'superadmin')
+                    .map(u => ({
+                        ...u,
+                        id: String(u.id),
+                        status: u.lastLogin ? 'Online' : 'Offline',
+                        accountHealth: u.isActive ? 'Active' : 'Inactive',
+                        avatar: u.name ? u.name.charAt(0).toUpperCase() : '?',
+                        permissions: ROLES[u.role]?.permissions || {},
+                    }));
+                setAllUsers(mapped);
+                setAdminUsers(mapped);
+            } catch (err) {
+                console.error('Failed to load admin users:', err);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
     const [editFormData, setEditFormData] = useState({
         name: '', email: '', role: '', status: '', accountHealth: '', locationId: ''
     });
@@ -289,21 +315,30 @@ export default function PermissionsPage() {
         setEditFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const saveEdit = () => {
+    const saveEdit = async () => {
         if (selectedUser) {
-            // Get new permissions if role changed
-            const roleChanged = editFormData.role !== selectedUser.role;
-            const newPermissions = roleChanged
-                ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
-                : selectedUser.permissions;
+            try {
+                await usersApi.update(selectedUser.id, {
+                    name: editFormData.name,
+                    email: editFormData.email,
+                    role: editFormData.role,
+                    isActive: editFormData.accountHealth === 'Active',
+                });
+                const roleChanged = editFormData.role !== selectedUser.role;
+                const newPermissions = roleChanged
+                    ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
+                    : selectedUser.permissions;
 
-            setAdminUsers(prev => prev.map(u =>
-                u.id === selectedUser.id
-                    ? { ...u, ...editFormData, permissions: newPermissions }
-                    : u
-            ));
-            setIsEditModalOpen(false);
-            setSelectedUser(null);
+                setAdminUsers(prev => prev.map(u =>
+                    u.id === selectedUser.id
+                        ? { ...u, ...editFormData, permissions: newPermissions }
+                        : u
+                ));
+                setIsEditModalOpen(false);
+                setSelectedUser(null);
+            } catch (err) {
+                alert(err.message || 'Failed to update admin.');
+            }
         }
     };
 
@@ -313,11 +348,16 @@ export default function PermissionsPage() {
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (selectedUser) {
-            setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
-            setIsDeleteModalOpen(false);
-            setSelectedUser(null);
+            try {
+                await usersApi.delete(selectedUser.id);
+                setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+                setIsDeleteModalOpen(false);
+                setSelectedUser(null);
+            } catch (err) {
+                alert(err.message || 'Failed to delete admin.');
+            }
         }
     };
 
@@ -352,15 +392,23 @@ export default function PermissionsPage() {
             result = [...result].sort((a, b) => {
                 let aVal = a[sortColumn];
                 let bVal = b[sortColumn];
-                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                if (sortColumn === 'id') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else {
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                }
                 if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
                 return aVal < bVal ? 1 : -1;
             });
+        } else {
+            // Default to newest first (descending User ID)
+            result = [...result].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
         }
 
         return result;
-    }, [allUsers, viewAsLocationId, isSuperAdmin, currentUser, searchQuery, filterLocation, filterRole, filterStatus, sortColumn, sortDirection]);
+    }, [adminUsers, viewAsLocationId, isSuperAdmin, currentUser, searchQuery, filterLocation, filterRole, filterStatus, sortColumn, sortDirection]);
 
     // Pagination
     const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
@@ -407,9 +455,17 @@ export default function PermissionsPage() {
 
     // Handle role change for a user
     const handleRoleChange = async (userId, newRole) => {
-        setAllUsers(prev => prev.map(u =>
-            u.id === userId ? { ...u, role: newRole, permissions: ROLES[newRole]?.permissions || u.permissions } : u
-        ));
+        try {
+            await usersApi.update(userId, { role: newRole });
+            setAllUsers(prev => prev.map(u =>
+                u.id === userId ? { ...u, role: newRole, permissions: ROLES[newRole]?.permissions || u.permissions } : u
+            ));
+            setAdminUsers(prev => prev.map(u =>
+                u.id === userId ? { ...u, role: newRole, permissions: ROLES[newRole]?.permissions || u.permissions } : u
+            ));
+        } catch (err) {
+            alert(err.message || 'Failed to update role.');
+        }
     };
 
     const getColorClasses = (color) => ({
@@ -576,7 +632,7 @@ export default function PermissionsPage() {
                 {/* Filter Panel */}
                 {showFilter && (
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-3 items-center">
-                        <CustomDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setCurrentPage(1); }} options={LOCATIONS.map(loc => ({ value: loc.id, label: loc.name }))} placeholder="All Locations" />
+                        <CustomDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setCurrentPage(1); }} options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))} placeholder="All Locations" />
                         <CustomDropdown value={filterRole} onChange={(v) => { setFilterRole(v); setCurrentPage(1); }} options={[{ value: 'head_admin', label: 'Head Admin' }, { value: 'auditor', label: 'Auditor' }, { value: 'inventory_officer', label: 'Inventory Officer' }, { value: 'technician', label: 'Technician' }]} placeholder="All Roles" />
                         <CustomDropdown value={filterStatus} onChange={(v) => { setFilterStatus(v); setCurrentPage(1); }} options={['Online', 'Offline']} placeholder="All Status" />
                         {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
@@ -608,7 +664,9 @@ export default function PermissionsPage() {
                     <table className="w-full min-w-max text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-3 py-3 whitespace-nowrap">User ID</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('id')}>
+                                    <div className="flex items-center gap-1">User ID <SortIcon column="id" /></div>
+                                </th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('name')}>
                                     <div className="flex items-center gap-1">Username <SortIcon column="name" /></div>
                                 </th>
@@ -669,7 +727,9 @@ export default function PermissionsPage() {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onUserAdded={(newUser) => {
-                    setAllUsers(prev => [newUser, ...prev]);
+                    const mapped = { ...newUser, id: String(newUser.id), avatar: (newUser.name || '?').charAt(0).toUpperCase() };
+                    setAllUsers(prev => [mapped, ...prev]);
+                    setAdminUsers(prev => [mapped, ...prev]);
                 }}
             />
 
@@ -755,7 +815,7 @@ export default function PermissionsPage() {
                                     <CustomDropdown
                                         value={editFormData.locationId}
                                         onChange={(v) => handleEditChange('locationId', v)}
-                                        options={LOCATIONS.map(loc => ({ value: loc.id, label: loc.name }))}
+                                        options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))}
                                         placeholder="Select Location"
                                         searchable
                                         showPlaceholder={false}

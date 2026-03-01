@@ -1,9 +1,10 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { LOCATIONS, BOTTLE_LOGS, USERS, getUsersByLocation, CITIES, getCityName } from '../../../src/data/mockData';
+import { CITIES, getCityName } from '../../../src/data/mockData';
+import { locations as locationsApi } from '../../../src/services/apiService';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Trophy, Plus, Search,
@@ -17,8 +18,11 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
     const [formData, setFormData] = useState({
         name: '',
         fullName: '',
+        orgType: 'University',
         cityId: '',
         streetAddress: '',
+        barangay: '',
+        zipCode: '',
         contactPerson: '',
         contactEmail: '',
         contactPhone: '',
@@ -30,6 +34,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = 'Short name is required';
         if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+        if (!formData.orgType) newErrors.orgType = 'Type is required';
         if (!formData.cityId) newErrors.cityId = 'City is required';
         if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
         if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
@@ -58,9 +63,8 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                 userCount: 0,
                 totalBottlesCollected: 0,
                 totalPoints: 0,
-                ranking: LOCATIONS.length + 1
             });
-            setFormData({ name: '', fullName: '', cityId: '', streetAddress: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setFormData({ name: '', fullName: '', orgType: 'University', cityId: '', streetAddress: '', barangay: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             onClose();
         }
     };
@@ -68,8 +72,8 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
@@ -82,39 +86,54 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                     </button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Display Name *</label>
-                        <input
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="e.g., AU-Pasig"
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.name ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
-                        />
-                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Display Name *</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="e.g., AU-Pasig"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.name ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                            />
+                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
+                            <input
+                                type="text"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                placeholder="e.g., Arellano University - Pasig Campus"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.fullName ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                            />
+                            {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
-                        <input
-                            type="text"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                            placeholder="e.g., Arellano University - Pasig Campus"
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.fullName ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
-                        />
-                        {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                        <CustomDropdown
-                            value={formData.cityId}
-                            onChange={(v) => setFormData({ ...formData, cityId: v })}
-                            options={CITIES.map(c => ({ value: c.id, label: c.name }))}
-                            placeholder="Select city..."
-                            searchable
-                            size="md"
-                        />
-                        {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization Type *</label>
+                            <CustomDropdown
+                                value={formData.orgType}
+                                onChange={(v) => setFormData({ ...formData, orgType: v })}
+                                options={['University', 'Corporation', 'HOA']}
+                                showPlaceholder={false}
+                                size="md"
+                            />
+                            {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
+                            <CustomDropdown
+                                value={formData.cityId}
+                                onChange={(v) => setFormData({ ...formData, cityId: v })}
+                                options={CITIES.map(c => ({ value: c.id, label: c.name }))}
+                                placeholder="Select city..."
+                                searchable
+                                size="md"
+                            />
+                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Street Address *</label>
@@ -126,6 +145,28 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                             className={`w-full px-4 py-2 rounded-lg border ${errors.streetAddress ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
                         />
                         {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Barangay</label>
+                            <input
+                                type="text"
+                                value={formData.barangay}
+                                onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
+                                placeholder="e.g., Caniogan"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ZIP Code</label>
+                            <input
+                                type="text"
+                                value={formData.zipCode}
+                                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                                placeholder="e.g., 1600"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Person *</label>
@@ -155,25 +196,30 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone *</label>
-                            <input
-                                type="tel"
-                                value={formData.contactPhone}
-                                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                                placeholder="+63 XXX XXXX"
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.contactPhone ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
-                            />
+                            <div className="flex">
+                                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-slate-500 dark:text-slate-400 text-sm font-medium">+63</span>
+                                <input
+                                    type="tel"
+                                    value={formData.contactPhone}
+                                    onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value.replace(/[^\d\s\-]/g, '') })}
+                                    placeholder="9XX XXX XXXX"
+                                    className={`w-full px-4 py-2 rounded-r-lg border ${errors.contactPhone ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                                />
+                            </div>
                             {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
-                        <CustomDropdown
-                            value={formData.status}
-                            onChange={(v) => setFormData({ ...formData, status: v })}
-                            options={['Active', 'Inactive']}
-                            showPlaceholder={false}
-                            size="md"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                            <CustomDropdown
+                                value={formData.status}
+                                onChange={(v) => setFormData({ ...formData, status: v })}
+                                options={['Active', 'Inactive']}
+                                showPlaceholder={false}
+                                size="md"
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
@@ -193,8 +239,27 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
 // LOCATIONS MANAGEMENT PAGE (Super Admin Only)
 // ============================================================================
 export default function LocationsPage() {
-    const { isSuperAdmin, setViewAsLocation } = useAuth();
-    const [locations, setLocations] = useState(LOCATIONS);
+    const { isSuperAdmin, setViewAsLocation, allLocations, refreshLocations } = useAuth();
+    const [locations, setLocations] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+
+    // Load locations from API
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            setIsDataLoading(true);
+            try {
+                const data = await locationsApi.getAll();
+                if (!cancelled) setLocations(data || []);
+            } catch (err) {
+                console.error('Failed to load locations:', err);
+            } finally {
+                if (!cancelled) setIsDataLoading(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, []);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -203,20 +268,21 @@ export default function LocationsPage() {
     // Filter locations by search
     const filteredLocations = useMemo(() => {
         if (!searchQuery) return locations;
+        const q = searchQuery.toLowerCase();
         return locations.filter(loc =>
-            loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.streetAddress.toLowerCase().includes(searchQuery.toLowerCase())
+            (loc.name || '').toLowerCase().includes(q) ||
+            (loc.fullName || '').toLowerCase().includes(q) ||
+            (loc.streetAddress || '').toLowerCase().includes(q)
         );
     }, [locations, searchQuery]);
 
-    // User count by location
+    // User count is included in the API response as location.userCount
     const userCountByLocation = useMemo(() => {
-        return USERS.reduce((acc, user) => {
-            acc[user.locationId] = (acc[user.locationId] || 0) + 1;
+        return locations.reduce((acc, loc) => {
+            acc[loc.id] = loc.userCount || 0;
             return acc;
         }, {});
-    }, []);
+    }, [locations]);
 
     // Pagination
     const totalPages = Math.ceil(filteredLocations.length / cardsPerPage);
@@ -224,13 +290,19 @@ export default function LocationsPage() {
     const currentLocations = filteredLocations.slice(startIndex, startIndex + cardsPerPage);
 
     // Calculate totals
-    const totalMachines = locations.reduce((sum, loc) => sum + loc.machineCount, 0);
-    const totalBottles = locations.reduce((sum, loc) => sum + loc.totalBottlesCollected, 0);
-    const totalPoints = BOTTLE_LOGS.reduce((sum, log) => sum + (log.pointsAwarded || 0), 0);
+    const totalMachines = locations.reduce((sum, loc) => sum + (loc.machineCount || 0), 0);
+    const totalBottles = locations.reduce((sum, loc) => sum + (loc.totalBottlesCollected || 0), 0);
+    const totalPoints = locations.reduce((sum, loc) => sum + (loc.totalPoints || 0), 0);
 
     // Add location handler
-    const handleAddLocation = (newLocation) => {
-        setLocations([...locations, newLocation]);
+    const handleAddLocation = async (newLocation) => {
+        try {
+            const created = await locationsApi.create(newLocation);
+            setLocations([...locations, created]);
+            await refreshLocations();
+        } catch (err) {
+            console.error('Failed to add location:', err);
+        }
     };
 
     // Redirect or show access denied if not Super Admin
@@ -274,10 +346,10 @@ export default function LocationsPage() {
 
             {/* Global Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                <div className="bg-white dark:bg-slate-800/50 system:bg-[rgba(147,130,220,0.08)] system:border-[rgba(147,130,220,0.2)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
-                            <Building2 size={24} className="text-purple-600 dark:text-purple-400" />
+                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20 system:bg-[rgba(147,130,220,0.15)]">
+                            <Building2 size={24} className="text-purple-600 dark:text-purple-400 system:text-purple-400" />
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Total Locations</p>
@@ -285,10 +357,10 @@ export default function LocationsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                <div className="bg-white dark:bg-slate-800/50 system:bg-[rgba(123,160,91,0.08)] system:border-[rgba(123,160,91,0.2)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <Package size={24} className="text-emerald-600 dark:text-emerald-400" />
+                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 system:bg-[rgba(123,160,91,0.15)]">
+                            <Package size={24} className="text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]" />
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Total Machines</p>
@@ -296,10 +368,10 @@ export default function LocationsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                <div className="bg-white dark:bg-slate-800/50 system:bg-[rgba(217,170,60,0.08)] system:border-[rgba(217,170,60,0.2)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
-                            <Leaf size={24} className="text-amber-600 dark:text-amber-400" />
+                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20 system:bg-[rgba(217,170,60,0.15)]">
+                            <Leaf size={24} className="text-amber-600 dark:text-amber-400 system:text-amber-400" />
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Total Bottles</p>
@@ -307,10 +379,10 @@ export default function LocationsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                <div className="bg-white dark:bg-slate-800/50 system:bg-[rgba(96,165,250,0.08)] system:border-[rgba(96,165,250,0.2)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                            <Coins size={24} className="text-blue-600 dark:text-blue-400" />
+                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20 system:bg-[rgba(96,165,250,0.15)]">
+                            <Coins size={24} className="text-blue-600 dark:text-blue-400 system:text-blue-400" />
                         </div>
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Total Points</p>
@@ -376,7 +448,7 @@ export default function LocationsPage() {
                     return (
                         <div
                             key={location.id}
-                            className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-white dark:bg-slate-800/50 system:bg-[#1A2E1F] system:border-[rgba(123,160,91,0.15)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                             {/* Header */}
                             <div className="flex items-start justify-between mb-4">
@@ -422,23 +494,23 @@ export default function LocationsPage() {
 
                             {/* Stats Grid */}
                             <div className="grid grid-cols-4 gap-2 mb-4">
-                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 system:bg-[rgba(147,130,220,0.08)] rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Users</p>
                                     <p className="text-lg font-black text-purple-600 dark:text-purple-400">
                                         {userCountByLocation[location.id] || 0}
                                     </p>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 system:bg-[rgba(123,160,91,0.08)] rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Machines</p>
-                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{location.machineCount}</p>
+                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]">{location.machineCount}</p>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 system:bg-[rgba(96,165,250,0.08)] rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Total Points</p>
-                                    <p className="text-lg font-black text-blue-600 dark:text-blue-400">{(BOTTLE_LOGS.filter(log => log.locationId === location.id).reduce((sum, log) => sum + (log.pointsAwarded || 0), 0)).toLocaleString()}</p>
+                                    <p className="text-lg font-black text-blue-600 dark:text-blue-400">{(location.totalPoints || 0).toLocaleString()}</p>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
+                                <div className="bg-slate-50 dark:bg-slate-900/50 system:bg-[rgba(217,170,60,0.08)] rounded-xl p-2.5 text-center">
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Bottles</p>
-                                    <p className="text-lg font-black text-slate-800 dark:text-white">{(location.totalBottlesCollected / 1000).toFixed(1)}k</p>
+                                    <p className="text-lg font-black text-amber-600 dark:text-amber-400 system:text-amber-400">{(location.totalBottlesCollected / 1000).toFixed(1)}k</p>
                                 </div>
                             </div>
 
@@ -447,8 +519,9 @@ export default function LocationsPage() {
                                 <button
                                     onClick={() => setViewAsLocation(location.id)}
                                     className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium
-                                        bg-emerald-100 text-emerald-700 hover:bg-emerald-200
-                                        dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30 transition-colors"
+                                        bg-indigo-100 text-indigo-700 hover:bg-indigo-200
+                                        dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30
+                                        system:bg-[rgba(129,140,248,0.1)] system:text-indigo-400 system:hover:bg-[rgba(129,140,248,0.2)] transition-colors"
                                 >
                                     <Eye size={14} />
                                     View As

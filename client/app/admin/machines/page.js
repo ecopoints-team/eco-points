@@ -1,9 +1,9 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { MACHINES, LOCATIONS, getMachinesByLocation, ADMIN_USERS, BOTTLE_LOGS, MACHINE_LOGS } from '../../../src/data/mockData';
+import { machines as machinesApi } from '../../../src/services/apiService';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
@@ -15,6 +15,8 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
     const [formData, setFormData] = useState({
         name: '',
         locationId: '',
+        locationName: '',
+        maxCapacity: 100,
         isOnline: true
     });
     const [errors, setErrors] = useState({});
@@ -23,6 +25,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = 'Machine name is required';
         if (!formData.locationId) newErrors.locationId = 'Location is required';
+        if (!formData.maxCapacity || formData.maxCapacity < 1) newErrors.maxCapacity = 'Must be at least 1';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -34,11 +37,13 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
             onSubmit({
                 ...formData,
                 id: `RVM-${Date.now().toString().slice(-6)}`,
-                locationName: loc ? loc.name : '',
+                machineUuid: `RVM-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+                organizationName: loc ? loc.name : '',
                 totalItemsCollected: 0,
+                currentCapacity: 0,
                 lastSync: 'Just now'
             });
-            setFormData({ name: '', locationId: '', isOnline: true });
+            setFormData({ name: '', locationId: '', locationName: '', maxCapacity: 100, isOnline: true });
             onClose();
         }
     };
@@ -72,7 +77,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization (Location) *</label>
                         <CustomDropdown
                             value={formData.locationId}
                             onChange={(v) => setFormData({ ...formData, locationId: v })}
@@ -84,14 +89,38 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
-                        <CustomDropdown
-                            value={formData.isOnline ? 'Online' : 'Offline'}
-                            onChange={(v) => setFormData({ ...formData, isOnline: v === 'Online' })}
-                            options={['Online', 'Offline']}
-                            showPlaceholder={false}
-                            size="md"
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area Placement</label>
+                        <input
+                            type="text"
+                            value={formData.locationName}
+                            onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                            placeholder="e.g., Main Gate, Canteen, Lobby"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Capacity</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={formData.maxCapacity}
+                                onChange={(e) => setFormData({ ...formData, maxCapacity: parseInt(e.target.value) || 0 })}
+                                placeholder="100"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.maxCapacity ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
+                            />
+                            {errors.maxCapacity && <p className="text-red-500 text-xs mt-1">{errors.maxCapacity}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
+                            <CustomDropdown
+                                value={formData.isOnline ? 'Online' : 'Offline'}
+                                onChange={(v) => setFormData({ ...formData, isOnline: v === 'Online' })}
+                                options={['Online', 'Offline']}
+                                showPlaceholder={false}
+                                size="md"
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
@@ -150,22 +179,35 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
         notes: '',
         resolved: false
     });
+    const [logs, setLogs] = useState([]);
+    const [technicians, setTechnicians] = useState([]);
 
-    // Get technicians at the machine's location
-    const technicians = useMemo(() => {
-        if (!machine) return [];
-        return ADMIN_USERS.filter(a =>
-            a.role === 'technician' &&
-            a.locationId === machine.locationId &&
-            a.accountHealth === 'Active'
-        );
-    }, [machine]);
+    // Load maintenance logs and technicians from API when modal opens
+    useEffect(() => {
+        if (!isOpen || !machine) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { logs: logsApi, users: usersApi } = await import('../../../src/services/apiService');
+                const [logData, userData] = await Promise.all([
+                    logsApi.getMachines(machine.locationId),
+                    usersApi.getAll({ locationId: machine.locationId, role: 'technician' }),
+                ]);
+                if (cancelled) return;
+                setLogs((logData || []).filter(l => l.rvmId === machine.id || String(l.rvmId) === String(machine.id)));
+                setTechnicians((userData || []).filter(u => u.role === 'technician' && u.isActive));
+            } catch (err) {
+                console.error('Failed to load maintenance data:', err);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen, machine]);
 
     if (!isOpen || !machine) return null;
 
     const handleSubmit = () => {
         if (!newLog.technicianId || !newLog.actionType) return;
-        const tech = ADMIN_USERS.find(a => a.id === newLog.technicianId);
+        const tech = technicians.find(a => String(a.id) === String(newLog.technicianId));
 
         onAddLog(machine.id, {
             id: Date.now(),
@@ -180,8 +222,6 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
         setNewLog({ technicianId: '', actionType: '', notes: '', resolved: false });
         setShowAddForm(false);
     };
-
-    const logs = machine ? MACHINE_LOGS.filter(l => l.machineId === machine.id) : [];
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -404,8 +444,8 @@ const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, 
                 <p className="text-xl font-black text-slate-800 dark:text-white">{machine.totalItemsCollected.toLocaleString()}</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Points</p>
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{(BOTTLE_LOGS.filter(log => log.machineId === machine.id).reduce((sum, log) => sum + (log.pointsAwarded || 0), 0)).toLocaleString()}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Capacity</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{machine.currentCapacity || 0}<span className="text-xs font-medium text-slate-400">/{machine.maxCapacity || 100}</span></p>
             </div>
         </div>
 
@@ -447,12 +487,8 @@ const MachineCard = ({ machine, onOpenMaintenance, onViewDetails, locationName, 
 export default function MachinesPage() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
 
-    // Filter machines by location
-    const filteredMachines = useMemo(() => {
-        return getMachinesByLocation(effectiveLocationId);
-    }, [effectiveLocationId]);
-
-    const [machines, setMachines] = useState(filteredMachines);
+    const [machines, setMachines] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     const [selectedMachine, setSelectedMachine] = useState(null);
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -460,9 +496,18 @@ export default function MachinesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const cardsPerPage = 9;
 
-    // Update machines when location changes
-    React.useEffect(() => {
-        setMachines(getMachinesByLocation(effectiveLocationId));
+    // Load machines from API when location changes
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            setIsDataLoading(true);
+            try {
+                const data = await machinesApi.getAll(effectiveLocationId);
+                if (!cancelled) setMachines((data || []).map(m => ({ ...m, id: String(m.id) })));
+            } catch (err) { console.error('Failed to load machines:', err); }
+            finally { if (!cancelled) setIsDataLoading(false); }
+        };
+        load();
         setSearchQuery('');
         setCurrentPage(1);
     }, [effectiveLocationId]);
@@ -498,14 +543,19 @@ export default function MachinesPage() {
     };
 
     const handleAddMaintenanceLog = (machineId, newLog) => {
-        // Log is added to MACHINE_LOGS context (in real app, this would be an API call)
+        // TODO: Call maintenance log API to persist the new maintenance log
         // For now just refresh the selected machine to show new log
         setSelectedMachine(prev => prev ? { ...prev } : null);
     };
 
     // Add machine handler
-    const handleAddMachine = (newMachine) => {
-        setMachines([newMachine, ...machines]);
+    const handleAddMachine = async (newMachine) => {
+        try {
+            const created = await machinesApi.create(newMachine);
+            setMachines([{ ...created, id: String(created.id) }, ...machines]);
+        } catch (err) {
+            console.error('Failed to add machine:', err);
+        }
     };
 
     // Get location name for a machine

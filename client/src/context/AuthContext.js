@@ -1,127 +1,154 @@
 'use client';
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { ADMIN_USERS, LOCATIONS, filterByLocation, isSuperAdmin } from '../data/mockData';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
+import { auth as authApi, locations as locationsApi } from '../services/apiService';
+import { ROLES } from '../data/mockData';
 
 // ============================================================================
-// AUTH CONTEXT - User State & Location Filtering
+// AUTH CONTEXT — JWT-Based Auth, Location Scoping, Permissions
 // ============================================================================
 
 const AuthContext = createContext(null);
 
+// Helper: attach role-based permissions to user object so existing code works
+function enrichUser(user) {
+    if (!user) return null;
+    const roleConfig = ROLES[user.role];
+    return { ...user, permissions: roleConfig?.permissions || {} };
+}
+
 export function AuthProvider({ children }) {
-    // Current logged-in user (default to Super Admin for demo)
-    const [currentUser, setCurrentUser] = useState(ADMIN_USERS[0]);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [allLocations, setAllLocations] = useState([]);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // "View as Location" mode for Super Admin
     const [viewAsLocationId, setViewAsLocationId] = useState(null);
 
-    // Load user from localStorage on initial mount
+    // ── Bootstrap: validate token & load context data on mount ──────────
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedUserId = localStorage.getItem('ecopoints_current_user');
-            if (storedUserId) {
-                const user = ADMIN_USERS.find(u => u.id === storedUserId);
-                if (user) {
-                    setCurrentUser(user);
+        let cancelled = false;
+        const init = async () => {
+            if (authApi.isAuthenticated()) {
+                try {
+                    const [user, locs] = await Promise.all([
+                        authApi.me(),
+                        locationsApi.getAll(),
+                    ]);
+                    if (!cancelled) {
+                        setCurrentUser(enrichUser(user));
+                        setAllLocations(locs);
+                    }
+                } catch {
+                    // Token expired / invalid — clear it silently
+                    authApi.logout().catch(() => {});
                 }
             }
-            setIsInitialized(true);
-        }
+            if (!cancelled) {
+                setIsInitialized(true);
+                setIsLoading(false);
+            }
+        };
+        init();
+        return () => { cancelled = true; };
     }, []);
 
-    // Save current user to localStorage whenever it changes
-    useEffect(() => {
-        if (isInitialized && typeof window !== 'undefined') {
-            if (currentUser) {
-                localStorage.setItem('ecopoints_current_user', currentUser.id);
-            }
-        }
-    }, [currentUser, isInitialized]);
+    // ── Derived: is this user a super admin? ────────────────────────────
+    const isSuperAdminUser = currentUser?.role === 'superadmin';
 
-    // Get the effective location ID (for filtering data)
+    // ── Effective location (for data scoping) ───────────────────────────
     const effectiveLocationId = useMemo(() => {
-        if (isSuperAdmin(currentUser)) {
-            return viewAsLocationId; // Super Admin can view as specific location or null (all)
-        }
-        return currentUser?.locationId; // Regular admins can only see their location
-    }, [currentUser, viewAsLocationId]);
+        if (isSuperAdminUser) return viewAsLocationId;
+        return currentUser?.locationId;
+    }, [currentUser, viewAsLocationId, isSuperAdminUser]);
 
-    // Get current location object
     const currentLocation = useMemo(() => {
         if (!effectiveLocationId) return null;
-        return LOCATIONS.find(loc => loc.id === effectiveLocationId);
+        return allLocations.find(loc => loc.id === effectiveLocationId);
+    }, [effectiveLocationId, allLocations]);
+
+    // ── Actions ─────────────────────────────────────────────────────────
+    const login = useCallback(async (identifier, password) => {
+        const data = await authApi.login(identifier, password);
+        setCurrentUser(enrichUser(data.user));
+        try {
+            const locs = await locationsApi.getAll();
+            setAllLocations(locs);
+        } catch { /* non-critical */ }
+        return data;
+    }, []);
+
+    const logout = useCallback(async () => {
+        await authApi.logout();
+        setCurrentUser(null);
+        setAllLocations([]);
+        setViewAsLocationId(null);
+    }, []);
+
+    const setViewAsLocation = useCallback((locationId) => {
+        if (isSuperAdminUser) setViewAsLocationId(locationId);
+    }, [isSuperAdminUser]);
+
+    // ── Permission helpers ──────────────────────────────────────────────
+    const hasPermission = useCallback((module, action) => {
+        if (!currentUser) return false;
+        if (currentUser.role === 'superadmin') return true;
+        return currentUser.permissions?.[module]?.[action] || false;
+    }, [currentUser]);
+
+    const canAccessLocation = useCallback((locationId) => {
+        if (isSuperAdminUser) return true;
+        return currentUser?.locationId === locationId;
+    }, [currentUser, isSuperAdminUser]);
+
+    // Client-side filter (for data already fetched)
+    const filterDataByLocation = useCallback((data) => {
+        if (!effectiveLocationId) return data;
+        return data.filter(item => item.locationId === effectiveLocationId);
     }, [effectiveLocationId]);
 
-    // Switch user account (for demo purposes)
-    const switchUser = (userId) => {
-        const user = ADMIN_USERS.find(u => u.id === userId);
-        if (user) {
-            setCurrentUser(user);
-            setViewAsLocationId(null); // Reset location view when switching users
-        }
-    };
+    // ── Refresh helpers ─────────────────────────────────────────────────
+    const refreshUser = useCallback(async () => {
+        try {
+            const user = await authApi.me();
+            setCurrentUser(enrichUser(user));
+        } catch { /* ignore */ }
+    }, []);
 
-    // Set "View as Location" mode (Super Admin only)
-    const setViewAsLocation = (locationId) => {
-        if (isSuperAdmin(currentUser)) {
-            setViewAsLocationId(locationId);
-        }
-    };
+    const refreshLocations = useCallback(async () => {
+        try {
+            const locs = await locationsApi.getAll();
+            setAllLocations(locs);
+        } catch { /* ignore */ }
+    }, []);
 
-    // Check permission for current user
-    const hasPermission = (module, action) => {
-        if (!currentUser || !currentUser.permissions) return false;
-        if (isSuperAdmin(currentUser)) return true;
-        return currentUser.permissions[module]?.[action] || false;
-    };
-
-    // Check if current user can access a specific location's data
-    const canAccessLocation = (locationId) => {
-        if (isSuperAdmin(currentUser)) return true;
-        return currentUser?.locationId === locationId;
-    };
-
-    // Filter data by effective location
-    const filterDataByLocation = (data) => {
-        return filterByLocation(data, effectiveLocationId);
-    };
-
-    // Logout function
-    const logout = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('ecopoints_current_user');
-        }
-        setCurrentUser(null);
-        setViewAsLocationId(null);
-    };
-
+    // ── Context value ───────────────────────────────────────────────────
     const value = {
         // User state
         currentUser,
         setCurrentUser,
-        switchUser,
+        login,
         logout,
         isInitialized,
+        isLoading,
 
         // Location state
         effectiveLocationId,
         currentLocation,
         viewAsLocationId,
         setViewAsLocation,
+        allLocations,
 
         // Permission helpers
         hasPermission,
         canAccessLocation,
-        isSuperAdmin: isSuperAdmin(currentUser),
-        canManage: isSuperAdmin(currentUser) || currentUser?.role === 'head_admin',
+        isSuperAdmin: isSuperAdminUser,
+        canManage: isSuperAdminUser || currentUser?.role === 'head_admin',
 
-        // Data filtering
+        // Data helpers
         filterDataByLocation,
-
-        // All admin users (for account switcher)
-        allAdminUsers: ADMIN_USERS,
-        allLocations: LOCATIONS,
+        refreshUser,
+        refreshLocations,
     };
 
     return (

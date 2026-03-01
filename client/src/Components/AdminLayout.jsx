@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf, Bell, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { ROLES, ADMIN_LOGS } from '../data/mockData';
+import { ROLES } from '../data/mockData';
+import { logs as logsApi } from '../services/apiService';
 
 // View-Only Banner for non-admin roles
 export const ViewOnlyBanner = () => {
@@ -101,21 +102,20 @@ export default function AdminLayout({ children }) {
     const {
         currentUser,
         isInitialized,
-        switchUser,
-        allAdminUsers,
         allLocations,
         isSuperAdmin,
         effectiveLocationId,
         currentLocation,
         viewAsLocationId,
-        setViewAsLocation
+        setViewAsLocation,
+        logout,
     } = useAuth();
 
-    // Auth guard — redirect to login if not authenticated
+    // Auth guard — redirect to landing page with login modal if not authenticated
     const router = useRouter();
     useEffect(() => {
         if (isInitialized && !currentUser) {
-            router.push('/login');
+            router.push('/?login=true');
         }
     }, [isInitialized, currentUser, router]);
 
@@ -199,17 +199,35 @@ export default function AdminLayout({ children }) {
     // Notification state
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [readNotifications, setReadNotifications] = useState([]);
+    const [notifications, setNotifications] = useState([]);
 
-    // Get recent notifications from admin logs (last 10)
-    const notifications = ADMIN_LOGS.slice(0, 10).map(log => ({
-        id: log.id,
-        title: log.action,
-        description: `${log.adminName} — ${log.target !== '-' ? log.target : log.category}`,
-        time: log.timestamp,
-        category: log.category,
-        read: readNotifications.includes(log.id),
-    }));
-    const unreadCount = notifications.filter(n => !n.read).length;
+    // Load notifications from API (recent admin logs)
+    useEffect(() => {
+        let cancelled = false;
+        const loadNotifications = async () => {
+            try {
+                const accessLogs = await logsApi.getAccess(effectiveLocationId);
+                if (!cancelled) {
+                    setNotifications(
+                        (accessLogs || []).slice(0, 10).map(log => ({
+                            id: log.id,
+                            title: log.action,
+                            description: `${log.adminName} — ${log.target !== '-' ? log.target : log.category}`,
+                            time: log.timestamp,
+                            category: log.category,
+                            read: readNotifications.includes(log.id),
+                        }))
+                    );
+                }
+            } catch {
+                // Notifications are non-critical — fail silently
+            }
+        };
+        if (currentUser) loadNotifications();
+        return () => { cancelled = true; };
+    }, [currentUser, effectiveLocationId]);
+
+    const unreadCount = notifications.filter(n => !readNotifications.includes(n.id)).length;
     const markAllRead = () => setReadNotifications(notifications.map(n => n.id));
     const markRead = (id) => setReadNotifications(prev => prev.includes(id) ? prev : [...prev, id]);
 
@@ -297,8 +315,8 @@ export default function AdminLayout({ children }) {
 
                     <div className="flex items-center gap-2 sm:gap-4">
 
-                        {/* LOCATION BADGE - Hidden on Locations page */}
-                        {!isOnLocationsPage && currentLocation ? (
+                        {/* LOCATION BADGE - Always visible, shows current view context */}
+                        {currentLocation ? (
                             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
                 bg-purple-100 border border-purple-200
                 dark:bg-purple-500/10 dark:border-purple-500/20">
@@ -307,7 +325,7 @@ export default function AdminLayout({ children }) {
                                     {currentLocation.name}
                                 </span>
                             </div>
-                        ) : !isOnLocationsPage && isSuperAdmin && (
+                        ) : isSuperAdmin && (
                             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
                 bg-lime-100 border border-lime-300
                 dark:bg-lime-500/10 dark:border-lime-500/20
@@ -450,7 +468,7 @@ export default function AdminLayout({ children }) {
                             >
                                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-[2px] shadow-md group-hover:shadow-lg transition-all">
                                     <div className={`w-full h-full rounded-full flex items-center justify-center text-xs font-bold transition-colors bg-white text-slate-700 dark:bg-slate-900 dark:text-white`}>
-                                        {currentUser?.avatar || 'AD'}
+                                        {currentUser?.name ? currentUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'AD'}
                                     </div>
                                 </div>
                                 <ChevronDown size={14} className="transition-colors hidden sm:block text-slate-500 dark:text-slate-400 group-hover:text-indigo-500" />
@@ -482,14 +500,14 @@ export default function AdminLayout({ children }) {
                                                 </button>
                                             </Link>
 
-                                            <Link href="/login">
-                                                <button className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
+                                            <button
+                                                onClick={async () => { await logout(); router.push('/?login=true'); }}
+                                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
                             text-red-600 hover:bg-red-50
                             dark:text-red-400 dark:hover:bg-red-900/10">
                                                     <LogOut size={16} />
                                                     Sign Out
                                                 </button>
-                                            </Link>
                                         </div>
                                     </div>
                                 </>

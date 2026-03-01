@@ -1,16 +1,29 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { MACHINE_LOGS, LOCATIONS, getLocationName } from '../../../../src/data/mockData';
+import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, Wrench, User, Clock, MapPin, X, ChevronDown, CheckCircle2, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
-const allMachineLogs = MACHINE_LOGS;
-
 export default function MachineLogsPage() {
-    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+
+    // API-loaded data
+    const [allMachineLogs, setAllMachineLogs] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const data = await logsApi.getMachines(effectiveLocationId);
+                if (!cancelled) setAllMachineLogs((data || []).map(l => ({ ...l, id: String(l.id), technician: l.performedBy || 'Unknown', timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() })));
+            } catch (err) { console.error('Failed to load machine logs:', err); }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [effectiveLocationId, refreshKey]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
@@ -42,9 +55,9 @@ export default function MachineLogsPage() {
 
         return logs.filter(log => {
             const matchesSearch = searchQuery === '' ||
-                log.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.technician.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.machineName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.technician || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.actionType || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             const statusMatch = filterStatus === '' ? true :
@@ -65,7 +78,7 @@ export default function MachineLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterMachine, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
+    }, [allMachineLogs, searchQuery, filterMachine, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -101,10 +114,10 @@ export default function MachineLogsPage() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Area', 'Technician', 'Action Type', 'Status', 'Notes'];
+        const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Technician', 'Action Type', 'Status', 'Notes'];
         const rows = filteredLogs.map(log => [
-            log.timestamp, log.id, log.machineName, getLocationName(log.locationId),
-            log.area, log.technician, log.actionType, log.resolved ? 'Resolved' : 'Pending', log.notes
+            log.timestamp, log.id, log.machineName, log.locationName || '-',
+            log.technician, log.actionType, log.resolved ? 'Resolved' : 'Pending', log.notes
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -141,7 +154,7 @@ export default function MachineLogsPage() {
                             <input type="text" placeholder="Search Machine, Technician, Issue..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none transition-all placeholder:text-slate-400 bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
-                        <button onClick={() => { setCurrentPage(1); }}
+                        <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
                             title="Refresh">
                             <RefreshCw size={16} />
@@ -159,7 +172,7 @@ export default function MachineLogsPage() {
                             <CustomDropdown value={filterMachine} onChange={(v) => handleFilterChange(setFilterMachine, v)} options={machineNames} placeholder="All Machines" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={['Resolved', 'Pending']} placeholder="All Statuses" />
                             {isSuperAdmin && !viewAsLocationId && (
-                                <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
+                                <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={allLocations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             )}
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
@@ -234,7 +247,7 @@ export default function MachineLogsPage() {
                                     )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.area || getLocationName(log.locationId)}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '-'}</span>
                                         </td>
                                     )}
                                     {showTechnician && (

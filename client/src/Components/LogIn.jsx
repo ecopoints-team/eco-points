@@ -67,8 +67,7 @@ import {
   AtSign,
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
-
-import { ADMIN_USERS } from "../data/mockData";
+import { useAuth } from "../context/AuthContext";
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments
@@ -633,7 +632,7 @@ export default function LogIn({ onClose }) {
   const handleCaptchaChange = (value) => {
     if (value) {
       setCaptchaVerified(true);
-      setError(""); // Clear error — user has verified, they can retry now
+      setError(""); // Clear any previous error
       // Fade out the CAPTCHA popup after a short delay
       setTimeout(() => {
         setShowCaptchaPopup(false);
@@ -641,10 +640,11 @@ export default function LogIn({ onClose }) {
     }
   };
 
+  // Get login function from AuthContext
+  const { login } = useAuth();
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    // HTML required attributes handle empty-field validation natively
 
     // Check CAPTCHA if required (after failed attempt)
     if (showCaptcha && !captchaVerified) {
@@ -655,36 +655,23 @@ export default function LogIn({ onClose }) {
     setIsLoading(true);
     setError("");
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Step 3: Check credentials against ADMIN_USERS (username OR email + password)
-    const credential = loginCredential.toLowerCase();
-    const matchedUser = ADMIN_USERS.find(
-      (user) =>
-        (user.username?.toLowerCase() === credential ||
-          user.email.toLowerCase() === credential) &&
-        user.password === loginPassword,
-    );
-
-    if (matchedUser) {
-      localStorage.setItem("ecopoints_current_user", matchedUser.id);
+    try {
+      await login(loginCredential, loginPassword);
       setFailedAttempts(0);
       setShowCaptcha(false);
       setShowCaptchaPopup(false);
       router.push("/admin");
-      return;
-    }
+    } catch (err) {
+      setIsLoading(false);
+      setFailedAttempts((prev) => prev + 1);
+      setError("Invalid credentials. Please try again.");
 
-    // Failed login — increment attempts, keep username/email intact
-    setIsLoading(false);
-    setFailedAttempts((prev) => prev + 1);
-    setError("Invalid credentials. Please try again.");
-
-    // Reset CAPTCHA for next attempt
-    if (recaptchaRef.current) {
-      recaptchaRef.current.reset();
+      // Reset CAPTCHA for next attempt
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setCaptchaVerified(false);
     }
-    setCaptchaVerified(false);
   };
 
   const handleSignUpPhase1 = async (e) => {

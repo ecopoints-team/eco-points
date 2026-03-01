@@ -1,8 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Check, Shield, ChevronRight } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Check, Shield, ChevronRight, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../context/AuthContext';
+import { users as usersApi } from '../services/apiService';
 
 // Admin duty roles (not user types like Student/Faculty)
 const ADMIN_ROLES = [
@@ -148,7 +149,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
 
     // Form state - Information tab
     const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordShake, setPasswordShake] = useState(false);
@@ -253,55 +256,52 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         }
 
         setIsLoading(true);
+        setError('');
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Build the payload for the API
+            const payload = {
+                name,
+                username: username || undefined,
+                email,
+                phone: phone || undefined,
+                password,
+                role: selectedRole,
+                locationId: isSuperAdmin ? locationId : currentLocation?.id,
+                isAdmin: true,
+            };
 
-        // Convert Fine-Tune permissions to hasPermission format
-        const isSuperUser = permissions.superUser === 'grant';
-        const hasAdminAccess = isSuperUser || permissions.adminAccess === 'grant';
-        const hasUsersManage = isSuperUser || permissions.usersManage === 'grant';
-        const hasMachinesManage = isSuperUser || permissions.machinesManage === 'grant';
-        const hasRewardsManage = isSuperUser || permissions.rewardsManage === 'grant';
-        const hasLogsAccess = isSuperUser || permissions.logsAccess === 'grant';
+            const created = await usersApi.create(payload);
 
-        const mappedPermissions = {
-            dashboard: { view: true, edit: hasAdminAccess },
-            users: { view: hasUsersManage, edit: hasUsersManage, delete: hasUsersManage, create: hasUsersManage },
-            machines: { view: hasMachinesManage, edit: hasMachinesManage, delete: hasMachinesManage, create: hasMachinesManage },
-            rewards: { view: hasRewardsManage, edit: hasRewardsManage, delete: hasRewardsManage, create: hasRewardsManage },
-            logs: { view: hasLogsAccess, export: hasLogsAccess, delete: false },
-            settings: { view: true, edit: hasAdminAccess }
-        };
+            // Enrich the returned user for the local table
+            const newUser = {
+                ...created,
+                id: String(created.id),
+                avatar: (created.name || name).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+                status: 'Active',
+                accountHealth: 'Active',
+                lastLogin: 'Never',
+            };
 
-        // Create new admin user object
-        const newUser = {
-            id: `ADM-${Date.now()}`,
-            name,
-            email,
-            password: 'test123', // Default password for new users
-            role: selectedRole,
-            locationId: isSuperAdmin ? locationId : currentLocation?.id,
-            avatar: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
-            status: 'Active',
-            accountHealth: 'Active',
-            lastLogin: 'Never',
-            permissions: mappedPermissions,
-        };
+            // Call callback to add user
+            if (onUserAdded) {
+                onUserAdded(newUser);
+            }
 
-        // Call callback to add user
-        if (onUserAdded) {
-            onUserAdded(newUser);
+            resetForm();
+            onClose();
+        } catch (err) {
+            setError(err.message || 'Failed to create admin user.');
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(false);
-        resetForm();
-        onClose();
     };
 
     const resetForm = () => {
         setName('');
+        setUsername('');
         setEmail('');
+        setPhone('');
         setPassword('');
         setConfirmPassword('');
         setPasswordShake(false);
@@ -382,6 +382,29 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                                     onChange={(e) => setName(e.target.value)}
                                     label="Full Name *"
                                 />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputField
+                                        type="text"
+                                        placeholder="johndoe"
+                                        icon={AtSign}
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        label="Username"
+                                    />
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                                        <div className="relative group flex">
+                                            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-slate-500 dark:text-slate-400 text-sm font-medium">+63</span>
+                                            <input
+                                                type="tel"
+                                                placeholder="9XX XXX XXXX"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                                                className="w-full px-4 py-2 rounded-r-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                                 <InputField
                                     type="email"
                                     placeholder="john@ecopoints.com"

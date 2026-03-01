@@ -1,9 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../context/AuthContext';
 import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../data/mockData';
+import { users as usersApi } from '../services/apiService';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label, error }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +43,9 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const { allLocations, isSuperAdmin, currentLocation } = useAuth();
 
     const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('Student');
@@ -80,35 +83,46 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         }
 
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const newUser = {
-            id: `USR-${Date.now()}`,
-            name,
-            email,
-            role,
-            status: 'Active',
-            points: 0,
-            locationId: locationId || currentLocation?.id,
-            educLevel: educLevel || null,
-            strand: educLevel === 'SHS' ? strand : null,
-            department: educLevel === 'College' ? department : null,
-            yearLevel: yearLevel || null,
-            joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        };
+        try {
+            const payload = {
+                name,
+                username: username || undefined,
+                email,
+                phone: phone || undefined,
+                password,
+                role: 'user',
+                userType: role.toLowerCase(),
+                yearLevel: yearLevel || undefined,
+                strand: strand || undefined,
+                department: department || undefined,
+                locationId: locationId || currentLocation?.id,
+            };
 
-        if (onUserAdded) {
-            onUserAdded(newUser);
+            const created = await usersApi.create(payload);
+
+            if (onUserAdded) {
+                onUserAdded({
+                    ...created,
+                    id: String(created.id),
+                    accountHealth: 'Active',
+                });
+            }
+
+            resetForm();
+            onClose();
+        } catch (err) {
+            setError(err.message || 'Failed to create user. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(false);
-        resetForm();
-        onClose();
     };
 
     const resetForm = () => {
         setName('');
+        setUsername('');
         setEmail('');
+        setPhone('');
         setPassword('');
         setConfirmPassword('');
         setRole('Student');
@@ -126,8 +140,8 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         : ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
@@ -144,55 +158,92 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <InputField type="text" placeholder="Full Name" icon={User} value={name} onChange={(e) => setName(e.target.value)} label="Full Name *" />
-                    <InputField type="email" placeholder="Email Address" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} label="Email Address *" />
-
-                    {/* Role */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role *</label>
-                        <CustomDropdown
-                            value={role}
-                            onChange={(v) => setRole(v)}
-                            options={['Student', 'Faculty', 'Staff']}
-                            showPlaceholder={false}
-                            icon={Users}
-                            size="md"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputField type="text" placeholder="Full Name" icon={User} value={name} onChange={(e) => setName(e.target.value)} label="Full Name *" />
+                        <InputField type="text" placeholder="Username" icon={AtSign} value={username} onChange={(e) => setUsername(e.target.value)} label="Username" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputField type="email" placeholder="Email Address" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} label="Email Address *" />
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                            <div className="relative group flex">
+                                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-slate-500 dark:text-slate-400 text-sm font-medium">+63</span>
+                                <input
+                                    type="tel"
+                                    placeholder="9XX XXX XXXX"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                                    className="w-full px-4 py-2 rounded-r-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Location (Super Admin only) */}
-                    {isSuperAdmin && (
+                    {/* Role & Location */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role *</label>
                             <CustomDropdown
-                                value={locationId}
-                                onChange={(v) => setLocationId(v)}
-                                options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))}
-                                placeholder="Select a location..."
-                                searchable
-                                icon={Building2}
+                                value={role}
+                                onChange={(v) => setRole(v)}
+                                options={['Student', 'Faculty', 'Staff']}
+                                showPlaceholder={false}
+                                icon={Users}
                                 size="md"
                             />
                         </div>
-                    )}
+
+                        {/* Location (Super Admin only) */}
+                        {isSuperAdmin && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
+                                <CustomDropdown
+                                    value={locationId}
+                                    onChange={(v) => setLocationId(v)}
+                                    options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))}
+                                    placeholder="Select a location..."
+                                    searchable
+                                    icon={Building2}
+                                    size="md"
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     {/* Student-specific fields */}
                     {role === 'Student' && (
                         <>
-                            {/* Educational Level */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Educational Level</label>
-                                <CustomDropdown
-                                    value={educLevel}
-                                    onChange={(v) => { setEducLevel(v); setStrand(''); setDepartment(''); setYearLevel(''); }}
-                                    options={[
-                                        { value: 'SHS', label: 'Senior High School' },
-                                        { value: 'College', label: 'College' }
-                                    ]}
-                                    placeholder="Select level..."
-                                    icon={GraduationCap}
-                                    size="md"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Educational Level */}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Educational Level</label>
+                                    <CustomDropdown
+                                        value={educLevel}
+                                        onChange={(v) => { setEducLevel(v); setStrand(''); setDepartment(''); setYearLevel(''); }}
+                                        options={[
+                                            { value: 'SHS', label: 'Senior High School' },
+                                            { value: 'College', label: 'College' }
+                                        ]}
+                                        placeholder="Select level..."
+                                        icon={GraduationCap}
+                                        size="md"
+                                    />
+                                </div>
+
+                                {/* Year Level */}
+                                {educLevel && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year Level</label>
+                                        <CustomDropdown
+                                            value={yearLevel}
+                                            onChange={(v) => setYearLevel(v)}
+                                            options={yearLevelOptions}
+                                            placeholder="Select year..."
+                                            icon={GraduationCap}
+                                            size="md"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* SHS Strand */}
@@ -226,29 +277,16 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                     />
                                 </div>
                             )}
-
-                            {/* Year Level */}
-                            {educLevel && (
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year Level</label>
-                                    <CustomDropdown
-                                        value={yearLevel}
-                                        onChange={(v) => setYearLevel(v)}
-                                        options={yearLevelOptions}
-                                        placeholder="Select year..."
-                                        icon={GraduationCap}
-                                        size="md"
-                                    />
-                                </div>
-                            )}
                         </>
                     )}
 
-                    <div className={passwordShake ? 'animate-shake' : ''}>
-                        <InputField type="password" placeholder="Password" icon={Lock} showToggle={true} value={password} onChange={(e) => setPassword(e.target.value)} label="Password *" />
-                    </div>
-                    <div className={passwordShake ? 'animate-shake' : ''}>
-                        <InputField type="password" placeholder="Confirm Password" icon={Lock} showToggle={true} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} label="Confirm Password *" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className={passwordShake ? 'animate-shake' : ''}>
+                            <InputField type="password" placeholder="Password" icon={Lock} showToggle={true} value={password} onChange={(e) => setPassword(e.target.value)} label="Password *" />
+                        </div>
+                        <div className={passwordShake ? 'animate-shake' : ''}>
+                            <InputField type="password" placeholder="Confirm Password" icon={Lock} showToggle={true} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} label="Confirm Password *" />
+                        </div>
                     </div>
 
                     {error && <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm border border-red-200 dark:border-red-500/30">{error}</div>}

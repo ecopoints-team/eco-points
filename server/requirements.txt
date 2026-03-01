@@ -5,4 +5,5 @@ psycopg[binary]
 python-dotenv>=1.0.0
 Flask-Migrate>=4.0.4
 Flask-Login
+PyJWT>=2.8.0
 gunicorn>=21.2.0

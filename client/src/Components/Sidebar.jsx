@@ -128,7 +128,7 @@ const SubMenuItem = ({ label, href, active, hidden }) => {
         >
             {/* Tiny dot connector */}
             <div className={`absolute left-[2.25rem] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-emerald-600 dark:bg-emerald-400 dark:shadow-[0_0_8px_#34d399]' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-            {label}
+            <span className="ml-2">{label}</span>
         </Link>
     );
 };
@@ -369,7 +369,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]'
                     }`}>
                     <button
-                        onClick={() => { logout(); router.push('/login'); }}
+                        onClick={() => { logout(); router.push('/?login=true'); }}
                         className={`
                             relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group w-full
                             ${theme === 'system'

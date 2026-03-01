@@ -3,10 +3,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import AdminLayout from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Camera, Save, Key, Eye, EyeOff } from 'lucide-react';
-import { LOCATIONS } from '../../../src/data/mockData';
+import { auth as authApi } from '../../../src/services/apiService';
 
 export default function ProfilePage() {
-    const { currentUser } = useAuth();
+    const { currentUser, allLocations } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
     const fileInputRef = useRef(null);
@@ -25,17 +25,17 @@ export default function ProfilePage() {
                 phone: currentUser.phone || '',
                 location: (() => {
                     if (currentUser.locationId) {
-                        const loc = LOCATIONS.find(l => l.id === currentUser.locationId);
-                        return loc ? loc.name + ', ' + loc.streetAddress : currentUser.location || '';
+                        const loc = allLocations.find(l => l.id === currentUser.locationId);
+                        return loc ? loc.name + (loc.streetAddress ? ', ' + loc.streetAddress : '') : currentUser.locationName || '';
                     }
-                    return currentUser.location || '';
+                    return currentUser.locationName || '';
                 })(),
                 role: currentUser.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Admin',
-                joinDate: currentUser.joinDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                joinDate: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
                 bio: `System administrator for EcoPoints. Role: ${currentUser.role || 'Admin'}.`,
             });
         }
-    }, [currentUser]);
+    }, [currentUser, allLocations]);
 
     const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
     const [showCurrent, setShowCurrent] = useState(false);
@@ -45,7 +45,7 @@ export default function ProfilePage() {
     const handleImageUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setProfileImage(reader.result); reader.readAsDataURL(file); } };
     const handleSave = () => { setIsEditing(false); alert('Profile changes saved successfully!'); };
 
-    const handleUpdatePassword = () => {
+    const handleUpdatePassword = async () => {
         if (!passwords.current || !passwords.new || !passwords.confirm) {
             alert('Please fill in all password fields.');
             return;
@@ -58,8 +58,13 @@ export default function ProfilePage() {
             alert('Password must be at least 6 characters.');
             return;
         }
-        alert('Password updated successfully!');
-        setPasswords({ current: '', new: '', confirm: '' });
+        try {
+            await authApi.changePassword(passwords.current, passwords.new);
+            alert('Password updated successfully!');
+            setPasswords({ current: '', new: '', confirm: '' });
+        } catch (err) {
+            alert(err.message || 'Failed to update password.');
+        }
     };
 
     return (

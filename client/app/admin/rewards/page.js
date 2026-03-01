@@ -4,7 +4,7 @@ import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Compo
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { REWARDS, getRewardsByLocation } from '../../../src/data/mockData';
+import { rewards as rewardsApi } from '../../../src/services/apiService';
 import {
     Search, Filter, ChevronLeft, ChevronRight, Gift, Package, Plus, Edit2, Trash2, X,
     Upload, Image, AlertTriangle, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown
@@ -80,10 +80,8 @@ const CategoryBadge = ({ category }) => {
 export default function RewardsInventoryPage() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
 
-    // Get initial rewards based on location
-    const getInitialRewards = () => getRewardsByLocation(effectiveLocationId);
-
-    const [rewards, setRewards] = useState(getInitialRewards);
+    const [rewards, setRewards] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterCategory, setFilterCategory] = useState('');
@@ -107,10 +105,27 @@ export default function RewardsInventoryPage() {
     });
     const fileInputRef = useRef(null);
 
-    // Update rewards when location changes
+    // Load rewards from API when location changes
     useEffect(() => {
-        setRewards(getRewardsByLocation(effectiveLocationId));
+        let cancelled = false;
+        const load = async () => {
+            setIsDataLoading(true);
+            try {
+                const data = await rewardsApi.getAll(effectiveLocationId);
+                if (!cancelled) setRewards((data || []).map(r => ({
+                    ...r,
+                    id: String(r.id),
+                    points: r.pointsRequired || r.points || 0,
+                    stock: r.stockQuantity ?? r.stock ?? 0,
+                    dispensed: 0,
+                    image: r.imageUrl || null,
+                })));
+            } catch (err) { console.error('Failed to load rewards:', err); }
+            finally { if (!cancelled) setIsDataLoading(false); }
+        };
+        load();
         setCurrentPage(1);
+        return () => { cancelled = true; };
     }, [effectiveLocationId]);
 
     const categories = [...new Set(rewards.map(r => r.category))];
@@ -218,27 +233,47 @@ export default function RewardsInventoryPage() {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!formData.name || !formData.points || !formData.stock || !formData.category) return;
         const stock = parseInt(formData.stock);
 
-        if (editingReward) {
-            setRewards(prev => prev.map(r => r.id === editingReward.id ? {
-                ...r,
-                ...formData,
-                points: parseInt(formData.points),
-                stock
-            } : r));
-        } else {
-            const newId = `RWD-${effectiveLocationId ? effectiveLocationId.split('-')[1] : 'X'}-${String(rewards.length + 1).padStart(3, '0')}`;
-            setRewards(prev => [{
-                id: newId,
-                ...formData,
-                points: parseInt(formData.points),
-                stock,
-                dispensed: 0,
-                locationId: effectiveLocationId || 'LOC-001'
-            }, ...prev]);
+        try {
+            if (editingReward) {
+                const updated = await rewardsApi.update(editingReward.id, {
+                    name: formData.name,
+                    description: formData.description,
+                    pointsRequired: parseInt(formData.points),
+                    stockQuantity: stock,
+                    category: formData.category,
+                    imageUrl: formData.image,
+                });
+                setRewards(prev => prev.map(r => r.id === editingReward.id ? {
+                    ...r,
+                    ...formData,
+                    points: parseInt(formData.points),
+                    stock
+                } : r));
+            } else {
+                const created = await rewardsApi.create({
+                    name: formData.name,
+                    description: formData.description,
+                    pointsRequired: parseInt(formData.points),
+                    stockQuantity: stock,
+                    category: formData.category,
+                    imageUrl: formData.image,
+                    locationId: effectiveLocationId,
+                });
+                setRewards(prev => [{
+                    id: String(created.id),
+                    ...formData,
+                    points: parseInt(formData.points),
+                    stock,
+                    dispensed: 0,
+                    locationId: effectiveLocationId
+                }, ...prev]);
+            }
+        } catch (err) {
+            console.error('Failed to save reward:', err);
         }
         setShowModal(false);
     };
@@ -672,8 +707,11 @@ export default function RewardsInventoryPage() {
                                 Cancel
                             </button>
                             <button
-                                onClick={() => {
-                                    setRewards(prev => prev.filter(x => x.id !== deletingReward.id));
+                                onClick={async () => {
+                                    try {
+                                        await rewardsApi.delete(deletingReward.id);
+                                        setRewards(prev => prev.filter(x => x.id !== deletingReward.id));
+                                    } catch (err) { console.error('Delete failed:', err); }
                                     setDeletingReward(null);
                                 }}
                                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"

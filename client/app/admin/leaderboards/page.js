@@ -5,9 +5,10 @@ import CustomDropdown from '../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import {
-    USERS, LOCATIONS, DEPARTMENTS, SHS_STRANDS, COLLEGE_DEPARTMENTS,
-    getUsersByLocation, getDepartmentName, getLocationName
+    DEPARTMENTS,
+    getDepartmentName
 } from '../../../src/data/mockData';
+import { leaderboard as leaderboardApi } from '../../../src/services/apiService';
 import {
     Trophy, Medal, Award, Crown, Search, Filter, ChevronLeft, ChevronRight,
     Flame, Recycle, Star, TrendingUp, Users as UsersIcon, GraduationCap,
@@ -38,7 +39,7 @@ const ADMIN_TABS = [
     { id: 'MY_LOCATION', label: 'My Location', icon: Building2 },
     { id: 'TOP_SCHOOLS', label: 'Top Schools', icon: School },
     { id: 'BY_DEPARTMENT', label: 'By Department', icon: GraduationCap },
-    { id: 'BY_STRAND', label: 'By Strand', icon: GraduationCap },
+    { id: 'BY_GROUP_TYPE', label: 'By Group Type', icon: GraduationCap },
 ];
 
 // ============================================================================
@@ -62,10 +63,6 @@ const getUserInitials = (name) => {
 // Get user's department display (works for ALL roles including Staff)
 const getUserDeptDisplay = (user) => {
     if (user.department) return getDepartmentName(user.department);
-    if (user.strand) {
-        const strand = DEPARTMENTS.find(d => d.id === user.strand);
-        return strand?.abbreviation || user.strand;
-    }
     return '—';
 };
 
@@ -237,29 +234,46 @@ export default function LeaderboardsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
     const [selectedDepartment, setSelectedDepartment] = useState('');
-    const [selectedStrand, setSelectedStrand] = useState('');
+    const [selectedGroupType, setSelectedGroupType] = useState('');
     const [showSearchHint, setShowSearchHint] = useState(false);
     const [schoolSortBy, setSchoolSortBy] = useState('POINTS');
     const [expandedSchool, setExpandedSchool] = useState(null);
     const [campusUserSort, setCampusUserSort] = useState('POINTS');
     const [campusRoleFilter, setCampusRoleFilter] = useState('');
+    const [leaderboardUsers, setLeaderboardUsers] = useState([]);
+
+    // Load leaderboard data from API
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await leaderboardApi.get(effectiveLocationId);
+                if (cancelled) return;
+                setLeaderboardUsers(data.topUsers || []);
+            } catch (err) {
+                console.error('Failed to load leaderboard:', err);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [effectiveLocationId]);
 
     // Reset page on filter change
-    useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand]);
+    useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedGroupType]);
 
     // Reset filters on tab change
     useEffect(() => {
         setSearchQuery('');
         setRoleFilter('');
         setSelectedDepartment('');
-        setSelectedStrand('');
+        setSelectedGroupType('');
     }, [activeTab]);
 
     // Get base user list
     const allUsers = useMemo(() => {
-        if (activeTab === 'OVERALL') return USERS;
-        return getUsersByLocation(effectiveLocationId);
-    }, [activeTab, effectiveLocationId]);
+        if (activeTab === 'OVERALL') return leaderboardUsers;
+        if (!effectiveLocationId) return leaderboardUsers;
+        return leaderboardUsers.filter(u => u.locationId === effectiveLocationId);
+    }, [activeTab, effectiveLocationId, leaderboardUsers]);
 
     // Sorting function with tiebreakers
     const sortUsers = (users) => {
@@ -277,12 +291,12 @@ export default function LeaderboardsPage() {
 
     // School rankings (for Top Schools tab)
     const schoolRankings = useMemo(() => {
-        return LOCATIONS.map(loc => {
-            const locUsers = USERS.filter(u => u.locationId === loc.id);
+        return allLocations.map(loc => {
+            const locUsers = leaderboardUsers.filter(u => u.locationId === loc.id);
             return {
                 id: loc.id,
                 name: loc.name,
-                fullName: loc.fullName,
+                fullName: loc.fullName || loc.name,
                 userCount: locUsers.length,
                 totalPoints: locUsers.reduce((sum, u) => sum + (u.points || 0), 0),
                 totalBottles: locUsers.reduce((sum, u) => sum + (u.bottlesCollected || 0), 0),
@@ -292,11 +306,11 @@ export default function LeaderboardsPage() {
             if (schoolSortBy === 'BOTTLES') return b.totalBottles - a.totalBottles;
             return b.totalPoints - a.totalPoints;
         });
-    }, [schoolSortBy]);
+    }, [schoolSortBy, allLocations, leaderboardUsers]);
 
     // Top 5 users per campus (for dropdown)
     const getCampusTopUsers = (locationId) => {
-        let users = USERS.filter(u => u.locationId === locationId);
+        let users = leaderboardUsers.filter(u => u.locationId === locationId);
         if (campusRoleFilter && campusRoleFilter !== 'All') {
             users = users.filter(u => u.userType === campusRoleFilter);
         }
@@ -318,13 +332,10 @@ export default function LeaderboardsPage() {
         });
     }, [allUsers]);
 
-    // Available strands
-    const availableStrands = useMemo(() => {
-        const strands = [...new Set(allUsers.filter(u => u.strand).map(u => u.strand))];
-        return strands.map(s => {
-            const strand = DEPARTMENTS.find(dep => dep.id === s);
-            return { value: s, label: strand?.abbreviation || s };
-        });
+    // Available group types
+    const availableGroupTypes = useMemo(() => {
+        const types = [...new Set(allUsers.filter(u => u.groupType).map(u => u.groupType))];
+        return types.map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
     }, [allUsers]);
 
     // Processed / filtered / sorted data
@@ -335,8 +346,8 @@ export default function LeaderboardsPage() {
         if (activeTab === 'BY_DEPARTMENT' && selectedDepartment) {
             filtered = filtered.filter(u => u.department === selectedDepartment);
         }
-        if (activeTab === 'BY_STRAND' && selectedStrand) {
-            filtered = filtered.filter(u => u.strand === selectedStrand);
+        if (activeTab === 'BY_GROUP_TYPE' && selectedGroupType) {
+            filtered = filtered.filter(u => u.groupType === selectedGroupType);
         }
 
         // Role filter
@@ -359,8 +370,7 @@ export default function LeaderboardsPage() {
                 if (u.name?.toLowerCase().includes(q)) return true;
                 if (u.userType?.toLowerCase().includes(q)) return true;
                 if (getDepartmentName(u.department)?.toLowerCase().includes(q)) return true;
-                const strandAbbr = u.strand && DEPARTMENTS.find(d => d.id === u.strand)?.abbreviation;
-                if (strandAbbr?.toLowerCase().includes(q)) return true;
+                if (u.groupType?.toLowerCase().includes(q)) return true;
                 // Easter egg: initials search (e.g. "JJ" matches "Justine James")
                 const initials = getUserInitials(u.name);
                 if (initials === qUpper) return true;
@@ -371,7 +381,7 @@ export default function LeaderboardsPage() {
         }
 
         return { leaderboardData: sorted, topThree: top3 };
-    }, [allUsers, activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedStrand]);
+    }, [allUsers, activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedGroupType]);
 
     // Pagination
     const totalPages = Math.ceil(leaderboardData.length / rowsPerPage);
@@ -398,8 +408,8 @@ export default function LeaderboardsPage() {
         avgStreak: leaderboardData.length > 0 ? Math.round(leaderboardData.reduce((sum, u) => sum + (u.streak || 0), 0) / leaderboardData.length) : 0,
     };
 
-    const hasActiveFilters = (roleFilter !== '' && roleFilter !== 'All') || searchQuery || selectedDepartment || selectedStrand;
-    const clearFilters = () => { setRoleFilter(''); setSearchQuery(''); setSelectedDepartment(''); setSelectedStrand(''); };
+    const hasActiveFilters = (roleFilter !== '' && roleFilter !== 'All') || searchQuery || selectedDepartment || selectedGroupType;
+    const clearFilters = () => { setRoleFilter(''); setSearchQuery(''); setSelectedDepartment(''); setSelectedGroupType(''); };
 
     return (
         <>
@@ -513,21 +523,21 @@ export default function LeaderboardsPage() {
                 </div>
             )}
 
-            {activeTab === 'BY_STRAND' && (
+            {activeTab === 'BY_GROUP_TYPE' && (
                 <div className="mb-4">
                     <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Strand:</span>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Group Type:</span>
                         <div className="flex flex-wrap gap-2">
-                            {availableStrands.map(strand => (
+                            {availableGroupTypes.map(gt => (
                                 <button
-                                    key={strand.value}
-                                    onClick={() => setSelectedStrand(selectedStrand === strand.value ? '' : strand.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedStrand === strand.value
+                                    key={gt.value}
+                                    onClick={() => setSelectedGroupType(selectedGroupType === gt.value ? '' : gt.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedGroupType === gt.value
                                         ? 'bg-emerald-600 text-white'
                                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
                                         }`}
                                 >
-                                    {strand.label}
+                                    {gt.label}
                                 </button>
                             ))}
                         </div>

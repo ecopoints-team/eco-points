@@ -1,6 +1,14 @@
 'use client';
-import LogIn from '../../src/Components/LogIn';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  return <LogIn />;
+  const router = useRouter();
+
+  // Redirect to landing page with login modal open
+  useEffect(() => {
+    router.replace('/?login=true');
+  }, [router]);
+
+  return null;
 }

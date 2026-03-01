@@ -1,16 +1,29 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { BOTTLE_LOGS, LOCATIONS } from '../../../../src/data/mockData';
+import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
-const allBottleLogs = BOTTLE_LOGS;
-
 export default function BottleLogsPage() {
-    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+
+    // API-loaded data
+    const [allBottleLogs, setAllBottleLogs] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const data = await logsApi.getBottles(effectiveLocationId);
+                if (!cancelled) setAllBottleLogs((data || []).map(l => ({ ...l, id: String(l.id), userId: String(l.userId || ''), timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() })));
+            } catch (err) { console.error('Failed to load bottle logs:', err); }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [effectiveLocationId, refreshKey]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
@@ -62,7 +75,7 @@ export default function BottleLogsPage() {
             acceptedBottles: logs.filter(log => log.status === 'Accepted').length,
             rejectedBottles: logs.filter(log => log.status === 'Rejected').length
         };
-    }, [viewAsLocationId, currentUser, isSuperAdmin]);
+    }, [allBottleLogs, viewAsLocationId, currentUser, isSuperAdmin]);
 
     const filteredLogs = useMemo(() => {
         let logs = allBottleLogs;
@@ -75,7 +88,7 @@ export default function BottleLogsPage() {
         }
 
         return logs.filter(log => {
-            const matchesSearch = searchQuery === '' || log.id.toLowerCase().includes(searchQuery.toLowerCase()) || log.userId.toLowerCase().includes(searchQuery.toLowerCase()) || log.userName.toLowerCase().includes(searchQuery.toLowerCase()) || log.machineName.toLowerCase().includes(searchQuery.toLowerCase()) || log.bottleType.toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
+            const matchesSearch = searchQuery === '' || (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userId || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.bottleType || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
             return matchesSearch &&
                 (filterMachine === '' || log.machineName === filterMachine) &&
                 (filterBottleType === '' || log.bottleType === filterBottleType) &&
@@ -90,7 +103,7 @@ export default function BottleLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, currentUser, isSuperAdmin]);
+    }, [allBottleLogs, searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, currentUser, isSuperAdmin]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -121,7 +134,7 @@ export default function BottleLogsPage() {
         const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Brand', 'Volume', 'Type', 'Condition', 'Points', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.machineName,
-            log.locationName || log.locationId, log.brand, log.volume, log.bottleType,
+            log.locationName || log.locationId, log.brand, log.volumeMl, log.bottleType,
             log.condition, log.pointsAwarded, log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -168,7 +181,7 @@ export default function BottleLogsPage() {
                             <input type="text" placeholder="Search ID, Name, Location..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
-                        <button onClick={() => { setCurrentPage(1); }}
+                        <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
                             title="Refresh">
                             <RefreshCw size={16} />
@@ -189,7 +202,7 @@ export default function BottleLogsPage() {
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Statuses" />
 
                             {isSuperAdmin && !viewAsLocationId && (
-                                <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
+                                <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={allLocations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             )}
 
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}

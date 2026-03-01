@@ -5,17 +5,15 @@ import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
-import { USERS, getUsersByLocation, getDepartmentName } from '../../../src/data/mockData';
+import { getDepartmentName } from '../../../src/data/mockData';
+import { users as usersApi } from '../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, GraduationCap, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 export default function ManageUsersPage() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
 
-    // Get initial users based on location
-    const getInitialUsers = () => getUsersByLocation(effectiveLocationId);
-
-
-    const [users, setUsers] = useState(getInitialUsers);
+    const [users, setUsers] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterRole, setFilterRole] = useState('');
@@ -36,7 +34,7 @@ export default function ManageUsersPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
-        name: '', email: '', userType: '', status: '', accountHealth: '', department: '', strand: ''
+        name: '', username: '', email: '', phone: '', userType: '', yearLevel: '', isActive: true
     });
 
     // Handle Edit
@@ -44,12 +42,12 @@ export default function ManageUsersPage() {
         setSelectedUser(user);
         setEditFormData({
             name: user.name || '',
+            username: user.username || '',
             email: user.email || '',
+            phone: user.phone || '',
             userType: user.userType || '',
-            status: user.status || '',
-            accountHealth: user.accountHealth || '',
-            department: user.department || '',
-            strand: user.strand || ''
+            yearLevel: user.yearLevel || '',
+            isActive: user.isActive !== undefined ? user.isActive : true
         });
         setIsEditModalOpen(true);
     };
@@ -58,11 +56,25 @@ export default function ManageUsersPage() {
         setEditFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const saveEdit = () => {
+    const saveEdit = async () => {
         if (selectedUser) {
-            setUsers(prev => prev.map(u =>
-                u.id === selectedUser.id ? { ...u, ...editFormData } : u
-            ));
+            try {
+                const payload = {
+                    name: editFormData.name,
+                    username: editFormData.username,
+                    email: editFormData.email,
+                    phone: editFormData.phone,
+                    userType: editFormData.userType,
+                    yearLevel: editFormData.yearLevel,
+                    isActive: editFormData.isActive,
+                };
+                const updated = await usersApi.update(selectedUser.id, payload);
+                setUsers(prev => prev.map(u =>
+                    u.id === selectedUser.id ? { ...u, ...updated, id: String(updated.id) } : u
+                ));
+            } catch (err) {
+                console.error('Failed to update user:', err);
+            }
             setIsEditModalOpen(false);
             setSelectedUser(null);
         }
@@ -74,9 +86,14 @@ export default function ManageUsersPage() {
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (selectedUser) {
-            setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+            try {
+                await usersApi.delete(selectedUser.id);
+                setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+            } catch (err) {
+                console.error('Failed to delete user:', err);
+            }
             setIsDeleteModalOpen(false);
             setSelectedUser(null);
         }
@@ -102,13 +119,39 @@ export default function ManageUsersPage() {
             : <ChevronDown size={12} className="text-emerald-500" />;
     };
 
-    // Update users when location changes
+    // Load users from API when location changes
     useEffect(() => {
-        setUsers(getUsersByLocation(effectiveLocationId));
+        let cancelled = false;
+        const load = async () => {
+            setIsDataLoading(true);
+            try {
+                const data = await usersApi.getAll({ locationId: effectiveLocationId });
+                if (!cancelled) {
+                    const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+                    const regularUsers = (data || []).filter(u => !ADMIN_ROLES.includes(u.role));
+                    setUsers(regularUsers.map(u => ({
+                        ...u,
+                        id: String(u.id),
+                        department: u.groupName || '',
+                        strand: '',
+                        joinDate: u.createdAt,
+                        status: u.isActive ? 'Active' : 'Inactive',
+                        accountHealth: u.isActive ? 'Active' : 'Inactive',
+                        points: u.pointsBalance || 0,
+                    })));
+                }
+            } catch (err) {
+                console.error('Failed to load users:', err);
+            } finally {
+                if (!cancelled) setIsDataLoading(false);
+            }
+        };
+        load();
         setCurrentPage(1);
+        return () => { cancelled = true; };
     }, [effectiveLocationId]);
 
-    const roles = [...new Set(users.map(u => u.userType))];
+    const roles = [...new Set(users.map(u => u.userType).filter(Boolean))];
     const statuses = ['Online', 'Offline'];
     const accountHealthOptions = ['Active', 'Inactive'];
 
@@ -130,14 +173,19 @@ export default function ManageUsersPage() {
             result = [...result].sort((a, b) => {
                 let aVal = a[sortColumn];
                 let bVal = b[sortColumn];
-                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                if (sortColumn === 'id') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else {
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                }
                 if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
                 return aVal < bVal ? 1 : -1;
             });
         } else {
-            // Default to newest first
-            result = result.sort((a, b) => new Date(b.joinDateObj || b.joinDate) - new Date(a.joinDateObj || a.joinDate));
+            // Default to newest first (descending User ID)
+            result = result.sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
         }
 
         return result;
@@ -301,7 +349,25 @@ export default function ManageUsersPage() {
                                     bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
                                     dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
-                        <button onClick={() => setUsers(getUsersByLocation(effectiveLocationId))}
+                        <button onClick={async () => {
+                            try {
+                                setIsDataLoading(true);
+                                const data = await usersApi.getAll({ locationId: effectiveLocationId });
+                                const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+                                const regularUsers = (data || []).filter(u => !ADMIN_ROLES.includes(u.role));
+                                setUsers(regularUsers.map(u => ({
+                                    ...u,
+                                    id: String(u.id),
+                                    department: u.groupName || '',
+                                    strand: '',
+                                    joinDate: u.createdAt,
+                                    status: u.isActive ? 'Active' : 'Inactive',
+                                    accountHealth: u.isActive ? 'Active' : 'Inactive',
+                                    points: u.pointsBalance || 0,
+                                })));
+                            } catch (err) { console.error('Refresh failed:', err); }
+                            finally { setIsDataLoading(false); }
+                        }}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
                             title="Refresh">
                             <RefreshCw size={16} />
@@ -394,7 +460,9 @@ export default function ManageUsersPage() {
                     <table className="w-full min-w-max text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-3 py-3 whitespace-nowrap">User ID</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('id')}>
+                                    <div className="flex items-center gap-1">User ID <SortIcon column="id" /></div>
+                                </th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('name')}>
                                     <div className="flex items-center gap-1">Username <SortIcon column="name" /></div>
                                 </th>
@@ -557,6 +625,27 @@ export default function ManageUsersPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Username</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.username}
+                                        onChange={(e) => handleEditChange('username', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Phone</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.phone}
+                                        onChange={(e) => handleEditChange('phone', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">User Type <span className="text-red-500">*</span></label>
                                     <CustomDropdown
                                         value={editFormData.userType}
@@ -566,48 +655,26 @@ export default function ManageUsersPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status <span className="text-red-500">*</span></label>
-                                    <CustomDropdown
-                                        value={editFormData.status}
-                                        onChange={(v) => handleEditChange('status', v)}
-                                        options={['Online', 'Offline']}
-                                        showPlaceholder={false}
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Year Level</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.yearLevel}
+                                        onChange={(e) => handleEditChange('yearLevel', e.target.value)}
+                                        placeholder="e.g. Grade 11, 1st Year"
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Health <span className="text-red-500">*</span></label>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Status <span className="text-red-500">*</span></label>
                                     <CustomDropdown
-                                        value={editFormData.accountHealth}
-                                        onChange={(v) => handleEditChange('accountHealth', v)}
+                                        value={editFormData.isActive ? 'Active' : 'Inactive'}
+                                        onChange={(v) => handleEditChange('isActive', v === 'Active')}
                                         options={['Active', 'Inactive']}
                                         showPlaceholder={false}
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Strand <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        list="strand-options"
-                                        value={editFormData.strand}
-                                        onChange={(e) => handleEditChange('strand', e.target.value)}
-                                        placeholder="Search or select strand..."
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
-                                    />
-                                    <datalist id="strand-options">
-                                        <option value="STEM" />
-                                        <option value="ABM" />
-                                        <option value="HUMSS" />
-                                        <option value="GAS" />
-                                        <option value="TVL-HE" />
-                                        <option value="TVL-ICT" />
-                                        <option value="Arts & Design" />
-                                        <option value="Sports Track" />
-                                        <option value="N/A" />
-                                    </datalist>
                                 </div>
                             </div>
                         </div>

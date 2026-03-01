@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { MACHINES, USERS, REWARDS, LOCATIONS, BOTTLE_LOGS, getMachinesByLocation, getRewardsByLocation, getUsersByLocation, filterByLocation } from '../../src/data/mockData';
+import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/apiService';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -136,36 +136,49 @@ export default function AdminDashboard() {
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
 
+    // API-loaded state
+    const [stats, setStats] = useState({ totalBottles: 0, totalPoints: 0, onlineMachines: 0, totalMachines: 0, activeUsers: 0, totalUsers: 0, totalRewards: 0 });
+    const [bottleLogs, setBottleLogs] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+
     // Prevent hydration mismatch - only render dynamic content after mount
     useEffect(() => {
         setMounted(true);
     }, []);
-    // =========================================================================
-    // LOCATION-FILTERED STATISTICS
-    // =========================================================================
-    const stats = useMemo(() => {
-        const machines = getMachinesByLocation(effectiveLocationId);
-        const users = getUsersByLocation(effectiveLocationId);
-        const rewards = getRewardsByLocation(effectiveLocationId);
 
-        const totalBottles = machines.reduce((sum, m) => sum + m.totalItemsCollected, 0);
-        const onlineMachines = machines.filter(m => m.isOnline).length;
-        const totalMachines = machines.length;
-        const activeUsers = users.filter(u => u.status === 'Online').length;
-        const totalPoints = users.reduce((sum, u) => sum + u.points, 0);
-        const totalRewards = rewards.length;
-        const totalStock = rewards.reduce((sum, r) => sum + r.stock, 0);
-
-        return {
-            totalBottles,
-            onlineMachines,
-            totalMachines,
-            activeUsers,
-            totalUsers: users.length,
-            totalPoints,
-            totalRewards,
-            totalStock
+    // Load dashboard data from API whenever location changes
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            setIsDataLoading(true);
+            try {
+                const [statsData, logsData] = await Promise.all([
+                    dashboardApi.getStats(effectiveLocationId),
+                    logsApi.getBottles(effectiveLocationId),
+                ]);
+                if (!cancelled) {
+                    setStats({
+                        totalBottles: statsData.totalBottles ?? 0,
+                        totalPoints: statsData.totalPointsAwarded ?? 0,
+                        onlineMachines: statsData.onlineMachines ?? 0,
+                        totalMachines: statsData.totalMachines ?? 0,
+                        activeUsers: statsData.activeUsers ?? 0,
+                        totalUsers: statsData.totalUsers ?? 0,
+                        totalRewards: statsData.totalRewards ?? 0,
+                    });
+                    setBottleLogs((logsData || []).map(log => ({
+                        ...log,
+                        timestampObj: log.timestamp ? new Date(log.timestamp) : new Date(),
+                    })));
+                }
+            } catch (err) {
+                console.error('Dashboard load failed:', err);
+            } finally {
+                if (!cancelled) setIsDataLoading(false);
+            }
         };
+        load();
+        return () => { cancelled = true; };
     }, [effectiveLocationId]);
 
     // Location-specific chart data with accepted/rejected
@@ -179,7 +192,7 @@ export default function AdminDashboard() {
             };
         }
 
-        const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
+        const logs = bottleLogs; // Already filtered by location on the backend
         const now = new Date();
 
         // Helper to get day name
@@ -265,7 +278,7 @@ export default function AdminDashboard() {
                 maxValue: getMax(yearlyAccepted, yearlyRejected)
             }
         };
-    }, [effectiveLocationId, mounted]);
+    }, [bottleLogs, mounted]);
 
     const currentData = chartData[timeRange];
 
@@ -273,32 +286,17 @@ export default function AdminDashboard() {
     const locationRanking = useMemo(() => {
         if (isSuperAdmin && !effectiveLocationId) return null;
         const location = allLocations.find(l => l.id === effectiveLocationId);
-        return location ? { rank: location.ranking, total: allLocations.length, name: location.name } : null;
+        if (!location) return null;
+        const sorted = [...allLocations].sort((a, b) => (b.totalBottlesCollected || 0) - (a.totalBottlesCollected || 0));
+        const rank = sorted.findIndex(l => l.id === effectiveLocationId) + 1;
+        return { rank, total: allLocations.length, name: location.name };
     }, [effectiveLocationId, isSuperAdmin, allLocations]);
 
-    // Location-specific recent transactions
+    // Location-specific recent transactions (from API-loaded bottle logs)
     const recentTransactions = useMemo(() => {
-        // Use the centralized BOTTLE_LOGS
-        const logs = filterByLocation(BOTTLE_LOGS, effectiveLocationId);
-
-        // Sort by timestamp (newest first) and take top 8
-        return logs.slice(0, 8).map(log => ({
-            id: log.id,
-            userId: log.userId,
-            userName: log.userName,
-            userEmail: log.userEmail,
-            location: log.locationName,
-            area: log.area,
-            machineId: log.machineId,
-            machineName: log.machineName,
-            bottleType: log.bottleType,
-            brand: log.brand,
-            condition: log.condition,
-            pointsAwarded: log.pointsAwarded,
-            timestamp: log.timestamp,
-            status: log.status,
-        }));
-    }, [effectiveLocationId]);
+        const sorted = [...bottleLogs].sort((a, b) => (b.timestampObj || 0) - (a.timestampObj || 0));
+        return sorted.slice(0, 8);
+    }, [bottleLogs]);
 
     return (
         <>

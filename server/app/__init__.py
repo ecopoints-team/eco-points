@@ -20,6 +20,7 @@ class Config:
         'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'ecopoints.db')
     )
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
+    JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
@@ -60,9 +61,11 @@ def create_app():
         from . import routes, models  # noqa: F401
 
         # Register blueprints
+        from .controllers.auth_controller import auth_bp
         from .controllers.web_controller import web_bp
         from .controllers.rpi_controller import rpi_bp
         
+        app.register_blueprint(auth_bp)
         app.register_blueprint(web_bp)
         app.register_blueprint(rpi_bp)
 

@@ -1,16 +1,37 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { REWARDS_LOGS, REWARDS, LOCATIONS, getLocationName } from '../../../../src/data/mockData';
+import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Gift, User, MapPin } from 'lucide-react';
 
-const allRewardsLogs = REWARDS_LOGS;
-
 export default function RewardsLogsPage() {
-    const { currentUser, isSuperAdmin, viewAsLocationId } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+
+    // API-loaded data
+    const [allRewardsLogs, setAllRewardsLogs] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const data = await logsApi.getRewards(effectiveLocationId);
+                if (!cancelled) setAllRewardsLogs((data || []).map(l => ({
+                    ...l,
+                    id: String(l.id),
+                    pointsCost: l.pointsSpent || 0,
+                    timestamp: l.redeemedAt || l.usedAt || '',
+                    timestampObj: new Date(l.redeemedAt || l.usedAt || Date.now()),
+                    userEmail: l.userEmail || '',
+                    locationName: l.locationName || '',
+                })));
+            } catch (err) { console.error('Failed to load rewards logs:', err); }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [effectiveLocationId, refreshKey]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterReward, setFilterReward] = useState('');
@@ -43,10 +64,10 @@ export default function RewardsLogsPage() {
 
         return logs.filter(log => {
             const matchesSearch = searchQuery === '' ||
-                log.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.rewardName.toLowerCase().includes(searchQuery.toLowerCase());
+                (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.userEmail || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.rewardName || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             const statusMatch = filterStatus === '' || log.status === filterStatus;
 
@@ -64,7 +85,7 @@ export default function RewardsLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
+    }, [allRewardsLogs, searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -112,7 +133,7 @@ export default function RewardsLogsPage() {
         const headers = ['Date', 'Log ID', 'User', 'Email', 'Reward', 'Points', 'Redemption Code', 'Location', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.rewardName,
-            log.pointsCost, log.redemptionCode || '', getLocationName(log.locationId), log.status
+            log.pointsCost, log.redemptionCode || '', log.locationName || '-', log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -149,7 +170,7 @@ export default function RewardsLogsPage() {
                             <input type="text" placeholder="Search User, Reward..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none transition-all placeholder:text-slate-400 bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
-                        <button onClick={() => { setCurrentPage(1); }}
+                        <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
                             title="Refresh">
                             <RefreshCw size={16} />
@@ -166,7 +187,7 @@ export default function RewardsLogsPage() {
                         <div className="flex flex-wrap gap-3 items-center mb-3">
                             <CustomDropdown value={filterReward} onChange={(v) => handleFilterChange(setFilterReward, v)} options={rewardNames} placeholder="All Rewards" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={['claimed', 'pending', 'expired']} placeholder="All Statuses" />
-                            <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={LOCATIONS.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
+                            <CustomDropdown value={filterLocation} onChange={(v) => handleFilterChange(setFilterLocation, v)} options={allLocations.map(l => ({ value: l.id, label: l.name }))} placeholder="All Locations" />
                             {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/20"><X size={14} /> Clear</button>}
                         </div>
 
@@ -262,17 +283,17 @@ export default function RewardsLogsPage() {
                                     </td>
                                     {showMachine && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-sm text-slate-600 dark:text-slate-300">{log.locationName || getLocationName(log.locationId)}</span>
+                                            <span className="text-sm text-slate-600 dark:text-slate-300">{log.locationName || '-'}</span>
                                         </td>
                                     )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{getLocationName(log.locationId)}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '-'}</span>
                                         </td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(log.status)}`}>
-                                            {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                                            {(log.status || 'pending').charAt(0).toUpperCase() + (log.status || 'pending').slice(1)}
                                         </span>
                                     </td>
                                 </tr>

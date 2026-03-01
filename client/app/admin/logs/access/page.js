@@ -1,17 +1,34 @@
 'use client';
-import React, { useState, useMemo } from 'react';
-import { ADMIN_LOGS, ADMIN_USERS, getLocationName, LOCATIONS } from '../../../../src/data/mockData';
+import React, { useState, useMemo, useEffect } from 'react';
+import { logs as logsApi } from '../../../../src/services/apiService';
 import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
-const allAdminLogs = ADMIN_LOGS;
-const activeAdmins = ADMIN_USERS.filter(a => a.accountHealth === 'Active').length;
-
 export default function AdminAccessLogsPage() {
-    const { effectiveLocationId, isSuperAdmin } = useAuth();
+    const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
+
+    // API-loaded data
+    const [allAdminLogs, setAllAdminLogs] = useState([]);
+    const [activeAdmins, setActiveAdmins] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const data = await logsApi.getAccess(effectiveLocationId);
+                if (!cancelled) {
+                    const mapped = (data || []).map(l => ({ ...l, id: String(l.id), timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() }));
+                    setAllAdminLogs(mapped);
+                    setActiveAdmins(new Set(mapped.map(l => l.adminName)).size);
+                }
+            } catch (err) { console.error('Failed to load access logs:', err); }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [effectiveLocationId, refreshKey]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterAdmin, setFilterAdmin] = useState('');
@@ -43,7 +60,7 @@ export default function AdminAccessLogsPage() {
     // Column visibility
     const [showLocation, setShowLocation] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
-    const locations = LOCATIONS;
+    const locations = allLocations;
     const admins = [...new Set(allAdminLogs.map(log => log.adminName))];
     const categories = [...new Set(allAdminLogs.map(log => log.category))];
 
@@ -63,9 +80,9 @@ export default function AdminAccessLogsPage() {
 
             // 2. Filter by Search Query
             const matchesSearch = searchQuery === '' ||
-                log.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.adminName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                log.action.toLowerCase().includes(searchQuery.toLowerCase());
+                (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.adminName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.action || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             // 3. Filter by Dropdowns
             const matchesAdmin = filterAdmin === '' || log.adminName === filterAdmin;
@@ -81,7 +98,7 @@ export default function AdminAccessLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [searchQuery, filterAdmin, filterCategory, filterLocation, effectiveLocationId, sortColumn, sortDirection]);
+    }, [allAdminLogs, searchQuery, filterAdmin, filterCategory, filterLocation, effectiveLocationId, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -128,7 +145,7 @@ export default function AdminAccessLogsPage() {
         const headers = ['Date', 'Log ID', 'Admin ID', 'Admin', 'Role', 'Action', 'Target', 'Category', 'Location', 'Notes'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.adminUserId, log.adminName, log.adminRole,
-            log.action, log.target, log.category, log.locationName || getLocationName(log.locationId),
+            log.action, log.target, log.category, log.locationName || '-',
             log.notes
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -172,7 +189,7 @@ export default function AdminAccessLogsPage() {
                             <input type="text" placeholder="Search Admin, Action, Target..." value={searchQuery} onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 focus:border-purple-500" />
                         </div>
-                        <button onClick={() => { setCurrentPage(1); }}
+                        <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-purple-500/20 dark:hover:text-purple-400 transition-colors"
                             title="Refresh">
                             <RefreshCw size={16} />
@@ -292,7 +309,7 @@ export default function AdminAccessLogsPage() {
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-xs text-slate-600 dark:text-slate-400">
-                                                {log.locationName || getLocationName(log.locationId) || '-'}
+                                                {log.locationName || '-'}
                                             </span>
                                         </td>
                                     )}
