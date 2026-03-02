@@ -156,6 +156,20 @@
     animation: scaleOut 0.2s ease-in forwards;
   }
 
+  /* ANIMATION - BOUNCE */
+  /* animation: var(--animate-bounce); /* bounce 1s infinite */
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
   .button {
     cursor: pointer;
   }
@@ -221,10 +235,21 @@
   .text-color-header {
     color: #ffcf56;
   }
+
+  .champagne-bg {
+    background-color: #f7e7ce;
+  }
+
   .soft-sage-bg {
     background-color: #55917f;
   }
 
+  /* SAMPLE DESIGNS */
+  .hr-line {
+    border: 1px solid;
+    margin: 6px 0;
+    width: 80%;
+  }
   /* NAVIGATION BAR */
 
   .nav {

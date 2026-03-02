@@ -96,13 +96,13 @@ export default function Hero() {
           <div className="">
             {/* Introducing EcoPoints */}
             <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-amber-600/40 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
-              <GraduationCapIcon className="lg:w-7 lg:h-7 md:h-6 md:w-6 sm:w-6 sm:h-6 text-white" />
+              <GraduationCapIcon className="animate-bounce lg:w-7 lg:h-7 md:h-6 md:w-6 sm:w-6 sm:h-6 text-white" />
               <span className="sour-gummy-body-600 lg:text-lg md:text-sm sm:text-lg text-white text-center">
                 PUP Institute of Technology Research Project
               </span>
             </div>
             {/* Header Text */}
-            <h1 className="text-6xl sm:text-5xl md:text-6xl lg:text-5xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="chewy-regular text-6xl sm:text-5xl md:text-6xl lg:text-5xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text sm:text-8xl md:text-9xl lg:text-9xl  bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints:
               </span>
@@ -179,7 +179,7 @@ export default function Hero() {
           </h2>
           {/* CONTAINERS AREA*/}
           {/* CONTAINER */}
-          <div className="flex lg:grid lg:grid-cols-3 soft-sage-bg rounded-lg sm:space-y-6 sm:space-x-6 sm:p-6 sm:mb-10 md:space-y-16 md:space-x-8 lg:w-auto lg:h-auto lg:p-6 mb-10 lg:space-y-4 lg:space-x-8">
+          <div className="flex lg:grid lg:grid-cols-3 soft-sage-bg rounded-lg sm:space-y-6 sm:space-x-6 sm:p-6 sm:mb-10 md:space-y-16 md:space-x-8 lg:w-auto lg:h-auto lg:p-6 lg:mb-10 lg:space-y-4 lg:space-x-8">
             {concept.map((concept) => (
               <div className="">
                 {/* IMAGE SECTION */}
@@ -199,10 +199,10 @@ export default function Hero() {
                     {/* TEXT SECTION */}
                     <div className="flex w-full">
                       <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                        <h3 className="text-4xl sm:text-4xl lg:text-3xl text-color-content chewy-regular text-center sm:mb-6 sm:mt-6 md:mb-6 md:mt-6 lg:mb-2 lg:mt-2">
+                        <h3 className="text-4xl sm:text-4xl lg:text-3xl text-color chewy-regular text-center sm:mb-6 sm:mt-6 md:mb-6 md:mt-6 lg:mb-2 lg:mt-2">
                           {concept.title}
                         </h3>
-                        <p className="text-shadow-lg text-color-content sour-gummy-body-500 text-center sm:text-xl md:text-lg lg:text-xl">
+                        <p className="text-shadow-lg text-color sour-gummy-body-500 text-center sm:text-xl md:text-lg lg:text-xl">
                           {concept.description}
                         </p>
                       </div>
@@ -214,7 +214,7 @@ export default function Hero() {
             ))}
           </div>
           {/* HOW IT WORKS AREA */}
-          <h2 className="text-4xl sm:text-6xl md:text-5xl lg:text-4xl xl:text-5xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+          <h2 className="text-4xl sm:text-6xl md:text-5xl lg:text-6xl lg:py-5 sm:py-8 chewy-regular sm:mb-6 md:mb-6 lg:mb-10  animate-in slide-in-from-bottom duration-700 delay-100">
             <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
               How it Works?
             </span>
@@ -223,7 +223,7 @@ export default function Hero() {
           {/* CIRCUIT-LINE  */}
           <div dir="ltr">
             {/* FROM LEFT - 1ST LINE*/}
-            <div className="absolute sm:opacity-0  md:start-20 md:top-320 lg:start-0 lg:top-310 ">
+            <div className="absolute sm:opacity-0 md:start-20 md:top-320 lg:start-0 lg:top-310 ">
               <img
                 src="/SampleBorder(Circuit-Line-Left).png"
                 className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
@@ -244,17 +244,17 @@ export default function Hero() {
               />
             </div>
           </div>
-          <div className="flex flex-cols lg:grid lg:grid-cols-4 sm:grid sm:grid-cols-2 lg:space-y-32 lg:space-x-8 md:space-y-16 md:space-x-8  sm:space-y-4 sm:space-x-4">
+          <div className="flex flex-cols lg:grid lg:grid-cols-4 sm:grid sm:grid-cols-2 lg:space-y-8 lg:space-x-8 md:space-y-8 md:space-x-8  sm:space-y-4 sm:space-x-4">
             {/* CONTAINER */}
             {howItWorks.map((howItWorks) => (
               <div className="">
                 {/* IMAGE SECTION */}
                 <div className="flex w-full ">
                   <div className="relative group">
-                    {/* INNER-CONTAINER (IMAGE) */}
-                    <div className="secondary-color rounded-lg text-xs sm:p-6 sm:w-85 sm:h-120 lg:w-75 lg:h-120 ">
-                      {/* PICTURES */}
-                      <div className="accent-color-background rounded-lg px-4 py-4 transition-transform duration-700 hover:rotate-6 hover:scale-90 overflow-hidden shadow-xl transition-shadow">
+                    {/* OUTER-CONTAINER (IMAGE) */}
+                    <div className="soft-sage-bg rounded-lg text-xs sm:p-6 sm:w-85 sm:h-120 lg:w-75 lg:h-120 ">
+                      {/* INNER-CONTAINER (PICTURES) */}
+                      <div className=" champagne-bg rounded-lg px-4 py-4 transition-transform duration-700 hover:rotate-6 hover:scale-90 overflow-hidden shadow-xl transition-shadow">
                         <div className="flex w-full ">
                           {/* If mag lalagay ng Photo dito ilalagay */}
                           <img
