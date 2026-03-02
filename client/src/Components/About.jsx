@@ -24,7 +24,8 @@ export default function About() {
       position: "Project Manager/Automation Engineer",
       question: "What is your MANTRA in Life?",
       quote: "Kung ang Tinapay ay malamig, Matigas ang Kapeng tuyo",
-      image: "/SampleReward-Stickers.jpg",
+      image: "/SampleImage-Face1.jpeg",
+      image2: "/SampleImage-Face2.jpg",
     },
     {
       name: "Justine James S. Ibale",
@@ -32,7 +33,8 @@ export default function About() {
       position: "Project Manager/System Integrator",
       question: "What is your MANTRA in Life?",
       quote: "Minsan na tayo'y kinalaban, dapat may ginagampanan",
-      image: "/SampleReward-Stickers.jpg",
+      image: "/SampleImage-Face7.jpg",
+      image2: "/SampleImage-Face8.jpg",
     },
     {
       name: "Jaydine C. Nuval",
@@ -40,7 +42,8 @@ export default function About() {
       position: "Front-End Developer",
       question: "What is your MANTRA in Life?",
       quote: "Kapag may maayos na ginagamit, kailangan natin itong makamit",
-      image: "/SampleReward-Stickers.jpg",
+      image: "/SampleImage-Face3.jpg",
+      image2: "/SampleImage-Face4.avif",
     },
     {
       name: "John Paul Elias",
@@ -48,7 +51,8 @@ export default function About() {
       position: "Back-End Developer",
       question: "What is your MANTRA in Life?",
       quote: "67",
-      image: "/SampleReward-Stickers.jpg",
+      image: "/SampleImage-Face5.webp",
+      image2: "/SampleImage-Face6.jpg",
     },
     {
       name: "Rodge Steven Jude D. Funtalba",
@@ -56,7 +60,8 @@ export default function About() {
       position: "Front-End Developer",
       question: "What is your MANTRA in Life?",
       quote: "Whenever we go to the start, it always begins",
-      image: "/SampleReward-Stickers.jpg",
+      image: "/SampleImage-Face9.png",
+      image2: "/SampleImage-Face10.jpg",
     },
   ];
 
@@ -125,13 +130,18 @@ export default function About() {
                       <img
                         src={researchers.image}
                         alt={researchers.image}
-                        className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 "
+                        className="inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-0"
+                      />
+                      <img
+                        src={researchers.image2}
+                        alt={researchers.image2}
+                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-100"
                       />
                       <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
                       <div className="flex-1 w-full">
                         {/* Name & Position */}
                         <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                          <h1 className="absolute text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 mb-4 sm:mb-6 text-color opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:mt-6">
+                          <h1 className="absolute text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 mb-4 sm:mb-6 text-color opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:mt-2">
                             {researchers.nickname}
                           </h1>
                           <h1 className="text-4xl sm:text-3xl lg:text-2xl sour-gummy-body-600 mb-4 sm:mb-6 text-color group-hover:opacity-0">
