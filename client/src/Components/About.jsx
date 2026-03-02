@@ -8,6 +8,10 @@ export default function About() {
       copy: "Build recycling habits that feel rewarding through playful hardware and clear feedback loops.",
     },
     {
+      title: "Our Vission",
+      copy: "WWWWWW WWWWWW WWWWWW WWWWWW WWWWWW WWWWWW",
+    },
+    {
       title: "Connected Experience",
       copy: "A single account keeps track of every scan, every drop-off, and every EcoPoint you earn.",
     },
@@ -137,18 +141,16 @@ export default function About() {
                         alt={researchers.image2}
                         className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-100"
                       />
-                      <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
                       <div className="flex-1 w-full">
                         {/* Name & Position */}
                         <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                           <h1 className="absolute text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 mb-4 sm:mb-6 text-color opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:mt-2">
                             {researchers.nickname}
                           </h1>
-                          <h1 className="text-4xl sm:text-3xl lg:text-2xl sour-gummy-body-600 mb-4 sm:mb-6 text-color group-hover:opacity-0">
+                          <h1 className="text-4xl sm:text-3xl lg:text-xl sour-gummy-body-600 mb-4 sm:mb-6 text-color group-hover:opacity-0">
                             {researchers.name}
                           </h1>
-
-                          <p className="text-color sour-gummy-body-500 text-2xl sm:text-lg text-left opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                          <p className="text-color sour-gummy-body-500 lg:text-md lg:h-12 sm:text-lg opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
                             {researchers.position}
                           </p>
                         </div>
@@ -183,26 +185,28 @@ export default function About() {
                     />
                   </div>
                   {/* NAME & POSITION */}
-                  <div className="relative max-w-lg lg:text-left px-8 py-10 space-y-6">
-                    <div className="relative h-[1rem] lg:h-[2rem]">
-                      <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-5xl chewy-regular text-color transition-all duration-500 ease-out group-hover:opacity-0">
-                        {researchers.name}
-                      </h1>
-                      <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-6xl chewy-regular text-color opacity-0 transition-opacity  duration-500 ease-out group-hover:opacity-100">
-                        {researchers.nickname}
-                      </h1>
+                  <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl overflow-hidden transition-shadow duration-300 ease-out shadow-xl">
+                    <div className="relative max-w-lg lg:text-left px-8 py-10 space-y-6">
+                      <div className="relative h-[1rem] lg:h-[2rem]">
+                        <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-5xl chewy-regular text-color transition-all duration-500 ease-out group-hover:opacity-0">
+                          {researchers.name}
+                        </h1>
+                        <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-6xl chewy-regular text-color opacity-0 transition-opacity  duration-500 ease-out group-hover:opacity-100">
+                          {researchers.nickname}
+                        </h1>
+                      </div>
+                      <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-xl leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                        {researchers.position}
+                      </p>
+                      <p className="text-color sour-gummy-body-500 italic sm:text-lg lg:text-4xl leading-relaxed italic opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 ">
+                        {'"'}
+                        {researchers.quote}
+                        {'"'}
+                      </p>
+                      <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-3xl leading-relaxed translate-y-2 transition-all duration-500 group-hover:opacity-0">
+                        {researchers.question}
+                      </p>
                     </div>
-                    <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-xl leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0">
-                      {researchers.position}
-                    </p>
-                    <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-4xl leading-relaxed italic opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 ">
-                      {'"'}
-                      {researchers.quote}
-                      {'"'}
-                    </p>
-                    <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-3xl leading-relaxed translate-y-2 transition-all duration-500 group-hover:opacity-0">
-                      {researchers.question}
-                    </p>
                   </div>
                 </div>
               </div>
