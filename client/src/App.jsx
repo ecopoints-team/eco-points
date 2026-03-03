@@ -8,7 +8,12 @@ import Footer from "./Components/Footer";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-l from-lime-900 to-lime-950 text-white overflow-hidden">
+    <div className="soft-sage-bg">
+      <div className="">
+        <button>
+          <ChevronDownCircle className="soft-sage-bg" />
+        </button>
+      </div>
       <NavBar />
       <Hero />
       <Features />

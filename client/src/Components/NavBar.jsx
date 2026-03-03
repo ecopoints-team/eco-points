@@ -1,6 +1,6 @@
 "use client";
 
-import { MenuIcon, X } from "lucide-react";
+import { MenuIcon, X, ChevronDownCircle } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState, useEffect } from "react";
 
@@ -79,115 +79,123 @@ export default function NavBar({ onLoginClick }) {
   );
 
   return (
-    <div className={color ? "nav nav-bg" : "nav-bg"}>
-      <nav className="fixed top-0 w-full z-50 transition-all duration-700 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative flex justify-between items-center h-14 sm:h-16 md:h-20">
-            {/* LOGO SECTION */}
-            <Link
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavClick("home");
-              }}
-            >
-              <div className="flex items-center space-x-1 group cursor-pointer hover:scale-105 transition-transform duration-300">
-                <span className="text-lg sm:text-xl md:text-2xl">
-                  <img
-                    src="/EcoPoints Logo Mark with Name (Light Version).png"
-                    alt="Logo"
-                    className="w-30 lg:w-auto lg:h-15 sm:h-12 md:h-12"
-                  />
-                </span>
-              </div>
-            </Link>
-
-            {/* DESKTOP NAV LINKS - CENTERED ABSOLUTELY */}
-            <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 font-body-black text-white">
-              {navLinks.map((link) => {
-                const isActive = activeSection === link.target;
-                return (
-                  <button
-                    key={link.target}
-                    type="button"
-                    onClick={() => handleNavLinkClick(link)}
-                    className={`relative group text-sm lg:text-base transition-colors duration-300 cursor-pointer ${
-                      isActive
-                        ? "text-orange-300"
-                        : "text-white hover:text-orange-300"
-                    }`}
-                  >
-                    {link.label}
-                    <span
-                      className={`absolute bottom-0 h-0.5 bg-orange-300 transition-all duration-500 ease-out left-1/2 -translate-x-1/2 ${
-                        isActive ? "w-full" : "w-0"
-                      }`}
-                    ></span>
-                  </button>
-                );
-              })}
+    <nav
+      className={
+        color
+          ? "nav nav-bg backdrop-blur-sm "
+          : "fixed top-0 w-full z-50 transition-all duration-700"
+      }
+    >
+      <div className="absolute z-0 translate-y-120">
+        <button>
+          <ChevronDownCircle className="soft-sage-bg" />
+        </button>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-15">
+        <div className="relative flex justify-between items-center sm:h-16 md:h-20 lg:h-20">
+          {/* LOGO SECTION */}
+          <Link
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavClick("home");
+            }}
+          >
+            <div className="flex items-center space-x-1 group cursor-pointer hover:scale-110 transition-transform duration-300">
+              <span className="">
+                <img
+                  src="/EcoPoints Logo Mark with Name (Light Version).png"
+                  alt="Logo"
+                  className="w-30 lg:w-auto lg:h-15 sm:h-12 md:h-12"
+                />
+              </span>
             </div>
+          </Link>
 
-            {/* DESKTOP LOGIN BUTTON */}
-            <div className="hidden md:flex items-center space-x-6 lg:space-x-8 group cursor-pointer">
-              <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 transition-all duration-100 font-body-regular hover:font-body-bold hover:bg-amber-700/80">
-                <button
-                  type="button"
-                  onClick={onLoginClick}
-                  className="text-white text-sm lg:text-base px-2 w-full text-center group cursor-pointer"
-                >
-                  Log In
-                </button>
-              </div>
-            </div>
-
-            {/* MOBILE MENU TOGGLE */}
-            <button
-              className="md:hidden items-center p-2 text-gray-300 hover:text-white"
-              onClick={() => setMobileMenuIsOpen((prev) => !prev)}
-            >
-              {mobileMenuIsOpen ? (
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-              ) : (
-                <MenuIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* MOBILE MENU DROPDOWN */}
-        {mobileMenuIsOpen && (
-          <div className="md:hidden bg-lime-950/90 backdrop-blur-lg border-t border-white animate-in slide-in-from-top duration-500">
-            <div className="px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
-              {navLinks.map((link) => (
+          {/* DESKTOP NAV LINKS - CENTERED ABSOLUTELY */}
+          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 sour-gummy-body-500  text-white">
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.target;
+              return (
                 <button
                   key={link.target}
                   type="button"
                   onClick={() => handleNavLinkClick(link)}
-                  className={`block text-sm lg:text-base text-left w-full ${
-                    activeSection === link.target
-                      ? "text-orange-400 font-bold"
-                      : "text-white hover:text-orange-600"
+                  className={`relative group lg:text-md lg:text-base transition-colors duration-300 cursor-pointer ${
+                    isActive
+                      ? "text-orange-300 lg:text-xl"
+                      : "text-white hover:text-orange-300"
                   }`}
                 >
                   {link.label}
+                  <span
+                    className={`absolute bottom-0 h-0.5 bg-orange-300 transition-all duration-500 ease-out left-1/2 -translate-x-1/2 ${
+                      isActive ? "w-full" : "w-0"
+                    }`}
+                  ></span>
                 </button>
-              ))}
-
+              );
+            })}
+          </div>
+          {/* DESKTOP LOGIN BUTTON */}
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8 group cursor-pointer">
+            <div className="w-20 flex justify-center items-center px-1 py-1 rounded-lg border border-white/20 transition-all duration-100 font-body-regular hover:font-body-bold hover:bg-amber-700/80">
               <button
                 type="button"
-                onClick={() => {
-                  setMobileMenuIsOpen(false);
-                  onLoginClick();
-                }}
-                className="block text-left text-white hover:text-orange-600 text-sm lg:text-base w-full mt-2 pt-2 border-t border-white/10"
+                onClick={onLoginClick}
+                className="text-white text-sm lg:text-base px-2 w-full text-center group cursor-pointer"
               >
                 Log In
               </button>
             </div>
           </div>
-        )}
-      </nav>
-    </div>
+
+          {/* MOBILE MENU TOGGLE */}
+          <button
+            className="md:hidden items-center p-2 text-gray-300 hover:text-white"
+            onClick={() => setMobileMenuIsOpen((prev) => !prev)}
+          >
+            {mobileMenuIsOpen ? (
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            ) : (
+              <MenuIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* MOBILE MENU DROPDOWN */}
+      {mobileMenuIsOpen && (
+        <div className="md:hidden bg-lime-950/90 backdrop-blur-lg border-t border-white animate-in slide-in-from-top duration-500">
+          <div className="px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
+            {navLinks.map((link) => (
+              <button
+                key={link.target}
+                type="button"
+                onClick={() => handleNavLinkClick(link)}
+                className={`block text-sm lg:text-base text-left w-full ${
+                  activeSection === link.target
+                    ? "text-orange-400 font-bold"
+                    : "text-white hover:text-orange-600"
+                }`}
+              >
+                {link.label}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuIsOpen(false);
+                onLoginClick();
+              }}
+              className="block text-left text-white hover:text-orange-600 text-sm lg:text-base w-full mt-2 pt-2 border-t border-white/10"
+            >
+              Log In
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }

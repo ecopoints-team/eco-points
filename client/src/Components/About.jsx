@@ -139,7 +139,7 @@ export default function About() {
                       <img
                         src={researchers.image2}
                         alt={researchers.image2}
-                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-100"
+                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-in group-hover:scale-120 group-hover:opacity-100"
                       />
                       <div className="flex-1 w-full">
                         {/* Name & Position */}
@@ -147,7 +147,7 @@ export default function About() {
                           <h1 className="absolute text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 mb-4 sm:mb-6 text-color opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:mt-2">
                             {researchers.nickname}
                           </h1>
-                          <h1 className="text-4xl sm:text-3xl lg:text-xl sour-gummy-body-600 mb-4 sm:mb-6 text-color group-hover:opacity-0">
+                          <h1 className="animate-bounce text-4xl sm:text-3xl lg:text-xl sour-gummy-body-600 mb-4 sm:mb-6 mt-4 text-color group-hover:opacity-0">
                             {researchers.name}
                           </h1>
                           <p className="text-color sour-gummy-body-500 lg:text-md lg:h-12 sm:text-lg opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
