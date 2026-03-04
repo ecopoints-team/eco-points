@@ -134,7 +134,7 @@ export default function Rewards() {
   return (
     <section
       id="showcase"
-      className="relative min-h-screen flex items-center justify-center pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28 background-color"
+      className="relative min-h-screen flex items-center justify-center pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-0 -mt-20 background-color"
     >
       <div className="relative max-w-6xl mx-auto">
         {/* Text Content */}
@@ -176,16 +176,16 @@ export default function Rewards() {
                         <img
                           src={feature.image}
                           alt={feature.image}
-                          className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-110 "
+                          className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 "
                         />
                         <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
                         <div className="flex-1 w-full">
                           {/* Title & Description */}
-                          <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                            <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
+                          <div className="overflow-hidden max-h-[3.5rem] group-hover:max-h-[9rem] transition-[max-height] duration-500 ease-out max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                            <h3 className="chewy-regular text-4xl sm:text-3xl lg:text-5xl text-color">
                               {feature.title}
                             </h3>
-                            <p className="text-color text-base text-xl sm:text-lg leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                            <p className="sour-gummy-body-300 text-color text-base text-xl sm:text-lg leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
                               {feature.description}
                             </p>
                           </div>

@@ -87,7 +87,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative scroll-mt-28 background-color"
+      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative -mt-12 scroll-mt-12 background-color"
     >
       {/* Root Div */}
       <div className="max-w-6xl mx-auto">
@@ -151,7 +151,7 @@ export default function Features() {
                       <img
                         src={feature.image}
                         alt={feature.image}
-                        className="rounded-lg hover:rotate-6 hover:scale-150 transition-transform duration-500 sm:w-200 sm:h-80 md:w-450 md:h-60 lg:w-150 lg:h-100"
+                        className="rounded-lg hover:rotate-6 hover:scale-130 transition-transform duration-500 sm:w-200 sm:h-80 md:w-450 md:h-60 lg:w-150 lg:h-100"
                       />
                     </div>
                   </div>

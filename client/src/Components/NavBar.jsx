@@ -37,7 +37,7 @@ export default function NavBar({ onLoginClick }) {
       const current = sections.find((section) => {
         if (section) {
           const rect = section.getBoundingClientRect();
-          return rect.top >= -150 && rect.top < window.innerHeight / 2;
+          return rect.top <= 120 && rect.bottom > 120;
         }
         return false;
       });
@@ -82,16 +82,11 @@ export default function NavBar({ onLoginClick }) {
     <nav
       className={
         color
-          ? "nav nav-bg backdrop-blur-sm "
-          : "fixed top-0 w-full z-50 transition-all duration-700"
+          ? "nav nav-bg backdrop-blur-sm"
+          : "fixed top-1 w-full z-50 transition-all duration-300"
       }
     >
-      <div className="absolute z-0 translate-y-120">
-        <button>
-          <ChevronDownCircle className="soft-sage-bg" />
-        </button>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-15">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="relative flex justify-between items-center sm:h-16 md:h-20 lg:h-20">
           {/* LOGO SECTION */}
           <Link
@@ -111,9 +106,8 @@ export default function NavBar({ onLoginClick }) {
               </span>
             </div>
           </Link>
-
           {/* DESKTOP NAV LINKS - CENTERED ABSOLUTELY */}
-          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 sour-gummy-body-500  text-white">
+          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 sour-gummy-body-500 text-white">
             {navLinks.map((link) => {
               const isActive = activeSection === link.target;
               return (
@@ -123,8 +117,8 @@ export default function NavBar({ onLoginClick }) {
                   onClick={() => handleNavLinkClick(link)}
                   className={`relative group lg:text-md lg:text-base transition-colors duration-300 cursor-pointer ${
                     isActive
-                      ? "text-orange-300 lg:text-xl"
-                      : "text-white hover:text-orange-300"
+                      ? "text-color-header lg:text-xl"
+                      : "text-white hover:text-color-header"
                   }`}
                 >
                   {link.label}

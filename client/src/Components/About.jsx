@@ -85,7 +85,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="scroll-mt-28 py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 background-color"
+      className="scroll-mt-6 py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 background-color"
     >
       <div className="max-w-5xl mx-auto space-y-10 text-center lg:text-left">
         <div className="space-y-4">
@@ -120,17 +120,17 @@ export default function About() {
         </div>
         {/* ABOUT US - RESEARCHERS */}
         {/* SAMPLE DESIGN #1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-10 space-y-8 sm:space-y-12 lg:space-y-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-8 space-y-8 sm:space-y-12 lg:space-y-12">
           {researchers.map((researchers, key) => (
             <div key={`${researchers.name}-${key}`}>
               {/* Container Contents */}
               <div className="flex-1 w-full hover:translate-y-4 hover:scale-110 transition-transform duration-500 ease-out">
                 <div className="relative group">
                   {/* Outer Container */}
-                  <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-70" />
-                  <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl">
+                  <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-60" />
+                  <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl">
                     {/* Inner Container */}
-                    <div className="relative group bg-gray-800/20 rounded-lg p-3 sm:p-4 lg:p-2">
+                    <div className="relative group rounded-lg p-3 sm:p-4 lg:p-2">
                       <img
                         src={researchers.image}
                         alt={researchers.image}
@@ -139,20 +139,23 @@ export default function About() {
                       <img
                         src={researchers.image2}
                         alt={researchers.image2}
-                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-in group-hover:scale-120 group-hover:opacity-100"
+                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-108 group-hover:opacity-100"
                       />
                       <div className="flex-1 w-full">
-                        {/* Name & Position */}
-                        <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                          <h1 className="absolute text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 mb-4 sm:mb-6 text-color opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:mt-2">
-                            {researchers.nickname}
-                          </h1>
-                          <h1 className="animate-bounce text-4xl sm:text-3xl lg:text-xl sour-gummy-body-600 mb-4 sm:mb-6 mt-4 text-color group-hover:opacity-0">
+                        {/* NAME, NICKNAME & POSITION */}
+                        <div className="overflow-hidden max-h-[3.5rem] group-hover:max-h-[9rem] transition-[max-height] duration-500 ease-out text-center lg:text-left">
+                          <h1 className="absolute text-4xl sm:text-3xl lg:text-xl sour-gummy-body-600 text-color group-hover:opacity-0">
+                            {/*  mb-4 sm:mb-6 mt-4  */}
                             {researchers.name}
                           </h1>
-                          <p className="text-color sour-gummy-body-500 lg:text-md lg:h-12 sm:text-lg opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
-                            {researchers.position}
-                          </p>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:mt-2 group-hover:mb-2">
+                            <h1 className="text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 text-color">
+                              {researchers.nickname}
+                            </h1>
+                            <p className="text-color sour-gummy-body-500 lg:text-md lg:h-12 sm:text-lg">
+                              {researchers.position}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -188,24 +191,26 @@ export default function About() {
                   <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl overflow-hidden transition-shadow duration-300 ease-out shadow-xl">
                     <div className="relative max-w-lg lg:text-left px-8 py-10 space-y-6">
                       <div className="relative h-[1rem] lg:h-[2rem]">
-                        <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-5xl chewy-regular text-color transition-all duration-500 ease-out group-hover:opacity-0">
+                        <h1 className="text-4xl sm:text-3xl lg:text-5xl chewy-regular text-color transition-all duration-500 ease-out group-hover:opacity-0">
                           {researchers.name}
                         </h1>
-                        <h1 className="absolute inset-0 text-4xl sm:text-3xl lg:text-6xl chewy-regular text-color opacity-0 transition-opacity  duration-500 ease-out group-hover:opacity-100">
+                        <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-3xl leading-relaxed translate-y-2 transition-all duration-500 group-hover:opacity-0">
+                          {researchers.question}
+                        </p>
+                      </div>
+                      <div className="overflow-hidden opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
+                        <h1 className="absolute text-4xl sm:text-3xl lg:text-6xl -translate-y-15 chewy-regular text-color">
                           {researchers.nickname}
                         </h1>
+                        <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-xl leading-relaxed text-justify">
+                          {researchers.position}
+                        </p>
+                        <p className="text-color sour-gummy-body-500 italic sm:text-lg lg:text-4xl leading-relaxed italic">
+                          {'"'}
+                          {researchers.quote}
+                          {'"'}
+                        </p>
                       </div>
-                      <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-xl leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0">
-                        {researchers.position}
-                      </p>
-                      <p className="text-color sour-gummy-body-500 italic sm:text-lg lg:text-4xl leading-relaxed italic opacity-0 translate-y-2 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 ">
-                        {'"'}
-                        {researchers.quote}
-                        {'"'}
-                      </p>
-                      <p className="text-color sour-gummy-body-500 sm:text-lg lg:text-3xl leading-relaxed translate-y-2 transition-all duration-500 group-hover:opacity-0">
-                        {researchers.question}
-                      </p>
                     </div>
                   </div>
                 </div>
