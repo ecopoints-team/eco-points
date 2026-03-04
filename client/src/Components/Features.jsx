@@ -87,7 +87,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative scroll-mt-10 background-color"
+      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative -mt-12 scroll-mt-12 background-color"
     >
       {/* Root Div */}
       <div className="max-w-6xl mx-auto">

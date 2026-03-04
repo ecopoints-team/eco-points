@@ -38,7 +38,7 @@ export default function Services() {
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="w-full hover:scale-90 transition-transform delay-300 duration-500">
-            <div className="relative soft-sage-bg backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10">
+            <div className="relative soft-sage-bg backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/10">
               {/* h-[280px] sm:h-[350px] lg:h-[450px] */}
               {/* Container */}
               {/* IMAGE SECTION */}
@@ -68,7 +68,7 @@ export default function Services() {
             </p>
             {/* Button */}
             <div className="flex items-center justify-center mt-4 sm:mt-6 lg:mt-10 ">
-              <div className="items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center soft-sage-bg hover:scale-110 hover:deep-forest-bg hover:underline hover:cursor-pointer transition-transform duration-300 ease-in-out ">
+              <div className="items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center soft-sage-bg hover:scale-110 hover:deep-forest-bg hover:underline hover:cursor-pointer transition-transform duration-300 ease-in-out ">
                 <Link href="/rewards" className="">
                   Continue to Rewards
                 </Link>

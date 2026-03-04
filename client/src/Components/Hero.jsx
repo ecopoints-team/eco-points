@@ -66,7 +66,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen deep-forest-bg flex item-center justify-center sm:px-6 md:px-6 lg:px-20 pt-28 sm:pt-32 overflow-hidden scroll-mt-24"
+      className="relative min-h-screen deep-forest-bg flex item-center justify-center sm:px-6 md:px-6 lg:px-20 pt-28 sm:pt-32 overflow-hidden mb-8 scroll-mt-24"
     >
       <style>
         @import
@@ -102,7 +102,7 @@ export default function Hero() {
               </span>
             </div>
             {/* Header Text */}
-            <h1 className="chewy-regular text-6xl sm:text-5xl md:text-6xl lg:text-5xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="text-6xl sm:text-5xl md:text-6xl lg:text-5xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text sm:text-8xl md:text-9xl lg:text-9xl  bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints:
               </span>

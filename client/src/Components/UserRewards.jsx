@@ -185,6 +185,12 @@ export default function UserRewards() {
 
   return (
     <section className="relative min-h-screen pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
+      <style>
+        @import
+        url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&display=swap');
+        @import
+        url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&family=Playpen+Sans+Deva:wght@100..800&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap');{" "}
+      </style>
       {/* USER SUMMARY SECTION */}
       <div className="secondary-color relative">
         {/* CONTENT */}

@@ -4,7 +4,7 @@ import RewardsOrg from "../../src/Components/Rewards";
 
 export default function RewardsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-l from-lime-900 to-lime-950 text-white overflow-hidden">
+    <div className="min-h-screen deep-forest-bg text-color-content overflow-hidden">
       <NavBar />
       <main>
         <RewardsOrg />

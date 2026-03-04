@@ -117,8 +117,8 @@ export default function NavBar({ onLoginClick }) {
                   onClick={() => handleNavLinkClick(link)}
                   className={`relative group lg:text-md lg:text-base transition-colors duration-300 cursor-pointer ${
                     isActive
-                      ? "text-orange-300 lg:text-xl"
-                      : "text-white hover:text-orange-300"
+                      ? "text-color-header lg:text-xl"
+                      : "text-white hover:text-color-header"
                   }`}
                 >
                   {link.label}
