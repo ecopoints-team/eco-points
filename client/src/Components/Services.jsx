@@ -14,7 +14,7 @@ export default function Services() {
   return (
     <section
       id="services"
-      className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28 background-color"
+      className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
     >
       {/* CIRCUIT-LINE BORDER LEFT  */}
       <div dir="ltr">
@@ -45,7 +45,7 @@ export default function Services() {
               <div className="">
                 <img
                   src="/SampleReward-Stickers.jpg"
-                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-140 hover:scale-110 transition-transform delay-300 duration-700"
+                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-140 hover:scale-110 transition-transform  duration-700"
                 />
               </div>
             </div>
@@ -68,7 +68,7 @@ export default function Services() {
             </p>
             {/* Button */}
             <div className="flex items-center justify-center mt-4 sm:mt-6 lg:mt-10 ">
-              <div className="items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center soft-sage-bg hover:scale-110 hover:deep-forest-bg hover:underline hover:cursor-pointer transition-transform delay-150 duration-500 ease-in-out ">
+              <div className="items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center soft-sage-bg hover:scale-110 hover:deep-forest-bg hover:underline hover:cursor-pointer transition-transform duration-300 ease-in-out ">
                 <Link href="/rewards" className="">
                   Continue to Rewards
                 </Link>

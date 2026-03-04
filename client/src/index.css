@@ -201,15 +201,19 @@
 
   /* Safety Orange */
   .accent-color-background {
-    background-color: #e67e22;
+    background-color: #ffcf56;
+  }
+
+  .accent-color-bg-20 {
+    background-color: #1069b862;
   }
 
   .accent-color-text {
-    color: #ffcf56;
+    color: #2c74b3;
   }
 
   .accent-color-border {
-    border-color: #e67e22;
+    border-color: #106ab8;
   }
 
   /* Light Fern */
@@ -225,7 +229,7 @@
   /* SAMPLE COLOR PALETTE */
 
   .deep-forest-bg {
-    background-color: #004f2d;
+    background-color: #1e3f20;
   }
 
   .text-color-content {
@@ -233,7 +237,7 @@
   }
 
   .text-color-header {
-    color: #ffcf56;
+    color: #f6ae2d;
   }
 
   .champagne-bg {
@@ -241,7 +245,7 @@
   }
 
   .soft-sage-bg {
-    background-color: #55917f;
+    background-color: #70ae6e;
   }
 
   /* SAMPLE DESIGNS */
@@ -253,10 +257,9 @@
   /* NAVIGATION BAR */
 
   .nav {
-    background-color: #10172748;
     position: fixed;
     top: 0;
-    height: 90px;
+    height: 80px;
     width: 100%;
     z-index: 1;
     transition: 0.3s ease-in;
@@ -264,7 +267,7 @@
   }
 
   .nav-bg {
-    background-color: #10172748;
+    background-color: #2c74b370;
   }
 
   /* Fonts */

@@ -23,7 +23,7 @@ export default function Footer() {
             {" "}
             <img
               src="/EcoPoints Logo Mark with Name (Light Version).png"
-              className="lg:w-60 lg:h-auto mb-2"
+              className="lg:w-60 lg:h-auto mb-2 transition-transform duration-500 hover:cursor-pointer hover:scale-110"
             />
             <h1 className="sour-gummy-body-300">
               A smart recycling initiative powered by technology and
