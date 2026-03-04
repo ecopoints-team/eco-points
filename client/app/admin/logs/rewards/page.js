@@ -13,9 +13,11 @@ export default function RewardsLogsPage() {
     // API-loaded data
     const [allRewardsLogs, setAllRewardsLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
+            setIsDataLoading(true);
             try {
                 const data = await logsApi.getRewards(effectiveLocationId);
                 if (!cancelled) setAllRewardsLogs((data || []).map(l => ({
@@ -28,6 +30,7 @@ export default function RewardsLogsPage() {
                     locationName: l.locationName || '',
                 })));
             } catch (err) { console.error('Failed to load rewards logs:', err); }
+            finally { if (!cancelled) setIsDataLoading(false); }
         };
         load();
         return () => { cancelled = true; };
@@ -171,9 +174,10 @@ export default function RewardsLogsPage() {
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none transition-all placeholder:text-slate-400 bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
                         <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
-                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
+                            disabled={isDataLoading}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
                             title="Refresh">
-                            <RefreshCw size={16} />
+                            <RefreshCw size={16} className={isDataLoading ? 'animate-spin' : ''} />
                         </button>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilter || hasActiveFilters ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
                             <Filter size={16} /> Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}

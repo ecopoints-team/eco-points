@@ -158,7 +158,7 @@ export default function ManageUsersPage() {
     const filteredUsers = useMemo(() => {
         let result = users.filter(user => {
             const matchesSearch = searchQuery === '' ||
-                user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (user.displayId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.email.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesRole = filterRole === '' || user.userType === filterRole;
@@ -173,7 +173,10 @@ export default function ManageUsersPage() {
             result = [...result].sort((a, b) => {
                 let aVal = a[sortColumn];
                 let bVal = b[sortColumn];
-                if (sortColumn === 'id') {
+                if (sortColumn === 'displayId') {
+                    aVal = aVal || '';
+                    bVal = bVal || '';
+                } else if (sortColumn === 'id') {
                     aVal = parseInt(aVal) || 0;
                     bVal = parseInt(bVal) || 0;
                 } else {
@@ -368,9 +371,10 @@ export default function ManageUsersPage() {
                             } catch (err) { console.error('Refresh failed:', err); }
                             finally { setIsDataLoading(false); }
                         }}
-                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
+                            disabled={isDataLoading}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
                             title="Refresh">
-                            <RefreshCw size={16} />
+                            <RefreshCw size={16} className={isDataLoading ? 'animate-spin' : ''} />
                         </button>
                         <button onClick={() => setShowFilter(!showFilter)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
@@ -486,7 +490,7 @@ export default function ManageUsersPage() {
                             {currentUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{user.id}</span>
+                                        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{user.displayId || user.id}</span>
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</span>
@@ -592,7 +596,7 @@ export default function ManageUsersPage() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Edit User</h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">ID: {selectedUser.id}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">ID: {selectedUser.displayId || selectedUser.id}</p>
                             </div>
                             <button onClick={() => { setIsEditModalOpen(false); setSelectedUser(null); }} className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                                 <X size={18} className="text-slate-400" />

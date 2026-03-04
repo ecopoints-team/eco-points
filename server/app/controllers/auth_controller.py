@@ -5,7 +5,7 @@ Handles login, logout, and current-user endpoints with JWT tokens.
 import jwt
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app
-from ..models import User, AdminLog
+from ..models import User, AdminLog, Account, CommunityGroup
 from ..middleware import token_required
 from .. import db
 
@@ -189,4 +189,125 @@ def change_password(current_user):
         return jsonify({'success': True, 'message': 'Password changed successfully'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── Public Registration ───────────────────────────────────────────────
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    """Public registration for regular (non-admin) users.
+
+    Body: { name, username?, email?, phone?, password, userType,
+            locationId, groupId?, yearLevel? }
+    """
+    try:
+        data = request.get_json() or {}
+        name = data.get('name')
+        password = data.get('password')
+        email = data.get('email')
+        username = data.get('username')
+        phone = data.get('phone')
+        user_type = data.get('userType')
+        location_id = data.get('locationId')
+        group_id = data.get('groupId')
+        year_level = data.get('yearLevel')
+
+        # Validations
+        if not name:
+            return jsonify({'success': False, 'error': 'Name is required'}), 400
+        if not password or len(password) < 6:
+            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
+        if not location_id:
+            return jsonify({'success': False, 'error': 'Organization/location is required'}), 400
+
+        if email and User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'error': 'Email already exists'}), 409
+        if username and User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'error': 'Username already taken'}), 409
+
+        # Resolve community group
+        if not group_id:
+            default_group = CommunityGroup.query.filter_by(
+                organization_id=location_id, group_type='staff'
+            ).first()
+            if not default_group:
+                default_group = CommunityGroup.query.filter_by(organization_id=location_id).first()
+            if not default_group:
+                return jsonify({'success': False, 'error': 'No community group found for this location'}), 400
+            group_id = default_group.id
+
+        account = Account(
+            community_group_id=group_id,
+            account_name=name,
+            points_balance=0,
+        )
+        db.session.add(account)
+        db.session.flush()
+
+        user = User(
+            account_id=account.id,
+            name=name,
+            username=username,
+            email=email,
+            phone=phone,
+            role='user',
+            user_type=user_type,
+            year_level=year_level,
+            is_active=True,
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.flush()
+
+        # Generate display_id
+        from ..models import Organization
+        org = Organization.query.get(location_id)
+        if org:
+            words = [w for w in org.name.split() if w[0].isupper()]
+            org_abbr = ''.join(w[0] for w in words).upper() or 'ORG'
+        else:
+            org_abbr = 'ORG'
+        user.display_id = User.generate_display_id('user', org_abbr)
+
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Account created successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@auth_bp.route('/locations', methods=['GET'])
+def public_locations():
+    """Return active organizations for the signup form (public, no auth)."""
+    try:
+        from ..models import Organization
+        orgs = Organization.query.filter_by(status='Active').order_by(Organization.name).all()
+        result = [{'id': o.id, 'name': o.name, 'fullName': o.full_name} for o in orgs]
+        return jsonify({'success': True, 'locations': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@auth_bp.route('/groups', methods=['GET'])
+def public_groups():
+    """Return community groups for a given location (public, no auth).
+
+    Query: ?location_id=1
+    """
+    try:
+        loc_id = request.args.get('location_id', type=int)
+        if not loc_id:
+            return jsonify({'success': True, 'groups': []}), 200
+        groups = CommunityGroup.query.filter_by(organization_id=loc_id)\
+            .order_by(CommunityGroup.group_type, CommunityGroup.name).all()
+        result = [{
+            'id': g.id,
+            'name': g.name,
+            'abbreviation': g.abbreviation,
+            'groupType': g.group_type,
+        } for g in groups]
+        return jsonify({'success': True, 'groups': result}), 200
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

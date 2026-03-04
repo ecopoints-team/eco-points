@@ -7,10 +7,27 @@ from . import db
 # Group 1: Multi-Tenant Identity (The Core)
 # ============================================================================
 
+class OrgType(db.Model):
+    """
+    Lookup table for organization types (University, Corporation, HOA, etc.).
+    Super-admin can add/delete types dynamically.
+    """
+    __tablename__ = 'org_types'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)  # "University", "Corporation"
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organizations = db.relationship('Organization', backref='org_type_ref', lazy=True)
+
+    def __repr__(self):
+        return f'<OrgType {self.name}>'
+
+
 class City(db.Model):
     """
     3NF lookup table for city/municipality normalization.
     Organizations reference this via city_id FK instead of storing flat city strings.
+    Super-admin can add/delete cities dynamically.
     """
     __tablename__ = 'cities'
     id = db.Column(db.Integer, primary_key=True)
@@ -35,6 +52,7 @@ class Organization(db.Model):
     name = db.Column(db.String(200), nullable=False)              # "Arellano University"
     full_name = db.Column(db.String(500))                         # "Arellano University - Andres Bonifacio Pasig Campus"
     org_type = db.Column(db.String(100), nullable=False)          # "University", "Corporation", "HOA"
+    org_type_id = db.Column(db.Integer, db.ForeignKey('org_types.id'), nullable=True)
 
     # 3NF Address
     street_address = db.Column(db.String(500))                    # "Pag-asa St, Caniogan"
@@ -128,6 +146,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    display_id = db.Column(db.String(30), unique=True, nullable=True, index=True)  # e.g. USER-AU-001, HEAD-AU-002
 
     # Identity
     name = db.Column(db.String(200), nullable=False)
@@ -167,6 +186,44 @@ class User(db.Model):
     @property
     def is_admin(self):
         return self.role in ('superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician')
+
+    # ── Role prefix map for display_id ──────────────────────────────
+    ROLE_PREFIX = {
+        'superadmin': 'SA',
+        'head_admin': 'HEAD',
+        'auditor': 'AUD',
+        'inventory_officer': 'INV',
+        'technician': 'TECH',
+        'user': 'USER',
+        'dependent': 'DEP',
+    }
+
+    @staticmethod
+    def generate_display_id(role, org_abbreviation):
+        """Generate next display_id like USER-AU-001.
+
+        Args:
+            role: user role string (e.g. 'user', 'head_admin')
+            org_abbreviation: short org name (e.g. 'AU', 'PU'). Use 'SYS' for superadmins.
+        Returns:
+            str – e.g. 'USER-AU-001'
+        """
+        prefix = User.ROLE_PREFIX.get(role, 'USER')
+        abbr = (org_abbreviation or 'SYS').upper()
+        pattern = f'{prefix}-{abbr}-%'
+
+        last = db.session.query(User).filter(User.display_id.like(pattern))\
+            .order_by(User.display_id.desc()).first()
+
+        if last and last.display_id:
+            try:
+                seq = int(last.display_id.rsplit('-', 1)[-1]) + 1
+            except ValueError:
+                seq = 1
+        else:
+            seq = 1
+
+        return f'{prefix}-{abbr}-{seq:03d}'
 
     def __repr__(self):
         return f'<User {self.name} ({self.role})>'
@@ -212,9 +269,8 @@ class RVM(db.Model):
     is_online = db.Column(db.Boolean, default=False)
     last_heartbeat = db.Column(db.DateTime)
 
-    # Capacity
+    # Capacity (sensors detect bin-full state; no max_capacity needed)
     current_capacity = db.Column(db.Integer, default=0)
-    max_capacity = db.Column(db.Integer, default=100)
     total_items_collected = db.Column(db.Integer, default=0)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

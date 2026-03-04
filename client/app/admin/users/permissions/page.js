@@ -194,7 +194,7 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
             <td className="px-3 py-3">
-                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.id}</span>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.displayId || user.id}</span>
             </td>
             <td className="px-3 py-3">
                 <span className="text-sm font-medium text-slate-800 dark:text-white">{user.name}</span>
@@ -267,11 +267,14 @@ export default function PermissionsPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [adminUsers, setAdminUsers] = useState([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Load admin users from API
     useEffect(() => {
         let cancelled = false;
         (async () => {
+            setIsDataLoading(true);
             try {
                 const raw = await usersApi.getAll({ isAdmin: true });
                 if (cancelled) return;
@@ -289,10 +292,12 @@ export default function PermissionsPage() {
                 setAdminUsers(mapped);
             } catch (err) {
                 console.error('Failed to load admin users:', err);
+            } finally {
+                if (!cancelled) setIsDataLoading(false);
             }
         })();
         return () => { cancelled = true; };
-    }, []);
+    }, [refreshKey]);
     const [editFormData, setEditFormData] = useState({
         name: '', email: '', role: '', status: '', accountHealth: '', locationId: ''
     });
@@ -377,6 +382,7 @@ export default function PermissionsPage() {
             const q = searchQuery.toLowerCase();
             result = result.filter(u =>
                 u.id.toLowerCase().includes(q) ||
+                (u.displayId || '').toLowerCase().includes(q) ||
                 u.name.toLowerCase().includes(q) ||
                 u.email.toLowerCase().includes(q)
             );
@@ -499,17 +505,17 @@ export default function PermissionsPage() {
 
 
             {/* Role & Permission Matrix */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-stretch">
                 {/* Roles Panel */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl h-full flex flex-col">
                         <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <Shield size={18} className="text-emerald-600 dark:text-emerald-400" />
                                 System Roles
                             </h3>
                         </div>
-                        <div className="p-3 space-y-2">
+                        <div className="p-3 space-y-2 flex-1 overflow-y-auto">
                             {roles.map(role => (
                                 <RoleCard
                                     key={role.id}
@@ -525,7 +531,7 @@ export default function PermissionsPage() {
 
                 {/* Permission Matrix */}
                 <div className="lg:col-span-2">
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl h-full flex flex-col">
                         <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white">
                                 Permissions for{' '}
@@ -534,7 +540,7 @@ export default function PermissionsPage() {
                                 </span>
                             </h3>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto flex-1">
                             <table className="w-full">
                                 <thead className="bg-slate-50 dark:bg-slate-900/80 text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
                                     <tr>
@@ -618,10 +624,11 @@ export default function PermissionsPage() {
                             <input type="text" placeholder="Search ID, Name, Email..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
-                        <button onClick={() => { setCurrentPage(1); }}
-                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors"
+                        <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
+                            disabled={isDataLoading}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
                             title="Refresh">
-                            <RefreshCw size={16} />
+                            <RefreshCw size={16} className={isDataLoading ? 'animate-spin' : ''} />
                         </button>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilter || hasActiveFilters ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'}`}>
                             <Filter size={16} /> Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}

@@ -332,11 +332,11 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
 
                                 <div
                                     className={`
-                                        grid transition-all duration-300 ease-in-out
+                                        grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
                                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
                                     `}
                                 >
-                                    <div className="overflow-hidden">
+                                    <div className="overflow-hidden transition-all duration-300">
                                         <div className="relative ml-5 pl-3 border-l border-slate-200 dark:border-slate-700/50 my-1 space-y-0.5">
                                             {item.children.map((child, cIdx) => (
                                                 <SubMenuItem

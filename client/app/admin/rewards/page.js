@@ -13,6 +13,9 @@ import {
 // Low stock threshold
 const LOW_STOCK_THRESHOLD = 10;
 
+// Predefined category options
+const DEFAULT_CATEGORIES = ['Merchandise', 'Vouchers', 'Experience', 'Sustainable Product', 'School Supply'];
+
 // ============================================================================
 // COMPONENTS
 // ============================================================================
@@ -70,6 +73,96 @@ const CategoryBadge = ({ category }) => {
         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${colors[category] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
             {category}
         </span>
+    );
+};
+
+// Searchable Category Field (with + button, upward dropdown, 5-item scroll)
+const CategorySearchField = ({ value, onChange, existingCategories }) => {
+    const [search, setSearch] = useState('');
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showAddCategory, setShowAddCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [customCategories, setCustomCategories] = useState([]);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setShowDropdown(false);
+                setShowAddCategory(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const allOptions = [...new Set([...DEFAULT_CATEGORIES, ...existingCategories, ...customCategories])];
+    const filtered = allOptions.filter(c => c.toLowerCase().includes((showDropdown ? search : '').toLowerCase()));
+
+    const handleAddCategory = () => {
+        const trimmed = newCategoryName.trim();
+        if (!trimmed) return;
+        setCustomCategories(prev => [...new Set([...prev, trimmed])]);
+        onChange(trimmed);
+        setNewCategoryName('');
+        setShowAddCategory(false);
+        setShowDropdown(false);
+    };
+
+    return (
+        <div ref={ref} className="relative">
+            <div className="flex gap-1">
+                <div className="flex-1 relative">
+                    <input
+                        type="text"
+                        placeholder={value || 'Search or type category...'}
+                        value={showDropdown ? search : value}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            onChange(e.target.value);
+                            setShowDropdown(true);
+                        }}
+                        onFocus={() => { setShowDropdown(true); setSearch(''); }}
+                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    />
+                    {showDropdown && (
+                        <div className="absolute z-50 bottom-full mb-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[185px] overflow-y-auto">
+                            {filtered.length > 0 ? filtered.map(cat => (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => { onChange(cat); setShowDropdown(false); setSearch(''); }}
+                                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${cat === value
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-medium'
+                                        : 'text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            )) : (
+                                <div className="px-3 py-3 text-center text-xs text-slate-400">No matches — use + to add</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <button type="button" onClick={() => { setShowAddCategory(!showAddCategory); setShowDropdown(false); }}
+                    className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
+                    title="Add new category">
+                    <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
+                </button>
+            </div>
+            {showAddCategory && (
+                <div className="mt-2 flex gap-2">
+                    <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category name..."
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
+                    <button type="button" onClick={handleAddCategory} disabled={!newCategoryName.trim()}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                        Add
+                    </button>
+                </div>
+            )}
+        </div>
     );
 };
 
@@ -671,13 +764,10 @@ export default function RewardsInventoryPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category *</label>
-                                <CustomDropdown
+                                <CategorySearchField
                                     value={formData.category}
                                     onChange={(v) => setFormData(p => ({ ...p, category: v }))}
-                                    options={[...new Set(['Merchandise', 'Vouchers', 'Experience', ...categories])]}
-                                    placeholder="Select a category..."
-                                    size="md"
-                                    direction="up"
+                                    existingCategories={categories}
                                 />
                             </div>
                         </div>

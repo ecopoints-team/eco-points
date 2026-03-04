@@ -111,10 +111,13 @@ export default function AdminLayout({ children }) {
         logout,
     } = useAuth();
 
-    // Auth guard — redirect to landing page with login modal if not authenticated
+    // Auth guard — redirect to landing page with login modal if not authenticated or not admin
     const router = useRouter();
+    const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+    const isAdminUser = currentUser && ADMIN_ROLES.includes(currentUser.role);
+
     useEffect(() => {
-        if (isInitialized && !currentUser) {
+        if (isInitialized && (!currentUser || !ADMIN_ROLES.includes(currentUser.role))) {
             router.push('/?login=true');
         }
     }, [isInitialized, currentUser, router]);
@@ -250,10 +253,16 @@ export default function AdminLayout({ children }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Auth guard — don't render admin layout if not logged in 
-    const isAuth = isInitialized && currentUser;
-    if (!isAuth) {
-        return null;
+    // Auth guard — don't render admin content until auth is verified and user is admin
+    if (!isInitialized || !isAdminUser) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-100 dark:bg-slate-900">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Verifying access...</span>
+                </div>
+            </div>
+        );
     }
 
     return (

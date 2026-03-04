@@ -68,6 +68,7 @@ import {
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../context/AuthContext";
+import { auth as authApi } from "../services/apiService";
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments
@@ -368,7 +369,7 @@ const FloatingSearchDropdown = ({
           ref={dropdownRef}
           className="absolute z-50 bottom-full mb-2 left-0
                         w-full bg-white border border-gray-200 rounded-xl shadow-2xl 
-                        max-h-48 overflow-y-auto"
+                        max-h-[210px] overflow-y-auto"
         >
           <div
             className="sticky top-0 px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider 
@@ -440,17 +441,18 @@ export default function LogIn({ onClose }) {
   const [loginPassword, setLoginPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("");
-  const [school, setSchool] = useState("");
+  const [phone, setPhone] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationsList, setLocationsList] = useState([]);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [communityGroups, setCommunityGroups] = useState([]);
   const [educationLevel, setEducationLevel] = useState("");
   const [strand, setStrand] = useState("");
   const [strandSearch, setStrandSearch] = useState("");
   const [department, setDepartment] = useState("");
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [yearLevel, setYearLevel] = useState("");
-  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
-  const [filteredSchools, setFilteredSchools] = useState([
-    "Arellano University - Andres Bonifacio Pasig Campus",
-  ]);
   const [error, setError] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -488,6 +490,22 @@ export default function LogIn({ onClose }) {
     }
   }, [failedAttempts]);
 
+  // Load locations for signup form
+  useEffect(() => {
+    if (isSignUp) {
+      authApi.getPublicLocations().then(data => setLocationsList(data || [])).catch(() => {});
+    }
+  }, [isSignUp]);
+
+  // Load community groups when locationId changes
+  useEffect(() => {
+    if (locationId) {
+      authApi.getPublicGroups(locationId).then(data => setCommunityGroups(data || [])).catch(() => {});
+    } else {
+      setCommunityGroups([]);
+    }
+  }, [locationId]);
+
   // Check if signup form has data
   const hasSignUpData = () => {
     return (
@@ -497,7 +515,8 @@ export default function LogIn({ onClose }) {
       password ||
       confirmPassword ||
       role ||
-      school ||
+      phone ||
+      locationId ||
       educationLevel ||
       strand ||
       department ||
@@ -528,7 +547,11 @@ export default function LogIn({ onClose }) {
     setPassword("");
     setConfirmPassword("");
     setRole("");
-    setSchool("");
+    setPhone("");
+    setLocationId("");
+    setLocationSearch("");
+    setShowLocationDropdown(false);
+    setCommunityGroups([]);
     setEducationLevel("");
     setStrand("");
     setStrandSearch("");
@@ -547,7 +570,9 @@ export default function LogIn({ onClose }) {
       password,
       confirmPassword,
       role,
-      school,
+      phone,
+      locationId,
+      locationSearch,
       educationLevel,
       strand,
       strandSearch,
@@ -566,7 +591,9 @@ export default function LogIn({ onClose }) {
     setPassword(data.password || "");
     setConfirmPassword(data.confirmPassword || "");
     setRole(data.role || "");
-    setSchool(data.school || "");
+    setPhone(data.phone || "");
+    setLocationId(data.locationId || "");
+    setLocationSearch(data.locationSearch || "");
     setEducationLevel(data.educationLevel || "");
     setStrand(data.strand || "");
     setStrandSearch(data.strandSearch || "");
@@ -697,13 +724,40 @@ export default function LogIn({ onClose }) {
     setIsLoading(true);
     setError("");
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      // Resolve groupId from strand/department selection via communityGroups
+      let groupId = null;
+      if (role === "Student" && educationLevel === "shs" && strand) {
+        const match = communityGroups.find(g => g.groupType === "shs_strand" && g.abbreviation === strand);
+        if (match) groupId = match.id;
+      } else if ((role === "Student" && educationLevel === "college" && department) || (role === "Faculty" && department)) {
+        const match = communityGroups.find(g => g.groupType === "college" && g.abbreviation === department);
+        if (match) groupId = match.id;
+      } else if (role === "Staff") {
+        const match = communityGroups.find(g => g.groupType === "staff");
+        if (match) groupId = match.id;
+      }
 
-    // Reset all fields and switch to login
-    setIsLoading(false);
-    alert("Account created successfully! Please sign in.");
-    resetAllFields();
-    setIsSignUp(false);
+      await authApi.register({
+        name: fullName,
+        username: signUpUsername || undefined,
+        email: email || undefined,
+        phone: phone ? `+63${phone}` : undefined,
+        password,
+        userType: role.toLowerCase(),
+        locationId: parseInt(locationId),
+        groupId: groupId || undefined,
+        yearLevel: yearLevel || undefined,
+      });
+
+      setIsLoading(false);
+      alert("Account created successfully! Please sign in.");
+      resetAllFields();
+      setIsSignUp(false);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || "Registration failed. Please try again.");
+    }
   };
 
   const [isClosing, setIsClosing] = useState(false);
@@ -729,7 +783,11 @@ export default function LogIn({ onClose }) {
     setLoginPassword("");
     setConfirmPassword("");
     setRole("");
-    setSchool("");
+    setPhone("");
+    setLocationId("");
+    setLocationSearch("");
+    setShowLocationDropdown(false);
+    setCommunityGroups([]);
     setEducationLevel("");
     setStrand("");
     setStrandSearch("");
@@ -737,7 +795,6 @@ export default function LogIn({ onClose }) {
     setDepartmentSearch("");
     setYearLevel("");
     setError("");
-    setShowSchoolDropdown(false);
     setSignUpPhase(1);
   };
 
@@ -1316,10 +1373,10 @@ export default function LogIn({ onClose }) {
               </form>
             )}
 
-            {/* PHASE 2: User Information (User Type, School, Department/Strand) */}
+            {/* PHASE 2: User Information (User Type, Organization, Phone, Department/Strand) */}
             {signUpPhase === 2 && (
               <form onSubmit={handleSignUpPhase2} className="w-full space-y-2">
-                {/* USER TYPE DROPDOWN (Moved to Phase 2) */}
+                {/* USER TYPE DROPDOWN */}
                 <div className="relative w-full group">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
                     <Users size={18} />
@@ -1345,77 +1402,80 @@ export default function LogIn({ onClose }) {
                   </div>
                 </div>
 
-                {/* SCHOOL SEARCHABLE DROPDOWN (Moved to Phase 2) */}
+                {/* PHONE NUMBER */}
                 <div className="relative w-full group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-100 text-gray-500 text-sm font-medium">+63</span>
+                    <input
+                      type="tel"
+                      placeholder="9XX XXX XXXX"
+                      value={phone}
+                      onChange={(e) => { let d = e.target.value.replace(/[^\d]/g, ''); if (d.startsWith('0')) d = d.slice(1); setPhone(d.slice(0, 10)); }}
+                      maxLength={10}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-r-lg 
+                                  focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                  block px-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* ORGANIZATION / LOCATION SEARCHABLE DROPDOWN */}
+                <div className="relative w-full group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300 z-10">
                     <Building2 size={18} />
                   </div>
                   <input
                     type="text"
-                    placeholder="Select School / Campus"
-                    value={school}
-                    required
+                    placeholder="Select Organization / Campus"
+                    value={locationSearch}
+                    required={!locationId}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      setSchool(val);
-                      if (val.length > 0) {
-                        setShowSchoolDropdown(true);
-                        if (
-                          "Arellano University - Andres Bonifacio Pasig Campus"
-                            .toLowerCase()
-                            .includes(val.toLowerCase())
-                        ) {
-                          setFilteredSchools([
-                            "Arellano University - Andres Bonifacio Pasig Campus",
-                          ]);
-                        } else {
-                          setFilteredSchools([]);
-                        }
-                      } else {
-                        setShowSchoolDropdown(false);
-                      }
+                      setLocationSearch(e.target.value);
+                      setShowLocationDropdown(true);
+                      if (!e.target.value) { setLocationId(""); setCommunityGroups([]); }
                     }}
-                    onFocus={() => {
-                      if (school.length > 0) setShowSchoolDropdown(true);
-                    }}
+                    onFocus={() => setShowLocationDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
                     className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
                                     focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                     block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
                   />
-                  {showSchoolDropdown && school.length > 0 && (
-                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-40 overflow-y-auto z-50 p-1">
+                  {showLocationDropdown && (
+                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-[210px] overflow-y-auto z-50 p-1">
                       <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 mb-1">
                         <Building2 size={12} />
-                        Suggested Schools
+                        Organizations
                       </div>
-                      {filteredSchools.length > 0 ? (
-                        filteredSchools.map((s, idx) => (
+                      {locationsList
+                        .filter(l => l.name.toLowerCase().includes(locationSearch.toLowerCase()) || (l.fullName || '').toLowerCase().includes(locationSearch.toLowerCase()))
+                        .slice(0, 20)
+                        .map((loc) => (
                           <button
-                            key={idx}
+                            key={loc.id}
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
-                              setSchool(s);
-                              setShowSchoolDropdown(false);
+                              setLocationId(String(loc.id));
+                              setLocationSearch(loc.fullName || loc.name);
+                              setShowLocationDropdown(false);
+                              // Reset education fields when org changes
+                              setEducationLevel(""); setStrand(""); setStrandSearch(""); setDepartment(""); setDepartmentSearch(""); setYearLevel("");
                             }}
                             className="w-full text-left px-3 py-2 hover:bg-lime-50 rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-2 group"
                           >
-                            <div className="w-7 h-7 rounded-full bg-lime-100 flex items-center justify-center text-lime-600 group-hover:bg-lime-200 transition-colors">
+                            <div className="w-7 h-7 rounded-full bg-lime-100 flex items-center justify-center text-lime-600 group-hover:bg-lime-200 transition-colors flex-shrink-0">
                               <Building2 size={14} />
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-800 group-hover:text-lime-800 text-xs">
-                                {s}
-                              </p>
-                              <p className="text-[10px] text-gray-400">
-                                Pasig City
-                              </p>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-800 group-hover:text-lime-800 text-xs truncate">{loc.fullName || loc.name}</p>
+                              <p className="text-[10px] text-gray-400 truncate">{loc.name}</p>
                             </div>
                           </button>
-                        ))
-                      ) : (
+                        ))}
+                      {locationsList.filter(l => l.name.toLowerCase().includes(locationSearch.toLowerCase()) || (l.fullName || '').toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
                         <div className="px-4 py-4 text-center flex flex-col items-center justify-center text-gray-400 gap-1">
                           <Search size={16} />
-                          <span className="text-xs">No schools found</span>
+                          <span className="text-xs">No organizations found</span>
                         </div>
                       )}
                     </div>
@@ -1423,7 +1483,7 @@ export default function LogIn({ onClose }) {
                 </div>
 
                 {/* CONDITIONAL FIELDS BASED ON ROLE */}
-                {role === "Student" && (
+                {role === "Student" && locationId && (
                   <>
                     {/* Educational Level */}
                     <div className="relative w-full group">
@@ -1450,7 +1510,7 @@ export default function LogIn({ onClose }) {
                       </div>
                     </div>
 
-                    {/* SHS Strand Dropdown (Searchable, UPWARD) */}
+                    {/* SHS Strand Dropdown - Use community groups from API */}
                     {educationLevel === "shs" && (
                       <>
                         <FloatingSearchDropdown
@@ -1458,7 +1518,7 @@ export default function LogIn({ onClose }) {
                           icon={<BookOpen size={18} />}
                           value={strandSearch}
                           onChange={setStrandSearch}
-                          options={SHS_STRANDS}
+                          options={communityGroups.filter(g => g.groupType === 'shs_strand').map(g => ({ id: g.abbreviation || g.name, name: g.abbreviation || g.name, fullName: g.name }))}
                           onSelect={(option) => {
                             setStrand(option.id);
                             setStrandSearch(option.name);
@@ -1496,7 +1556,7 @@ export default function LogIn({ onClose }) {
                       </>
                     )}
 
-                    {/* College Department Dropdown (Searchable, UPWARD) */}
+                    {/* College Department Dropdown - Use community groups from API */}
                     {educationLevel === "college" && (
                       <>
                         <FloatingSearchDropdown
@@ -1504,10 +1564,10 @@ export default function LogIn({ onClose }) {
                           icon={<Building2 size={18} />}
                           value={departmentSearch}
                           onChange={setDepartmentSearch}
-                          options={COLLEGE_DEPARTMENTS}
+                          options={communityGroups.filter(g => g.groupType === 'college').map(g => ({ id: g.abbreviation || g.name, name: g.name, abbreviation: g.abbreviation || g.name }))}
                           onSelect={(option) => {
                             setDepartment(option.id);
-                            setDepartmentSearch(`${option.abbreviation}`);
+                            setDepartmentSearch(option.abbreviation);
                           }}
                           searchKey="name"
                           displayKey="name"
@@ -1546,17 +1606,17 @@ export default function LogIn({ onClose }) {
                   </>
                 )}
 
-                {/* Faculty: Department Search */}
-                {role === "Faculty" && (
+                {/* Faculty: Department Search - Use community groups from API */}
+                {role === "Faculty" && locationId && (
                   <FloatingSearchDropdown
                     placeholder="Search Department"
                     icon={<Building2 size={18} />}
                     value={departmentSearch}
                     onChange={setDepartmentSearch}
-                    options={COLLEGE_DEPARTMENTS}
+                    options={communityGroups.filter(g => g.groupType === 'college').map(g => ({ id: g.abbreviation || g.name, name: g.name, abbreviation: g.abbreviation || g.name }))}
                     onSelect={(option) => {
                       setDepartment(option.id);
-                      setDepartmentSearch(`${option.abbreviation}`);
+                      setDepartmentSearch(option.abbreviation);
                     }}
                     searchKey="name"
                     displayKey="name"

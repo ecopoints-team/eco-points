@@ -9,7 +9,7 @@ from datetime import datetime, date, timezone
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, or_
 from ..models import (
-    City, Organization, CommunityGroup, Account, User, AccessCredential,
+    OrgType, City, Organization, CommunityGroup, Account, User, AccessCredential,
     RVM, RecyclingSession, RecyclingItem, MaintenanceLog,
     Transaction, Reward, RewardRedemption, AdminLog,
 )
@@ -30,6 +30,22 @@ def _dt(val):
 
 def _serialize_city(c):
     return {'id': c.id, 'name': c.name, 'province': c.province, 'region': c.region}
+
+
+def _get_org_abbreviation(org):
+    """Derive a short abbreviation from an organization name.
+
+    e.g. 'Arellano University' → 'AU', 'Polytechnic University' → 'PU'
+    Takes the first letter of each capitalized word.
+    """
+    if not org or not org.name:
+        return 'SYS'
+    words = [w for w in org.name.split() if w[0].isupper()]
+    return ''.join(w[0] for w in words).upper() or 'ORG'
+
+
+def _serialize_org_type(ot):
+    return {'id': ot.id, 'name': ot.name}
 
 
 def _serialize_organization(o):
@@ -82,6 +98,7 @@ def _serialize_user(u):
 
     return {
         'id': u.id,
+        'displayId': u.display_id,
         'accountId': u.account_id,
         'name': u.name,
         'username': u.username,
@@ -115,7 +132,6 @@ def _serialize_rvm(m):
         'isOnline': m.is_online,
         'lastHeartbeat': _dt(m.last_heartbeat),
         'currentCapacity': m.current_capacity,
-        'maxCapacity': m.max_capacity,
         'totalItemsCollected': m.total_items_collected,
         'createdAt': _dt(m.created_at),
     }
@@ -345,7 +361,62 @@ def dashboard_stats(current_user):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# CITIES (lookup)
+# ORG TYPES (lookup — superadmin managed)
+# ══════════════════════════════════════════════════════════════════════════
+
+@web_bp.route('/org-types', methods=['GET'])
+@token_required
+@admin_required
+def get_org_types(current_user):
+    """Return all organization types for dropdown selectors."""
+    try:
+        types = OrgType.query.order_by(OrgType.name).all()
+        return jsonify({'success': True, 'orgTypes': [_serialize_org_type(t) for t in types]}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/org-types', methods=['POST'])
+@token_required
+@superadmin_required
+def create_org_type(current_user):
+    """Create a new organization type (superadmin only)."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'Name is required'}), 400
+        existing = OrgType.query.filter(func.lower(OrgType.name) == name.lower()).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Organization type already exists'}), 409
+        ot = OrgType(name=name)
+        db.session.add(ot)
+        db.session.commit()
+        return jsonify({'success': True, 'orgType': _serialize_org_type(ot)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/org-types/<int:ot_id>', methods=['DELETE'])
+@token_required
+@superadmin_required
+def delete_org_type(current_user, ot_id):
+    """Delete an organization type (superadmin only)."""
+    try:
+        ot = OrgType.query.get(ot_id)
+        if not ot:
+            return jsonify({'success': False, 'error': 'Not found'}), 404
+        db.session.delete(ot)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# CITIES (lookup — superadmin managed)
 # ══════════════════════════════════════════════════════════════════════════
 
 @web_bp.route('/cities', methods=['GET'])
@@ -357,6 +428,45 @@ def get_cities(current_user):
         cities = City.query.order_by(City.name).all()
         return jsonify({'success': True, 'cities': [_serialize_city(c) for c in cities]}), 200
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/cities', methods=['POST'])
+@token_required
+@superadmin_required
+def create_city(current_user):
+    """Create a new city (superadmin only)."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'City name is required'}), 400
+        existing = City.query.filter(func.lower(City.name) == name.lower()).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'City already exists'}), 409
+        city = City(name=name, province=data.get('province'), region=data.get('region'))
+        db.session.add(city)
+        db.session.commit()
+        return jsonify({'success': True, 'city': _serialize_city(city)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/cities/<int:city_id>', methods=['DELETE'])
+@token_required
+@superadmin_required
+def delete_city(current_user, city_id):
+    """Delete a city (superadmin only)."""
+    try:
+        city = City.query.get(city_id)
+        if not city:
+            return jsonify({'success': False, 'error': 'Not found'}), 404
+        db.session.delete(city)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -575,6 +685,10 @@ def create_user(current_user):
         db.session.add(account)
         db.session.flush()
 
+        # Resolve org abbreviation for display_id
+        org = Organization.query.get(location_id)
+        org_abbr = _get_org_abbreviation(org) if org else 'SYS'
+
         user = User(
             account_id=account.id,
             name=name,
@@ -588,6 +702,10 @@ def create_user(current_user):
         )
         user.set_password(password)
         db.session.add(user)
+        db.session.flush()
+
+        # Generate and assign display_id
+        user.display_id = User.generate_display_id(role, org_abbr)
 
         _log_action(current_user, 'User Created', name, 'Users', f'Role: {role}')
         db.session.commit()
@@ -696,7 +814,6 @@ def create_machine(current_user):
             name=data.get('name'),
             location_name=data.get('locationName'),
             is_online=data.get('isOnline', False),
-            max_capacity=data.get('maxCapacity', 100),
         )
         db.session.add(rvm)
         _log_action(current_user, 'Machine Registered', rvm.name, 'Machines')
@@ -723,7 +840,7 @@ def update_machine(current_user, machine_id):
         data = request.get_json() or {}
         for front, back in [
             ('name', 'name'), ('locationName', 'location_name'),
-            ('isOnline', 'is_online'), ('maxCapacity', 'max_capacity'),
+            ('isOnline', 'is_online'),
             ('currentCapacity', 'current_capacity'),
         ]:
             if front in data:
@@ -960,14 +1077,16 @@ def get_leaderboard(current_user):
             CommunityGroup.group_type,
             CommunityGroup.organization_id,
             Organization.name.label('org_name'),
-        ).join(Account).join(CommunityGroup)\
-         .join(Organization, CommunityGroup.organization_id == Organization.id)\
-         .outerjoin(bottle_sub, Account.id == bottle_sub.c.account_id)
+        ).select_from(User)\
+         .join(Account, Account.id == User.account_id)\
+         .join(CommunityGroup, CommunityGroup.id == Account.community_group_id)\
+         .join(Organization, Organization.id == CommunityGroup.organization_id)\
+         .outerjoin(bottle_sub, bottle_sub.c.account_id == Account.id)
 
         if loc_id:
             user_query = user_query.filter(CommunityGroup.organization_id == loc_id)
         top_users = user_query.filter(User.role == 'user')\
-            .order_by(Account.points_balance.desc()).limit(100).all()
+            .order_by(Account.points_balance.desc()).all()
 
         users_list = []
         for row in top_users:
@@ -994,12 +1113,14 @@ def get_leaderboard(current_user):
             CommunityGroup.organization_id,
             func.coalesce(func.sum(Account.points_balance), 0).label('total_points'),
             func.count(Account.id).label('member_count'),
-        ).join(Account).group_by(CommunityGroup.id)
+        ).select_from(CommunityGroup)\
+         .join(Account, Account.community_group_id == CommunityGroup.id)\
+         .group_by(CommunityGroup.id)
 
         if loc_id:
             group_query = group_query.filter(CommunityGroup.organization_id == loc_id)
 
-        top_groups = group_query.order_by(func.sum(Account.points_balance).desc()).limit(20).all()
+        top_groups = group_query.order_by(func.sum(Account.points_balance).desc()).all()
 
         groups_list = []
         for g in top_groups:

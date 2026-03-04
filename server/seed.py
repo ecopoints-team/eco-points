@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, date, timedelta, timezone
 from app import create_app, db
 from app.models import (
-    City, Organization, CommunityGroup, Account, User, AccessCredential,
+    OrgType, City, Organization, CommunityGroup, Account, User, AccessCredential,
     RVM, RecyclingSession, RecyclingItem, MaintenanceLog,
     Transaction, Reward, RewardRedemption, AdminLog,
 )
@@ -214,6 +214,16 @@ def seed():
     print('🏗️  Creating all tables...')
     db.create_all()
 
+    # ── 0. Org Types ───────────────────────────────────────────────────
+    print('  [0/11] Org Types...')
+    org_type_map = {}
+    for ot_name in ['University', 'Corporation', 'HOA']:
+        ot = OrgType(name=ot_name)
+        db.session.add(ot)
+        db.session.flush()
+        org_type_map[ot_name] = ot
+    print(f'       → {len(org_type_map)} org types')
+
     # ── 1. Cities ──────────────────────────────────────────────────────
     print('  [1/11] Cities...')
     city_list = []
@@ -232,6 +242,7 @@ def seed():
             name=loc['name'],
             full_name=loc['fullName'],
             org_type='University',
+            org_type_id=org_type_map['University'].id,
             street_address=loc['streetAddress'],
             barangay=loc['barangay'],
             city_id=city_list[loc['cityIdx']].id,
@@ -311,6 +322,14 @@ def seed():
         db.session.add(acct)
         db.session.flush()
 
+        # Derive org abbreviation for display_id
+        if loc_id and loc_id in org_map:
+            org = org_map[loc_id]
+            words = [w for w in org.name.split() if w[0].isupper()]
+            org_abbr = ''.join(w[0] for w in words).upper() or 'ORG'
+        else:
+            org_abbr = 'SYS'
+
         user = User(
             account_id=acct.id,
             name=adm['name'],
@@ -323,6 +342,8 @@ def seed():
         user.set_password('test123')
         db.session.add(user)
         db.session.flush()
+
+        user.display_id = User.generate_display_id(adm['role'], org_abbr)
 
         cred = AccessCredential(
             account_id=acct.id,
@@ -413,6 +434,12 @@ def seed():
         )
         db.session.add(user)
         db.session.flush()
+
+        # Derive org abbreviation for display_id
+        org = org_map[loc_id]
+        words = [w for w in org.name.split() if w[0].isupper()]
+        org_abbr = ''.join(w[0] for w in words).upper() or 'ORG'
+        user.display_id = User.generate_display_id('user', org_abbr)
 
         cred = AccessCredential(
             account_id=acct.id,

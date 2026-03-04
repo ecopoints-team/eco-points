@@ -124,6 +124,35 @@ export const auth = {
 
     /** Get the raw token. */
     getToken,
+
+    /**
+     * Public registration for regular users.
+     * Body: { name, username?, email?, phone?, password, userType, locationId, groupId?, yearLevel? }
+     */
+    register: async (userData) => {
+        return await request(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            body: userData,
+        });
+    },
+
+    /**
+     * Public: get active locations for signup dropdown.
+     */
+    getPublicLocations: async () => {
+        const data = await request(`${API_BASE}/auth/locations`);
+        return data.locations;
+    },
+
+    /**
+     * Public: get community groups for a given location.
+     */
+    getPublicGroups: async (locationId) => {
+        const data = await request(`${API_BASE}/auth/groups`, {
+            params: { location_id: locationId },
+        });
+        return data.groups;
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -140,13 +169,38 @@ export const dashboard = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// CITIES
+// ORG TYPES (lookup — superadmin managed)
+// ═══════════════════════════════════════════════════════════════════════
+
+export const orgTypes = {
+    getAll: async () => {
+        const data = await request(`${API_BASE}/org-types`);
+        return data.orgTypes;
+    },
+    create: async (name) => {
+        const data = await request(`${API_BASE}/org-types`, { method: 'POST', body: { name } });
+        return data.orgType;
+    },
+    delete: async (id) => {
+        return await request(`${API_BASE}/org-types/${id}`, { method: 'DELETE' });
+    },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CITIES (lookup — superadmin managed)
 // ═══════════════════════════════════════════════════════════════════════
 
 export const cities = {
     getAll: async () => {
         const data = await request(`${API_BASE}/cities`);
         return data.cities;
+    },
+    create: async (cityData) => {
+        const data = await request(`${API_BASE}/cities`, { method: 'POST', body: cityData });
+        return data.city;
+    },
+    delete: async (id) => {
+        return await request(`${API_BASE}/cities/${id}`, { method: 'DELETE' });
     },
 };
 
@@ -370,5 +424,5 @@ export const healthCheck = async () => {
 // DEFAULT EXPORT (for `import api from`)
 // ═══════════════════════════════════════════════════════════════════════
 
-const api = { auth, dashboard, cities, locations, users, machines, rewards, logs, leaderboard, groups, healthCheck };
+const api = { auth, dashboard, orgTypes, cities, locations, users, machines, rewards, logs, leaderboard, groups, healthCheck };
 export default api;

@@ -121,8 +121,8 @@ export default function CustomDropdown({
                         </div>
                     )}
 
-                    {/* Options List */}
-                    <div className="max-h-56 overflow-y-auto py-1">
+                    {/* Options List — max 5 visible, scrollable */}
+                    <div className="max-h-[200px] overflow-y-auto py-1">
                         {/* "All" / placeholder option */}
                         {showPlaceholder && (
                             <button

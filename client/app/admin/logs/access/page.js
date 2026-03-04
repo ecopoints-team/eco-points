@@ -5,26 +5,27 @@ import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { Search, Filter, ChevronLeft, ChevronRight, Shield, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 export default function AdminAccessLogsPage() {
     const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
 
     // API-loaded data
     const [allAdminLogs, setAllAdminLogs] = useState([]);
-    const [activeAdmins, setActiveAdmins] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
+            setIsDataLoading(true);
             try {
                 const data = await logsApi.getAccess(effectiveLocationId);
                 if (!cancelled) {
                     const mapped = (data || []).map(l => ({ ...l, id: String(l.id), timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() }));
                     setAllAdminLogs(mapped);
-                    setActiveAdmins(new Set(mapped.map(l => l.adminName)).size);
                 }
             } catch (err) { console.error('Failed to load access logs:', err); }
+            finally { if (!cancelled) setIsDataLoading(false); }
         };
         load();
         return () => { cancelled = true; };
@@ -171,15 +172,6 @@ export default function AdminAccessLogsPage() {
                 </button>
             </div>
 
-            <div className="mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl max-w-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Shield size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Active Admins</p><p className="text-2xl font-black text-slate-800 dark:text-white">{activeAdmins}</p></div>
-                    </div>
-                </div>
-            </div>
-
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3"><span className="w-1.5 h-6 bg-purple-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#a855f7]"></span>Activity Log</h3>
@@ -190,9 +182,10 @@ export default function AdminAccessLogsPage() {
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 focus:border-purple-500" />
                         </div>
                         <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }}
-                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-purple-500/20 dark:hover:text-purple-400 transition-colors"
+                            disabled={isDataLoading}
+                            className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-purple-500/20 dark:hover:text-purple-400 transition-colors disabled:opacity-50"
                             title="Refresh">
-                            <RefreshCw size={16} />
+                            <RefreshCw size={16} className={isDataLoading ? 'animate-spin' : ''} />
                         </button>
                         <button onClick={() => setShowFilter(!showFilter)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${showFilter || hasActiveFilters ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}><Filter size={16} /> Filter {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-purple-500"></span>}</button>
                     </div>

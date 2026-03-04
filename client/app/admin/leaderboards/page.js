@@ -13,7 +13,7 @@ import {
     Trophy, Medal, Award, Crown, Search, Filter, ChevronLeft, ChevronRight,
     Flame, Recycle, Star, TrendingUp, Users as UsersIcon, GraduationCap,
     Building2, X, ChevronsUpDown, ChevronUp, ChevronDown, School, Info,
-    Sparkles, Zap, Target, MapPin
+    Sparkles, Zap, Target, MapPin, RefreshCw, Loader2
 } from 'lucide-react';
 
 // ============================================================================
@@ -128,42 +128,42 @@ const PodiumCard = ({ user, rank, sortBy }) => {
     const stat = getMainStat();
 
     return (
-        <div className={`relative rounded-2xl p-5 backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-2xl ${style.wrapper}`}>
+        <div className={`relative rounded-2xl p-4 backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-2xl ${style.wrapper}`}>
             {/* Rank Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
                     {style.icon}
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-black ${style.badge}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${style.badge}`}>
                         {style.label}
                     </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.userType)}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${getRoleBadge(user.userType)}`}>
                     {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}
                 </span>
             </div>
 
             {/* Avatar (icons, not initials) + Name */}
-            <div className="flex items-center gap-3 mb-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${style.avatarGradient} flex items-center justify-center shadow-lg`}>
+            <div className="flex items-center gap-2.5 mb-3">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.avatarGradient} flex items-center justify-center shadow-lg`}>
                     {podiumIcons[rank]}
                 </div>
                 <div className="min-w-0">
-                    <p className="font-black text-slate-800 dark:text-white truncate text-base">{user.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <p className="font-black text-slate-800 dark:text-white truncate text-sm">{user.name}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                         {getUserDeptDisplay(user)}
                     </p>
                 </div>
             </div>
 
             {/* Main Stat — highlighted */}
-            <div className={`flex items-center gap-2 rounded-xl px-4 py-3 border ${style.statBg}`}>
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border ${style.statBg}`}>
                 {stat.icon}
-                <span className="text-2xl font-black text-slate-800 dark:text-white">{stat.value}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto font-semibold">{stat.label}</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white">{stat.value}</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 ml-auto font-semibold">{stat.label}</span>
             </div>
 
             {/* Secondary Stats */}
-            <div className="flex gap-4 mt-3 px-1">
+            <div className="flex gap-3 mt-2.5 px-1">
                 {sortBy !== 'POINTS' && (
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                         <Star size={12} className="text-amber-500" />
@@ -241,21 +241,35 @@ export default function LeaderboardsPage() {
     const [campusUserSort, setCampusUserSort] = useState('POINTS');
     const [campusRoleFilter, setCampusRoleFilter] = useState('');
     const [leaderboardUsers, setLeaderboardUsers] = useState([]);
+    const [topGroups, setTopGroups] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Load leaderboard data from API
     useEffect(() => {
         let cancelled = false;
         (async () => {
+            setIsLoading(true);
+            setLoadError(null);
             try {
+                console.log('[Leaderboard] Fetching with locationId:', effectiveLocationId);
                 const data = await leaderboardApi.get(effectiveLocationId);
+                console.log('[Leaderboard] API response:', { topUsers: data.topUsers?.length, topGroups: data.topGroups?.length, raw: data });
                 if (cancelled) return;
                 setLeaderboardUsers(data.topUsers || []);
+                setTopGroups(data.topGroups || []);
             } catch (err) {
-                console.error('Failed to load leaderboard:', err);
+                console.error('[Leaderboard] Failed to load:', err);
+                if (!cancelled) setLoadError(err.message || 'Failed to load leaderboard data');
+            } finally {
+                if (!cancelled) setIsLoading(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [effectiveLocationId]);
+    }, [effectiveLocationId, refreshKey]);
+
+    const handleRefresh = () => { setRefreshKey(k => k + 1); };
 
     // Reset page on filter change
     useEffect(() => { setCurrentPage(1); }, [activeTab, sortBy, roleFilter, searchQuery, selectedDepartment, selectedGroupType]);
@@ -268,11 +282,11 @@ export default function LeaderboardsPage() {
         setSelectedGroupType('');
     }, [activeTab]);
 
-    // Get base user list
+    // Get base user list (use == for locationId comparison to handle int/string mismatch)
     const allUsers = useMemo(() => {
         if (activeTab === 'OVERALL') return leaderboardUsers;
         if (!effectiveLocationId) return leaderboardUsers;
-        return leaderboardUsers.filter(u => u.locationId === effectiveLocationId);
+        return leaderboardUsers.filter(u => String(u.locationId) === String(effectiveLocationId));
     }, [activeTab, effectiveLocationId, leaderboardUsers]);
 
     // Sorting function with tiebreakers
@@ -292,7 +306,7 @@ export default function LeaderboardsPage() {
     // School rankings (for Top Schools tab)
     const schoolRankings = useMemo(() => {
         return allLocations.map(loc => {
-            const locUsers = leaderboardUsers.filter(u => u.locationId === loc.id);
+            const locUsers = leaderboardUsers.filter(u => String(u.locationId) === String(loc.id));
             return {
                 id: loc.id,
                 name: loc.name,
@@ -310,7 +324,7 @@ export default function LeaderboardsPage() {
 
     // Top 5 users per campus (for dropdown)
     const getCampusTopUsers = (locationId) => {
-        let users = leaderboardUsers.filter(u => u.locationId === locationId);
+        let users = leaderboardUsers.filter(u => String(u.locationId) === String(locationId));
         if (campusRoleFilter && campusRoleFilter !== 'All') {
             users = users.filter(u => u.userType === campusRoleFilter);
         }
@@ -424,6 +438,14 @@ export default function LeaderboardsPage() {
                             {currentLocation.name}
                         </span>
                     )}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isLoading}
+                        className="ml-auto p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
+                        title="Refresh leaderboard"
+                    >
+                        <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                    </button>
                 </div>
                 <p className="text-slate-500 dark:text-slate-400">
                     {activeTab === 'OVERALL' ? 'Rankings across all locations' :
@@ -432,7 +454,40 @@ export default function LeaderboardsPage() {
                 </p>
             </div>
 
+            {/* Loading State */}
+            {isLoading && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 size={40} className="animate-spin text-emerald-500 mb-4" />
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Loading leaderboard data...</p>
+                </div>
+            )}
+
+            {/* Error State */}
+            {loadError && !isLoading && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Trophy size={48} className="text-red-300 dark:text-red-600 mb-4" />
+                    <p className="text-red-600 dark:text-red-400 font-bold mb-2">Failed to load leaderboard</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{loadError}</p>
+                    <button onClick={handleRefresh} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm">
+                        Try Again
+                    </button>
+                </div>
+            )}
+
+            {/* Empty State — data loaded but no participants */}
+            {!isLoading && !loadError && leaderboardUsers.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Trophy size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
+                    <p className="text-slate-600 dark:text-slate-300 font-bold mb-2">No participants yet</p>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm mb-4">No users with recycling activity were found{effectiveLocationId ? ' for this location' : ''}.</p>
+                    <button onClick={handleRefresh} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm">
+                        Refresh
+                    </button>
+                </div>
+            )}
+
             {/* Stat Cards */}
+            {!isLoading && !loadError && leaderboardUsers.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
                     <div className="flex items-center gap-3">
@@ -479,9 +534,12 @@ export default function LeaderboardsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
+            {!isLoading && !loadError && leaderboardUsers.length > 0 && (
+            <>
             {/* Context Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6 justify-center">
                 {visibleTabs.map(tab => {
                     const Icon = tab.icon;
                     return (
@@ -566,11 +624,11 @@ export default function LeaderboardsPage() {
 
                     {/* School Podium (2nd-1st-3rd) */}
                     {schoolRankings.length >= 2 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-end max-w-5xl mx-auto">
                             <div className="md:mb-0">
                                 <SchoolRankCard school={schoolRankings[1]} rank={2} sortBy={schoolSortBy} />
                             </div>
-                            <div className="md:-mt-4 md:scale-105 z-10">
+                            <div className="md:-mt-4 md:scale-[1.04] z-10">
                                 <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
                             </div>
                             {schoolRankings.length >= 3 ? (
@@ -598,7 +656,7 @@ export default function LeaderboardsPage() {
                                     options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
                                     placeholder="Sort Users" showPlaceholder={false} />
                                 <CustomDropdown value={campusRoleFilter} onChange={(v) => setCampusRoleFilter(v)}
-                                    options={['student', 'faculty', 'staff']} placeholder="All Roles" />
+                                    options={['Student', 'Faculty', 'Staff']} placeholder="All Roles" />
                             </div>
                         </div>
                         <div className="p-5 space-y-3">
@@ -629,8 +687,8 @@ export default function LeaderboardsPage() {
                                                 <ChevronDown size={18} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                             </div>
                                         </button>
-                                        {isExpanded && (
-                                            <div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                                        <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                            <div className="overflow-hidden">
                                                 <div className="mt-2 ml-12 mr-4 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden bg-slate-50 dark:bg-slate-800/50">
                                                     <div className="px-4 py-2 bg-slate-100 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                                         <Trophy size={12} className="text-amber-500" /> Top 5 Users
@@ -665,7 +723,7 @@ export default function LeaderboardsPage() {
                                                     )}
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -676,14 +734,14 @@ export default function LeaderboardsPage() {
                 <>
                     {/* TOP 3 PODIUM CARDS — Always visible, even during search */}
                     {topThree.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-6 items-end max-w-5xl mx-auto">
                             {topThree.length > 1 && (
                                 <div className="md:mb-0">
                                     <PodiumCard user={topThree[1]} rank={2} sortBy={sortBy} />
                                 </div>
                             )}
                             {topThree.length > 0 && (
-                                <div className="md:-mt-4 md:scale-105 z-10">
+                                <div className="md:-mt-4 md:scale-[1.04] z-10">
                                     <PodiumCard user={topThree[0]} rank={1} sortBy={sortBy} />
                                 </div>
                             )}
@@ -720,7 +778,7 @@ export default function LeaderboardsPage() {
                                 <CustomDropdown
                                     value={roleFilter}
                                     onChange={(v) => setRoleFilter(v)}
-                                    options={['student', 'faculty', 'staff']}
+                                    options={['Student', 'Faculty', 'Staff']}
                                     placeholder="All Roles"
                                 />
 
@@ -899,6 +957,8 @@ export default function LeaderboardsPage() {
                         )}
                     </div>
                 </>
+            )}
+            </>
             )}
         </>
     );

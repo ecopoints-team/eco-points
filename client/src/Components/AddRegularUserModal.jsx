@@ -172,7 +172,8 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                     type="tel"
                                     placeholder="9XX XXX XXXX"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                                    onChange={(e) => { let d = e.target.value.replace(/[^\d]/g, ''); if (d.startsWith('0')) d = d.slice(1); setPhone(d.slice(0, 10)); }}
+                                    maxLength={10}
                                     className="w-full px-4 py-2 rounded-r-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>

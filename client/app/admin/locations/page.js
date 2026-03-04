@@ -1,24 +1,24 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { CITIES, getCityName } from '../../../src/data/mockData';
-import { locations as locationsApi } from '../../../src/services/apiService';
+import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/apiService';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
-    Calendar, Phone, Mail, Edit2, Eye, Trophy, Plus, Search,
-    ChevronLeft, ChevronRight, X, Coins, User
+    Calendar, Phone, Mail, Edit2, Eye, Plus, Search,
+    ChevronLeft, ChevronRight, X, Coins, User, Trash2, RefreshCw
 } from 'lucide-react';
 
 // ============================================================================
 // ADD LOCATION MODAL
 // ============================================================================
-function AddLocationModal({ isOpen, onClose, onSubmit }) {
+function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [formData, setFormData] = useState({
         name: '',
         fullName: '',
-        orgType: 'University',
+        orgType: '',
         cityId: '',
         streetAddress: '',
         barangay: '',
@@ -29,6 +29,59 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
         status: 'Active'
     });
     const [errors, setErrors] = useState({});
+
+    // Org Type CRUD state
+    const [orgTypesList, setOrgTypesList] = useState([]);
+    const [orgTypeSearch, setOrgTypeSearch] = useState('');
+    const [showOrgTypeDropdown, setShowOrgTypeDropdown] = useState(false);
+    const [showAddOrgType, setShowAddOrgType] = useState(false);
+    const [newOrgTypeName, setNewOrgTypeName] = useState('');
+    const [isAddingOrgType, setIsAddingOrgType] = useState(false);
+    const orgTypeRef = useRef(null);
+
+    // Load org types from API
+    useEffect(() => {
+        if (isOpen) {
+            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
+        }
+    }, [isOpen]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (orgTypeRef.current && !orgTypeRef.current.contains(e.target)) {
+                setShowOrgTypeDropdown(false);
+                setShowAddOrgType(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
+    const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
+
+    const handleAddOrgType = async () => {
+        if (!newOrgTypeName.trim()) return;
+        setIsAddingOrgType(true);
+        try {
+            const created = await orgTypesApi.create(newOrgTypeName.trim());
+            setOrgTypesList(prev => [...prev, created]);
+            setFormData(f => ({ ...f, orgType: String(created.id) }));
+            setNewOrgTypeName('');
+            setShowAddOrgType(false);
+            setOrgTypeSearch('');
+        } catch (err) { console.error(err); }
+        finally { setIsAddingOrgType(false); }
+    };
+
+    const handleDeleteOrgType = async (id) => {
+        try {
+            await orgTypesApi.delete(id);
+            setOrgTypesList(prev => prev.filter(t => t.id !== id));
+            if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
+        } catch (err) { console.error(err); }
+    };
 
     const validateForm = () => {
         const newErrors = {};
@@ -45,18 +98,28 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
         }
         if (!formData.contactPhone.trim()) {
             newErrors.contactPhone = 'Phone is required';
-        } else if (!/^[\d\s\-+()]+$/.test(formData.contactPhone)) {
-            newErrors.contactPhone = 'Invalid phone format';
+        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
+            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
+    const handlePhoneChange = (val) => {
+        let digits = val.replace(/[^\d]/g, '');
+        if (digits.startsWith('0')) digits = digits.slice(1);
+        if (digits.length > 10) digits = digits.slice(0, 10);
+        setFormData({ ...formData, contactPhone: digits });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
+            // Resolve org type name from ID for backend
+            const orgTypeObj = orgTypesList.find(t => String(t.id) === String(formData.orgType));
             onSubmit({
                 ...formData,
+                orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
                 id: `LOC-${Date.now()}`,
                 joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                 machineCount: 0,
@@ -64,7 +127,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                 totalBottlesCollected: 0,
                 totalPoints: 0,
             });
-            setFormData({ name: '', fullName: '', orgType: 'University', cityId: '', streetAddress: '', barangay: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setFormData({ name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             onClose();
         }
     };
@@ -111,15 +174,58 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
+                        <div ref={orgTypeRef} className="relative">
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization Type *</label>
-                            <CustomDropdown
-                                value={formData.orgType}
-                                onChange={(v) => setFormData({ ...formData, orgType: v })}
-                                options={['University', 'Corporation', 'HOA']}
-                                showPlaceholder={false}
-                                size="md"
-                            />
+                            <div className="flex gap-1">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        placeholder={formData.orgType ? selectedOrgTypeLabel : 'Select type...'}
+                                        value={showOrgTypeDropdown ? orgTypeSearch : selectedOrgTypeLabel}
+                                        onChange={(e) => { setOrgTypeSearch(e.target.value); setShowOrgTypeDropdown(true); }}
+                                        onFocus={() => { setShowOrgTypeDropdown(true); setOrgTypeSearch(''); }}
+                                        className={`w-full px-4 py-2 rounded-lg border ${errors.orgType ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm`}
+                                    />
+                                    {showOrgTypeDropdown && (
+                                        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
+                                            {filteredOrgTypes.length > 0 ? filteredOrgTypes.map(opt => (
+                                                <div key={opt.id} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
+                                                    <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
+                                                        className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                                                        {opt.name}
+                                                    </button>
+                                                    {isSuperAdmin && (
+                                                        <button type="button" onClick={async (e) => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
+                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100">
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )) : (
+                                                <div className="px-3 py-3 text-center text-xs text-slate-400">No results</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {isSuperAdmin && (
+                                    <button type="button" onClick={() => { setShowAddOrgType(!showAddOrgType); setShowOrgTypeDropdown(false); }}
+                                        className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
+                                        title="Add new organization type">
+                                        <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                    </button>
+                                )}
+                            </div>
+                            {showAddOrgType && isSuperAdmin && (
+                                <div className="mt-2 flex gap-2">
+                                    <input type="text" value={newOrgTypeName} onChange={(e) => setNewOrgTypeName(e.target.value)} placeholder="New type name..."
+                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOrgType())}
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
+                                    <button type="button" onClick={handleAddOrgType} disabled={isAddingOrgType || !newOrgTypeName.trim()}
+                                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                                        {isAddingOrgType ? '...' : 'Add'}
+                                    </button>
+                                </div>
+                            )}
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
                         </div>
                         <div>
@@ -201,7 +307,8 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
                                 <input
                                     type="tel"
                                     value={formData.contactPhone}
-                                    onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value.replace(/[^\d\s\-]/g, '') })}
+                                    onChange={(e) => handlePhoneChange(e.target.value)}
+                                    maxLength={10}
                                     placeholder="9XX XXX XXXX"
                                     className={`w-full px-4 py-2 rounded-r-lg border ${errors.contactPhone ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
                                 />
@@ -236,6 +343,276 @@ function AddLocationModal({ isOpen, onClose, onSubmit }) {
 }
 
 // ============================================================================
+// EDIT LOCATION MODAL
+// ============================================================================
+function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }) {
+    const [formData, setFormData] = useState({
+        name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '',
+        contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active'
+    });
+    const [errors, setErrors] = useState({});
+
+    // Org Type CRUD state
+    const [orgTypesList, setOrgTypesList] = useState([]);
+    const [orgTypeSearch, setOrgTypeSearch] = useState('');
+    const [showOrgTypeDropdown, setShowOrgTypeDropdown] = useState(false);
+    const [showAddOrgType, setShowAddOrgType] = useState(false);
+    const [newOrgTypeName, setNewOrgTypeName] = useState('');
+    const [isAddingOrgType, setIsAddingOrgType] = useState(false);
+    const orgTypeRef = useRef(null);
+
+    // Load org types and populate form
+    useEffect(() => {
+        if (isOpen && location) {
+            orgTypesApi.getAll().then(data => {
+                const list = data || [];
+                setOrgTypesList(list);
+                // Match orgType by name to get the ID
+                const matchedType = list.find(t => t.name === location.orgType);
+                setFormData({
+                    name: location.name || '',
+                    fullName: location.fullName || '',
+                    orgType: matchedType ? String(matchedType.id) : '',
+                    cityId: location.cityId || '',
+                    streetAddress: location.streetAddress || '',
+                    barangay: location.barangay || '',
+                    zipCode: location.zipCode || '',
+                    contactPerson: location.contactPerson || '',
+                    contactEmail: location.contactEmail || '',
+                    contactPhone: location.contactPhone || '',
+                    status: location.status || 'Active'
+                });
+            }).catch(() => {});
+        }
+    }, [isOpen, location]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (orgTypeRef.current && !orgTypeRef.current.contains(e.target)) {
+                setShowOrgTypeDropdown(false);
+                setShowAddOrgType(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
+    const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
+
+    const handleAddOrgType = async () => {
+        if (!newOrgTypeName.trim()) return;
+        setIsAddingOrgType(true);
+        try {
+            const created = await orgTypesApi.create(newOrgTypeName.trim());
+            setOrgTypesList(prev => [...prev, created]);
+            setFormData(f => ({ ...f, orgType: String(created.id) }));
+            setNewOrgTypeName('');
+            setShowAddOrgType(false);
+            setOrgTypeSearch('');
+        } catch (err) { console.error(err); }
+        finally { setIsAddingOrgType(false); }
+    };
+
+    const handleDeleteOrgType = async (id) => {
+        try {
+            await orgTypesApi.delete(id);
+            setOrgTypesList(prev => prev.filter(t => t.id !== id));
+            if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
+        } catch (err) { console.error(err); }
+    };
+
+    const handlePhoneChange = (val) => {
+        let digits = val.replace(/[^\d]/g, '');
+        if (digits.startsWith('0')) digits = digits.slice(1);
+        if (digits.length > 10) digits = digits.slice(0, 10);
+        setFormData({ ...formData, contactPhone: digits });
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.name.trim()) newErrors.name = 'Short name is required';
+        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+        if (!formData.orgType) newErrors.orgType = 'Type is required';
+        if (!formData.cityId) newErrors.cityId = 'City is required';
+        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
+        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
+        if (!formData.contactEmail.trim()) {
+            newErrors.contactEmail = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+            newErrors.contactEmail = 'Invalid email format';
+        }
+        if (!formData.contactPhone.trim()) {
+            newErrors.contactPhone = 'Phone is required';
+        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
+            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (validateForm()) {
+            const orgTypeObj = orgTypesList.find(t => String(t.id) === String(formData.orgType));
+            onSubmit(location.id, {
+                ...formData,
+                orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
+            });
+            onClose();
+        }
+    };
+
+    if (!isOpen || !location) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-500/20">
+                            <Edit2 size={20} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Location</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <X size={20} className="text-slate-500" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Display Name *</label>
+                            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., AU-Pasig"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.name ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
+                            <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} placeholder="e.g., Arellano University - Pasig Campus"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.fullName ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div ref={orgTypeRef} className="relative">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization Type *</label>
+                            <div className="flex gap-1">
+                                <div className="flex-1 relative">
+                                    <input type="text" placeholder={formData.orgType ? selectedOrgTypeLabel : 'Select type...'}
+                                        value={showOrgTypeDropdown ? orgTypeSearch : selectedOrgTypeLabel}
+                                        onChange={(e) => { setOrgTypeSearch(e.target.value); setShowOrgTypeDropdown(true); }}
+                                        onFocus={() => { setShowOrgTypeDropdown(true); setOrgTypeSearch(''); }}
+                                        className={`w-full px-4 py-2 rounded-lg border ${errors.orgType ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm`} />
+                                    {showOrgTypeDropdown && (
+                                        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
+                                            {filteredOrgTypes.length > 0 ? filteredOrgTypes.map(opt => (
+                                                <div key={opt.id} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
+                                                    <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
+                                                        className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                                                        {opt.name}
+                                                    </button>
+                                                    {isSuperAdmin && (
+                                                        <button type="button" onClick={async (e) => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
+                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100">
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )) : (
+                                                <div className="px-3 py-3 text-center text-xs text-slate-400">No results</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {isSuperAdmin && (
+                                    <button type="button" onClick={() => { setShowAddOrgType(!showAddOrgType); setShowOrgTypeDropdown(false); }}
+                                        className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
+                                        title="Add new organization type">
+                                        <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                    </button>
+                                )}
+                            </div>
+                            {showAddOrgType && isSuperAdmin && (
+                                <div className="mt-2 flex gap-2">
+                                    <input type="text" value={newOrgTypeName} onChange={(e) => setNewOrgTypeName(e.target.value)} placeholder="New type name..."
+                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOrgType())}
+                                        className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
+                                    <button type="button" onClick={handleAddOrgType} disabled={isAddingOrgType || !newOrgTypeName.trim()}
+                                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                                        {isAddingOrgType ? '...' : 'Add'}
+                                    </button>
+                                </div>
+                            )}
+                            {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
+                            <CustomDropdown value={formData.cityId} onChange={(v) => setFormData({ ...formData, cityId: v })} options={CITIES.map(c => ({ value: c.id, label: c.name }))} placeholder="Select city..." searchable size="md" />
+                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Street Address *</label>
+                        <input type="text" value={formData.streetAddress} onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })} placeholder="Full street address"
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.streetAddress ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                        {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Barangay</label>
+                            <input type="text" value={formData.barangay} onChange={(e) => setFormData({ ...formData, barangay: e.target.value })} placeholder="e.g., Caniogan"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ZIP Code</label>
+                            <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} placeholder="e.g., 1600"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Person *</label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><User size={16} /></div>
+                            <input type="text" value={formData.contactPerson} onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })} placeholder="e.g., Admin Officer"
+                                className={`w-full pl-10 pr-4 py-2 rounded-lg border ${errors.contactPerson ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                        </div>
+                        {errors.contactPerson && <p className="text-red-500 text-xs mt-1">{errors.contactPerson}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                            <input type="email" value={formData.contactEmail} onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })} placeholder="contact@example.edu"
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.contactEmail ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            {errors.contactEmail && <p className="text-red-500 text-xs mt-1">{errors.contactEmail}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone *</label>
+                            <div className="flex">
+                                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-slate-500 dark:text-slate-400 text-sm font-medium">+63</span>
+                                <input type="tel" value={formData.contactPhone} onChange={(e) => handlePhoneChange(e.target.value)} maxLength={10} placeholder="9XX XXX XXXX"
+                                    className={`w-full px-4 py-2 rounded-r-lg border ${errors.contactPhone ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            </div>
+                            {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                            <CustomDropdown value={formData.status} onChange={(v) => setFormData({ ...formData, status: v })} options={['Active', 'Inactive']} showPlaceholder={false} size="md" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">Cancel</button>
+                        <button type="submit" className="flex-1 py-2 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors font-bold shadow-lg shadow-blue-500/20">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ============================================================================
 // LOCATIONS MANAGEMENT PAGE (Super Admin Only)
 // ============================================================================
 export default function LocationsPage() {
@@ -259,10 +636,13 @@ export default function LocationsPage() {
         };
         load();
         return () => { cancelled = true; };
-    }, []);
+    }, [refreshKey]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingLocation, setEditingLocation] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
     const cardsPerPage = 9;
 
     // Filter locations by search
@@ -305,6 +685,22 @@ export default function LocationsPage() {
         }
     };
 
+    // Edit location handler
+    const handleEditLocation = async (locationId, updatedData) => {
+        try {
+            const updated = await locationsApi.update(locationId, updatedData);
+            setLocations(prev => prev.map(loc => loc.id === locationId ? { ...loc, ...updated } : loc));
+            await refreshLocations();
+        } catch (err) {
+            console.error('Failed to update location:', err);
+        }
+    };
+
+    // Refresh handler
+    const handleRefresh = () => {
+        setRefreshKey(k => k + 1);
+    };
+
     // Redirect or show access denied if not Super Admin
     if (!isSuperAdmin) {
         return (
@@ -334,13 +730,23 @@ export default function LocationsPage() {
                             Manage all deployment sites and their resources
                         </p>
                     </div>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-                    >
-                        <Plus size={18} />
-                        <span className="hidden sm:inline">Add Location</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isDataLoading}
+                            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400 transition-all disabled:opacity-50"
+                            title="Refresh Locations"
+                        >
+                            <RefreshCw size={18} className={isDataLoading ? 'animate-spin' : ''} />
+                        </button>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            <Plus size={18} />
+                            <span className="hidden sm:inline">Add Location</span>
+                        </button>
+                    </div>
                 </div>
             </ViewOnlyWrapper>
 
@@ -444,7 +850,6 @@ export default function LocationsPage() {
             {/* Locations Grid - 3 columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 {currentLocations.map((location, index) => {
-                    const globalIndex = locations.findIndex(l => l.id === location.id);
                     return (
                         <div
                             key={location.id}
@@ -453,21 +858,12 @@ export default function LocationsPage() {
                             {/* Header */}
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-3 rounded-xl ${globalIndex === 0 ? 'bg-amber-100 dark:bg-amber-500/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                                        {globalIndex === 0 ? (
-                                            <Trophy size={24} className="text-amber-600 dark:text-amber-400" />
-                                        ) : (
-                                            <Building2 size={24} className="text-slate-600 dark:text-slate-400" />
-                                        )}
+                                    <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-700">
+                                        <Building2 size={24} className="text-slate-600 dark:text-slate-400" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-bold text-lg text-slate-800 dark:text-white">{location.name}</h3>
-                                            {globalIndex === 0 && (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
-                                                    #1
-                                                </span>
-                                            )}
                                         </div>
                                         <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{location.fullName}</p>
                                     </div>
@@ -527,7 +923,7 @@ export default function LocationsPage() {
                                     View As
                                 </button>
                                 <button
-                                    onClick={() => alert(`Edit location: ${location.name}\n\nThis feature will allow editing location details such as name, address, and contact information.`)}
+                                    onClick={() => { setEditingLocation(location); setShowEditModal(true); }}
                                     className="flex items-center justify-center p-2 rounded-lg
                                     bg-slate-100 text-slate-600 hover:bg-slate-200
                                     dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors"
@@ -577,6 +973,16 @@ export default function LocationsPage() {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 onSubmit={handleAddLocation}
+                isSuperAdmin={isSuperAdmin}
+            />
+
+            {/* Edit Location Modal */}
+            <EditLocationModal
+                isOpen={showEditModal}
+                onClose={() => { setShowEditModal(false); setEditingLocation(null); }}
+                onSubmit={handleEditLocation}
+                location={editingLocation}
+                isSuperAdmin={isSuperAdmin}
             />
         </>
     );
