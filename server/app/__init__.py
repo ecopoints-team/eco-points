@@ -19,7 +19,7 @@ class Config:
         'DATABASE_URL',
         'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'ecopoints.db')
     )
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-DO-NOT-USE-IN-PRODUCTION')
     JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -29,6 +29,15 @@ def create_app():
     app = Flask(__name__, instance_relative_config=False)
     # Load Config from environment or defaults
     app.config.from_object(Config)
+
+    # Warn if using default secret key
+    if app.config['SECRET_KEY'] == 'dev-key-DO-NOT-USE-IN-PRODUCTION':
+        import warnings
+        warnings.warn(
+            'SECRET_KEY is using the default dev value. '
+            'Set the SECRET_KEY environment variable for production!',
+            RuntimeWarning
+        )
 
     # Enable CORS for frontend and Raspberry Pi
     allowed_origins = [
@@ -68,5 +77,9 @@ def create_app():
         app.register_blueprint(auth_bp)
         app.register_blueprint(web_bp)
         app.register_blueprint(rpi_bp)
+
+    # Register CLI commands
+    from .seeder import seed_cmd
+    app.cli.add_command(seed_cmd)
 
     return app

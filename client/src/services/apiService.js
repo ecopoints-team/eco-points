@@ -119,6 +119,17 @@ export const auth = {
         });
     },
 
+    /**
+     * Update current user's profile fields (name, email, phone).
+     */
+    updateProfile: async (profileData) => {
+        const data = await request(`${API_BASE}/auth/profile`, {
+            method: 'PUT',
+            body: profileData,
+        });
+        return data.user;
+    },
+
     /** Check if a token exists locally. */
     isAuthenticated: () => !!getToken(),
 
@@ -165,6 +176,19 @@ export const dashboard = {
             params: { location_id: locationId },
         });
         return data.stats;
+    },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// ANALYTICS  (comprehensive insights)
+// ═══════════════════════════════════════════════════════════════════════
+
+export const analytics = {
+    getData: async (locationId = null) => {
+        const data = await request(`${API_BASE}/analytics`, {
+            params: { location_id: locationId },
+        });
+        return data.analytics;
     },
 };
 
@@ -278,6 +302,13 @@ export const users = {
     delete: async (id) => {
         return await request(`${API_BASE}/users/${id}`, { method: 'DELETE' });
     },
+
+    adjustPoints: async (id, { amount, reason }) => {
+        return await request(`${API_BASE}/users/${id}/adjust-points`, {
+            method: 'POST',
+            body: { amount, reason },
+        });
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -365,6 +396,14 @@ export const logs = {
         return data.logs;
     },
 
+    createMachineLog: async (logData) => {
+        const data = await request(`${API_BASE}/logs/machines`, {
+            method: 'POST',
+            body: logData,
+        });
+        return data.log;
+    },
+
     getAccess: async (locationId = null) => {
         const data = await request(`${API_BASE}/logs/access`, {
             params: { location_id: locationId },
@@ -374,6 +413,21 @@ export const logs = {
 
     getRewards: async (locationId = null) => {
         const data = await request(`${API_BASE}/logs/rewards`, {
+            params: { location_id: locationId },
+        });
+        return data.logs;
+    },
+
+    updateRedemptionStatus: async (redemptionId, status) => {
+        const data = await request(`${API_BASE}/logs/rewards/${redemptionId}`, {
+            method: 'PUT',
+            body: { status },
+        });
+        return data.log;
+    },
+
+    getTransactions: async (locationId = null) => {
+        const data = await request(`${API_BASE}/logs/transactions`, {
             params: { location_id: locationId },
         });
         return data.logs;
@@ -404,6 +458,26 @@ export const groups = {
         });
         return data.groups;
     },
+
+    create: async (groupData) => {
+        const data = await request(`${API_BASE}/groups`, {
+            method: 'POST',
+            body: groupData,
+        });
+        return data.group;
+    },
+
+    update: async (id, groupData) => {
+        const data = await request(`${API_BASE}/groups/${id}`, {
+            method: 'PUT',
+            body: groupData,
+        });
+        return data.group;
+    },
+
+    delete: async (id) => {
+        return await request(`${API_BASE}/groups/${id}`, { method: 'DELETE' });
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -424,5 +498,5 @@ export const healthCheck = async () => {
 // DEFAULT EXPORT (for `import api from`)
 // ═══════════════════════════════════════════════════════════════════════
 
-const api = { auth, dashboard, orgTypes, cities, locations, users, machines, rewards, logs, leaderboard, groups, healthCheck };
+const api = { auth, dashboard, analytics, orgTypes, cities, locations, users, machines, rewards, logs, leaderboard, groups, healthCheck };
 export default api;

@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi } from '../../../src/services/apiService';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
-    AlertCircle, CheckCircle2, Clock, DollarSign, User, Calendar, Building2,
+    CheckCircle2, Clock, User, Calendar, Building2,
     ChevronLeft, ChevronRight, Search, Edit2, RefreshCw
 } from 'lucide-react';
 
@@ -803,10 +803,6 @@ export default function MachinesPage() {
     const handleOpenMaintenance = (machine) => {
         setSelectedMachine(machine);
         setShowMaintenanceModal(true);
-    };
-
-    const handleViewDetails = (machine) => {
-        setSelectedMachine(machine);
     };
 
     // Edit machine handler

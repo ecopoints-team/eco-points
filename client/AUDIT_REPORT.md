@@ -2,7 +2,8 @@
 
 **Date:** March 5, 2026  
 **Scope:** Website system only (Flask web controller + Next.js admin frontend). RPI controller excluded.  
-**Files Scanned:** 30+ across `server/app/`, `client/app/admin/`, `client/src/Components/`, `client/src/context/`, `client/src/services/`, `client/src/data/`
+**Files Scanned:** 30+ across `server/app/`, `client/app/admin/`, `client/src/Components/`, `client/src/context/`, `client/src/services/`, `client/src/data/`  
+**ERD Status:** Updated ERD now matches `models.py` — added `org_types` table, `org_type_id` FK, `display_id` on users; removed `max_capacity` from rvms.
 
 ---
 
@@ -10,8 +11,8 @@
 
 | Severity    | Backend | Frontend | **Total** |
 | ----------- | ------- | -------- | --------- |
-| 🔴 Critical | 3       | 5        | **8**     |
-| 🟡 Warning  | 18      | 24       | **42**    |
+| 🔴 Critical | 2       | 5        | **7**     |
+| 🟡 Warning  | 19      | 24       | **43**    |
 | 🔵 Info     | 5       | 16       | **21**    |
 | **Total**   | **26**  | **45**   | **71**    |
 
@@ -21,18 +22,18 @@
 
 ## B1. Models — Schema Issues
 
-| #   | File        | Line(s)  | Severity    | Description                                                                                                                                                                                                                                        |
-| --- | ----------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | `models.py` | L57–58   | 🔴 Critical | **Redundant `org_type` columns.** `Organization` has both `org_type` (string, NOT NULL) and `org_type_id` (FK to `org_types`, nullable). They can drift out of sync — `create_location` only sets the string, leaving `org_type_id = NULL` always. |
-| B2  | `models.py` | L113     | 🟡 Warning  | Missing index on `Account.community_group_id` — joined in nearly every web controller query                                                                                                                                                        |
-| B3  | `models.py` | L98      | 🟡 Warning  | Missing index on `CommunityGroup.organization_id` — filtered in all location-scoped queries                                                                                                                                                        |
-| B4  | `models.py` | L253–254 | 🟡 Warning  | Missing index on `RecyclingSession.rvm_id` and `RecyclingSession.account_id` — used in bottle log + leaderboard joins                                                                                                                              |
-| B5  | `models.py` | L269     | 🟡 Warning  | Missing index on `RecyclingItem.session_id` — joined in bottle log queries                                                                                                                                                                         |
-| B6  | `models.py` | L246     | 🟡 Warning  | Missing index on `RVM.organization_id` — filtered in machine, bottle-log, dashboard queries                                                                                                                                                        |
-| B7  | `models.py` | L400     | 🟡 Warning  | Missing index on `Reward.organization_id` — filtered in reward listing and reward-log queries                                                                                                                                                      |
-| B8  | `models.py` | L147     | 🟡 Warning  | Missing index on `User.account_id` — used in serialization lookups                                                                                                                                                                                 |
-| B9  | `models.py` | L290–291 | 🟡 Warning  | `MaintenanceLog.transaction_id` FK has no backref on `Transaction` — reverse lookup impossible via ORM                                                                                                                                             |
-| B10 | `models.py` | L37      | 🟡 Warning  | `City.name` has no unique constraint — `create_city` only checks by name, so "San Jose, Bulacan" blocks "San Jose, Batangas"                                                                                                                       |
+| #   | File        | Line(s)  | Severity   | Description                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | ----------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | `models.py` | L57–58   | � Warning  | **`org_type_id` FK never populated.** `Organization` has both `org_type` (string) and `org_type_id` (FK to `org_types`). The `OrgType` lookup table exists and is managed by super-admin, but `create_location` only sets the string `org_type`, leaving `org_type_id = NULL` always. The controller should set `org_type_id` when creating/editing organizations to keep both in sync. |
+| B2  | `models.py` | L113     | 🟡 Warning | Missing index on `Account.community_group_id` — joined in nearly every web controller query                                                                                                                                                                                                                                                                                             |
+| B3  | `models.py` | L98      | 🟡 Warning | Missing index on `CommunityGroup.organization_id` — filtered in all location-scoped queries                                                                                                                                                                                                                                                                                             |
+| B4  | `models.py` | L253–254 | 🟡 Warning | Missing index on `RecyclingSession.rvm_id` and `RecyclingSession.account_id` — used in bottle log + leaderboard joins                                                                                                                                                                                                                                                                   |
+| B5  | `models.py` | L269     | 🟡 Warning | Missing index on `RecyclingItem.session_id` — joined in bottle log queries                                                                                                                                                                                                                                                                                                              |
+| B6  | `models.py` | L246     | 🟡 Warning | Missing index on `RVM.organization_id` — filtered in machine, bottle-log, dashboard queries                                                                                                                                                                                                                                                                                             |
+| B7  | `models.py` | L400     | 🟡 Warning | Missing index on `Reward.organization_id` — filtered in reward listing and reward-log queries                                                                                                                                                                                                                                                                                           |
+| B8  | `models.py` | L147     | 🟡 Warning | Missing index on `User.account_id` — used in serialization lookups                                                                                                                                                                                                                                                                                                                      |
+| B9  | `models.py` | L290–291 | 🟡 Warning | `MaintenanceLog.transaction_id` FK has no backref on `Transaction` — reverse lookup impossible via ORM                                                                                                                                                                                                                                                                                  |
+| B10 | `models.py` | L37      | 🟡 Warning | `City.name` has no unique constraint — `create_city` only checks by name, so "San Jose, Bulacan" blocks "San Jose, Batangas"                                                                                                                                                                                                                                                            |
 
 ## B2. Web Controller — Query & Performance Issues
 
@@ -228,16 +229,16 @@ The project has migrated to real API calls (`apiService.js`) but still actively 
 
 ## Immediate (Critical — 8 items)
 
-| Priority | Area     | Fix                                                                                                     |
-| -------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| 1        | Frontend | **Fix `refreshKey` TDZ** in `locations/page.js` — move useState declaration above the useEffect         |
-| 2        | Frontend | **Fix status filter mismatch** in `users/page.js` — change filter options to `['Active', 'Inactive']`   |
-| 3        | Frontend | **Add stock persistence API calls** in `rewards/page.js` — `handleDispense`/`adjustStock` must call API |
-| 4        | Frontend | **Add settings API** or mark settings page as "Coming Soon"                                             |
-| 5        | Backend  | **Fix N+1 query storm** in `_serialize_organization` — add `joinedload()` for nested relations          |
-| 6        | Backend  | **Fix N+1 query storm** in `_serialize_bottle_log` — add eager loading for session chain                |
-| 7        | Backend  | **Resolve redundant `org_type` columns** — remove string field or sync it with FK                       |
-| 8        | Backend  | **Set strong random SECRET_KEY** or fail loudly if env var is unset                                     |
+| Priority | Area     | Fix                                                                                                                           |
+| -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 1        | Frontend | **Fix `refreshKey` TDZ** in `locations/page.js` — move useState declaration above the useEffect                               |
+| 2        | Frontend | **Fix status filter mismatch** in `users/page.js` — change filter options to `['Active', 'Inactive']`                         |
+| 3        | Frontend | **Add stock persistence API calls** in `rewards/page.js` — `handleDispense`/`adjustStock` must call API                       |
+| 4        | Frontend | **Add settings API** or mark settings page as "Coming Soon"                                                                   |
+| 5        | Backend  | **Fix N+1 query storm** in `_serialize_organization` — add `joinedload()` for nested relations                                |
+| 6        | Backend  | **Fix N+1 query storm** in `_serialize_bottle_log` — add eager loading for session chain                                      |
+| 7        | Backend  | **Sync `org_type_id` FK** — `create_location`/`update_location` should set `org_type_id` from the `OrgType` table when saving |
+| 8        | Backend  | **Set strong random SECRET_KEY** or fail loudly if env var is unset                                                           |
 
 ## Short-Term (Warnings — top 12)
 

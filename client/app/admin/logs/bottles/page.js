@@ -1,11 +1,10 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { logs as logsApi } from '../../../../src/services/apiService';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, User, Clock, MapPin, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 export default function BottleLogsPage() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
@@ -40,6 +39,7 @@ export default function BottleLogsPage() {
     // Column visibility toggles
     const [showMachine, setShowMachine] = useState(true);
     const [showLocation, setShowLocation] = useState(true);
+    const [showSession, setShowSession] = useState(false);
 
     // Sortable column state
     const [sortColumn, setSortColumn] = useState('timestampObj');
@@ -65,32 +65,18 @@ export default function BottleLogsPage() {
     const bottleTypes = [...new Set(allBottleLogs.map(log => log.bottleType))];
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
 
-    // Stats computed from filtered logs (responds to location scope)
+    // Stats computed from logs (already server-scoped by effectiveLocationId)
     const stats = useMemo(() => {
-        let logs = allBottleLogs;
-        if (viewAsLocationId) {
-            logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (currentUser?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === currentUser.locationId);
-        }
         return {
-            todayTransactions: logs.length,
-            acceptedBottles: logs.filter(log => log.status === 'Accepted').length,
-            rejectedBottles: logs.filter(log => log.status === 'Rejected').length
+            todayTransactions: allBottleLogs.length,
+            acceptedBottles: allBottleLogs.filter(log => log.status === 'Accepted').length,
+            rejectedBottles: allBottleLogs.filter(log => log.status === 'Rejected').length
         };
-    }, [allBottleLogs, viewAsLocationId, currentUser, isSuperAdmin]);
+    }, [allBottleLogs]);
 
     const filteredLogs = useMemo(() => {
-        let logs = allBottleLogs;
-
-        // Filter by View As Location (or user's scoped location)
-        if (viewAsLocationId) {
-            logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (currentUser?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === currentUser.locationId);
-        }
-
-        return logs.filter(log => {
+        // Data is already server-scoped by effectiveLocationId — no need to re-filter by location
+        return allBottleLogs.filter(log => {
             const matchesSearch = searchQuery === '' || (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userId || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.bottleType || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
             return matchesSearch &&
                 (filterMachine === '' || log.machineName === filterMachine) &&
@@ -106,7 +92,7 @@ export default function BottleLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [allBottleLogs, searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection, viewAsLocationId, currentUser, isSuperAdmin]);
+    }, [allBottleLogs, searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -235,6 +221,16 @@ export default function BottleLogsPage() {
                                 {showLocation ? <Eye size={12} /> : <EyeOff size={12} />}
                                 Location
                             </button>
+                            <button
+                                onClick={() => setShowSession(!showSession)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showSession
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    }`}
+                            >
+                                {showSession ? <Eye size={12} /> : <EyeOff size={12} />}
+                                Session
+                            </button>
                         </div>
                     </div>
                 )}
@@ -271,6 +267,7 @@ export default function BottleLogsPage() {
                                 <th className="px-3 py-3">Email</th>
                                 {showMachine && <th className="px-3 py-3">Machine</th>}
                                 {showLocation && <th className="px-3 py-3">Location</th>}
+                                {showSession && <th className="px-3 py-3">Session</th>}
                                 <th className="px-3 py-3">Bottle Type</th>
                                 <th className="px-3 py-3">Condition</th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
@@ -298,7 +295,10 @@ export default function BottleLogsPage() {
                                         <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.machineName || '-'}</span></td>
                                     )}
                                     {showLocation && (
-                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Arellano University'}</span></td>
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Unknown'}</span></td>
+                                    )}
+                                    {showSession && (
+                                        <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.sessionId || '-'}</span></td>
                                     )}
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
                                     <td className="px-3 py-3">

@@ -1,6 +1,5 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import AdminLayout from '../../../src/Components/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Camera, Save, Key, Eye, EyeOff } from 'lucide-react';
 import { auth as authApi } from '../../../src/services/apiService';
@@ -43,7 +42,32 @@ export default function ProfilePage() {
     const [showConfirm, setShowConfirm] = useState(false);
 
     const handleImageUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setProfileImage(reader.result); reader.readAsDataURL(file); } };
-    const handleSave = () => { setIsEditing(false); alert('Profile changes saved successfully!'); };
+    const [isSaving, setIsSaving] = useState(false);
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const updated = await authApi.updateProfile({
+                name: profile.name,
+                email: profile.email,
+                phone: profile.phone,
+            });
+            // Sync local profile state with server response
+            if (updated) {
+                setProfile(p => ({
+                    ...p,
+                    name: updated.name || p.name,
+                    email: updated.email || p.email,
+                    phone: updated.phone || p.phone,
+                }));
+            }
+            setIsEditing(false);
+            alert('Profile updated successfully!');
+        } catch (err) {
+            alert(err.message || 'Failed to save profile changes.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleUpdatePassword = async () => {
         if (!passwords.current || !passwords.new || !passwords.confirm) {
@@ -102,7 +126,7 @@ export default function ProfilePage() {
                     <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><User size={20} className="text-emerald-600 dark:text-emerald-400" /> Profile Info</h3>
-                            {isEditing ? <button onClick={handleSave} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-500"><Save size={16} /> Save</button> : <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium"><Edit2 size={16} /> Edit</button>}
+                            {isEditing ? <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-500 disabled:opacity-50"><Save size={16} /> {isSaving ? 'Saving...' : 'Save'}</button> : <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium"><Edit2 size={16} /> Edit</button>}
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label><input type="text" value={profile.name} onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))} disabled={!isEditing} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 outline-none" /></div>

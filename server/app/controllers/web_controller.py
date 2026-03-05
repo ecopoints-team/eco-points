@@ -5,9 +5,10 @@ Every route (except /health) requires JWT authentication via @token_required.
 
 Prefix: /api/web
 """
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from flask import Blueprint, request, jsonify
-from sqlalchemy import func, or_
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from ..models import (
     OrgType, City, Organization, CommunityGroup, Account, User, AccessCredential,
     RVM, RecyclingSession, RecyclingItem, MaintenanceLog,
@@ -407,6 +408,10 @@ def delete_org_type(current_user, ot_id):
         ot = OrgType.query.get(ot_id)
         if not ot:
             return jsonify({'success': False, 'error': 'Not found'}), 404
+        # Prevent deletion if referenced by any organization
+        ref_count = Organization.query.filter_by(org_type_id=ot_id).count()
+        if ref_count > 0:
+            return jsonify({'success': False, 'error': f'Cannot delete: {ref_count} organization(s) reference this type'}), 409
         db.session.delete(ot)
         db.session.commit()
         return jsonify({'success': True, 'message': 'Deleted'}), 200
@@ -462,6 +467,10 @@ def delete_city(current_user, city_id):
         city = City.query.get(city_id)
         if not city:
             return jsonify({'success': False, 'error': 'Not found'}), 404
+        # Prevent deletion if referenced by any organization
+        ref_count = Organization.query.filter_by(city_id=city_id).count()
+        if ref_count > 0:
+            return jsonify({'success': False, 'error': f'Cannot delete: {ref_count} organization(s) reference this city'}), 409
         db.session.delete(city)
         db.session.commit()
         return jsonify({'success': True, 'message': 'Deleted'}), 200
@@ -481,7 +490,13 @@ def get_locations(current_user):
     """List organizations. Superadmin sees all; others see only their own."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = Organization.query.order_by(Organization.id.asc())
+        query = Organization.query.options(
+            joinedload(Organization.community_groups)
+                .joinedload(CommunityGroup.accounts)
+                .joinedload(Account.users),
+            joinedload(Organization.rvms),
+            joinedload(Organization.city),
+        ).order_by(Organization.id.asc())
         if loc_id:
             query = query.filter_by(id=loc_id)
         orgs = query.all()
@@ -497,10 +512,14 @@ def create_location(current_user):
     """Create a new organization (superadmin only)."""
     try:
         data = request.get_json() or {}
+        org_type_name = data.get('orgType', 'University')
+        # Resolve org_type_id from OrgType lookup table
+        org_type_ref = OrgType.query.filter(func.lower(OrgType.name) == org_type_name.lower()).first() if org_type_name else None
         org = Organization(
             name=data.get('name'),
             full_name=data.get('fullName'),
-            org_type=data.get('orgType', 'University'),
+            org_type=org_type_name,
+            org_type_id=org_type_ref.id if org_type_ref else None,
             street_address=data.get('streetAddress'),
             barangay=data.get('barangay'),
             city_id=data.get('cityId') or None,
@@ -551,6 +570,11 @@ def update_location(current_user, loc_id):
             if front in data:
                 setattr(org, back, data[front] if data[front] != '' else None)
 
+        # Sync org_type_id when org_type string changes
+        if 'orgType' in data and data['orgType']:
+            org_type_ref = OrgType.query.filter(func.lower(OrgType.name) == data['orgType'].lower()).first()
+            org.org_type_id = org_type_ref.id if org_type_ref else None
+
         _log_action(current_user, 'Location Updated', org.name, 'Locations')
         db.session.commit()
         return jsonify({'success': True, 'location': _serialize_organization(org)}), 200
@@ -570,6 +594,17 @@ def delete_location(current_user, loc_id):
             return jsonify({'success': False, 'error': 'Location not found'}), 404
 
         org.status = 'Inactive'
+
+        # Cascade: deactivate child RVMs, rewards, and users under this org
+        for rvm in (org.rvms or []):
+            rvm.is_online = False
+        for reward in (org.rewards or []):
+            reward.is_active = False
+        for cg in (org.community_groups or []):
+            for acc in (cg.accounts or []):
+                for user in (acc.users or []):
+                    user.is_active = False
+
         _log_action(current_user, 'Location Deactivated', org.name, 'Locations')
         db.session.commit()
         return jsonify({'success': True, 'message': f'{org.name} deactivated'}), 200
@@ -730,6 +765,17 @@ def update_user(current_user, user_id):
                 return jsonify({'success': False, 'error': 'Access denied'}), 403
 
         data = request.get_json() or {}
+
+        # Uniqueness checks for email and username
+        if 'email' in data and data['email']:
+            existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Email already in use'}), 409
+        if 'username' in data and data['username']:
+            existing = User.query.filter(User.username == data['username'], User.id != user_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Username already in use'}), 409
+
         for front, back in [
             ('name', 'name'), ('username', 'username'), ('email', 'email'),
             ('phone', 'phone'), ('role', 'role'), ('userType', 'user_type'),
@@ -767,6 +813,70 @@ def delete_user(current_user, user_id):
         _log_action(current_user, 'User Deactivated', user.name, 'Users')
         db.session.commit()
         return jsonify({'success': True, 'message': f'{user.name} deactivated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/users/<int:user_id>/adjust-points', methods=['POST'])
+@token_required
+@admin_required
+def adjust_user_points(current_user, user_id):
+    """Manually adjust a user's point balance (add or subtract)."""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        if current_user.role != 'superadmin':
+            if get_user_org_id(user) != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        data = request.get_json() or {}
+        amount = data.get('amount')
+        reason = data.get('reason', 'Manual adjustment')
+
+        if amount is None or not isinstance(amount, (int, float)):
+            return jsonify({'success': False, 'error': 'Amount is required and must be a number'}), 400
+        amount = int(amount)
+        if amount == 0:
+            return jsonify({'success': False, 'error': 'Amount cannot be zero'}), 400
+
+        account = user.account
+        if not account:
+            return jsonify({'success': False, 'error': 'User has no account'}), 404
+
+        balance_before = account.points_balance
+        balance_after = balance_before + amount
+
+        if balance_after < 0:
+            return jsonify({'success': False, 'error': f'Insufficient balance. Current: {balance_before}, adjustment: {amount}'}), 400
+
+        account.points_balance = balance_after
+
+        txn = Transaction(
+            account_id=account.id,
+            transaction_type='adjustment',
+            amount=amount,
+            balance_before=balance_before,
+            balance_after=balance_after,
+            description=reason,
+            reference_id=f'ADJ-{user.id}-{current_user.id}',
+        )
+        db.session.add(txn)
+
+        direction = 'added' if amount > 0 else 'deducted'
+        _log_action(current_user, f'Points {direction.title()}',
+                     f'{abs(amount)} pts {direction} for {user.name} (was {balance_before}, now {balance_after})',
+                     'Users', notes=reason)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'{abs(amount)} points {direction} for {user.name}',
+            'balanceBefore': balance_before,
+            'balanceAfter': balance_after,
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -992,7 +1102,14 @@ def get_bottle_logs(current_user):
     """Recycling item logs, scoped by location."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = RecyclingItem.query.join(RecyclingSession)
+        query = RecyclingItem.query.join(RecyclingSession).options(
+            joinedload(RecyclingItem.session)
+                .joinedload(RecyclingSession.account)
+                .joinedload(Account.users),
+            joinedload(RecyclingItem.session)
+                .joinedload(RecyclingSession.rvm)
+                .joinedload(RVM.organization),
+        )
         if loc_id:
             query = query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
         items = query.order_by(RecyclingItem.deposited_at.desc()).limit(500).all()
@@ -1014,6 +1131,44 @@ def get_machine_logs(current_user):
         logs = query.order_by(MaintenanceLog.timestamp.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_machine_log(l) for l in logs]}), 200
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/logs/machines', methods=['POST'])
+@token_required
+@admin_required
+def create_machine_log(current_user):
+    """Create a new maintenance log entry."""
+    try:
+        data = request.get_json() or {}
+        rvm_id = data.get('rvmId')
+        action_type = data.get('actionType')
+
+        if not rvm_id or not action_type:
+            return jsonify({'success': False, 'error': 'rvmId and actionType are required'}), 400
+
+        rvm = RVM.query.get(rvm_id)
+        if not rvm:
+            return jsonify({'success': False, 'error': 'Machine not found'}), 404
+
+        if current_user.role != 'superadmin':
+            if rvm.organization_id != _scope_location_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        log = MaintenanceLog(
+            rvm_id=rvm_id,
+            performed_by_id=current_user.id,
+            action_type=action_type,
+            resolved=data.get('resolved', False),
+            notes=data.get('notes', ''),
+        )
+        db.session.add(log)
+        _log_action(current_user, 'Maintenance Log Created',
+                     f'{action_type} on {rvm.name}', 'Machines')
+        db.session.commit()
+        return jsonify({'success': True, 'log': _serialize_machine_log(log)}), 201
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -1042,11 +1197,90 @@ def get_reward_logs(current_user):
     """Reward redemption logs, scoped by location."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = RewardRedemption.query.join(Reward)
+        query = RewardRedemption.query.join(Reward).options(
+            joinedload(RewardRedemption.account)
+                .joinedload(Account.users),
+            joinedload(RewardRedemption.reward)
+                .joinedload(Reward.organization),
+        )
         if loc_id:
             query = query.filter(Reward.organization_id == loc_id)
         logs = query.order_by(RewardRedemption.redeemed_at.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_reward_log(r) for r in logs]}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/logs/rewards/<int:redemption_id>', methods=['PUT'])
+@token_required
+@admin_required
+def update_reward_redemption(current_user, redemption_id):
+    """Update a reward redemption status (pending→claimed→used→expired)."""
+    try:
+        rd = RewardRedemption.query.get(redemption_id)
+        if not rd:
+            return jsonify({'success': False, 'error': 'Redemption not found'}), 404
+
+        data = request.get_json() or {}
+        new_status = data.get('status')
+        valid_statuses = ('pending', 'claimed', 'used', 'expired')
+        if new_status not in valid_statuses:
+            return jsonify({'success': False, 'error': f'Invalid status. Must be one of {valid_statuses}'}), 400
+
+        old_status = rd.status
+        rd.status = new_status
+        if new_status == 'used' and not rd.used_at:
+            rd.used_at = datetime.now(timezone.utc)
+
+        _log_action(current_user, 'Redemption Status Updated',
+                     f'{rd.redemption_code}: {old_status} → {new_status}', 'Rewards')
+        db.session.commit()
+        return jsonify({'success': True, 'log': _serialize_reward_log(rd)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/logs/transactions', methods=['GET'])
+@token_required
+@admin_required
+def get_transaction_logs(current_user):
+    """Transaction logs (earn/redeem/adjustment), scoped by location."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        query = db.session.query(Transaction, Account, User).join(
+            Account, Transaction.account_id == Account.id
+        ).outerjoin(
+            User, User.account_id == Account.id
+        ).join(
+            CommunityGroup, Account.community_group_id == CommunityGroup.id
+        ).join(
+            Organization, CommunityGroup.organization_id == Organization.id
+        )
+        if loc_id:
+            query = query.filter(Organization.id == loc_id)
+        rows = query.order_by(Transaction.created_at.desc()).limit(500).all()
+        result = []
+        for txn, acct, user in rows:
+            org_name = None
+            if acct.community_group and acct.community_group.organization:
+                org_name = acct.community_group.organization.name
+            result.append({
+                'id': txn.id,
+                'accountId': txn.account_id,
+                'userName': user.name if user else acct.account_name,
+                'userEmail': user.email if user else None,
+                'transactionType': txn.transaction_type,
+                'amount': txn.amount,
+                'balanceBefore': txn.balance_before,
+                'balanceAfter': txn.balance_after,
+                'description': txn.description,
+                'referenceId': txn.reference_id,
+                'locationId': acct.community_group.organization_id if acct.community_group else None,
+                'locationName': org_name,
+                'timestamp': _dt(txn.created_at),
+            })
+        return jsonify({'success': True, 'logs': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1166,5 +1400,451 @@ def get_groups(current_user):
             'organizationId': g.organization_id,
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/groups', methods=['POST'])
+@token_required
+@admin_required
+def create_group(current_user):
+    """Create a new community group.
+
+    Body: { name, abbreviation?, groupType, organizationId? }
+    """
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'Group name is required'}), 400
+
+        group_type = data.get('groupType', 'college')
+        org_id = data.get('organizationId')
+
+        if current_user.role != 'superadmin':
+            org_id = get_user_org_id(current_user)
+
+        if not org_id:
+            return jsonify({'success': False, 'error': 'Organization is required'}), 400
+
+        # Check for duplicate name within the same org
+        existing = CommunityGroup.query.filter_by(
+            organization_id=org_id, name=name
+        ).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'A group with this name already exists in this organization'}), 409
+
+        group = CommunityGroup(
+            organization_id=org_id,
+            name=name,
+            abbreviation=(data.get('abbreviation') or '').strip() or None,
+            group_type=group_type,
+        )
+        db.session.add(group)
+        _log_action(current_user, 'Group Created', name, 'Groups')
+        db.session.commit()
+        return jsonify({'success': True, 'group': {
+            'id': group.id,
+            'name': group.name,
+            'abbreviation': group.abbreviation,
+            'groupType': group.group_type,
+            'organizationId': group.organization_id,
+        }}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/groups/<int:group_id>', methods=['PUT'])
+@token_required
+@admin_required
+def update_group(current_user, group_id):
+    """Update a community group."""
+    try:
+        group = CommunityGroup.query.get(group_id)
+        if not group:
+            return jsonify({'success': False, 'error': 'Group not found'}), 404
+
+        if current_user.role != 'superadmin' and group.organization_id != get_user_org_id(current_user):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        data = request.get_json() or {}
+        if 'name' in data:
+            group.name = (data['name'] or '').strip()
+        if 'abbreviation' in data:
+            group.abbreviation = (data['abbreviation'] or '').strip() or None
+        if 'groupType' in data:
+            group.group_type = data['groupType']
+
+        _log_action(current_user, 'Group Updated', group.name, 'Groups')
+        db.session.commit()
+        return jsonify({'success': True, 'group': {
+            'id': group.id,
+            'name': group.name,
+            'abbreviation': group.abbreviation,
+            'groupType': group.group_type,
+            'organizationId': group.organization_id,
+        }}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/groups/<int:group_id>', methods=['DELETE'])
+@token_required
+@admin_required
+def delete_group(current_user, group_id):
+    """Delete a community group. Prevents deletion if it has accounts."""
+    try:
+        group = CommunityGroup.query.get(group_id)
+        if not group:
+            return jsonify({'success': False, 'error': 'Group not found'}), 404
+
+        if current_user.role != 'superadmin' and group.organization_id != get_user_org_id(current_user):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        # Prevent deletion if referenced by any accounts
+        acc_count = Account.query.filter_by(community_group_id=group_id).count()
+        if acc_count > 0:
+            return jsonify({'success': False, 'error': f'Cannot delete: {acc_count} account(s) belong to this group'}), 409
+
+        _log_action(current_user, 'Group Deleted', group.name, 'Groups')
+        db.session.delete(group)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Group deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# ANALYTICS  (comprehensive insights)
+# ══════════════════════════════════════════════════════════════════════════
+
+@web_bp.route('/analytics', methods=['GET'])
+@token_required
+@admin_required
+def get_analytics(current_user):
+    """
+    Comprehensive analytics data for the Analytics page.
+    Returns multiple datasets: recycling trends, user growth, points economy,
+    machine utilization, reward insights, peak hours, and location comparisons.
+    """
+    try:
+        loc_id = _scope_location_id(current_user)
+        now = datetime.now(timezone.utc)
+        current_year = now.year
+
+        # ──────────────────────────────────────────────────────
+        # 1. RECYCLING TRENDS  (monthly bottles for last 12 months)
+        # ──────────────────────────────────────────────────────
+        items_query = db.session.query(
+            func.strftime('%Y-%m', RecyclingItem.deposited_at).label('month'),
+            func.count(RecyclingItem.id).label('total'),
+            func.sum(db.case(
+                (RecyclingItem.condition != 'Rejected', 1),
+                else_=0
+            )).label('accepted'),
+            func.sum(db.case(
+                (RecyclingItem.condition == 'Rejected', 1),
+                else_=0
+            )).label('rejected'),
+            func.coalesce(func.sum(RecyclingItem.points_awarded), 0).label('points'),
+        ).join(RecyclingSession)
+        if loc_id:
+            items_query = items_query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        recycling_trends = items_query.group_by('month').order_by('month').all()
+
+        # Weekly recycling trends (daily for last 7 days)
+        today = datetime.now(timezone.utc).date()
+        # Find Monday of this week
+        days_since_monday = today.weekday()  # 0=Mon
+        week_start = today - timedelta(days=days_since_monday)
+        daily_items_query = db.session.query(
+            func.strftime('%w', RecyclingItem.deposited_at).label('dow'),  # 0=Sun
+            func.strftime('%Y-%m-%d', RecyclingItem.deposited_at).label('day'),
+            func.count(RecyclingItem.id).label('total'),
+            func.sum(db.case(
+                (RecyclingItem.condition != 'Rejected', 1),
+                else_=0
+            )).label('accepted'),
+            func.sum(db.case(
+                (RecyclingItem.condition == 'Rejected', 1),
+                else_=0
+            )).label('rejected'),
+        ).join(RecyclingSession).filter(
+            func.date(RecyclingItem.deposited_at) >= week_start.isoformat(),
+            func.date(RecyclingItem.deposited_at) <= today.isoformat(),
+        )
+        if loc_id:
+            daily_items_query = daily_items_query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        daily_trends = daily_items_query.group_by('day').order_by('day').all()
+
+        # ──────────────────────────────────────────────────────
+        # 2. USER GROWTH  (monthly new registrations for current year)
+        # ──────────────────────────────────────────────────────
+        user_base_query = db.session.query(
+            func.strftime('%Y-%m', User.created_at).label('month'),
+            func.count(User.id).label('count'),
+        ).join(Account).join(CommunityGroup)
+        if loc_id:
+            user_base_query = user_base_query.filter(CommunityGroup.organization_id == loc_id)
+        user_growth = user_base_query.filter(
+            func.strftime('%Y', User.created_at) == str(current_year)
+        ).group_by('month').order_by('month').all()
+
+        # Cumulative user count up to start of current year (baseline)
+        baseline_query = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
+        if loc_id:
+            baseline_query = baseline_query.filter(CommunityGroup.organization_id == loc_id)
+        baseline_users = baseline_query.filter(
+            User.created_at < datetime(current_year, 1, 1, tzinfo=timezone.utc)
+        ).scalar() or 0
+
+        # ──────────────────────────────────────────────────────
+        # 3. POINTS ECONOMY  (earn vs redeem per month, current year)
+        # ──────────────────────────────────────────────────────
+        txn_base = db.session.query(
+            func.strftime('%Y-%m', Transaction.created_at).label('month'),
+            Transaction.transaction_type,
+            func.sum(func.abs(Transaction.amount)).label('total_amount'),
+        ).join(Account)
+        if loc_id:
+            txn_base = txn_base.join(CommunityGroup, Account.community_group_id == CommunityGroup.id).filter(
+                CommunityGroup.organization_id == loc_id
+            )
+        points_economy = txn_base.filter(
+            func.strftime('%Y', Transaction.created_at) == str(current_year)
+        ).group_by('month', Transaction.transaction_type).order_by('month').all()
+
+        # ──────────────────────────────────────────────────────
+        # 4. MACHINE UTILIZATION  (items per machine, all time)
+        # ──────────────────────────────────────────────────────
+        machine_util_base = db.session.query(
+            RVM.name,
+            RVM.is_online,
+            RVM.organization_id,
+            Organization.name.label('org_name'),
+            func.count(RecyclingItem.id).label('item_count'),
+            func.count(RecyclingSession.id.distinct()).label('session_count'),
+        ).join(Organization, RVM.organization_id == Organization.id
+        ).outerjoin(RecyclingSession, RVM.id == RecyclingSession.rvm_id
+        ).outerjoin(RecyclingItem, RecyclingSession.id == RecyclingItem.session_id)
+        if loc_id:
+            machine_util_base = machine_util_base.filter(RVM.organization_id == loc_id)
+        machine_utilization = machine_util_base.group_by(RVM.id).all()
+
+        # ──────────────────────────────────────────────────────
+        # 5. REWARD INSIGHTS  (top redeemed rewards)
+        # ──────────────────────────────────────────────────────
+        reward_base = db.session.query(
+            Reward.name,
+            Reward.points_required,
+            func.count(RewardRedemption.id).label('redemption_count'),
+            func.coalesce(func.sum(RewardRedemption.points_spent), 0).label('total_points_spent'),
+        ).outerjoin(RewardRedemption, Reward.id == RewardRedemption.reward_id)
+        if loc_id:
+            reward_base = reward_base.filter(Reward.organization_id == loc_id)
+        reward_insights = reward_base.group_by(Reward.id).order_by(
+            func.count(RewardRedemption.id).desc()
+        ).limit(10).all()
+
+        # ──────────────────────────────────────────────────────
+        # 6. PEAK HOURS  (bottles by hour of day, all time)
+        # ──────────────────────────────────────────────────────
+        peak_base = db.session.query(
+            func.strftime('%H', RecyclingItem.deposited_at).label('hour'),
+            func.count(RecyclingItem.id).label('count'),
+        ).join(RecyclingSession)
+        if loc_id:
+            peak_base = peak_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        peak_hours = peak_base.group_by('hour').order_by('hour').all()
+
+        # ──────────────────────────────────────────────────────
+        # 7. PEAK DAYS OF WEEK  (bottles by day, all time)
+        # ──────────────────────────────────────────────────────
+        peak_day_base = db.session.query(
+            func.strftime('%w', RecyclingItem.deposited_at).label('dow'),  # 0=Sun
+            func.count(RecyclingItem.id).label('count'),
+        ).join(RecyclingSession)
+        if loc_id:
+            peak_day_base = peak_day_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        peak_days = peak_day_base.group_by('dow').order_by('dow').all()
+
+        # ──────────────────────────────────────────────────────
+        # 8. USER TYPE DISTRIBUTION  (student/faculty/staff)
+        # ──────────────────────────────────────────────────────
+        utype_base = db.session.query(
+            User.user_type,
+            func.count(User.id).label('count'),
+        ).join(Account).join(CommunityGroup).filter(User.role == 'user')
+        if loc_id:
+            utype_base = utype_base.filter(CommunityGroup.organization_id == loc_id)
+        user_type_dist = utype_base.group_by(User.user_type).all()
+
+        # ──────────────────────────────────────────────────────
+        # 9. LOCATION COMPARISON  (per-org totals — superadmin only)
+        # ──────────────────────────────────────────────────────
+        location_comparison = []
+        if not loc_id:
+            loc_comp = db.session.query(
+                Organization.name,
+                Organization.org_type,
+                func.count(RecyclingItem.id.distinct()).label('bottles'),
+                func.coalesce(func.sum(RecyclingItem.points_awarded), 0).label('points'),
+                func.count(User.id.distinct()).label('users'),
+            ).outerjoin(RVM, Organization.id == RVM.organization_id
+            ).outerjoin(RecyclingSession, RVM.id == RecyclingSession.rvm_id
+            ).outerjoin(RecyclingItem, RecyclingSession.id == RecyclingItem.session_id
+            ).outerjoin(CommunityGroup, Organization.id == CommunityGroup.organization_id
+            ).outerjoin(Account, CommunityGroup.id == Account.community_group_id
+            ).outerjoin(User, Account.id == User.account_id
+            ).group_by(Organization.id).all()
+            location_comparison = [{
+                'name': row.name,
+                'orgType': row.org_type,
+                'bottles': row.bottles,
+                'points': row.points,
+                'users': row.users,
+            } for row in loc_comp]
+
+        # ──────────────────────────────────────────────────────
+        # 10. BOTTLE CONDITION BREAKDOWN  (With Label / No Label / Rejected)
+        # ──────────────────────────────────────────────────────
+        cond_base = db.session.query(
+            RecyclingItem.condition,
+            func.count(RecyclingItem.id).label('count'),
+        ).join(RecyclingSession)
+        if loc_id:
+            cond_base = cond_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        condition_dist = cond_base.group_by(RecyclingItem.condition).all()
+
+        # ──────────────────────────────────────────────────────
+        # 11. SUMMARY TOTALS  (key metrics for stat cards)
+        # ──────────────────────────────────────────────────────
+        total_items_base = db.session.query(func.count(RecyclingItem.id)).join(RecyclingSession)
+        total_points_base = db.session.query(func.coalesce(func.sum(RecyclingItem.points_awarded), 0)).join(RecyclingSession)
+        total_sessions_base = db.session.query(func.count(RecyclingSession.id))
+        total_redemptions_base = db.session.query(func.count(RewardRedemption.id))
+        total_users_base = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
+
+        if loc_id:
+            total_items_base = total_items_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+            total_points_base = total_points_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+            total_sessions_base = total_sessions_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+            total_redemptions_base = total_redemptions_base.join(Reward).filter(Reward.organization_id == loc_id)
+            total_users_base = total_users_base.filter(CommunityGroup.organization_id == loc_id)
+
+        total_items = total_items_base.scalar() or 0
+        total_points = total_points_base.scalar() or 0
+        total_sessions = total_sessions_base.scalar() or 0
+        total_redemptions = total_redemptions_base.scalar() or 0
+        total_users = total_users_base.scalar() or 0
+
+        # Average points per session
+        avg_points_per_session = round(total_points / total_sessions, 1) if total_sessions > 0 else 0
+        # Average items per session
+        avg_items_per_session = round(total_items / total_sessions, 1) if total_sessions > 0 else 0
+
+        # ──────────────────────────────────────────────────────
+        # BUILD RESPONSE
+        # ──────────────────────────────────────────────────────
+        day_names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+        return jsonify({
+            'success': True,
+            'analytics': {
+                # 1. Recycling trends (monthly)
+                'recyclingTrends': [{
+                    'month': row.month,
+                    'total': row.total,
+                    'accepted': row.accepted,
+                    'rejected': row.rejected,
+                    'points': row.points,
+                } for row in recycling_trends],
+
+                # 1b. Daily recycling trends (current week)
+                'dailyTrends': [{
+                    'day': row.day,
+                    'dow': int(row.dow),
+                    'total': row.total,
+                    'accepted': row.accepted,
+                    'rejected': row.rejected,
+                } for row in daily_trends],
+
+                # 2. User growth (monthly, current year)
+                'userGrowth': {
+                    'baseline': baseline_users,
+                    'months': [{
+                        'month': row.month,
+                        'count': row.count,
+                    } for row in user_growth],
+                },
+
+                # 3. Points economy (earn vs redeem)
+                'pointsEconomy': [{
+                    'month': row.month,
+                    'type': row.transaction_type,
+                    'amount': row.total_amount,
+                } for row in points_economy],
+
+                # 4. Machine utilization
+                'machineUtilization': [{
+                    'name': row.name,
+                    'isOnline': row.is_online,
+                    'itemCount': row.item_count,
+                    'sessionCount': row.session_count,
+                    'organizationId': row.organization_id,
+                    'organizationName': row.org_name,
+                } for row in machine_utilization],
+
+                # 5. Top rewards
+                'rewardInsights': [{
+                    'name': row.name,
+                    'pointsRequired': row.points_required,
+                    'redemptionCount': row.redemption_count,
+                    'totalPointsSpent': row.total_points_spent,
+                } for row in reward_insights],
+
+                # 6. Peak hours (0-23)
+                'peakHours': [{
+                    'hour': int(row.hour),
+                    'count': row.count,
+                } for row in peak_hours],
+
+                # 7. Peak days of week
+                'peakDays': [{
+                    'day': day_names[int(row.dow)],
+                    'dayIndex': int(row.dow),
+                    'count': row.count,
+                } for row in peak_days],
+
+                # 8. User type distribution
+                'userTypeDistribution': [{
+                    'type': row.user_type or 'Unknown',
+                    'count': row.count,
+                } for row in user_type_dist],
+
+                # 9. Location comparison (superadmin only)
+                'locationComparison': location_comparison,
+
+                # 10. Bottle condition breakdown
+                'conditionDistribution': [{
+                    'condition': row.condition or 'Unknown',
+                    'count': row.count,
+                } for row in condition_dist],
+
+                # 11. Summary
+                'summary': {
+                    'totalItems': total_items,
+                    'totalPoints': total_points,
+                    'totalSessions': total_sessions,
+                    'totalRedemptions': total_redemptions,
+                    'totalUsers': total_users,
+                    'avgPointsPerSession': avg_points_per_session,
+                    'avgItemsPerSession': avg_items_per_session,
+                },
+            }
+        }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

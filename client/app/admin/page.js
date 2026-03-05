@@ -132,7 +132,7 @@ const PieTooltip = ({ active, payload }) => {
 
 export default function AdminDashboard() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
-    const [timeRange, setTimeRange] = useState('week');
+    const [timeRange, setTimeRange] = useState('month');
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
 
@@ -151,12 +151,21 @@ export default function AdminDashboard() {
         let cancelled = false;
         const load = async () => {
             setIsDataLoading(true);
-            try {
-                const [statsData, logsData] = await Promise.all([
-                    dashboardApi.getStats(effectiveLocationId),
-                    logsApi.getBottles(effectiveLocationId),
-                ]);
-                if (!cancelled) {
+
+            // Load stats and bottle logs independently so one failure doesn't block the other
+            const statsPromise = dashboardApi.getStats(effectiveLocationId).catch(err => {
+                console.error('Dashboard stats failed:', err);
+                return null;
+            });
+            const logsPromise = logsApi.getBottles(effectiveLocationId).catch(err => {
+                console.error('Bottle logs failed:', err);
+                return null;
+            });
+
+            const [statsData, logsData] = await Promise.all([statsPromise, logsPromise]);
+
+            if (!cancelled) {
+                if (statsData) {
                     setStats({
                         totalBottles: statsData.totalBottles ?? 0,
                         totalPoints: statsData.totalPointsAwarded ?? 0,
@@ -166,15 +175,23 @@ export default function AdminDashboard() {
                         totalUsers: statsData.totalUsers ?? 0,
                         totalRewards: statsData.totalRewards ?? 0,
                     });
-                    setBottleLogs((logsData || []).map(log => ({
-                        ...log,
-                        timestampObj: log.timestamp ? new Date(log.timestamp) : new Date(),
-                    })));
                 }
-            } catch (err) {
-                console.error('Dashboard load failed:', err);
-            } finally {
-                if (!cancelled) setIsDataLoading(false);
+                if (logsData) {
+                    setBottleLogs((logsData || []).map(log => {
+                        let ts = null;
+                        if (log.timestamp) {
+                            const parsed = new Date(log.timestamp);
+                            ts = isNaN(parsed.getTime()) ? new Date() : parsed;
+                        } else if (log.depositedAt) {
+                            const parsed = new Date(log.depositedAt);
+                            ts = isNaN(parsed.getTime()) ? new Date() : parsed;
+                        } else {
+                            ts = new Date();
+                        }
+                        return { ...log, timestampObj: ts };
+                    }));
+                }
+                setIsDataLoading(false);
             }
         };
         load();
@@ -192,81 +209,81 @@ export default function AdminDashboard() {
             };
         }
 
-        const logs = bottleLogs; // Already filtered by location on the backend
+        const logs = bottleLogs;
         const now = new Date();
 
-        // Helper to get day name
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        // Helper: classify status
+        const isAccepted = (l) => ['Accepted', 'Completed', 'Success'].includes(l.status);
+        const isRejected = (l) => ['Rejected', 'Failed', 'Error'].includes(l.status);
 
-        // Helper to count accepted/rejected
-        const countByStatus = (logsSubset) => {
-            const accepted = logsSubset.filter(l => ['Accepted', 'Completed', 'Success'].includes(l.status)).length;
-            const rejected = logsSubset.filter(l => ['Rejected', 'Failed', 'Error'].includes(l.status)).length;
-            return { accepted, rejected };
-        };
+        // ── 1. WEEKLY: Real-time 7-day window (Mon → Sun of current week) ──
+        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        // Find Monday of the current week (ISO week: Monday = 1)
+        const currentDay = now.getDay(); // 0=Sun, 1=Mon,...
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + mondayOffset);
+        monday.setHours(0, 0, 0, 0);
 
-        // 1. Weekly Data (Last 7 Days)
         const weeklyAccepted = [];
         const weeklyRejected = [];
-        const weeklyLabels = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(now.getDate() - i);
-            weeklyLabels.push(days[d.getDay()]);
-
-            const dayStart = new Date(d.setHours(0, 0, 0, 0));
-            const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+        for (let i = 0; i < 7; i++) {
+            const dayStart = new Date(monday);
+            dayStart.setDate(monday.getDate() + i);
+            const dayEnd = new Date(dayStart);
+            dayEnd.setHours(23, 59, 59, 999);
 
             const dayLogs = logs.filter(l => l.timestampObj >= dayStart && l.timestampObj <= dayEnd);
-            const counts = countByStatus(dayLogs);
-            weeklyAccepted.push(counts.accepted);
-            weeklyRejected.push(counts.rejected);
+            weeklyAccepted.push(dayLogs.filter(isAccepted).length);
+            weeklyRejected.push(dayLogs.filter(isRejected).length);
         }
 
-        // 2. Monthly Data (Last 4 Weeks)
-        const monthlyAccepted = [];
-        const monthlyRejected = [];
-        const monthlyLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        for (let i = 0; i < 4; i++) {
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - ((3 - i) * 7) - 6);
-            const weekEnd = new Date(now);
-            weekEnd.setDate(now.getDate() - ((3 - i) * 7));
-
-            const weekLogs = logs.filter(l => l.timestampObj >= weekStart && l.timestampObj <= weekEnd);
-            const counts = countByStatus(weekLogs);
-            monthlyAccepted.push(counts.accepted);
-            monthlyRejected.push(counts.rejected);
-        }
-
-        // 3. Yearly Data (Last 12 Months)
-        const yearlyAccepted = new Array(12).fill(0);
-        const yearlyRejected = new Array(12).fill(0);
-        const yearlyLabels = months;
+        // ── 2. MONTHLY: Jan → Dec of the current year (real-time) ──
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const currentYear = now.getFullYear();
+        const monthlyAccepted = new Array(12).fill(0);
+        const monthlyRejected = new Array(12).fill(0);
         logs.forEach(log => {
-            const d = new Date(log.timestampObj);
-            if (d.getFullYear() === now.getFullYear()) {
-                if (['Accepted', 'Completed', 'Success'].includes(log.status)) {
-                    yearlyAccepted[d.getMonth()]++;
-                } else if (['Rejected', 'Failed', 'Error'].includes(log.status)) {
-                    yearlyRejected[d.getMonth()]++;
+            const d = log.timestampObj;
+            if (d && d.getFullYear() === currentYear) {
+                const m = d.getMonth();
+                if (isAccepted(log)) monthlyAccepted[m]++;
+                else if (isRejected(log)) monthlyRejected[m]++;
+            }
+        });
+
+        // ── 3. YEARLY: One point per year, dynamically grows ──
+        // Find the range of years present in the data
+        const yearSet = new Set();
+        yearSet.add(currentYear); // Always include current year
+        logs.forEach(log => {
+            if (log.timestampObj) yearSet.add(log.timestampObj.getFullYear());
+        });
+        const years = [...yearSet].sort((a, b) => a - b);
+        const yearlyLabels = years.map(String);
+        const yearlyAccepted = years.map(() => 0);
+        const yearlyRejected = years.map(() => 0);
+        logs.forEach(log => {
+            if (log.timestampObj) {
+                const yIdx = years.indexOf(log.timestampObj.getFullYear());
+                if (yIdx !== -1) {
+                    if (isAccepted(log)) yearlyAccepted[yIdx]++;
+                    else if (isRejected(log)) yearlyRejected[yIdx]++;
                 }
             }
         });
 
-        // Determine Max Values for scaling (combined)
         const getMax = (arr1, arr2) => Math.max(...arr1, ...arr2, 10);
 
         return {
             week: {
-                labels: weeklyLabels,
+                labels: dayNames,
                 accepted: weeklyAccepted,
                 rejected: weeklyRejected,
                 maxValue: getMax(weeklyAccepted, weeklyRejected)
             },
             month: {
-                labels: monthlyLabels,
+                labels: monthNames,
                 accepted: monthlyAccepted,
                 rejected: monthlyRejected,
                 maxValue: getMax(monthlyAccepted, monthlyRejected)
@@ -439,9 +456,9 @@ export default function AdminDashboard() {
                                 }}
                             />
                             {[
-                                { key: 'week', label: 'Daily' },
-                                { key: 'month', label: 'Weekly' },
-                                { key: 'year', label: 'Monthly' }
+                                { key: 'week', label: 'Weekly' },
+                                { key: 'month', label: 'Monthly' },
+                                { key: 'year', label: 'Yearly' }
                             ].map((range) => (
                                 <button
                                     key={range.key}
@@ -604,7 +621,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 mb-1">
-                            Peak {timeRange === 'week' ? 'Day' : timeRange === 'month' ? 'Week' : 'Month'}
+                            Peak {timeRange === 'week' ? 'Day' : timeRange === 'month' ? 'Month' : 'Year'}
                         </p>
                         <p className="text-xl font-bold text-amber-600 dark:text-amber-400 system:text-amber-400">
                             {(() => {

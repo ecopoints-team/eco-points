@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 import { getDepartmentName } from '../../../src/data/mockData';
 import { users as usersApi } from '../../../src/services/apiService';
-import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, GraduationCap, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle, Coins } from 'lucide-react';
 
 export default function ManageUsersPage() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
@@ -36,6 +36,12 @@ export default function ManageUsersPage() {
     const [editFormData, setEditFormData] = useState({
         name: '', username: '', email: '', phone: '', userType: '', yearLevel: '', isActive: true
     });
+
+    // Adjust Points modal state
+    const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+    const [adjustAmount, setAdjustAmount] = useState('');
+    const [adjustReason, setAdjustReason] = useState('');
+    const [isAdjusting, setIsAdjusting] = useState(false);
 
     // Handle Edit
     const handleEdit = (user) => {
@@ -90,12 +96,44 @@ export default function ManageUsersPage() {
         if (selectedUser) {
             try {
                 await usersApi.delete(selectedUser.id);
-                setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+                // Backend soft-deletes (sets is_active=false), update local state to match
+                setUsers(prev => prev.map(u =>
+                    u.id === selectedUser.id ? { ...u, isActive: false } : u
+                ));
             } catch (err) {
-                console.error('Failed to delete user:', err);
+                console.error('Failed to deactivate user:', err);
             }
             setIsDeleteModalOpen(false);
             setSelectedUser(null);
+        }
+    };
+
+    // Handle Adjust Points
+    const handleAdjustPoints = (user) => {
+        setSelectedUser(user);
+        setAdjustAmount('');
+        setAdjustReason('');
+        setIsAdjustModalOpen(true);
+    };
+
+    const confirmAdjustPoints = async () => {
+        if (!selectedUser || !adjustAmount) return;
+        setIsAdjusting(true);
+        try {
+            const result = await usersApi.adjustPoints(selectedUser.id, {
+                amount: parseInt(adjustAmount, 10),
+                reason: adjustReason || 'Manual adjustment',
+            });
+            // Update local user points
+            setUsers(prev => prev.map(u =>
+                u.id === selectedUser.id ? { ...u, points: result.balanceAfter } : u
+            ));
+            setIsAdjustModalOpen(false);
+            setSelectedUser(null);
+        } catch (err) {
+            alert(err.message || 'Failed to adjust points');
+        } finally {
+            setIsAdjusting(false);
         }
     };
 
@@ -152,7 +190,7 @@ export default function ManageUsersPage() {
     }, [effectiveLocationId]);
 
     const roles = [...new Set(users.map(u => u.userType).filter(Boolean))];
-    const statuses = ['Online', 'Offline'];
+    const statuses = ['Active', 'Inactive'];
     const accountHealthOptions = ['Active', 'Inactive'];
 
     const filteredUsers = useMemo(() => {
@@ -529,6 +567,9 @@ export default function ManageUsersPage() {
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <div className="flex justify-end gap-1">
                                                 {canEdit && (
+                                                    <button onClick={() => handleAdjustPoints(user)} title="Adjust Points" className="p-1.5 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-500/10 transition-all"><Coins size={14} /></button>
+                                                )}
+                                                {canEdit && (
                                                     <button onClick={() => handleEdit(user)} title="Edit User" className="p-1.5 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all"><Edit2 size={14} /></button>
                                                 )}
                                                 {canDelete && (
@@ -711,14 +752,14 @@ export default function ManageUsersPage() {
                                 <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Delete User</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">This action cannot be undone</p>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Deactivate User</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">User will be marked as inactive</p>
                             </div>
                         </div>
 
                         <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                             <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                                Are you sure you want to delete this user?
+                                Are you sure you want to deactivate this user? They will no longer be able to log in.
                             </p>
                             <div className="flex items-center gap-3 mt-3">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
@@ -743,7 +784,68 @@ export default function ManageUsersPage() {
                                 className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Trash2 size={16} />
-                                Delete User
+                                Deactivate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Adjust Points Modal */}
+            {isAdjustModalOpen && selectedUser && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/20">
+                                <Coins size={24} className="text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Adjust Points</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{selectedUser.name} — Current: <strong className="text-emerald-600 dark:text-emerald-400">{selectedUser.points}</strong> pts</p>
+                            </div>
+                            <button onClick={() => { setIsAdjustModalOpen(false); setSelectedUser(null); }} className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount</label>
+                                <input
+                                    type="number"
+                                    value={adjustAmount}
+                                    onChange={(e) => setAdjustAmount(e.target.value)}
+                                    placeholder="e.g. 50 to add, -30 to deduct"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Use positive to add, negative to deduct</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Reason</label>
+                                <input
+                                    type="text"
+                                    value={adjustReason}
+                                    onChange={(e) => setAdjustReason(e.target.value)}
+                                    placeholder="e.g. Manual correction, bonus award"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => { setIsAdjustModalOpen(false); setSelectedUser(null); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmAdjustPoints}
+                                disabled={!adjustAmount || parseInt(adjustAmount) === 0 || isAdjusting}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Coins size={16} />
+                                {isAdjusting ? 'Adjusting...' : 'Adjust Points'}
                             </button>
                         </div>
                     </div>

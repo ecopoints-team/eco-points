@@ -11,9 +11,9 @@ import {
 import { leaderboard as leaderboardApi } from '../../../src/services/apiService';
 import {
     Trophy, Medal, Award, Crown, Search, Filter, ChevronLeft, ChevronRight,
-    Flame, Recycle, Star, TrendingUp, Users as UsersIcon, GraduationCap,
-    Building2, X, ChevronsUpDown, ChevronUp, ChevronDown, School, Info,
-    Sparkles, Zap, Target, MapPin, RefreshCw, Loader2
+    Flame, Recycle, Star, Users as UsersIcon, GraduationCap,
+    Building2, X, ChevronsUpDown, ChevronUp, ChevronDown, School,
+    Sparkles, Zap, RefreshCw, Loader2
 } from 'lucide-react';
 
 // ============================================================================
@@ -253,9 +253,7 @@ export default function LeaderboardsPage() {
             setIsLoading(true);
             setLoadError(null);
             try {
-                console.log('[Leaderboard] Fetching with locationId:', effectiveLocationId);
                 const data = await leaderboardApi.get(effectiveLocationId);
-                console.log('[Leaderboard] API response:', { topUsers: data.topUsers?.length, topGroups: data.topGroups?.length, raw: data });
                 if (cancelled) return;
                 setLeaderboardUsers(data.topUsers || []);
                 setTopGroups(data.topGroups || []);

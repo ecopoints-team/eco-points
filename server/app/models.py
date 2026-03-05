@@ -52,12 +52,12 @@ class Organization(db.Model):
     name = db.Column(db.String(200), nullable=False)              # "Arellano University"
     full_name = db.Column(db.String(500))                         # "Arellano University - Andres Bonifacio Pasig Campus"
     org_type = db.Column(db.String(100), nullable=False)          # "University", "Corporation", "HOA"
-    org_type_id = db.Column(db.Integer, db.ForeignKey('org_types.id'), nullable=True)
+    org_type_id = db.Column(db.Integer, db.ForeignKey('org_types.id'), nullable=True, index=True)
 
     # 3NF Address
     street_address = db.Column(db.String(500))                    # "Pag-asa St, Caniogan"
     barangay = db.Column(db.String(200), nullable=True)           # "Caniogan"
-    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=True)
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=True, index=True)
     zip_code = db.Column(db.String(10), nullable=True)            # "1600"
 
     # Contact
@@ -89,7 +89,7 @@ class CommunityGroup(db.Model):
     """
     __tablename__ = 'community_groups'
     id = db.Column(db.Integer, primary_key=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)              # "Bachelor of Science in IT", "Campus Staff"
     abbreviation = db.Column(db.String(50))                       # "BSIT", "STEM"
     group_type = db.Column(db.String(50), nullable=False)         # "shs_strand", "college", "staff"
@@ -109,7 +109,7 @@ class Account(db.Model):
     """
     __tablename__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True)
-    community_group_id = db.Column(db.Integer, db.ForeignKey('community_groups.id'), nullable=False)
+    community_group_id = db.Column(db.Integer, db.ForeignKey('community_groups.id'), nullable=False, index=True)
     account_name = db.Column(db.String(200), nullable=False)      # "Juan Dela Cruz" or "CS Student Council"
     points_balance = db.Column(db.Integer, default=0)
     streak = db.Column(db.Integer, default=0)                     # Consecutive recycling days
@@ -145,7 +145,7 @@ class User(db.Model):
     """
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
     display_id = db.Column(db.String(30), unique=True, nullable=True, index=True)  # e.g. USER-AU-001, HEAD-AU-002
 
     # Identity
@@ -261,7 +261,7 @@ class RVM(db.Model):
     """
     __tablename__ = 'rvms'
     id = db.Column(db.Integer, primary_key=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True)
 
     machine_uuid = db.Column(db.String(100), unique=True, nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)              # "Main Gate RVM"
@@ -290,8 +290,8 @@ class RecyclingSession(db.Model):
     """
     __tablename__ = 'recycling_sessions'
     id = db.Column(db.Integer, primary_key=True)
-    rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'), nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'), nullable=False, index=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
 
     start_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     end_time = db.Column(db.DateTime, nullable=True)
@@ -313,7 +313,7 @@ class RecyclingItem(db.Model):
     """
     __tablename__ = 'recycling_items'
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('recycling_sessions.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('recycling_sessions.id'), nullable=False, index=True)
 
     item_type = db.Column(db.String(100), nullable=False)         # "PET Bottle"
     material = db.Column(db.String(100), default='Plastic')       # "Plastic", "Aluminum"
@@ -335,8 +335,8 @@ class MaintenanceLog(db.Model):
     """
     __tablename__ = 'maintenance_logs'
     id = db.Column(db.Integer, primary_key=True)
-    rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'), nullable=False)
-    performed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    rvm_id = db.Column(db.Integer, db.ForeignKey('rvms.id'), nullable=False, index=True)
+    performed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
 
     action_type = db.Column(db.String(200), nullable=False)       # "Sensor Error", "Bin Full", "Routine Checkup"
     resolved = db.Column(db.Boolean, default=False)
@@ -383,7 +383,7 @@ class Reward(db.Model):
     """
     __tablename__ = 'rewards'
     id = db.Column(db.Integer, primary_key=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True)
 
     name = db.Column(db.String(200), nullable=False)              # "EcoPoints T-Shirt"
     description = db.Column(db.Text)
@@ -408,8 +408,8 @@ class RewardRedemption(db.Model):
     """
     __tablename__ = 'reward_redemptions'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
+    reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False, index=True)
 
     points_spent = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='pending')          # "pending", "claimed", "used", "expired"
@@ -437,7 +437,7 @@ class AdminLog(db.Model):
     """
     __tablename__ = 'admin_logs'
     id = db.Column(db.Integer, primary_key=True)
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
 
     action = db.Column(db.String(100), nullable=False)            # "User Created", "Maintenance Added"
     target = db.Column(db.String(200))                            # ID or name of affected entity

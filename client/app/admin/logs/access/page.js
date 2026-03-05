@@ -1,11 +1,10 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { logs as logsApi } from '../../../../src/services/apiService';
-import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { Search, Filter, ChevronLeft, ChevronRight, User, Clock, Globe, ChevronDown, X, Activity, Download, MapPin, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 export default function AdminAccessLogsPage() {
     const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
@@ -71,11 +70,8 @@ export default function AdminAccessLogsPage() {
     const filteredLogs = useMemo(() => {
         return allAdminLogs.filter(log => {
             // 1. Filter by Location (View As)
-            // If effectiveLocationId is set, only show logs matching that location
-            // OR logs that are global (null) if we want to show global events to everyone? 
-            // Usually, "View As Location A" means "Show me things relevant to Location A".
-            // Strict filtering: log.locationId === effectiveLocationId
-            if (effectiveLocationId && log.locationId !== effectiveLocationId) {
+            // Include global actions (null locationId) alongside location-specific ones
+            if (effectiveLocationId && log.locationId && log.locationId !== effectiveLocationId) {
                 return false;
             }
 

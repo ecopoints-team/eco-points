@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -210,6 +210,13 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             hidden: !hasPermission('leaderboards', 'view')
         },
         {
+            type: 'item',
+            label: 'Analytics',
+            icon: BarChart3,
+            href: '/admin/analytics',
+            hidden: !hasPermission('logs', 'view')
+        },
+        {
             type: 'group',
             key: 'logs',
             label: 'System Logs',
@@ -219,6 +226,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 { label: 'Bottle Logs', href: '/admin/logs/bottles' },
                 { label: 'Machine Logs', href: '/admin/logs/machines' },
                 { label: 'Rewards Logs', href: '/admin/logs/rewards' },
+                { label: 'Transactions', href: '/admin/logs/transactions' },
                 { label: 'Admin Logs', href: '/admin/logs/access', hidden: !isSuperAdmin && !hasPermission('logs', 'view') },
             ]
         },

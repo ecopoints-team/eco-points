@@ -1,10 +1,9 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { CITIES, getCityName } from '../../../src/data/mockData';
-import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/apiService';
+import { locations as locationsApi, orgTypes as orgTypesApi, cities as citiesApi } from '../../../src/services/apiService';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Plus, Search,
@@ -39,10 +38,14 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Load org types from API
+    // Cities from API
+    const [citiesList, setCitiesList] = useState([]);
+
+    // Load org types and cities from API
     useEffect(() => {
         if (isOpen) {
             orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
+            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
         }
     }, [isOpen]);
 
@@ -233,7 +236,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                             <CustomDropdown
                                 value={formData.cityId}
                                 onChange={(v) => setFormData({ ...formData, cityId: v })}
-                                options={CITIES.map(c => ({ value: c.id, label: c.name }))}
+                                options={citiesList.map(c => ({ value: String(c.id), label: c.name }))}
                                 placeholder="Select city..."
                                 searchable
                                 size="md"
@@ -361,9 +364,13 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Load org types and populate form
+    // Cities from API
+    const [citiesList, setCitiesList] = useState([]);
+
+    // Load org types, cities, and populate form
     useEffect(() => {
         if (isOpen && location) {
+            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
             orgTypesApi.getAll().then(data => {
                 const list = data || [];
                 setOrgTypesList(list);
@@ -548,7 +555,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                            <CustomDropdown value={formData.cityId} onChange={(v) => setFormData({ ...formData, cityId: v })} options={CITIES.map(c => ({ value: c.id, label: c.name }))} placeholder="Select city..." searchable size="md" />
+                            <CustomDropdown value={formData.cityId} onChange={(v) => setFormData({ ...formData, cityId: v })} options={citiesList.map(c => ({ value: String(c.id), label: c.name }))} placeholder="Select city..." searchable size="md" />
                             {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
                         </div>
                     </div>
@@ -619,6 +626,12 @@ export default function LocationsPage() {
     const { isSuperAdmin, setViewAsLocation, allLocations, refreshLocations } = useAuth();
     const [locations, setLocations] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingLocation, setEditingLocation] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Load locations from API
     useEffect(() => {
@@ -637,12 +650,6 @@ export default function LocationsPage() {
         load();
         return () => { cancelled = true; };
     }, [refreshKey]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingLocation, setEditingLocation] = useState(null);
-    const [refreshKey, setRefreshKey] = useState(0);
     const cardsPerPage = 9;
 
     // Filter locations by search

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight, Zap, Recycle, Palette, Plus, X, Send, Mail, Smartphone, Trash2, Clock } from 'lucide-react';
 import { useTheme } from '../../../src/context/ThemeContext';

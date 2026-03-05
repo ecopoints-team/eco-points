@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -180,7 +180,6 @@ export default function RewardsInventoryPage() {
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
-    const [sortOrder, setSortOrder] = useState('Newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20);
     const [sortColumn, setSortColumn] = useState('');
@@ -785,9 +784,9 @@ export default function RewardsInventoryPage() {
                         <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 dark:text-red-400">
                             <Trash2 size={24} />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Delete Reward?</h3>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Deactivate Reward?</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                            Are you sure you want to delete <strong>{deletingReward.name}</strong>? This action cannot be undone.
+                            Are you sure you want to deactivate <strong>{deletingReward.name}</strong>? It will be hidden from users.
                         </p>
                         <div className="flex gap-3">
                             <button
@@ -800,13 +799,16 @@ export default function RewardsInventoryPage() {
                                 onClick={async () => {
                                     try {
                                         await rewardsApi.delete(deletingReward.id);
-                                        setRewards(prev => prev.filter(x => x.id !== deletingReward.id));
-                                    } catch (err) { console.error('Delete failed:', err); }
+                                        // Backend soft-deletes (sets is_active=false), update local state to match
+                                        setRewards(prev => prev.map(x =>
+                                            x.id === deletingReward.id ? { ...x, isActive: false } : x
+                                        ));
+                                    } catch (err) { console.error('Deactivate failed:', err); }
                                     setDeletingReward(null);
                                 }}
                                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"
                             >
-                                Delete
+                                Deactivate
                             </button>
                         </div>
                     </div>

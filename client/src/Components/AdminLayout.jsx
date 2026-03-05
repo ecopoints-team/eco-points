@@ -83,6 +83,8 @@ const ThemeToggle = ({ theme, setTheme }) => {
 };
 
 // Main layout component that uses AuthContext and ThemeContext
+const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+
 export default function AdminLayout({ children }) {
     // Theme State from Context
     const { theme, setTheme, isDarkMode, isNeutralMode, isSystemMode } = useTheme();
@@ -113,7 +115,6 @@ export default function AdminLayout({ children }) {
 
     // Auth guard — redirect to landing page with login modal if not authenticated or not admin
     const router = useRouter();
-    const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
     const isAdminUser = currentUser && ADMIN_ROLES.includes(currentUser.role);
 
     useEffect(() => {
@@ -139,7 +140,7 @@ export default function AdminLayout({ children }) {
     // Determine Page Title based on current path
     const getPageTitle = (path) => {
         if (path === '/admin') return { main: 'Dashboard', sub: 'Overview' };
-        if (path === '/admin/locations') return { main: 'School', sub: 'Locations' };
+        if (path === '/admin/locations') return { main: 'Organization', sub: 'Locations' };
         if (path === '/admin/machines') return { main: 'Machine', sub: 'Management' };
         if (path === '/admin/users') return { main: 'User', sub: 'Management' };
         if (path === '/admin/users/permissions') return { main: 'User', sub: 'Permissions' };
@@ -149,6 +150,7 @@ export default function AdminLayout({ children }) {
         if (path === '/admin/logs/machines') return { main: 'System', sub: 'Machine Logs' };
         if (path === '/admin/logs/rewards') return { main: 'System', sub: 'Reward Logs' };
         if (path === '/admin/leaderboards') return { main: 'Leaderboards', sub: 'Overview' };
+        if (path === '/admin/analytics') return { main: 'System', sub: 'Analytics' };
         if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
         if (path === '/admin/profile') return { main: 'My', sub: 'Profile' };
         return { main: 'Admin', sub: 'Panel' };
@@ -201,8 +203,18 @@ export default function AdminLayout({ children }) {
 
     // Notification state
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [readNotifications, setReadNotifications] = useState([]);
+    const [readNotifications, setReadNotifications] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try { return JSON.parse(localStorage.getItem('eco_read_notifs') || '[]'); } catch { return []; }
+        }
+        return [];
+    });
     const [notifications, setNotifications] = useState([]);
+
+    // Persist read notifications to localStorage
+    useEffect(() => {
+        try { localStorage.setItem('eco_read_notifs', JSON.stringify(readNotifications)); } catch {}
+    }, [readNotifications]);
 
     // Load notifications from API (recent admin logs)
     useEffect(() => {
@@ -431,17 +443,19 @@ export default function AdminLayout({ children }) {
                                         {notifications.length === 0 ? (
                                             <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">No notifications</div>
                                         ) : (
-                                            notifications.map(n => (
+                                            notifications.map(n => {
+                                                const isUnread = !readNotifications.includes(n.id);
+                                                return (
                                                 <button
                                                     key={n.id}
                                                     onClick={() => markRead(n.id)}
                                                     className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-slate-700/30 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/30
-                            ${!n.read ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''}`}
+                            ${isUnread ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''}`}
                                                 >
                                                     <div className="flex items-start gap-3">
-                                                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
+                                                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${isUnread ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`text-sm ${!n.read ? 'font-semibold text-slate-800 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>
+                                                            <p className={`text-sm ${isUnread ? 'font-semibold text-slate-800 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>
                                                                 {n.title}
                                                             </p>
                                                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{n.description}</p>
@@ -449,7 +463,8 @@ export default function AdminLayout({ children }) {
                                                         </div>
                                                     </div>
                                                 </button>
-                                            ))
+                                                );
+                                            })
                                         )}
                                     </div>
                                     <div className="px-4 py-2 border-t border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/50">

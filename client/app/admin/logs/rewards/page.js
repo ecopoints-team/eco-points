@@ -1,11 +1,10 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout from '../../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { logs as logsApi } from '../../../../src/services/apiService';
-import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Gift, User, MapPin } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 export default function RewardsLogsPage() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
@@ -50,22 +49,13 @@ export default function RewardsLogsPage() {
     // Column visibility toggles
     const [showUser, setShowUser] = useState(true);
     const [showReward, setShowReward] = useState(true);
-    const [showMachine, setShowMachine] = useState(true);
     const [showLocation, setShowLocation] = useState(true);
 
     const rewardNames = [...new Set(allRewardsLogs.map(log => log.rewardName))];
 
     const filteredLogs = useMemo(() => {
-        let logs = allRewardsLogs;
-
-        // Filter by View As Location (or user's scoped location)
-        if (viewAsLocationId) {
-            logs = logs.filter(log => log.locationId === viewAsLocationId);
-        } else if (currentUser?.locationId && !isSuperAdmin) {
-            logs = logs.filter(log => log.locationId === currentUser.locationId);
-        }
-
-        return logs.filter(log => {
+        // Data is already server-scoped by effectiveLocationId — no need to re-filter by location
+        return allRewardsLogs.filter(log => {
             const matchesSearch = searchQuery === '' ||
                 (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,7 +78,7 @@ export default function RewardsLogsPage() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [allRewardsLogs, searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection, currentUser, isSuperAdmin, viewAsLocationId]);
+    }, [allRewardsLogs, searchQuery, filterReward, filterStatus, filterLocation, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -127,9 +117,23 @@ export default function RewardsLogsPage() {
         const styles = {
             claimed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
             pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+            used: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
             expired: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
         };
         return styles[status] || 'bg-slate-100 text-slate-600';
+    };
+
+    const handleStatusChange = async (logId, newStatus) => {
+        try {
+            const updated = await logsApi.updateRedemptionStatus(logId, newStatus);
+            setAllRewardsLogs(prev => prev.map(l =>
+                l.id === String(logId) || l.id === logId
+                    ? { ...l, status: updated.status, usedAt: updated.usedAt }
+                    : l
+            ));
+        } catch (err) {
+            alert(err.message || 'Failed to update status');
+        }
     };
 
     const exportToCSV = () => {
@@ -204,9 +208,6 @@ export default function RewardsLogsPage() {
                             <button onClick={() => setShowReward(!showReward)} className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showReward ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
                                 {showReward ? <Eye size={12} /> : <EyeOff size={12} />} Reward
                             </button>
-                            <button onClick={() => setShowMachine(!showMachine)} className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showMachine ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
-                                {showMachine ? <Eye size={12} /> : <EyeOff size={12} />} Machine
-                            </button>
                             <button onClick={() => setShowLocation(!showLocation)} className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showLocation ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
                                 {showLocation ? <Eye size={12} /> : <EyeOff size={12} />} Location
                             </button>
@@ -256,9 +257,9 @@ export default function RewardsLogsPage() {
                                 <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsCost')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="pointsCost" /></div>
                                 </th>
-                                {showMachine && <th className="px-3 py-3 whitespace-nowrap">Machine</th>}
                                 {showLocation && <th className="px-3 py-3 whitespace-nowrap">Location</th>}
                                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
+                                <th className="px-3 py-3 whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -285,11 +286,6 @@ export default function RewardsLogsPage() {
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="font-bold text-emerald-600 dark:text-emerald-400">{log.pointsCost.toLocaleString()}</span>
                                     </td>
-                                    {showMachine && (
-                                        <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-sm text-slate-600 dark:text-slate-300">{log.locationName || '-'}</span>
-                                        </td>
-                                    )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '-'}</span>
@@ -299,6 +295,18 @@ export default function RewardsLogsPage() {
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(log.status)}`}>
                                             {(log.status || 'pending').charAt(0).toUpperCase() + (log.status || 'pending').slice(1)}
                                         </span>
+                                    </td>
+                                    <td className="px-3 py-3 whitespace-nowrap">
+                                        <select
+                                            value={log.status || 'pending'}
+                                            onChange={(e) => handleStatusChange(log.id, e.target.value)}
+                                            className="text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-emerald-500 outline-none cursor-pointer"
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="claimed">Claimed</option>
+                                            <option value="used">Used</option>
+                                            <option value="expired">Expired</option>
+                                        </select>
                                     </td>
                                 </tr>
                             ))}

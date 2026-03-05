@@ -153,6 +153,56 @@ def logout(current_user):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@auth_bp.route('/profile', methods=['PUT'])
+@token_required
+def update_profile(current_user):
+    """Update the current user's profile fields (name, email, phone).
+
+    Body: { "name": "...", "email": "...", "phone": "..." }
+    """
+    try:
+        data = request.get_json() or {}
+
+        # Name
+        if 'name' in data and data['name']:
+            current_user.name = data['name'].strip()
+            # Also update the account name to keep them in sync
+            if current_user.account:
+                current_user.account.account_name = data['name'].strip()
+
+        # Email (check uniqueness)
+        if 'email' in data and data['email']:
+            email = data['email'].strip()
+            existing = User.query.filter(User.email == email, User.id != current_user.id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Email already in use by another account'}), 409
+            current_user.email = email
+
+        # Phone
+        if 'phone' in data:
+            current_user.phone = data['phone'].strip() if data['phone'] else None
+
+        db.session.commit()
+
+        log = AdminLog(
+            admin_user_id=current_user.id,
+            action='Profile Updated',
+            target=current_user.name,
+            category='Auth',
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'user': _serialize_auth_user(current_user),
+            'message': 'Profile updated successfully',
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @auth_bp.route('/change-password', methods=['POST'])
 @token_required
 def change_password(current_user):
