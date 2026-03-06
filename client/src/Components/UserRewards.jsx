@@ -133,20 +133,44 @@ export default function UserRewards({ onLoginClick }) {
   const challenges = [
     {
       title: "Sample Challenge #1",
-      description: "",
-      image: "/SampleImage-Face2.jpg",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face3.jpg",
       id: 1,
     },
     {
       title: "Sample Challenge #2",
-      description: "",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       image: "/SampleImage-Face2.jpg",
       id: 2,
     },
     {
       title: "Sample Challenge #3",
-      description: "",
-      image: "/SampleImage-Face2.jpg",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face1.jpeg",
+      id: 3,
+    },
+    {
+      title: "Sample Challenge #4",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face10.jpg",
+      id: 3,
+    },
+    {
+      title: "Sample Challenge #5",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face8.jpg",
+      id: 3,
+    },
+    {
+      title: "Sample Challenge #6",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face9.png",
+      id: 3,
+    },
+    {
+      title: "Sample Challenge #7",
+      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+      image: "/SampleImage-Face4.avif",
       id: 3,
     },
   ];
@@ -461,37 +485,78 @@ export default function UserRewards({ onLoginClick }) {
       </div>
       {/* CHALLENGES SECTION */}
       <section id="challenges" className="scroll-mt-25">
-        {/* OUTER CONTAINER */}
-        <div className="soft-sage-bg mt-10 px-6 py-6">
-          {/* INNER CONTAINER */}
-          <div className="primary-color px-10 py-10">
-            {/* CONTENT */}
-            <div className="background-color text-color px-6 py-6">
-              <div className="flex grid grid-cols-4 gap-4">
-                {/* CONTENT #1 */}
-                <div className="col-span-2">
-                  {/* OUTER CONTENT */}
-                  <div className="secondary-color px-2 py-2">
-                    {/* INNER CONTENT */}
-                    <div className="grid grid-cols-2">
-                      <div className="soft-sage-bg px-10 py-10">
-                        <img src="SampleImage-Face2.jpg" />
-                      </div>
-                      <div className="primary-color grid grid-row-2 px-10 py-10">
-                        <div className="">
-                          <h1>Sample Challenge</h1>
+        <div>
+          {/* OUTER CONTAINER */}
+          <div className="soft-sage-bg mt-10 px-2 py-2">
+            {/* INNER CONTAINER */}
+            <div className="primary-color px-4 py-4">
+              {/* CONTENT */}
+              <div className="background-color text-color px-2 py-2">
+                <div className="flex grid grid-cols-4 gap-4">
+                  {/* CONTENT #1 */}
+                  {challenges
+                    .slice(
+                      activeIdx * itemsPerPage,
+                      activeIdx * itemsPerPage + itemsPerPage,
+                    )
+                    .map((challenges, index) => (
+                      <div
+                        key={`${challenges.title}-${index}`}
+                        className={index === 0 ? "col-span-2" : "col-span-1"}
+                      >
+                        {/* OUTER CONTENT */}
+                        <div className="secondary-color px-2 py-2">
+                          {/* INNER CONTENT */}
+                          <div
+                            className={
+                              index >= 1
+                                ? "grid grid-row-2 gap-2"
+                                : "grid grid-cols-2 gap-2"
+                            }
+                          >
+                            {/* IMAGE AREA */}
+                            <div className="">
+                              <img
+                                src={challenges.image}
+                                className={
+                                  index >= 1 ? "w-80 h-70" : "w-100 h-113"
+                                }
+                              />
+                            </div>
+                            {/* HEADER & DESCRIPTION */}
+                            <div className="primary-color flex grid grid-row-3 px-4 py-4">
+                              <div className="text-2xl text-white sour-gummy-body-300">
+                                <h1
+                                  className={
+                                    index >= 1 ? "text-md" : "text-5xl"
+                                  }
+                                >
+                                  {challenges.title}
+                                </h1>
+                              </div>
+                              <div className="text-md mt-2 text-white sour-gummy-body-300">
+                                <p
+                                  className={
+                                    index >= 1
+                                      ? "text-md mb-2"
+                                      : "text-3xl mb-43"
+                                  }
+                                >
+                                  {challenges.description}
+                                </p>
+                              </div>
+                              {/* REDEEM POINTS */}
+                              <div className="text-xl text-white sour-gummy-body-300">
+                                <button className="soft-sage-bg rounded-lg px-2 py-2 duration-300 transition-transform hover:scale-110 hover:underline">
+                                  POINTS
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="">
-                          <p>You Have to at least recycle 5 1L PET Bottles </p>
-                        </div>
                       </div>
-                    </div>
-                  </div>
+                    ))}
                 </div>
-                {/* CONTENT #2 */}
-                <div className="secondary-color px-4 py-4">2</div>
-                {/* CONTENT #3 */}
-                <div className="secondary-color px-4 py-4">3</div>
               </div>
             </div>
           </div>
@@ -505,27 +570,39 @@ export default function UserRewards({ onLoginClick }) {
         {/* CONTAINER */}
         <div className="primary-color grid grid-rows-4 px-10 py-10">
           {/* HEADER */}
-          <div className="flex justify-center grid grid-row-3">
+          <div className="flex text-center justify-center grid grid-row-3 gap-4">
             {/* AREA LEADERBOARD (LIKE KUNG SA RIZAL PA MANILA O KAYA PWEDE DIN PER UNIVERSITIES) */}
-            <div className="soft-sage-bg">
-              <div className="flex justify-center">
-                <h1>UNIVERSITY</h1>
+            <div className="soft-sage-bg ">
+              <div className="flex justify-center px-2 py-2">
+                <h1 className="sour-gummy-body-500 text-5xl">UNIVERSITY</h1>
               </div>
             </div>
-            <h1 className="">Top Recyclers</h1>
-            <p className="">Think you're the best Recycler?</p>
-            <p>
+            <h1 className="sour-gummy-body-400 text-3xl">Top Recyclers</h1>
+            <p className="sour-gummy-body-400 text-3xl">
+              Think you're the best Recycler?
+            </p>
+            <p className="sour-gummy-body-400 text-xl">
               Compete with fellow students and faculties alike to climb the
               leaderboard
             </p>
           </div>
           {/* LEADERBOARD CATEGORIES */}
-          <div>
-            <div className="flex grid grid-cols-3 gap-4 px-10 py-10">
-              <div className="secondary-color order-1">1</div>
-              <div className="secondary-color order-2">2</div>
-              <div className="secondary-color order-3">3</div>
-            </div>
+          <div className="flex grid grid-cols-3 gap-4 text-center justify-center mb-2 mt-10">
+            <button className="">
+              <div className="secondary-color order-1 rounded-lg">
+                <div className="sour-gummy-body-500 text-2xl">DAILY</div>
+              </div>
+            </button>
+            <button>
+              <div className="secondary-color order-2 rounded-lg">
+                <div className="sour-gummy-body-500 text-2xl">WEEKLY</div>
+              </div>
+            </button>
+            <button>
+              <div className="secondary-color order-3 rounded-lg">
+                <div className="sour-gummy-body-500 text-2xl">ALL TIME</div>
+              </div>
+            </button>
           </div>
           {/* LEADERBOARD ITSELF */}
           {/* CONTAINER */}
@@ -533,12 +610,14 @@ export default function UserRewards({ onLoginClick }) {
             {/* CONTENT */}
             <div className="flex grid grid-cols-3">
               {/* NUMBER */}
-              <div className="">
+              <div className="soft-sage-bg px-4 py-4">
                 <img src="SampleImage-UserIcon.png" className="w-25 h-25" />
               </div>
               {/* NAME */}
-              <div>
-                <h1 className="text-2xl">Tyrion Lannister</h1>
+              <div className="px-4 py-4">
+                <h1 className="sour-gummy-body-500 text-4xl">
+                  Tyrion Lannister
+                </h1>
                 <p>Kings Landing Univerity Student</p>
               </div>
               {/* ALL-TIME ECOPOINTS */}
