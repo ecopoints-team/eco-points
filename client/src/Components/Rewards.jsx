@@ -4,25 +4,6 @@ import { ChevronLeft, ChevronRight, MenuIcon } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 
 export default function RewardsOrg({ onLoginClick }) {
-  const rewards = [
-    {
-      title: "Sample Reward",
-      description: "Replace this with the real rewards.ecopoints.org content.",
-      image: "/Omniman.jpg",
-    },
-    {
-      title: "Another Reward",
-      description:
-        "You can list reward details, costs, and redemption rules here.",
-      image: "/Omniman.jpg",
-    },
-    {
-      title: "Limited Offer",
-      description: "This is just placeholder content for the rewards portal.",
-      image: "/Omniman.jpg",
-    },
-  ];
-
   const features = [
     {
       title: "Pencil",
@@ -140,6 +121,7 @@ export default function RewardsOrg({ onLoginClick }) {
     },
   ];
 
+  // PAGINATION FOR REWARDS
   const [activeIdx, setActiveIdx] = useState(0);
   const itemsPerPage = 3;
   const totalPages = Math.ceil(features.length / itemsPerPage);
@@ -244,13 +226,7 @@ export default function RewardsOrg({ onLoginClick }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
             <div className="relative flex justify-between items-center sm:h-16 md:h-20 lg:h-20">
               {/* LOGO SECTION */}
-              <Link
-                href="/"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavClick("home");
-                }}
-              >
+              <Link href="/">
                 <div className="flex items-center space-x-1 group cursor-pointer hover:scale-110 transition-transform duration-300">
                   <span className="">
                     <img
@@ -347,20 +323,11 @@ export default function RewardsOrg({ onLoginClick }) {
           )}
         </nav>
       </section>
-      {/* SAMPLE BUTTON */}
-      <div className="mb-8">
-        <Link
-          href="/"
-          className="chewy-regular text-xl text-color hover:text-orange-400"
-        >
-           Back to Home
-        </Link>
-      </div>
       {/* TOP SETION */}
       {/* COL-1 EXAMPLE CONTAINER */}
       <div
         id="home"
-        className="scroll-mt-35  flex text-center primary-color items-center p-4 py-12 lg:px-10 justify-center transition-transform duration-300"
+        className="scroll-mt-35 flex text-center primary-color items-center p-4 py-12 lg:px-10 justify-center transition-transform duration-300"
       >
         {/* CONTAINER CONTENT */}
         <div className="flex flex-col lg:grid lg:grid-cols-2 secondary-color backdrop-blur-xl rounded-md sm:rounded-xl p-4 lg:p-6 sm:p-4 gap-20 mb-20 shadow-2xl border border-white/10">
@@ -392,10 +359,11 @@ export default function RewardsOrg({ onLoginClick }) {
               </div>
             </div>
           </div>
+
           {/* COL-2 CONTAINER */}
           <div className="relative order-2 w-full">
             <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10 transition-transform delay-300 ease-out duration-700 hover:scale-90">
-              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform ease-in duration-300 hover:scale-130 hover:-translate-x-6">
+              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform ease-in duration-300 hover:scale-120">
                 {/* Container */}
                 <img
                   src="SampleImage-Face10.jpg"
@@ -495,7 +463,7 @@ export default function RewardsOrg({ onLoginClick }) {
             </div>
           </section>
           {/* REWARDS SECTION */}
-          <section id="rewards" className="scroll-mt-22">
+          <section id="rewards" className="scroll-mt-24">
             {/* TEXT CONTENT */}
             <div className="relative primary-color text-center mb-2 sm:mb-6 lg:mb-6 lg:px-0 lg:py-0 ">
               <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6">
@@ -659,8 +627,8 @@ export default function RewardsOrg({ onLoginClick }) {
                     <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
                       {/* COLUMN 1 (EARN HERE) */}
                       <div
-                        id="earnHere"
-                        className="background-color text-color px-10 py-10"
+                        id=""
+                        className="scroll-mt-10 background-color text-color px-10 py-10"
                       >
                         <h1 className="text-center">EARN HERE</h1>
                         <p className="">
@@ -680,13 +648,15 @@ export default function RewardsOrg({ onLoginClick }) {
                   </div>
                 </section>
                 {/* SECTION 2 */}
-                <section id="" className="mb-10">
+                <section id="leadnChall" className="mb-10">
                   <div className="primary-color order-2 px-4 py-4">
                     {/* INNER SECTION */}
                     <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
                       {/* COLUMN 1 */}
                       <div className="background-color text-color px-10 py-10">
-                        <h1 className="text-center">TITLE</h1>
+                        <h1 className="text-center">
+                          LEADERBOARD & CHALLENGES
+                        </h1>
                         <p className="">
                           Lorem ipsum dolor sit amet consectetur adipisicing
                           elit. Aliquid corporis illum distinctio labore debitis
@@ -703,13 +673,13 @@ export default function RewardsOrg({ onLoginClick }) {
                   </div>
                 </section>
                 {/* SECTION 3 */}
-                <section id="" className="">
+                <section id="exploreRewards" className="">
                   <div className="secondary-color order-3 px-4 py-4">
                     {/* INNER SECTION */}
                     <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
                       {/* COLUMN 1 */}
                       <div className="background-color text-color px-10 py-10">
-                        <h1 className="text-center">TITLE</h1>
+                        <h1 className="text-center">DISCOVER REWARDS</h1>
                         <p className="">
                           Lorem ipsum dolor sit amet consectetur adipisicing
                           elit. Aliquid corporis illum distinctio labore debitis

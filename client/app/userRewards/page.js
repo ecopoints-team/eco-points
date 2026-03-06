@@ -4,8 +4,7 @@ import UserRewards from "../../src/Components/UserRewards";
 
 export default function UserRewardsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-l from-lime-900 to-lime-950 text-white overflow-hidden">
-      <NavBar />
+    <div className="min-h-screen background-color text-white overflow-hidden">
       <main>
         <UserRewards />
       </main>
