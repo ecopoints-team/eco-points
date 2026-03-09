@@ -193,10 +193,10 @@ export default function UserRewards({ onLoginClick }) {
 
   // FOR CATEGORIES
   const categories = [
+    { label: "All Rewards", value: "All" },
     { label: "School Supplies", value: "SchoolSupplies" },
     { label: "Essentials", value: "Essentials" },
     { label: "Extras", value: "Extra" },
-    { label: "All Rewards", value: "All" },
   ];
 
   // FOR CATEGORIES (REWARDS)
@@ -208,7 +208,6 @@ export default function UserRewards({ onLoginClick }) {
       : rewards.filter((reward) => reward.catID === selectedCategory);
 
   // LEADERBAORD
-
   const leaderboard = [
     {
       icon: "/SampleImage-UserIcon.png",
@@ -656,16 +655,16 @@ export default function UserRewards({ onLoginClick }) {
               Compete with fellow students and faculties alike to climb the
               leaderboard
             </p>
-            <h1 className="sour-gummy-body-400 text-7xl mt-10 mb-10">
+            <h1 className="sour-gummy-body-400 text-6xl mt-10">
               Top Recyclers
             </h1>
           </div>
           {/* LEADERBOARD CATEGORIES */}
-          <div className="grid grid-cols-3 gap-4 text-center mb-6">
-            {leadCategories.map((leadCategories) => (
+          <div className="grid grid-cols-3 text-center mb-6">
+            {leadCategories.map((leadCategories, index) => (
               <div className="flex items-center justify-center group">
-                <div className="transition-transform duration-300 ease-in-out hover:scale-115 hover:-translate-y-2 ">
-                  <button className="secondary-color rounded-lg w-50 px-2 py-2 hover:cursor-pointer">
+                <div className="transition-transform duration-300 ease-in-out hover:scale-105 hover:-translate-y-2 ">
+                  <button className="secondary-color rounded-lg w-95 px-2 py-2 hover:cursor-pointer">
                     <div className="sour-gummy-body-500 text-2xl">
                       {leadCategories.title}
                     </div>
@@ -683,12 +682,12 @@ export default function UserRewards({ onLoginClick }) {
               <div
                 className={
                   index >= 3
-                    ? "grid grid-cols-3 items-center gap-20 secondary-color"
+                    ? "grid grid-cols-3 items-center gap-8 mx-30 my-2 secondary-color"
                     : index === 0
-                      ? "grid grid-cols-3 items-center background-color"
+                      ? "grid grid-cols-3 items-center my-2 background-color"
                       : index === 1
-                        ? "grid grid-cols-3 items-center accent-color-background"
-                        : "grid grid-cols-3 items-center soft-sage-bg"
+                        ? "grid grid-cols-3 items-center my-2 accent-color-background"
+                        : "grid grid-cols-3 items-center my-2 soft-sage-bg"
                 }
               >
                 {/* PLACEMENT */}
@@ -707,16 +706,46 @@ export default function UserRewards({ onLoginClick }) {
                   />
                 </div>
                 {/* NAME */}
-                <div className="relative px-4 py-4">
-                  <h1 className="absolute sour-gummy-body-500 text-5xl">
+                <div
+                  className={
+                    index >= 3
+                      ? "relative flex justify-start"
+                      : index === 0
+                        ? "relative px-4 py-4"
+                        : index === 1
+                          ? "relative px-4 py-4"
+                          : "relative px-4 py-4"
+                  }
+                >
+                  <h1
+                    className={
+                      index >= 3
+                        ? "absolute sour-gummy-body-500 text-4xl text-color"
+                        : index === 0
+                          ? "absolute sour-gummy-body-500 text-5xl text-color"
+                          : index === 1
+                            ? "absolute sour-gummy-body-500 text-5xl text-color"
+                            : "absolute sour-gummy-body-500 text-5xl text-color"
+                    }
+                  >
                     {leaderboard.name}
                   </h1>
-                  <p className="text-md sour-gummy-body-300 mt-13">
+                  <p
+                    className={
+                      index >= 3
+                        ? "text-md sour-gummy-body-300 mt-10 text-color"
+                        : index === 0
+                          ? "text-xl sour-gummy-body-500 mt-13 text-color"
+                          : index === 1
+                            ? "text-md sour-gummy-body-500 mt-13 text-color"
+                            : "text-md sour-gummy-body-300 mt-13 text-color"
+                    }
+                  >
                     {leaderboard.university}
                   </p>
                 </div>
                 {/* ALL-TIME ECOPOINTS */}
-                <h1 className="flex justify-end text-2xl sour-gummy-body-500 mx-20">
+                <h1 className="flex justify-end text-2xl sour-gummy-body-500 mx-20 text-color">
                   {leaderboard.points}
                 </h1>
               </div>
@@ -771,14 +800,18 @@ export default function UserRewards({ onLoginClick }) {
             {/* CATEGORIES */}
             <div className="relative order-2 text-center">
               <div className="grid grid-cols-4 gap-4 mb-10">
-                {categories.map((cat) => (
+                {categories.map((cat, index) => (
                   <button
                     key={cat.value}
                     onClick={() => {
                       setSelectedCategory(cat.value);
                       setActiveIdx(0);
                     }}
-                    className="w-full px-4 py-4 accent-color-background rounded-lg sour-gummy-body-400 text-white text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
+                    className={
+                      index === 0
+                        ? "w-full px-4 py-4 primary-color rounded-lg sour-gummy-body-500 text-white text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
+                        : "w-full px-4 py-4 accent-color-background rounded-lg sour-gummy-body-500 text-color text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
+                    }
                   >
                     {cat.label}
                   </button>

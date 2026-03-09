@@ -206,6 +206,42 @@ export default function RewardsOrg({ onLoginClick }) {
     [handleNavClick],
   );
 
+  // START EARNING POINTS LINKS
+  const howToEarnLinks = [
+    {
+      title: "How to Earn EcoPoints?",
+      alt: "How to Earn EcoPoints",
+      description: "There are a lot of ways to earn EcoPoints in your Account",
+      clickableLink: "Earn Here",
+      howToEarnID: "EarnHere",
+      image: "/SampleImage-Streak.png",
+    },
+    {
+      title: "Leaderboards & Challenges",
+      alt: "Leaderboards & Challenges",
+      description:
+        "Don't let anyone keep you from being the best at recycling bottles",
+      clickableLink: "Click Here",
+      howToEarnID: "ClickHere",
+      image: "/SampleImage-Streak.png",
+    },
+    {
+      title: "Discover Rewards!",
+      alt: "Discover Rewards!",
+      description:
+        "Rack up points and redeem them for gift cards, cash donations to causes you care about, and more.",
+      clickableLink: "Explore the Rewards",
+      howToEarnID: "Explore",
+      image: "/SampleImage-Streak.png",
+    },
+  ];
+
+  const earnLinks = [
+    { label: "Earn Here", value: "EarnHere" },
+    { label: "Click Here", value: "ClickHere" },
+    { label: "Explore the Rewards", value: "Explore" },
+  ];
+
   return (
     <section className="relative flex flex-grid lg:grid lg:grid-row-2 min-h-screen background-color flex items-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-0 overflow-hidden">
       <style>
@@ -330,7 +366,7 @@ export default function RewardsOrg({ onLoginClick }) {
         className="scroll-mt-35 flex text-center primary-color items-center p-4 py-12 lg:px-10 justify-center transition-transform duration-300"
       >
         {/* CONTAINER CONTENT */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 secondary-color backdrop-blur-xl rounded-md sm:rounded-xl p-4 lg:p-6 sm:p-4 gap-20 mb-20 shadow-2xl border border-white/10">
+        <div className="lg:grid lg:grid-cols-2 secondary-color backdrop-blur-xl rounded-md sm:rounded-xl p-4 lg:p-6 sm:p-4 gap-20 mb-10 shadow-2xl border border-white/10">
           {/* Container */}
           {/* Inside Container */}
           <div className="order-1">
@@ -410,14 +446,20 @@ export default function RewardsOrg({ onLoginClick }) {
             <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 chewy-regular">
               {/* 1ST SECTION */}
               <div className="soft-sage-bg">
-                <div className="px-10 py-10">
+                <div className="px-6 py-6">
                   {/* ICON */}
-                  <div className="deep-forest-bg">1 - ICON</div>
+                  <div className="deep-forest-bg">
+                    {" "}
+                    <img
+                      src="/SampleImage-UserIcon.png"
+                      alt="Discover Rewards"
+                    />
+                  </div>
                   {/* TEXT */}
                   <h1 className="text-3xl mb-4 mt-4">Sign In</h1>
                   <p className="text-xl sour-gummy-body-400">
-                    You may already have an account. Try logging in with your
-                    EcoPoints account, before creating a new one.
+                    Try logging in with your EcoPoints account, before creating
+                    a new one.
                   </p>
                   <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
                     Sign In Here
@@ -426,9 +468,14 @@ export default function RewardsOrg({ onLoginClick }) {
               </div>
               {/* 2ND SECTION */}
               <div className="deep-forest-bg ">
-                <div className="px-10 py-10">
+                <div className="px-6 py-6">
                   {/* ICON */}
-                  <div className="soft-sage-bg">2 - ICON</div>
+                  <div className="soft-sage-bg">
+                    <img
+                      src="/SampleImage-UserIcon.png"
+                      alt="Discover Rewards"
+                    />
+                  </div>
                   {/* TEXT */}
                   <h1 className="text-3xl mb-4 mt-4">
                     Visit the Rewards Dashboard
@@ -444,12 +491,17 @@ export default function RewardsOrg({ onLoginClick }) {
               </div>
               {/* 3RD SECTION */}
               <div className="soft-sage-bg">
-                <div className="px-10 py-10">
+                <div className="px-6 py-6">
                   {/* ICON */}
-                  <div className="deep-forest-bg">3 - ICON</div>
+                  <div className="deep-forest-bg">
+                    <img
+                      src="/SampleImage-UserIcon.png"
+                      alt="Discover Rewards"
+                    />
+                  </div>
                   {/* TEXT */}
                   <h1 className="text-3xl mb-4 mt-4">
-                    Recycle some PET Bottles and Earn Points!
+                    Recycle PET Bottles to Earn Points!
                   </h1>
                   <p className="text-xl sour-gummy-body-400">
                     Rack up points and redeem them for school supplies,
@@ -563,139 +615,119 @@ export default function RewardsOrg({ onLoginClick }) {
             </div>
             <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 chewy-regular">
               {/* 1ST SECTION */}
-              <div className="soft-sage-bg">
-                <div className="px-10 py-10">
-                  {/* ICON */}
-                  <div className="deep-forest-bg">1 - ICON</div>
-                  {/* TEXT */}
-                  <h1 className="text-4xl mb-4 mt-4">How to Earn EcoPoints?</h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    There are a lot of ways to earn EcoPoints in your Account
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
-                    Earn Here
-                  </button>
+              {howToEarnLinks.map((howToEarnLinks) => (
+                <div className="soft-sage-bg">
+                  <div className="px-6 py-6">
+                    {/* ICON */}
+                    <div className="deep-forest-bg">
+                      <img
+                        src={howToEarnLinks.image}
+                        alt={howToEarnLinks.alt}
+                      />
+                    </div>
+                    {/* TEXT */}
+                    <h1 className="text-4xl mb-4 mt-4">
+                      {howToEarnLinks.title}
+                    </h1>
+                    <p className="text-xl sour-gummy-body-400">
+                      {howToEarnLinks.description}
+                    </p>
+                    {/* CLICKABLE BUTTON */}
+                    <button
+                      onClick={() => {
+                        const section = document.getElementById(
+                          howToEarnLinks.howToEarnID,
+                        );
+                        if (section) {
+                          section.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        }
+                      }}
+                      className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline"
+                    >
+                      {howToEarnLinks.clickableLink}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              {/* 2ND SECTION */}
-              <div className="deep-forest-bg ">
-                <div className="px-10 py-10">
-                  {/* ICON */}
-                  <div className="soft-sage-bg">2 - ICON</div>
-                  {/* TEXT */}
-                  <h1 className="text-4xl mb-4 mt-4">
-                    Leaderboard & Challenges?
-                  </h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    Don't let anyone keep you from being the best at recycling
-                    bottles
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
-                    Click Here
-                  </button>
-                </div>
-              </div>
-              {/* 3RD SECTION */}
-              <div className="soft-sage-bg">
-                <div className="px-10 py-10">
-                  {/* ICON */}
-                  <div className="deep-forest-bg">3 - ICON</div>
-                  {/* TEXT */}
-                  <h1 className="text-4xl mb-4 mt-4">Discover Rewards!</h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    Rack up points and redeem them for gift cards, cash
-                    donations to causes you care about, and more.
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline ">
-                    Explore the Rewards
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
           {/* CONTAINER SECTION */}
           {/* CONTAINER */}
-          <div className="soft-sage-bg px-6 py-6 mb-20">
-            {/* OUTER CONTAINER */}
-            <div className="px-4 py-4 deep-forest-bg">
-              {/* INNER CONTAINER */}
-              <div className="deep-forest-bg flex flex-grid lg:grid lg:grid-row-3">
-                {/* SECTION 1 */}
-                <section id="earnHere" className="mb-10 secondary-color">
-                  <div className=" order-1 px-4 py-4">
-                    {/* INNER SECTION */}
-                    <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
-                      {/* COLUMN 1 (EARN HERE) */}
-                      <div
-                        id=""
-                        className="scroll-mt-10 background-color text-color px-10 py-10"
-                      >
-                        <h1 className="text-center">EARN HERE</h1>
-                        <p className="">
-                          Lorem ipsum dolor sit amet consectetur adipisicing
-                          elit. Aliquid corporis illum distinctio labore debitis
-                          ullam esse. Reiciendis totam placeat reprehenderit id
-                          nihil voluptate aliquid, rerum nostrum veniam earum
-                          eligendi natus.
-                        </p>
-                      </div>
-
-                      {/* COLUMN 2 */}
-                      <div className="primary-color text-white px-10 py-10">
-                        ICON OR PICTURE
-                      </div>
+          <div className="mx-10 mb-20">
+            {/* INNER CONTAINER */}
+            <div className="grid lg:grid lg:grid-row-3 gap-10">
+              {/* SECTION 1 */}
+              <section id="EarnHere" className="secondary-color scroll-mt-28">
+                <div className=" order-1">
+                  {/* INNER SECTION */}
+                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
+                    {/* COLUMN 1 (EARN HERE) */}
+                    <div className="background-color text-color px-4 py-4">
+                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
+                        EARN HERE
+                      </h1>
+                      <p className="text-center sour-gummy-body-400 text-xl">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                        Aliquid corporis illum distinctio labore debitis ullam
+                        esse.
+                      </p>
+                    </div>
+                    {/* COLUMN 2 */}
+                    <div className="primary-color text-white px-4 py-4">
+                      <img src="SampleImage-Streak.png" />
                     </div>
                   </div>
-                </section>
-                {/* SECTION 2 */}
-                <section id="leadnChall" className="mb-10">
-                  <div className="primary-color order-2 px-4 py-4">
-                    {/* INNER SECTION */}
-                    <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
-                      {/* COLUMN 1 */}
-                      <div className="background-color text-color px-10 py-10">
-                        <h1 className="text-center">
-                          LEADERBOARD & CHALLENGES
-                        </h1>
-                        <p className="">
-                          Lorem ipsum dolor sit amet consectetur adipisicing
-                          elit. Aliquid corporis illum distinctio labore debitis
-                          ullam esse. Reiciendis totam placeat reprehenderit id
-                          nihil voluptate aliquid, rerum nostrum veniam earum
-                          eligendi natus.
-                        </p>
-                      </div>
-                      {/* COLUMN 2 */}
-                      <div className="secondary-color text-color px-10 py-10">
-                        ICON OR PICTURE
-                      </div>
+                </div>
+              </section>
+              {/* SECTION 2 */}
+              <section id="ClickHere" className="primary-color scroll-mt-28">
+                <div className="order-2">
+                  {/* INNER SECTION */}
+                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
+                    {/* COLUMN 1 */}
+                    <div className="background-color text-color px-4 py-4">
+                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
+                        LEADERBOARD & CHALLENGES
+                      </h1>
+                      <p className="text-center sour-gummy-body-400 text-xl">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                        Aliquid corporis illum distinctio labore debitis ullam
+                        esse.
+                      </p>
+                    </div>
+                    {/* COLUMN 2 */}
+                    <div className="secondary-color text-color px-4 py-4">
+                      <img src="SampleImage-Streak.png" />
                     </div>
                   </div>
-                </section>
-                {/* SECTION 3 */}
-                <section id="exploreRewards" className="">
-                  <div className="secondary-color order-3 px-4 py-4">
-                    {/* INNER SECTION */}
-                    <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-10">
-                      {/* COLUMN 1 */}
-                      <div className="background-color text-color px-10 py-10">
-                        <h1 className="text-center">DISCOVER REWARDS</h1>
-                        <p className="">
-                          Lorem ipsum dolor sit amet consectetur adipisicing
-                          elit. Aliquid corporis illum distinctio labore debitis
-                          ullam esse. Reiciendis totam placeat reprehenderit id
-                          nihil voluptate aliquid, rerum nostrum veniam earum
-                          eligendi natus.
-                        </p>
-                      </div>
-                      {/* COLUMN 2 */}
-                      <div className="primary-color text-white px-10 py-10">
-                        ICON OR PICTURE
-                      </div>
+                </div>
+              </section>
+              {/* SECTION 3 */}
+              <section id="Explore" className="secondary-color scroll-mt-28">
+                <div className="order-3">
+                  {/* INNER SECTION */}
+                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
+                    {/* COLUMN 1 */}
+                    <div className="background-color text-color px-4 py-4">
+                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
+                        DISCOVER REWARDS
+                      </h1>
+                      <p className="text-center sour-gummy-body-400 text-xl">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                        Aliquid corporis illum distinctio labore debitis ullam
+                        esse.
+                      </p>
+                    </div>
+                    {/* COLUMN 2 */}
+                    <div className="primary-color text-white px-4 py-4">
+                      <img src="SampleImage-Streak.png" />
                     </div>
                   </div>
-                </section>
-              </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
