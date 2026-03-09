@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import { Search, ChevronLeft, ChevronRight, MenuIcon } from "lucide-react";
 import Link from "next/link";
 export default function UserRewards({ onLoginClick }) {
-  const features = [
+  // REWARDS
+  const rewards = [
     {
       title: "Pencil",
       description: "",
@@ -115,6 +116,7 @@ export default function UserRewards({ onLoginClick }) {
     },
   ];
 
+  // CATEGORIES
   const categories = [
     {
       title: "School Supplies",
@@ -130,6 +132,7 @@ export default function UserRewards({ onLoginClick }) {
     },
   ];
 
+  // CHALLENGES
   const challenges = [
     {
       title: "Sample Challenge #1",
@@ -175,6 +178,17 @@ export default function UserRewards({ onLoginClick }) {
     },
   ];
 
+  // LEADERBAORD
+
+  const leaderboard = [
+    {
+      icon: "/SampleImage-UserIcon.png",
+      name: "Tyrion Lannister",
+      university: "Kings Landing University",
+      points: "19,900",
+    },
+  ];
+
   // FOR PAGINATION
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -195,13 +209,13 @@ export default function UserRewards({ onLoginClick }) {
         return;
       }
 
-      const results = features.filter((item) =>
+      const results = rewards.filter((item) =>
         item.title.toLowerCase().includes(term.toLowerCase()),
       );
 
       setSearchResults(results);
     }, 300),
-    [features],
+    [rewards],
   );
 
   useEffect(() => {
@@ -215,7 +229,7 @@ export default function UserRewards({ onLoginClick }) {
   // EXAMPLE FOR PAGINATION
   const [activeIdx, setActiveIdx] = useState(0);
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(features.length / itemsPerPage);
+  const totalPages = Math.ceil(rewards.length / itemsPerPage);
 
   const next = () => {
     setActiveIdx((prev) => (prev + 1) % totalPages);
@@ -606,24 +620,26 @@ export default function UserRewards({ onLoginClick }) {
           </div>
           {/* LEADERBOARD ITSELF */}
           {/* CONTAINER */}
+          {/* HERE LALAGAY YUNG SA ARRAY */}
           <div className="relative secondary-color">
             {/* CONTENT */}
             <div className="flex grid grid-cols-3">
               {/* NUMBER */}
               <div className="soft-sage-bg px-4 py-4">
-                <img src="SampleImage-UserIcon.png" className="w-25 h-25" />
+                <img src="SampleImage-UserIcon.png" className="w-35 h-35" />
               </div>
               {/* NAME */}
               <div className="px-4 py-4">
                 <h1 className="sour-gummy-body-500 text-4xl">
-                  Tyrion Lannister
+                  {leaderboard.name}
                 </h1>
-                <p>Kings Landing Univerity Student</p>
+                <p>{leaderboard.university}</p>
               </div>
               {/* ALL-TIME ECOPOINTS */}
-              <h1>19,900</h1>
+              <h1>{leaderboard.points}</h1>
             </div>
           </div>
+          {/*  */}
           {/* VIEW FULL LEADERBOARD (BUTTON) */}
           <div className="flex justify-center">
             <button>View the Full Leaderboard</button>
@@ -692,8 +708,8 @@ export default function UserRewards({ onLoginClick }) {
           {searchResults.length > 0 && (
             <div className="px-6 py-6">
               <ul className="grid grid-cols-3 gap-4">
-                {searchResults.map((feature) => (
-                  <li key={feature.id}>
+                {searchResults.map((rewards) => (
+                  <li key={rewards.id}>
                     {/* Container Contents */}
                     <div className="flex-1 w-full">
                       <div className="relative group">
@@ -702,8 +718,8 @@ export default function UserRewards({ onLoginClick }) {
                         <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition">
                           {/* Inner Container */}
                           <img
-                            src={feature.image}
-                            alt={feature.image}
+                            src={rewards.image}
+                            alt={rewards.image}
                             className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 hover:-translate-y-2 group-hover:scale-115 transition-transform duration-500"
                           />
                           <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
@@ -711,10 +727,10 @@ export default function UserRewards({ onLoginClick }) {
                             {/* Title & Description */}
                             <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                               <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
-                                {feature.title}
+                                {rewards.title}
                               </h3>
                               <p className="text-color text-base text-xl sm:text-lg leading-relaxed text-justify">
-                                {feature.description}
+                                {rewards.description}
                               </p>
                             </div>
                           </div>
@@ -737,13 +753,13 @@ export default function UserRewards({ onLoginClick }) {
               {/* GRID REWARDS */}
               {/* COLUMN 2 */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 col-start-1 gap-2 sm:gap-3 lg:gap-5 space-y-4 sm:space-y-6 lg:space-y-6">
-                {features
+                {rewards
                   .slice(
                     activeIdx * itemsPerPage,
                     activeIdx * itemsPerPage + itemsPerPage,
                   )
-                  .map((feature, key) => (
-                    <div key={`${feature.title}-${key}`}>
+                  .map((rewards, key) => (
+                    <div key={`${rewards.title}-${key}`}>
                       {/* Container Contents */}
                       <div className="flex-1 w-full">
                         <div className="relative group">
@@ -752,8 +768,8 @@ export default function UserRewards({ onLoginClick }) {
                           <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition-transform">
                             {/* Inner Container */}
                             <img
-                              src={feature.image}
-                              alt={feature.image}
+                              src={rewards.image}
+                              alt={rewards.image}
                               className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 hover:-translate-y-2 group-hover:scale-115 transition-transform duration-500"
                             />
                             <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
@@ -761,10 +777,10 @@ export default function UserRewards({ onLoginClick }) {
                               {/* Title & Description */}
                               <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                                 <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
-                                  {feature.title}
+                                  {rewards.title}
                                 </h3>
                                 <p className="text-color text-base text-xl sm:text-lg leading-relaxed text-justify">
-                                  {feature.description}
+                                  {rewards.description}
                                 </p>
                               </div>
                             </div>
