@@ -11,124 +11,126 @@ export default function UserRewards({ onLoginClick }) {
       description: "",
       image: "/SampleReward-Pencil.jpg",
       id: 1,
+      catID: "SchoolSupplies",
     },
     {
       title: "Notebook",
       description: "",
       image: "/SampleReward-Ntbk.jpg",
       id: 2,
+      catID: "SchoolSupplies",
     },
     {
       title: "Lanyard",
       description: "",
       image: "/SampleReward-Lanyard.jpg",
       id: 3,
+      catID: "SchoolSupplies",
     },
     {
       title: "Tote Bag",
       description: "",
       image: "/SampleReward-ToteBag.jpg",
       id: 4,
+      catID: "Essentials",
     },
     {
       title: "Shirt",
       description: "",
       image: "/SampleReward-Shirt.jpg",
       id: 5,
+      catID: "Essentials",
     },
     {
       title: "Mug",
       description: "",
       image: "/SampleReward-Mug.jpg",
       id: 6,
+      catID: "Essentials",
     },
     {
       title: "Stickers",
       description: "",
       image: "/SampleReward-Stickers.jpg",
       id: 7,
+      catID: "Extra",
     },
     {
       title: "Keychain",
       description: "",
       image: "/SampleReward-Keychain.jpg",
       id: 8,
+      catID: "Extra",
     },
     {
       title: "Pins",
       description: "",
       image: "/SampleReward-Pins.jpg",
       id: 9,
+      catID: "Extra",
     },
     {
       title: "EXTRA1",
       description: "",
       image: "/Stkrs.jpg",
       id: 10,
+      catID: "Extra",
     },
     {
       title: "EXTRA2",
       description: "",
       image: "/Kychn.jpg",
       id: 11,
+      catID: "Extra",
     },
     {
       title: "EXTRA3",
       description: "",
       image: "/Stkrs.jpg",
       id: 12,
+      catID: "Extra",
     },
     {
       title: "EXTRA4",
       description: "",
       image: "/Stkrs.jpg",
       id: 13,
+      catID: "Extra",
     },
     {
       title: "EXTRA5",
       description: "",
       image: "/Kychn.jpg",
       id: 14,
+      catID: "Extra",
     },
     {
       title: "EXTRA6",
       description: "",
       image: "/Stkrs.jpg",
       id: 15,
+      catID: "Extra",
     },
     {
       title: "EXTRA7",
       description: "",
       image: "/Stkrs.jpg",
       id: 16,
+      catID: "Extra",
     },
     {
       title: "EXTRA8",
       description: "",
       image: "/Kychn.jpg",
       id: 17,
+      catID: "Extra",
     },
     {
       title: "EXTRA9",
       description: "",
       image: "/Stkrs.jpg",
       id: 18,
-    },
-  ];
-
-  // CATEGORIES
-  const categories = [
-    {
-      title: "School Supplies",
-      id: 1,
-    },
-    {
-      title: "Essentials",
-      id: 2,
-    },
-    {
-      title: "Extras",
-      id: 3,
+      catID: "Extra",
     },
   ];
 
@@ -167,27 +169,43 @@ export default function UserRewards({ onLoginClick }) {
       title: "Sample Challenge #4",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       image: "/SampleImage-Face10.jpg",
-      id: 3,
+      id: 4,
     },
     {
       title: "Sample Challenge #5",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       image: "/SampleImage-Face8.jpg",
-      id: 3,
+      id: 5,
     },
     {
       title: "Sample Challenge #6",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       image: "/SampleImage-Face9.png",
-      id: 3,
+      id: 6,
     },
     {
       title: "Sample Challenge #7",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       image: "/SampleImage-Face4.avif",
-      id: 3,
+      id: 7,
     },
   ];
+
+  // FOR CATEGORIES
+  const categories = [
+    { label: "School Supplies", value: "SchoolSupplies" },
+    { label: "Essentials", value: "Essentials" },
+    { label: "Extras", value: "Extra" },
+    { label: "All Rewards", value: "All" },
+  ];
+
+  // FOR CATEGORIES (REWARDS)
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const filteredRewards =
+    selectedCategory === "All"
+      ? rewards
+      : rewards.filter((reward) => reward.catID === selectedCategory);
 
   // LEADERBAORD
 
@@ -270,7 +288,7 @@ export default function UserRewards({ onLoginClick }) {
   // EXAMPLE FOR PAGINATION
   const [activeIdx, setActiveIdx] = useState(0);
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(rewards.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredRewards.length / itemsPerPage);
 
   const next = () => {
     setActiveIdx((prev) => (prev + 1) % totalPages);
@@ -613,7 +631,7 @@ export default function UserRewards({ onLoginClick }) {
       {/* LEADERBOARD SECTION */}
       <section
         id="leaderboard"
-        className="scroll-mt-30 mt-10 mb-10 mx-10 px-4 py-4"
+        className="scroll-mt-25 mt-10 mb-10 mx-20 px-4 py-4"
       >
         {/* CONTAINER */}
         <div className="primary-color grid grid-row-4 px-6 py-6">
@@ -631,14 +649,16 @@ export default function UserRewards({ onLoginClick }) {
                 </button>
               </div>
             </div>
-            <p className="sour-gummy-body-400 text-3xl">
+            <p className="sour-gummy-body-400 text-3xl mt-4">
               Think you're the best Recycler?
             </p>
             <p className="sour-gummy-body-400 text-xl">
               Compete with fellow students and faculties alike to climb the
               leaderboard
             </p>
-            <h1 className="sour-gummy-body-400 text-5xl mt-8">Top Recyclers</h1>
+            <h1 className="sour-gummy-body-400 text-7xl mt-10 mb-10">
+              Top Recyclers
+            </h1>
           </div>
           {/* LEADERBOARD CATEGORIES */}
           <div className="grid grid-cols-3 gap-4 text-center mb-6">
@@ -663,11 +683,11 @@ export default function UserRewards({ onLoginClick }) {
               <div
                 className={
                   index >= 3
-                    ? "grid grid-cols-3 items-center gap-20"
+                    ? "grid grid-cols-3 items-center gap-20 secondary-color"
                     : index === 0
                       ? "grid grid-cols-3 items-center background-color"
                       : index === 1
-                        ? "grid grid-cols-3 items-center secondary-color"
+                        ? "grid grid-cols-3 items-center accent-color-background"
                         : "grid grid-cols-3 items-center soft-sage-bg"
                 }
               >
@@ -716,7 +736,7 @@ export default function UserRewards({ onLoginClick }) {
       {/* USER REWARDS REDEMPTION SECTION */}
       <section
         id="redeem"
-        className="background-color relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-28"
+        className="background-color relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 mx-10 sm:px-6 lg:px-8 overflow-hidden scroll-mt-12"
       >
         <div className="relative justify-center overflow-hidden scroll-mt-28">
           {/* TEXT Above Container */}
@@ -726,18 +746,18 @@ export default function UserRewards({ onLoginClick }) {
             </span>
           </div>
           {/* SEARCH BAR */}
-          <div className="relative grid grid-cols-2">
+          <div className="relative grid grid-cols-2 max-w-7xl">
             <div className="flex flex-col items-center">
               <form
                 onSubmit={(e) => e.preventDefault()}
-                className="mb-8 w-full max-w-2xl"
+                className="mb-8 w-full max-w-xl"
               >
                 <div className="relative">
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={handleInputChange}
-                    className="w-full rounded-full border border-white accent-color-background px-5 py-3 pr-20 text-base shadow-md transition-shadow duration-200 hover:shadow-lg focus:border-gray-300 focus:outline-none"
+                    className="w-full rounded-full border border-white accent-color-background px-5 py-3 pr-20 text-base shadow-md transition-all duration-300 shadow-lg focus:border-gray-300 focus:outline-none"
                     placeholder="Search For Your Desired Rewards!"
                   />
                   <div className="absolute right-0 top-0 mr-4 mt-3 flex items-center">
@@ -750,35 +770,30 @@ export default function UserRewards({ onLoginClick }) {
             </div>
             {/* CATEGORIES */}
             <div className="relative order-2 text-center">
-              {/*  */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className=" text-shadow-lg text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-                  <button className="group w-full shadow-lg sm:w-100% px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:border text-center cursor-pointer">
-                    School Supplies
+              <div className="grid grid-cols-4 gap-4 mb-10">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => {
+                      setSelectedCategory(cat.value);
+                      setActiveIdx(0);
+                    }}
+                    className="w-full px-4 py-4 accent-color-background rounded-lg sour-gummy-body-400 text-white text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
+                  >
+                    {cat.label}
                   </button>
-                </div>
-                <div className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-                  <button className="group w-full shadow-lg sm:w-100% px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:border text-center cursor-pointer">
-                    Essentials
-                  </button>
-                </div>
-                <div className="relative text-shadow-lg text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl mx-auto font-body-bold lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
-                  <button className="group w-full shadow-lg sm:w-100% px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:border text-center cursor-pointer">
-                    Extras
-                  </button>
-                </div>
+                ))}
               </div>
-              {/*  */}
             </div>
           </div>
           {/* SEARCH RESULT */}
           {searchResults.length > 0 && (
             <div className="px-6 py-6">
-              <ul className="grid grid-cols-3 gap-4">
+              <ul className="grid grid-cols-3 gap-4 mb-20">
                 {searchResults.map((rewards) => (
                   <li key={rewards.id}>
                     {/* Container Contents */}
-                    <div className="flex-1 w-full">
+                    <div className="w-full">
                       <div className="relative group">
                         {/* Outer Container */}
                         <div className="absolute inset-0 secondary-color rounded-xl sm:rounded-2xl transition-all duration-500" />
@@ -790,7 +805,7 @@ export default function UserRewards({ onLoginClick }) {
                             className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 hover:-translate-y-2 group-hover:scale-115 transition-transform duration-500"
                           />
                           <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
-                          <div className="flex-1 w-full">
+                          <div className=" w-full">
                             {/* Title & Description */}
                             <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                               <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
@@ -820,7 +835,7 @@ export default function UserRewards({ onLoginClick }) {
               {/* GRID REWARDS */}
               {/* COLUMN 2 */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 col-start-1 gap-2 sm:gap-3 lg:gap-5 space-y-4 sm:space-y-6 lg:space-y-6">
-                {rewards
+                {filteredRewards
                   .slice(
                     activeIdx * itemsPerPage,
                     activeIdx * itemsPerPage + itemsPerPage,
@@ -828,19 +843,19 @@ export default function UserRewards({ onLoginClick }) {
                   .map((rewards, key) => (
                     <div key={`${rewards.title}-${key}`}>
                       {/* Container Contents */}
-                      <div className="flex-1 w-full">
+                      <div className=" w-full">
                         <div className="relative group">
                           {/* Outer Container */}
-                          <div className="absolute inset-0 secondary-color  rounded-xl sm:rounded-2xl transition-all duration-500 " />
-                          <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition-transform">
+                          <div className="absolute inset-0 secondary-color rounded-xl sm:rounded-2xl transition-all duration-500 " />
+                          <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 overflow-hidden group-hover:border-1 group-hover:border-orange-500 transition-transform">
                             {/* Inner Container */}
                             <img
                               src={rewards.image}
                               alt={rewards.image}
-                              className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 hover:-translate-y-2 group-hover:scale-115 transition-transform duration-500"
+                              className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-125 lg:h-70 hover:-translate-y-2 group-hover:scale-115 transition-transform duration-500"
                             />
                             <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
-                            <div className="flex-1 w-full">
+                            <div className="w-full">
                               {/* Title & Description */}
                               <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                                 <h3 className="text-4xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-color">
