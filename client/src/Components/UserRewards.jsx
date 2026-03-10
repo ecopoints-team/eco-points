@@ -559,7 +559,7 @@ export default function UserRewards({ onLoginClick }) {
       <section id="challenges" className="scroll-mt-25">
         <div>
           {/* OUTER CONTAINER */}
-          <div className="mt-10 mx-20 px-4 py-4 max-w-auto">
+          <div className="mt-10 mb-10 mx-20 px-4 py-4 max-w-auto">
             {/* CONTENT */}
             <div className="background-color text-color">
               <div className="grid grid-cols-4 gap-4">
@@ -580,8 +580,8 @@ export default function UserRewards({ onLoginClick }) {
                         <div
                           className={
                             index >= 1
-                              ? "grid grid-row-2 gap-2"
-                              : "grid grid-cols-2 gap-2"
+                              ? "grid grid-row-2 gap-2 group"
+                              : "grid grid-cols-2 gap-2 group"
                           }
                         >
                           {/* IMAGE AREA */}
@@ -589,7 +589,9 @@ export default function UserRewards({ onLoginClick }) {
                             <img
                               src={challenges.image}
                               className={
-                                index >= 1 ? "w-80 h-70" : "w-100 h-115"
+                                index >= 1
+                                  ? "w-80 h-70 transition-transform duration-500 ease-in group-hover:scale-105 group-hover:rotate-2"
+                                  : "w-100 h-115 transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
                               }
                             />
                           </div>
@@ -602,10 +604,10 @@ export default function UserRewards({ onLoginClick }) {
                                 {challenges.title}
                               </h1>
                             </div>
-                            <div className="text-md mt-2 text-white sour-gummy-body-300">
+                            <div className="text-md text-white sour-gummy-body-300">
                               <p
                                 className={
-                                  index >= 1 ? "text-md mb-2" : "text-3xl"
+                                  index >= 1 ? "text-md mb-2 mt-2" : "text-3xl"
                                 }
                               >
                                 {challenges.description}
@@ -613,7 +615,13 @@ export default function UserRewards({ onLoginClick }) {
                             </div>
                             {/* REDEEM POINTS */}
                             <div className="text-xl text-white sour-gummy-body-300">
-                              <button className="soft-sage-bg rounded-lg px-2 py-2 duration-300 transition-transform hover:scale-110 hover:underline">
+                              <button
+                                className={
+                                  index === 0
+                                    ? "soft-sage-bg rounded-lg text-md px-8 py-2 duration-300 transition-transform delay-300 group-hover:scale-110 hover:underline"
+                                    : "soft-sage-bg rounded-lg text-md p-2 duration-300 transition-transform delay-300 group-hover:scale-110 hover:underline hover:cursor-pointer"
+                                }
+                              >
                                 POINTS
                               </button>
                             </div>
@@ -628,12 +636,9 @@ export default function UserRewards({ onLoginClick }) {
         </div>
       </section>
       {/* LEADERBOARD SECTION */}
-      <section
-        id="leaderboard"
-        className="scroll-mt-25 mt-10 mb-10 mx-20 px-4 py-4"
-      >
+      <section id="leaderboard" className="scroll-mt-25 mt-10 mb-10 mx-20">
         {/* CONTAINER */}
-        <div className="primary-color grid grid-row-4 px-6 py-6">
+        <div className="primary-color grid grid-row-4 px-4 py-4">
           {/* HEADER */}
           <div className="relative grid text-center justify-center gap-4 mb-10">
             {/* AREA LEADERBOARD (LIKE KUNG SA RIZAL PA MANILA O KAYA PWEDE DIN PER UNIVERSITIES) */}
@@ -677,7 +682,18 @@ export default function UserRewards({ onLoginClick }) {
           {/* CONTAINER */}
           {/* HERE LALAGAY YUNG SA ARRAY */}
           {leaderboard.map((leaderboard, index) => (
-            <div key={`${index}`} className="relative">
+            <div
+              key={`${index}`}
+              className={
+                index >= 3
+                  ? "relative"
+                  : index === 0
+                    ? "relative"
+                    : index === 1
+                      ? "relative mx-6"
+                      : "relative mx-12"
+              }
+            >
               {/* CONTENT */}
               <div
                 className={
