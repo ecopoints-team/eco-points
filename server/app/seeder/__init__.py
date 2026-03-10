@@ -16,5 +16,5 @@ from flask.cli import with_appcontext
 @with_appcontext
 def seed_cmd(fresh):
     """Populate the database with sample data for dashboard testing."""
-    from .seed_runner import run_seed
+    from .seed import run_seed
     run_seed(fresh=fresh)
