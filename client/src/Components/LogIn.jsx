@@ -1,46 +1,67 @@
 // ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
 // Sign in with: username OR email + password
+// Total: 20 admin accounts across 2 organizations (multi-tenant)
 // ============================================================================
-// SUPER ADMINS:
-//   - System Administrator     | sysadmin     | superadmin@ecopoints.com
-//   - Chief Technology Officer  | cto          | cto@ecopoints.com
+//
+// ── MULTI-TENANT LOCATIONS ──────────────────────────────────────────────────
+//   LOC-001: Arellano University (Pasig City)
+//   LOC-002: Polytechnic University of the Philippines (Manila)
+//
+// ── PERMISSION MATRIX (by role) ─────────────────────────────────────────────
+//   Role               | Scope    | Dashboard | Users | Machines | Rewards | Logs   | Settings
+//   ───────────────────|──────────|───────────|───────|──────────|─────────|────────|─────────
+//   superadmin         | Global   | Edit      | CRUD  | CRUD     | CRUD    | Export | Edit
+//   head_admin         | Location | Edit      | CRUD  | CRUD     | CRUD    | Export | Edit
+//   auditor            | Location | View      | View  | View     | View    | Export | View
+//   inventory_officer  | Location | View      | —     | —        | CRUD    | View   | View
+//   technician         | Location | View      | —     | CRUD     | —       | View   | View
+//
+// ── SIDEBAR VISIBILITY ─────────────────────────────────────────────────────
+//   Locations page: superadmin only
+//   Manage Admins:  users.view permission (superadmin, head_admin)
+//   Admin Logs:     superadmin only (others see only own-location logs)
+//
+// ── ACCOUNTS ────────────────────────────────────────────────────────────────
+//
+// SUPER ADMINS (scope: ALL locations):
+//   - System Administrator      | sysadmin     | superadmin@ecopoints.com
+//   - Chief Technology Officer   | cto          | cto@ecopoints.com
 //
 // HEAD ADMINS (LOC-001 — Arellano University):
-//   - Maria Santos              | msantos      | head@arellano.edu.ph
-//   - Roberto Garcia            | rgarcia      | rgarcia@arellano.edu.ph
-//   - Elena Cruz                | ecruz        | ecruz@arellano.edu.ph
+//   - Maria Santos               | msantos      | head@arellano.edu.ph
+//   - Roberto Garcia             | rgarcia      | rgarcia@arellano.edu.ph
+//   - Elena Cruz                 | ecruz        | ecruz@arellano.edu.ph
 //
 // HEAD ADMIN (LOC-002 — Polytechnic University):
-//   - Rosa Aquino               | raquino      | head@pup.edu.ph
+//   - Rosa Aquino                | raquino      | head@pup.edu.ph
 //
 // AUDITORS (LOC-001):
-//   - Juan Dela Cruz            | jdelacruz    | auditor@arellano.edu.ph
-//   - Angela Reyes              | areyes       | areyes@arellano.edu.ph
-//   - Mark Gonzales             | mgonzales    | mgonzales@arellano.edu.ph
+//   - Juan Dela Cruz             | jdelacruz    | auditor@arellano.edu.ph
+//   - Angela Reyes               | areyes       | areyes@arellano.edu.ph
+//   - Mark Gonzales              | mgonzales    | mgonzales@arellano.edu.ph
 //
 // AUDITOR (LOC-002):
-//   - Leo Bautista              | lbautista    | auditor@pup.edu.ph
+//   - Leo Bautista               | lbautista    | auditor@pup.edu.ph
 //
 // INVENTORY OFFICERS (LOC-001):
-//   - Ana Lim                   | alim         | inventory@arellano.edu.ph
-//   - Patricia Tan              | ptan         | ptan@arellano.edu.ph
-//   - Jose Mendoza              | jmendoza     | jmendoza@arellano.edu.ph
+//   - Ana Lim                    | alim         | inventory@arellano.edu.ph
+//   - Patricia Tan               | ptan         | ptan@arellano.edu.ph
+//   - Jose Mendoza               | jmendoza     | jmendoza@arellano.edu.ph
 //
 // INVENTORY OFFICER (LOC-002):
-//   - Carmen Diaz               | cdiaz        | inventory@pup.edu.ph
+//   - Carmen Diaz                | cdiaz        | inventory@pup.edu.ph
 //
 // TECHNICIANS (LOC-001):
-//   - Carlos Reyes              | creyes       | tech@arellano.edu.ph
-//   - Miguel Santos             | misantos     | msantos@arellano.edu.ph
-//   - Fernando Lopez            | flopez       | flopez@arellano.edu.ph
-//   - David Villanueva          | dvillanueva  | dvillanueva@arellano.edu.ph
+//   - Carlos Reyes               | creyes       | tech@arellano.edu.ph
+//   - Miguel Santos              | misantos     | msantos@arellano.edu.ph
+//   - Fernando Lopez             | flopez       | flopez@arellano.edu.ph
+//   - David Villanueva           | dvillanueva  | dvillanueva@arellano.edu.ph
 //
 // TECHNICIANS (LOC-002):
-//   - Rico Fernandez            | rfernandez   | tech@pup.edu.ph
-//   - Lorna Gutierrez           | lgutierrez   | tech2@pup.edu.ph
+//   - Rico Fernandez             | rfernandez   | tech@pup.edu.ph
+//   - Lorna Gutierrez            | lgutierrez   | tech2@pup.edu.ph
 // ============================================================================
-
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -493,14 +514,14 @@ export default function LogIn({ onClose }) {
   // Load locations for signup form
   useEffect(() => {
     if (isSignUp) {
-      authApi.getPublicLocations().then(data => setLocationsList(data || [])).catch(() => {});
+      authApi.getPublicLocations().then(data => setLocationsList(data || [])).catch(() => { });
     }
   }, [isSignUp]);
 
   // Load community groups when locationId changes
   useEffect(() => {
     if (locationId) {
-      authApi.getPublicGroups(locationId).then(data => setCommunityGroups(data || [])).catch(() => {});
+      authApi.getPublicGroups(locationId).then(data => setCommunityGroups(data || [])).catch(() => { });
     } else {
       setCommunityGroups([]);
     }

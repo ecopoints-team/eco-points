@@ -70,13 +70,13 @@ def login():
     """
     try:
         data = request.get_json() or {}
-        identifier = data.get('email') or data.get('username')
+        identifier = data.get('email') or data.get('username') or data.get('identifier')
         password = data.get('password')
 
         if not identifier or not password:
             return jsonify({'success': False, 'error': 'Email/username and password are required'}), 400
 
-        # Look up by email first, then username
+        # Look up by email first, then username — identifier could be either
         user = User.query.filter_by(email=identifier).first()
         if not user:
             user = User.query.filter_by(username=identifier).first()
