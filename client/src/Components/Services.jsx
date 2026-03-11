@@ -38,14 +38,14 @@ export default function Services() {
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="w-full hover:scale-90 transition-transform delay-300 duration-500">
-            <div className="relative soft-sage-bg backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/10">
+            <div className="relative soft-sage-bg backdrop-blur-xl rounded-md sm:rounded-2xl p-2 border border-white/10">
               {/* h-[280px] sm:h-[350px] lg:h-[450px] */}
               {/* Container */}
               {/* IMAGE SECTION */}
               <div className="">
                 <img
                   src="/SampleReward-Stickers.jpg"
-                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-140 hover:scale-110 transition-transform  duration-700"
+                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-110 hover:scale-110 transition-transform  duration-700"
                 />
               </div>
             </div>
@@ -54,13 +54,13 @@ export default function Services() {
           {/* Grid #1 */}
           <div>
             {/* Header Text */}
-            <h1 className="sm:text-5xl md:text-5xl lg:text-7xl chewy-regular lg:mb-4 sm:mb-6">
+            <h1 className="flex justify-center sm:text-5xl md:text-5xl lg:text-6xl chewy-regular lg:mb-4 sm:mb-6">
               <span className="text-color bg-clip-text text-transparent">
                 Services on EcoPoints
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-md sm:text-base lg:text-2xl text-color sour-gummy-body-500 text-justify max-w-2xl mx-auto lg:mx-0 font-body-regular mb-6 sm:mb-8">
+            <p className="text-md sm:text-base lg:text-lg text-color sour-gummy-body-500 text-center max-w-2xl mx-auto lg:mx-0 mb-6 sm:mb-8">
               We offer a bunch of services including rewards blah blah. Lorem
               ipsum, dolor sit amet consectetur adipisicing elit. Illo error eos
               nisi, provident modi quidem amet ab eum voluptas numquam debitis,

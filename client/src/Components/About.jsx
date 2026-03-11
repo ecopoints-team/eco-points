@@ -120,7 +120,7 @@ export default function About() {
         </div>
         {/* ABOUT US - RESEARCHERS */}
         {/* SAMPLE DESIGN #1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-8 space-y-8 sm:space-y-12 lg:space-y-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-4 space-y-8 sm:space-y-12 lg:space-y-8">
           {researchers.map((researchers, key) => (
             <div key={`${researchers.name}-${key}`}>
               {/* Container Contents */}
@@ -130,7 +130,7 @@ export default function About() {
                   <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-60" />
                   <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl">
                     {/* Inner Container */}
-                    <div className="relative group rounded-lg p-3 sm:p-4 lg:p-2">
+                    <div className="relative group rounded-lg p-2 lg:p-0">
                       <img
                         src={researchers.image}
                         alt={researchers.image}
@@ -148,7 +148,7 @@ export default function About() {
                             {/*  mb-4 sm:mb-6 mt-4  */}
                             {researchers.name}
                           </h1>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:mt-2 group-hover:mb-2">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:mt-4 group-hover:mb-2">
                             <h1 className="text-4xl sm:text-3xl lg:text-4xl sour-gummy-body-600 text-color">
                               {researchers.nickname}
                             </h1>
@@ -166,7 +166,7 @@ export default function About() {
           ))}
         </div>
         {/* SAMPLE DESIGN #2*/}
-        <div className="">
+        <div className="mt-20">
           {researchers
             .slice(
               activeIdx * itemsPerPage,
@@ -177,14 +177,14 @@ export default function About() {
                 key={`${researchers.name}-${key}`}
                 className="w-full hover:scale-90 transition-transform duration-500 ease-out"
               >
-                <div className="relative flex group lg:grid lg:grid-cols-2 soft-sage-bg backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl">
+                <div className="relative flex group lg:grid lg:grid-cols-2 soft-sage-bg backdrop-blur-xl rounded-xl sm:rounded-2xl p-2 shadow-2xl">
                   {/* CONTAINER */}
                   {/* IMAGE SECTION */}
                   <div className="order-2">
                     <img
                       src={researchers.image}
                       alt={researchers.image}
-                      className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-120 hover:scale-120 transition-transform duration-700 "
+                      className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-120 group-hover:scale-120 transition-transform duration-700"
                     />
                   </div>
                   {/* NAME & POSITION */}

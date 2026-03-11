@@ -144,7 +144,7 @@ export default function Features() {
               <div className="flex w-full transition-transform duration-300 overflow-hidden shadow-2xl transition-shadow duration-300">
                 <div className="relative group">
                   {/* Inner-Container (Image) */}
-                  <div className="soft-sage-bg rounded-lg p-3 sm:p-4 sm:text-sm ">
+                  <div className="soft-sage-bg rounded-lg p-2 sm:text-sm ">
                     {/* Pictures */}
                     <div>
                       {/* If mag lalagay ng Photo dito ilalagay */}
@@ -172,11 +172,11 @@ export default function Features() {
                   <p className="text-shadow-lg text-color font-body-bold text-xl text-justify sm:text-lg leading-relaxed">
                     {feature.description3}
                   </p> */}
-                  <ul className="list-disc  pl-6 marker:text-slate-900 marker:text-2xl sm:space-y-6 md:space-y-6 lg:space-x-auto lg:space-y-6">
+                  <ul className="list-disc pl-6 marker:text-slate-900 marker:text-2xl sm:space-y-6 md:space-y-6 lg:space-x-auto lg:space-y-6">
                     {feature.listFeatures?.map((item, index) => (
                       <li
                         key={index}
-                        className="text-shadow-lg text-color sour-gummy-body-600 text-justify  text-xl sm:text-lg lg:text-xl leading-relaxed transition-transform duration-500"
+                        className="text-shadow-lg text-color sour-gummy-body-600 text-justify text-xl sm:text-lg lg:text-lg leading-relaxed transition-transform duration-500"
                       >
                         {item}
                       </li>

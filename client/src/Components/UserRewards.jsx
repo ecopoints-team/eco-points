@@ -150,43 +150,50 @@ export default function UserRewards({ onLoginClick }) {
     {
       title: "Sample Challenge #1",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face3.jpg",
+      image: "/SampleImage-UserIcon.png",
+      points: "15 Points",
       id: 1,
     },
     {
       title: "Sample Challenge #2",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face2.jpg",
+      image: "/SampleImage-UserIcon.png",
+      points: "10 Points",
       id: 2,
     },
     {
       title: "Sample Challenge #3",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face1.jpeg",
+      image: "/SampleImage-UserIcon.png",
+      points: "10 Points",
       id: 3,
     },
     {
       title: "Sample Challenge #4",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face10.jpg",
+      image: "/SampleImage-UserIcon.png",
+      points: "5 Points",
       id: 4,
     },
     {
       title: "Sample Challenge #5",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face8.jpg",
+      image: "/SampleImage-UserIcon.png",
+      points: "5 Points",
       id: 5,
     },
     {
       title: "Sample Challenge #6",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face9.png",
+      image: "/SampleImage-UserIcon.png",
+      points: "5 Points",
       id: 6,
     },
     {
       title: "Sample Challenge #7",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-      image: "/SampleImage-Face4.avif",
+      image: "/SampleImage-UserIcon.png",
+      points: "5 Points",
       id: 7,
     },
   ];
@@ -207,8 +214,8 @@ export default function UserRewards({ onLoginClick }) {
       ? rewards
       : rewards.filter((reward) => reward.catID === selectedCategory);
 
-  // LEADERBAORD
-  const leaderboard = [
+  // UNIVERSITY #1 LEADERBAORD
+  const leaderboard1 = [
     {
       icon: "/SampleImage-UserIcon.png",
       name: "Tyrion Lannister",
@@ -244,6 +251,16 @@ export default function UserRewards({ onLoginClick }) {
       name: "Arya Stark",
       university: "Braavos University",
       points: "18,900",
+    },
+  ];
+
+  // UNIVERSITY #2 LEADERBOARD
+  const leaderboard2 = [
+    {
+      icon: "/SampleImage-UserIcon.png",
+      name: "Tyrion Lannister",
+      university: "Kings Landing University",
+      points: "19,900",
     },
   ];
 
@@ -402,6 +419,11 @@ export default function UserRewards({ onLoginClick }) {
               </Link>
               {/* DESKTOP NAV LINKS - CENTERED ABSOLUTELY */}
               <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 items-center space-x-6 lg:space-x-8 sour-gummy-body-500 text-white">
+                <Link href="/">
+                  <div className="flex items-center space-x-1 group cursor-pointer hover:scale-110 transition-transform duration-300">
+                    <span className="">Back to Home</span>
+                  </div>
+                </Link>
                 {navLinks.map((link) => {
                   const isActive = activeSection === link.target;
                   return (
@@ -537,14 +559,14 @@ export default function UserRewards({ onLoginClick }) {
         </div>
       </div>
       {/* INNER CONTAINER */}
-      <div className="secondary-color items-center mt-10  grid grid-cols-2">
+      <div className="secondary-color items-center mt-10 grid grid-cols-2">
         {/* CONTENT */}
-        <h1 className="absolute sour-gummy-body-400 text-3xl mx-10">
+        <h1 className="absolute sour-gummy-body-400 text-2xl mx-10">
           Don’t miss out! This is to Remind you to collect PET Bottles and
           unlock your EcoPoints
         </h1>
         {/* BUTTONS Inside Grid #1 */}
-        <div className="flex items-center justify-center translate-x-240">
+        <div className="flex items-center justify-center translate-x-210">
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12">
             <Link
               href="/"
@@ -557,88 +579,104 @@ export default function UserRewards({ onLoginClick }) {
       </div>
       {/* CHALLENGES SECTION */}
       <section id="challenges" className="scroll-mt-25">
-        <div>
-          {/* OUTER CONTAINER */}
-          <div className="mt-10 mb-10 mx-20 px-4 py-4 max-w-auto">
-            {/* CONTENT */}
-            <div className="background-color text-color">
-              <div className="grid grid-cols-4 gap-4">
-                {/* CONTENT #1 */}
-                {challenges
-                  .slice(
-                    activeIdx * itemsPerPage,
-                    activeIdx * itemsPerPage + itemsPerPage,
-                  )
-                  .map((challenges, index) => (
+        {/* OUTER CONTAINER */}
+        <div className="mt-10 mb-10 mx-20 px-4 py-4 max-w-auto">
+          {/* CONTENT */}
+          <div className="background-color text-color">
+            <div className="grid grid-cols-4 gap-4">
+              {/* CONTENT #1 */}
+              {challenges
+                .slice(
+                  activeIdx * itemsPerPage,
+                  activeIdx * itemsPerPage + itemsPerPage,
+                )
+                .map((challenges, index) => (
+                  <div
+                    key={`${challenges.title}-${index}`}
+                    className={index === 0 ? "col-span-2" : "col-span-1"}
+                  >
+                    {/* OUTER CONTENT */}
                     <div
-                      key={`${challenges.title}-${index}`}
-                      className={index === 0 ? "col-span-2" : "col-span-1"}
+                      className={
+                        index === 0
+                          ? "secondary-color px-2 py-2"
+                          : "secondary-color px-2 py-2"
+                      }
                     >
-                      {/* OUTER CONTENT */}
-                      <div className="secondary-color px-2 py-2">
-                        {/* INNER CONTENT */}
+                      {/* INNER CONTENT */}
+                      <div
+                        className={
+                          index >= 1
+                            ? "grid grid-row-2 gap-2 group"
+                            : "grid grid-cols-2 gap-2 group"
+                        }
+                      >
+                        {/* IMAGE AREA */}
+                        <div className="">
+                          <img
+                            src={challenges.image}
+                            className={
+                              index >= 1
+                                ? "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-in group-hover:scale-120 group-hover:rotate-4"
+                                : "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
+                            }
+                          />
+                        </div>
+                        {/* HEADER & DESCRIPTION */}
                         <div
                           className={
-                            index >= 1
-                              ? "grid grid-row-2 gap-2 group"
-                              : "grid grid-cols-2 gap-2 group"
+                            index === 0
+                              ? "primary-color grid grid-row-3 px-4 py-4"
+                              : "primary-color grid grid-row-3 px-4 py-4"
                           }
                         >
-                          {/* IMAGE AREA */}
-                          <div className="">
-                            <img
-                              src={challenges.image}
+                          <div className="text-white sour-gummy-body-300">
+                            <h1 className={index >= 1 ? "text-xl" : "text-4xl"}>
+                              {challenges.title}
+                            </h1>
+                          </div>
+                          <div className="text-white sour-gummy-body-300">
+                            <p
                               className={
                                 index >= 1
-                                  ? "w-80 h-70 transition-transform duration-500 ease-in group-hover:scale-105 group-hover:rotate-2"
-                                  : "w-100 h-115 transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
+                                  ? "text-md mb-2 mt-2"
+                                  : "text-2xl mb-8 mt-10"
                               }
-                            />
+                            >
+                              {challenges.description}
+                            </p>
                           </div>
-                          {/* HEADER & DESCRIPTION */}
-                          <div className="primary-color grid grid-row-3 px-4 py-4">
-                            <div className="text-2xl text-white sour-gummy-body-300">
-                              <h1
-                                className={index >= 1 ? "text-md" : "text-5xl"}
-                              >
-                                {challenges.title}
-                              </h1>
-                            </div>
-                            <div className="text-md text-white sour-gummy-body-300">
-                              <p
-                                className={
-                                  index >= 1 ? "text-md mb-2 mt-2" : "text-3xl"
-                                }
-                              >
-                                {challenges.description}
-                              </p>
-                            </div>
-                            {/* REDEEM POINTS */}
-                            <div className="text-xl text-white sour-gummy-body-300">
-                              <button
-                                className={
-                                  index === 0
-                                    ? "soft-sage-bg rounded-lg text-md px-8 py-2 duration-300 transition-transform delay-300 group-hover:scale-110 hover:underline"
-                                    : "soft-sage-bg rounded-lg text-md p-2 duration-300 transition-transform delay-300 group-hover:scale-110 hover:underline hover:cursor-pointer"
-                                }
-                              >
-                                POINTS
-                              </button>
-                            </div>
+                          {/* REDEEM POINTS */}
+                          <div
+                            className={
+                              index === 0
+                                ? "flex justify-center text-white sour-gummy-body-300"
+                                : "flex justify-center text-white sour-gummy-body-300"
+                            }
+                          >
+                            <button
+                              className={
+                                index === 0
+                                  ? "self-end text-xl duration-300 transition-transform delay-300 hover:underline group-hover:cursor-pointer"
+                                  : "self-end text-md duration-300 transition-transform delay-300 hover:underline group-hover:cursor-pointer"
+                              }
+                            >
+                              {challenges.points}
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-              </div>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
       </section>
       {/* LEADERBOARD SECTION */}
-      <section id="leaderboard" className="scroll-mt-25 mt-10 mb-10 mx-20">
+      <section id="leaderboard" className="scroll-mt-25 mt-10 mb-4 mx-10">
         {/* CONTAINER */}
-        <div className="primary-color grid grid-row-4 px-4 py-4">
+        <div className="primary-color grid grid-row-4 px-10 py-10">
           {/* HEADER */}
           <div className="relative grid text-center justify-center gap-4 mb-10">
             {/* AREA LEADERBOARD (LIKE KUNG SA RIZAL PA MANILA O KAYA PWEDE DIN PER UNIVERSITIES) */}
@@ -653,23 +691,26 @@ export default function UserRewards({ onLoginClick }) {
                 </button>
               </div>
             </div>
-            <p className="sour-gummy-body-400 text-3xl mt-4">
-              Think you're the best Recycler?
-            </p>
-            <p className="sour-gummy-body-400 text-xl">
-              Compete with fellow students and faculties alike to climb the
-              leaderboard
-            </p>
-            <h1 className="sour-gummy-body-400 text-6xl mt-10">
-              Top Recyclers
-            </h1>
+            {/* TEXT AREA */}
+            <div className="px-10 py-10">
+              <p className="sour-gummy-body-400 text-3xl mt-4">
+                Think you're the best Recycler?
+              </p>
+              <p className="sour-gummy-body-400 text-xl">
+                Compete with fellow students and faculties alike to climb the
+                leaderboard
+              </p>
+              <h1 className="sour-gummy-body-400 text-6xl mt-10">
+                Top Recyclers
+              </h1>
+            </div>
           </div>
           {/* LEADERBOARD CATEGORIES */}
           <div className="grid grid-cols-3 text-center mb-6">
-            {leadCategories.map((leadCategories, index) => (
+            {leadCategories.map((leadCategories) => (
               <div className="flex items-center justify-center group">
                 <div className="transition-transform duration-300 ease-in-out hover:scale-105 hover:-translate-y-2 ">
-                  <button className="secondary-color rounded-lg w-95 px-2 py-2 hover:cursor-pointer">
+                  <button className="secondary-color rounded-lg w-90 px-2 py-2 hover:cursor-pointer">
                     <div className="sour-gummy-body-500 text-2xl">
                       {leadCategories.title}
                     </div>
@@ -681,7 +722,7 @@ export default function UserRewards({ onLoginClick }) {
           {/* LEADERBOARD ITSELF */}
           {/* CONTAINER */}
           {/* HERE LALAGAY YUNG SA ARRAY */}
-          {leaderboard.map((leaderboard, index) => (
+          {leaderboard1.map((leaderboard1, index) => (
             <div
               key={`${index}`}
               className={
@@ -721,7 +762,7 @@ export default function UserRewards({ onLoginClick }) {
                     }
                   />
                 </div>
-                {/* NAME */}
+                {/* NAME & UNIVERSITY*/}
                 <div
                   className={
                     index >= 3
@@ -733,6 +774,7 @@ export default function UserRewards({ onLoginClick }) {
                           : "relative px-4 py-4"
                   }
                 >
+                  {/* NAME */}
                   <h1
                     className={
                       index >= 3
@@ -740,12 +782,13 @@ export default function UserRewards({ onLoginClick }) {
                         : index === 0
                           ? "absolute sour-gummy-body-500 text-5xl text-color"
                           : index === 1
-                            ? "absolute sour-gummy-body-500 text-5xl text-color"
-                            : "absolute sour-gummy-body-500 text-5xl text-color"
+                            ? "absolute sour-gummy-body-500 text-4xl text-color"
+                            : "absolute sour-gummy-body-500 text-4xl text-color"
                     }
                   >
-                    {leaderboard.name}
+                    {leaderboard1.name}
                   </h1>
+                  {/* UNIVERSITY */}
                   <p
                     className={
                       index >= 3
@@ -753,16 +796,16 @@ export default function UserRewards({ onLoginClick }) {
                         : index === 0
                           ? "text-xl sour-gummy-body-500 mt-13 text-color"
                           : index === 1
-                            ? "text-md sour-gummy-body-500 mt-13 text-color"
-                            : "text-md sour-gummy-body-300 mt-13 text-color"
+                            ? "text-sm sour-gummy-body-500 mt-10 text-color"
+                            : "text-sm sour-gummy-body-300 mt-10 text-color"
                     }
                   >
-                    {leaderboard.university}
+                    {leaderboard1.university}
                   </p>
                 </div>
                 {/* ALL-TIME ECOPOINTS */}
                 <h1 className="flex justify-end text-2xl sour-gummy-body-500 mx-20 text-color">
-                  {leaderboard.points}
+                  {leaderboard1.points}
                 </h1>
               </div>
             </div>
@@ -781,17 +824,17 @@ export default function UserRewards({ onLoginClick }) {
       {/* USER REWARDS REDEMPTION SECTION */}
       <section
         id="redeem"
-        className="background-color relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 mx-10 sm:px-6 lg:px-8 overflow-hidden scroll-mt-12"
+        className="background-color relative min-h-screen flex item-center justify-center sm:pt-12 px-4 mx-10 sm:px-6 lg:px-8 overflow-hidden scroll-mt-12"
       >
-        <div className="relative justify-center overflow-hidden scroll-mt-28">
+        <div className="relative justify-center overflow-hidden">
           {/* TEXT Above Container */}
           <div className="px-6 py-6 mb-10 sm:text-4xl md:text-4xl lg:text-6xl text-color text-center chewy-regular">
             <span className="relative flex-col item-center justify-center overflow-hidden">
               Earn Points by Recycling and Helping the Environment!
             </span>
           </div>
-          {/* SEARCH BAR */}
-          <div className="relative grid grid-cols-2 max-w-7xl">
+          {/* SEARCH BAR & CATEGORIES*/}
+          <div className="relative grid grid-cols-2 max-w-7xl px-10 gap-10">
             <div className="flex flex-col items-center">
               <form
                 onSubmit={(e) => e.preventDefault()}
@@ -825,8 +868,8 @@ export default function UserRewards({ onLoginClick }) {
                     }}
                     className={
                       index === 0
-                        ? "w-full px-4 py-4 primary-color rounded-lg sour-gummy-body-500 text-white text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
-                        : "w-full px-4 py-4 accent-color-background rounded-lg sour-gummy-body-500 text-color text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
+                        ? "w-full px-4 py-0 primary-color rounded-lg sour-gummy-body-500 text-white text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-102 hover:-translate-y-2"
+                        : "w-full px-4 py-0 accent-color-background rounded-lg sour-gummy-body-500 text-color text-sm sm:text-base shadow-lg transition-all duration-300 hover:border hover:scale-105 hover:-translate-y-2"
                     }
                   >
                     {cat.label}
@@ -954,12 +997,6 @@ export default function UserRewards({ onLoginClick }) {
                 </button>
               </div>
             </div>
-          </div>
-
-          <div className="mb-8">
-            <Link href="/" className="text-white/80 hover:text-orange-400">
-               Back to Home
-            </Link>
           </div>
         </div>
       </section>
