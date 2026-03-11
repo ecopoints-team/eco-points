@@ -8,7 +8,7 @@ import Footer from "./Components/Footer";
 
 function App() {
   return (
-    <div className="soft-sage-bg">
+    <div className="onScroll">
       <NavBar />
       <Hero />
       <Features />

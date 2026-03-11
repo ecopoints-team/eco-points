@@ -14,40 +14,19 @@ export default function Services() {
   return (
     <section
       id="services"
-      className="relative min-h-screen flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
+      className="relative min-h-screen secondary-color flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
     >
-      {/* CIRCUIT-LINE BORDER LEFT  */}
-      <div dir="ltr">
-        <div className="absolute lg:start-0 lg:top-10 sm:top-12 sm:start-0 md:start-0 md:top-20">
-          <img
-            src="/SampleBorder(Circuit-Line-Left).png"
-            className="rounded-lg sm:opacity-0 md:opacity-0 lg:w-130 lg:h-70"
-          />
-        </div>
-      </div>
-      {/* CIRCUIT-LINE BORDER RIGHT */}
-      <div dir="rtl">
-        <div className="absolute lg:start-0 lg:top-0 sm:top-15 sm:start-0 md:start-0 md:top-20">
-          <img
-            src="/SampleBorder(Circuit-Line-Right).png"
-            className="rounded-lg sm:opacity-0 md:opacity-0 lg:w-130 lg:h-70"
-          />
-        </div>
-      </div>
       <div className="max-w-7xl mx-auto text-center relative w-full">
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #2 EXAMPLE CONTAINER */}
           <div className="w-full hover:scale-90 transition-transform delay-300 duration-500">
-            <div className="relative soft-sage-bg backdrop-blur-xl rounded-md sm:rounded-2xl p-2 border border-white/10">
-              {/* h-[280px] sm:h-[350px] lg:h-[450px] */}
-              {/* Container */}
-              {/* IMAGE SECTION */}
-              <div className="">
-                <img
-                  src="/SampleReward-Stickers.jpg"
-                  className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-110 hover:scale-110 transition-transform  duration-700"
-                />
-              </div>
+            {/* Container */}
+            {/* IMAGE SECTION */}
+            <div className="">
+              <img
+                src="/SampleReward-Stickers.jpg"
+                className="rounded-md sm:w-250 sm:h-116 md:w-450 md:h-115 lg:w-150 lg:h-110 hover:scale-110 transition-transform  duration-700"
+              />
             </div>
           </div>
           {/* Floating Cards */}
@@ -68,7 +47,7 @@ export default function Services() {
             </p>
             {/* Button */}
             <div className="flex items-center justify-center mt-4 sm:mt-6 lg:mt-10 ">
-              <div className="items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center soft-sage-bg hover:scale-110 hover:deep-forest-bg hover:underline hover:cursor-pointer transition-transform duration-300 ease-in-out ">
+              <div className="text-color items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center accent-color-background transition-transform duration-300 ease-in-out hover:scale-110 hover:underline hover:border hover:cursor-pointer">
                 <Link href="/rewards" className="">
                   Continue to Rewards
                 </Link>

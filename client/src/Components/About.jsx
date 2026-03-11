@@ -29,7 +29,7 @@ export default function About() {
       question: "What is your MANTRA in Life?",
       quote: "Kung ang Tinapay ay malamig, Matigas ang Kapeng tuyo",
       image: "/SampleImage-Face1.jpeg",
-      image2: "/SampleImage-Face2.jpg",
+      image2: "/SampleImage-Face2-bg.png",
     },
     {
       name: "Justine James S. Ibale",
@@ -38,7 +38,7 @@ export default function About() {
       question: "What is your MANTRA in Life?",
       quote: "Minsan na tayo'y kinalaban, dapat may ginagampanan",
       image: "/SampleImage-Face7.jpg",
-      image2: "/SampleImage-Face8.jpg",
+      image2: "/SampleImage-Face8-bg.png",
     },
     {
       name: "Jaydine C. Nuval",
@@ -56,7 +56,7 @@ export default function About() {
       question: "What is your MANTRA in Life?",
       quote: "67",
       image: "/SampleImage-Face5.webp",
-      image2: "/SampleImage-Face6.jpg",
+      image2: "/SampleImage-Face6-bg.png",
     },
     {
       name: "Rodge Steven Jude D. Funtalba",
@@ -65,7 +65,7 @@ export default function About() {
       question: "What is your MANTRA in Life?",
       quote: "Whenever we go to the start, it always begins",
       image: "/SampleImage-Face9.png",
-      image2: "/SampleImage-Face10.jpg",
+      image2: "/SampleImage-Face10-bg.png",
     },
   ];
 
@@ -85,17 +85,17 @@ export default function About() {
   return (
     <section
       id="about"
-      className="scroll-mt-6 py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 background-color"
+      className="scroll-mt-6 py-2 px-2 bg-white/5 background-color"
     >
-      <div className="max-w-5xl mx-auto space-y-10 text-center lg:text-left">
+      <div className="max-w-5xl mx-auto space-y-10 mb-10 mt-10 text-center lg:text-left">
         <div className="space-y-4">
-          <p className="text-3xl sm:text-5xl font-header uppercase tracking-[0.3em] text-color ">
+          <p className="text-3xl sm:text-5xl sour-gummy-body-600 uppercase tracking-[0.3em] text-color ">
             About EcoPoints
           </p>
-          <h2 className="text-4xl sm:text-3xl font-bold text-color">
+          <h2 className="text-4xl sm:text-3xl sour-gummy-body-300 text-color">
             A circular journey powered by smart rewards.
           </h2>
-          <p className="text-color text-lg leading-relaxed font-body-regular">
+          <p className="text-color text-lg leading-relaxed sour-gummy-body-300">
             EcoPoints pairs reverse vending tech with a lightweight web portal
             so users can scan, redeem, and track progress without leaving the
             main page. This placeholder copy keeps the layout alive while the
@@ -131,16 +131,18 @@ export default function About() {
                   <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl">
                     {/* Inner Container */}
                     <div className="relative group rounded-lg p-2 lg:p-0">
-                      <img
-                        src={researchers.image}
-                        alt={researchers.image}
-                        className="inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-0"
-                      />
-                      <img
-                        src={researchers.image2}
-                        alt={researchers.image2}
-                        className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-108 group-hover:opacity-100"
-                      />
+                      <div>
+                        <img
+                          src={researchers.image}
+                          alt={researchers.image}
+                          className="inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:opacity-0"
+                        />
+                        <img
+                          src={researchers.image2}
+                          alt={researchers.image2}
+                          className="absolute inset-0 rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 opacity-0 transition-transform duration-500 ease-out group-hover:scale-110 group-hover:opacity-100"
+                        />
+                      </div>
                       <div className="flex-1 w-full">
                         {/* NAME, NICKNAME & POSITION */}
                         <div className="overflow-hidden max-h-[3.5rem] group-hover:max-h-[9rem] transition-[max-height] duration-500 ease-out text-center lg:text-left">

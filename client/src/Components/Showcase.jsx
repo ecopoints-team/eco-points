@@ -163,10 +163,10 @@ export default function Rewards() {
                 <div className="flex-1 w-full hover:translate-y-4 hover:scale-110 transition-transform duration-500 ease-out">
                   <div className="relative group">
                     {/* Outer Container */}
-                    <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-70 " />
-                    <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl p-2 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
+                    <div className="absolute inset-0 accent-color-background rounded-lg sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-50" />
+                    <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-lg sm:rounded-2xl p-2 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
                       {/* Inner Container */}
-                      <div className="relative group bg-gray-800/20 rounded-lg p-2 font-mono text-xs sm:text-sm">
+                      <div className="relative group accent-color-background rounded-lg p-4 font-mono text-xs sm:text-sm">
                         <img
                           src={feature.image}
                           alt={feature.image}
@@ -195,9 +195,9 @@ export default function Rewards() {
         <div className="flex items-center justify-center gap-4 mb-8 cursor-pointer">
           <button
             onClick={previous}
-            className="p-3 rounded-full primary-color transition-all cursor-pointer"
+            className="p-3 rounded-full accent-color-background transition-all cursor-pointer"
           >
-            <ChevronLeft />
+            <ChevronLeft className="text-color" />
           </button>
 
           <div className="flex gap-2">
@@ -206,7 +206,9 @@ export default function Rewards() {
                 key={idx}
                 onClick={() => setActiveIdx(idx)}
                 className={`h-2 rounded-full transition-all duration-300  ${
-                  idx === activeIdx ? "w-8 primary-color" : "w-2 primary-color"
+                  idx === activeIdx
+                    ? "w-8 accent-color-background"
+                    : "w-2 accent-color-background"
                 }`}
               />
             ))}
@@ -214,9 +216,9 @@ export default function Rewards() {
 
           <button
             onClick={next}
-            className="p-3 rounded-full primary-color transition-all cursor-pointer"
+            className="p-3 rounded-full accent-color-background transition-all cursor-pointer"
           >
-            <ChevronRight />
+            <ChevronRight className="text-color" />
           </button>
         </div>
       </div>

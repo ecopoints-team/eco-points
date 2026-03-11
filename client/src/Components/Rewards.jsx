@@ -121,6 +121,30 @@ export default function RewardsOrg({ onLoginClick }) {
     },
   ];
 
+  const visualInstruction = [
+    {
+      title: "Sign In",
+      description:
+        "Try logging in with your EcoPoints account, before creating a new one.",
+      visualLink: "Sign In Here",
+      image: "/SampleImage-UserIcon.png",
+    },
+    {
+      title: "Visit the Rewards Dashboard",
+      description:
+        "This fully activates your account, so you can start earning instantly.",
+      visualLink: "Visit Rewards",
+      image: "/SampleImage-UserIcon.png",
+    },
+    {
+      title: "Recycle PET Bottles to Earn Points!",
+      description:
+        "Rack up points and redeem them for school supplies, essentials and more",
+      visualLink: "View the Machine",
+      image: "/SampleImage-UserIcon.png",
+    },
+  ];
+
   // PAGINATION FOR REWARDS
   const [activeIdx, setActiveIdx] = useState(0);
   const itemsPerPage = 3;
@@ -372,7 +396,7 @@ export default function RewardsOrg({ onLoginClick }) {
           <div className="order-1">
             {/* Header Text */}
             <h1 className="text-6xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-              <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
+              <span className="text-shadow-lg text-white bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints: Rewards
               </span>
             </h1>
@@ -388,7 +412,7 @@ export default function RewardsOrg({ onLoginClick }) {
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
                 <Link
                   href="/userRewards"
-                  className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background rounded-lg sour-gummy-body-400 text-xl transition-transform duration-500 hover:scale-110 hover:border hover:underline text-center"
+                  className="group w-full shadow-lg sm:w-auto px-6 sm:px-8 py-3 sm:py-4 accent-color-background text-color rounded-lg sour-gummy-body-400 text-xl transition-transform duration-500 hover:scale-110 hover:border hover:underline text-center"
                 >
                   Start Earning EcoPoints!
                 </Link>
@@ -399,10 +423,10 @@ export default function RewardsOrg({ onLoginClick }) {
           {/* COL-2 CONTAINER */}
           <div className="relative order-2 w-full">
             <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10 transition-transform delay-300 ease-out duration-700 hover:scale-90">
-              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform ease-in duration-300 hover:scale-120">
+              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform delay-300 ease-in duration-300 hover:scale-140">
                 {/* Container */}
                 <img
-                  src="SampleImage-Face10.jpg"
+                  src="SampleImage-UserIcon.png"
                   alt="Sample"
                   className="w-full h-auto"
                 />
@@ -419,13 +443,13 @@ export default function RewardsOrg({ onLoginClick }) {
       <section id="" className="px-10 py-10">
         <div>
           {/* VISUAL AREA SECTION */}
-          <section id="earnPoints" className="scroll-mt-10">
+          <section id="earnPoints" className="scroll-mt-20">
             {/* DESCRIPTION AREA */}
             <section id="" className="">
               <div className="flex flex-row lg:grid lg:grid-row-2 px-10 py-10">
                 {/* HEADER */}
                 <div className="text-center mb-2 sm:mb-6 lg:mb-2">
-                  <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6">
+                  <h2 className="text-5xl sm:text-4xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6">
                     <span className="chewy-regular text-color bg-clip-text text-transparent">
                       Want to Start Earning Points?
                     </span>
@@ -433,7 +457,7 @@ export default function RewardsOrg({ onLoginClick }) {
                 </div>
                 {/* CONTENT */}
                 <div className="text-center mb-2 sm:mb-4 lg:mb-4 order-2">
-                  <p className="sour-gummy-body-300 text-color sm:text-4xl md:text-5xl lg:text-4xl">
+                  <p className="sour-gummy-body-300 text-color text-xl sm:text-3xl lg:text-2xl">
                     Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     Deserunt nobis eveniet quas incidunt nemo itaque omnis
                     voluptate repudiandae quae neque distinctio dolor placeat
@@ -442,83 +466,36 @@ export default function RewardsOrg({ onLoginClick }) {
                 </div>
               </div>
             </section>
-            {/* VISUAL INTRUCTION */}
-            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 chewy-regular">
+            {/* VISUAL INSTRUCTION */}
+            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 gap-6 chewy-regular">
               {/* 1ST SECTION */}
-              <div className="soft-sage-bg">
-                <div className="px-6 py-6">
-                  {/* ICON */}
-                  <div className="deep-forest-bg">
-                    {" "}
-                    <img
-                      src="/SampleImage-UserIcon.png"
-                      alt="Discover Rewards"
-                    />
+              {visualInstruction.map((visualInstruction) => (
+                <div key="" className="soft-sage-bg">
+                  <div className="px-2 py-2">
+                    {/* ICON */}
+                    <div className="deep-forest-bg">
+                      <img src={visualInstruction.image} alt="Sign in Here" />
+                    </div>
+                    {/* TEXT */}
+                    <h1 className="text-3xl mb-4 mt-4">
+                      {visualInstruction.title}
+                    </h1>
+                    <p className="text-xl sour-gummy-body-400">
+                      {visualInstruction.description}
+                    </p>
+                    <button className="text-xl px-2 py-2 mt-6 cursor-pointer hover:underline">
+                      {visualInstruction.visualLink}
+                    </button>
                   </div>
-                  {/* TEXT */}
-                  <h1 className="text-3xl mb-4 mt-4">Sign In</h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    Try logging in with your EcoPoints account, before creating
-                    a new one.
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
-                    Sign In Here
-                  </button>
                 </div>
-              </div>
-              {/* 2ND SECTION */}
-              <div className="deep-forest-bg ">
-                <div className="px-6 py-6">
-                  {/* ICON */}
-                  <div className="soft-sage-bg">
-                    <img
-                      src="/SampleImage-UserIcon.png"
-                      alt="Discover Rewards"
-                    />
-                  </div>
-                  {/* TEXT */}
-                  <h1 className="text-3xl mb-4 mt-4">
-                    Visit the Rewards Dashboard
-                  </h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    This fully activates your account, so you can start earning
-                    instantly
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
-                    Visit Rewards
-                  </button>
-                </div>
-              </div>
-              {/* 3RD SECTION */}
-              <div className="soft-sage-bg">
-                <div className="px-6 py-6">
-                  {/* ICON */}
-                  <div className="deep-forest-bg">
-                    <img
-                      src="/SampleImage-UserIcon.png"
-                      alt="Discover Rewards"
-                    />
-                  </div>
-                  {/* TEXT */}
-                  <h1 className="text-3xl mb-4 mt-4">
-                    Recycle PET Bottles to Earn Points!
-                  </h1>
-                  <p className="text-xl sour-gummy-body-400">
-                    Rack up points and redeem them for school supplies,
-                    essentials and more
-                  </p>
-                  <button className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline">
-                    View the Machine!
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
           {/* REWARDS SECTION */}
           <section id="rewards" className="scroll-mt-24">
             {/* TEXT CONTENT */}
-            <div className="relative primary-color text-center mb-2 sm:mb-6 lg:mb-6 lg:px-0 lg:py-0 ">
-              <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6">
+            <div className="relative text-center mb-2 sm:mb-6 lg:mb-6 lg:px-0 lg:py-0 ">
+              <h2 className="text-5xl sm:text-4xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
                 <span className="chewy-regular text-color bg-clip-text text-transparent">
                   Here are some Rewards you can Redeem!
                 </span>
@@ -547,7 +524,7 @@ export default function RewardsOrg({ onLoginClick }) {
                               <img
                                 src={feature.image}
                                 alt={feature.image}
-                                className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-120 lg:h-70 transition-transform duration-500 ease-out group-hover:scale-112 "
+                                className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-100 lg:h-60 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:-translate-y-1"
                               />
                               <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
                               <div className="flex-1 w-full">
@@ -601,7 +578,7 @@ export default function RewardsOrg({ onLoginClick }) {
             </div>
           </section>
           {/* INSTRUCTION SECTION*/}
-          <section id="howEarn" className="scroll-mt-22">
+          <section id="howEarn" className="scroll-mt-22 ">
             {/* HEADER */}
             <div className="text-center mb-2 sm:mb-6 lg:mb-2">
               <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-7xl mb-4">
@@ -613,11 +590,11 @@ export default function RewardsOrg({ onLoginClick }) {
                 Click Below and discover all the possible ways of earning points
               </p>
             </div>
-            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 chewy-regular">
+            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 gap-6 chewy-regular">
               {/* 1ST SECTION */}
               {howToEarnLinks.map((howToEarnLinks) => (
                 <div className="soft-sage-bg">
-                  <div className="px-6 py-6">
+                  <div className="px-2 py-2">
                     {/* ICON */}
                     <div className="deep-forest-bg">
                       <img

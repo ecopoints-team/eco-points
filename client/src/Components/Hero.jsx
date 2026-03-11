@@ -4,17 +4,6 @@ import { ChevronDown, GraduationCapIcon } from "lucide-react";
 // import { useEffect, useState } from "react";
 
 export default function Hero() {
-  // const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  // useEffect(() => {
-  //   function handleMouseMove(e) {
-  //     setMousePosition({ x: e.clientX, y: e.clientY });
-  //   }
-
-  //   window.addEventListener("mousemove", handleMouseMove);
-
-  //   return () => window.removeEventListener("mousemove", handleMouseMove);
-  // }, []);
   const concept = [
     {
       title: "Automation",
@@ -75,27 +64,13 @@ export default function Hero() {
         url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap');
       </style>
 
-      {/* MOUSE GRADIENT */}
-      {/* <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          background: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, #e67d22b7, transparent 50%)`,
-        }}
-      /> */}
-
-      {/* Pulse Background */}
-      {/* <div className="absolute top-30 left-4 sm:left-10 w-48 sm:w-72 h-48 sm: h-72 bg-teal-900/70 rounded-full blur-3xl animate-pulse"></div> */}
-      {/* <div className="absolute top-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 accent-color-background rounded-full blur-3xl animate-pulse delay-1000"></div> */}
-
-      {/*  */}
       {/* Grid Container Hero Section */}
-      {/*  */}
       <div className="max-w-7xl mx-auto text-center relative w-full">
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #1 */}
           <div className="">
             {/* Introducing EcoPoints */}
-            <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 accent-color-bg-20 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
+            <div className=" inline-flex items-center space-x-2 px-3 sm:px-4 py-2 accent-color-bg-20 border accent-color-border rounded-full mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-500 hover:translate-y-2 transition-transform duration-300 hover:scale-105">
               <GraduationCapIcon className="animate-bounce lg:w-7 lg:h-7 md:h-6 md:w-6 sm:w-6 sm:h-6 text-white" />
               <span className="sour-gummy-body-600 lg:text-lg md:text-sm sm:text-lg text-white text-center">
                 PUP Institute of Technology Research Project
@@ -115,7 +90,6 @@ export default function Hero() {
               Bridging the gap between technology and environmental
               sustainability through an automated reward system.
             </p>
-
             {/* BUTTONS inside Grid #1
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 animate-in slide-in-from-bottom duration-700 delay-300">
                     <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-b from-green-400 to-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-102 flex items-center justify-center space-x-2">
@@ -150,7 +124,7 @@ export default function Hero() {
           {/* Floating Cards */}
         </div>
         {/* HEADER SECTION */}
-        <div className="max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
+        <div className=" max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
           {/* BACKGROUND IF MAGLALAGAY */}
           <div className="">
             <h2 className="sm:text-4xl md:text-5xl lg:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
@@ -213,31 +187,7 @@ export default function Hero() {
             </span>
           </h2>
           {/* CONTAINERS AREA*/}
-          {/* CIRCUIT-LINE  */}
-          <div dir="ltr">
-            {/* FROM LEFT - 1ST LINE*/}
-            <div className="absolute sm:opacity-0 md:start-20 md:top-320 lg:start-0 lg:top-310 ">
-              <img
-                src="/SampleBorder(Circuit-Line-Left).png"
-                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
-              />
-            </div>
-            {/* 2ND LINE */}
-            <div className="absolute sm:opacity-0 md:start-98 md:top-300 lg:start-45 lg:top-270">
-              <img
-                src="/SampleBorder(Circuit-Line-Left).png"
-                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
-              />
-            </div>
-            {/* 3RD LINE */}
-            <div className="absolute sm:opacity-0 md:start-150 md:top-340 lg:start-180 lg:top-290 ">
-              <img
-                src="/SampleBorder(Circuit-Line-Left).png"
-                className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
-              />
-            </div>
-          </div>
-          <div className="flex flex-cols lg:grid lg:grid-cols-4 sm:grid sm:grid-cols-2 lg:space-y-8 lg:space-x-8 md:space-y-8 md:space-x-8  sm:space-y-4 sm:space-x-4">
+          <div className="flex flex-cols lg:grid lg:grid-cols-4 sm:grid sm:grid-cols-2 sm:gap-6 lg:gap-0">
             {/* CONTAINER */}
             {howItWorks.map((howItWorks) => (
               <div className="">
@@ -245,7 +195,7 @@ export default function Hero() {
                 <div className="flex w-full ">
                   <div className="relative group">
                     {/* OUTER-CONTAINER (IMAGE) */}
-                    <div className="soft-sage-bg rounded-lg text-xs sm:p-6 sm:w-85 sm:h-120 lg:w-75 lg:h-120 ">
+                    <div className="soft-sage-bg rounded-lg text-xs sm:p-6 sm:w-85 sm:h-120 lg:w-75 lg:h-120">
                       {/* INNER-CONTAINER (PICTURES) */}
                       <div className=" champagne-bg rounded-lg px-4 py-4 transition-transform duration-700 hover:rotate-6 hover:scale-80 shadow-xl transition-shadow">
                         <div className="flex w-full ">
