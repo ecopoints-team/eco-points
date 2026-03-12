@@ -127,11 +127,11 @@ export default function Hero() {
         <div className=" max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
           {/* BACKGROUND IF MAGLALAGAY */}
           <div className="">
-            <h2 className="sm:text-4xl md:text-5xl lg:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h1 className="sm:text-4xl md:text-5xl lg:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
                 WELCOME TO THE OFFICIAL PLATFORM
               </span>
-            </h2>
+            </h1>
             <h2 className="sm:text-6xl md:text-7xl lg:text-8xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
                 FOR ECOPOINTS
@@ -166,10 +166,10 @@ export default function Hero() {
                     {/* TEXT SECTION */}
                     <div className="flex w-full">
                       <div className="max-w-lg mx-auto lg:mx-0 text-center text-color lg:text-left">
-                        <h3 className="text-4xl sm:text-4xl lg:text-3xl chewy-regular text-center sm:mb-6 sm:mt-6 md:mb-6 md:mt-6 lg:mb-2 lg:mt-2">
+                        <h2 className="text-4xl sm:text-4xl lg:text-3xl chewy-regular text-center sm:mb-6 sm:mt-6 md:mb-6 md:mt-6 lg:mb-2 lg:mt-2">
                           {concept.title}
-                        </h3>
-                        <p className="text-shadow-lg sour-gummy-body-500 text-center sm:text-xl md:text-lg lg:text-xl">
+                        </h2>
+                        <p className="text-shadow-lg sour-gummy-body-400 text-center sm:text-xl md:text-lg lg:text-xl">
                           {concept.description}
                         </p>
                       </div>
