@@ -16,6 +16,9 @@ from ..models import (
 )
 from ..middleware import token_required, admin_required, superadmin_required, get_user_org_id
 from ..services.notification_service import trigger_alert
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 from .. import db
 
@@ -384,7 +387,233 @@ def get_user(user_id):
         user = User.query.get(user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
+<<<<<<< Updated upstream
         
+=======
+
+        if current_user.role != 'superadmin':
+            if get_user_org_id(user) != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        return jsonify({'success': True, 'user': _serialize_user(user)}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/users', methods=['POST'])
+@token_required
+@admin_required
+def create_user(current_user):
+    """Create a new user (regular or admin).
+
+    Body: { name, username?, email?, phone?, password, role, userType?, yearLevel?, locationId, groupId? }
+    """
+    try:
+        data = request.get_json() or {}
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        role = data.get('role', 'user')
+        location_id = data.get('locationId')
+
+        if not name:
+            return jsonify({'success': False, 'error': 'Name is required'}), 400
+        if not password:
+            return jsonify({'success': False, 'error': 'Password is required'}), 400
+
+        if email and User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'error': 'Email already exists'}), 409
+
+        username = data.get('username')
+        if username and User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'error': 'Username already taken'}), 409
+
+        if current_user.role != 'superadmin':
+            location_id = get_user_org_id(current_user)
+
+        if not location_id:
+            return jsonify({'success': False, 'error': 'Location is required'}), 400
+
+        group_id = data.get('groupId')
+        if not group_id:
+            default_group = CommunityGroup.query.filter_by(
+                organization_id=location_id, group_type='staff'
+            ).first()
+            if not default_group:
+                default_group = CommunityGroup.query.filter_by(organization_id=location_id).first()
+            if not default_group:
+                return jsonify({'success': False, 'error': 'No community group found for this location'}), 400
+            group_id = default_group.id
+
+        account = Account(
+            community_group_id=group_id,
+            account_name=name,
+            points_balance=0,
+        )
+        db.session.add(account)
+        db.session.flush()
+
+        # Resolve org abbreviation for display_id
+        org = Organization.query.get(location_id)
+        org_abbr = _get_org_abbreviation(org) if org else 'SYS'
+
+        user = User(
+            account_id=account.id,
+            name=name,
+            username=username,
+            email=email,
+            phone=data.get('phone'),
+            role=role,
+            user_type=data.get('userType'),
+            year_level=data.get('yearLevel'),
+            is_active=True,
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.flush()
+
+        # Generate and assign display_id
+        user.display_id = User.generate_display_id(role, org_abbr)
+
+        _log_action(current_user, 'User Created', name, 'Users', f'Role: {role}')
+        db.session.commit()
+
+        # ── Notification hook: new user registered ──
+        try:
+            trigger_alert(location_id, 'new_user_registered',
+                          f'New user registered: {name}',
+                          f'A new {role} "{name}" was created by {current_user.name}.')
+        except Exception:
+            pass
+
+        return jsonify({'success': True, 'user': _serialize_user(user)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/users/<int:user_id>', methods=['PUT'])
+@token_required
+@admin_required
+def update_user(current_user, user_id):
+    """Update user fields."""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        if current_user.role != 'superadmin':
+            if get_user_org_id(user) != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        data = request.get_json() or {}
+
+        # Uniqueness checks for email and username
+        if 'email' in data and data['email']:
+            existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Email already in use'}), 409
+        if 'username' in data and data['username']:
+            existing = User.query.filter(User.username == data['username'], User.id != user_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Username already in use'}), 409
+
+        for front, back in [
+            ('name', 'name'), ('username', 'username'), ('email', 'email'),
+            ('phone', 'phone'), ('role', 'role'), ('userType', 'user_type'),
+            ('yearLevel', 'year_level'), ('isActive', 'is_active'),
+        ]:
+            if front in data:
+                setattr(user, back, data[front])
+
+        if 'password' in data and data['password']:
+            user.set_password(data['password'])
+
+        _log_action(current_user, 'User Updated', user.name, 'Users')
+        db.session.commit()
+        return jsonify({'success': True, 'user': _serialize_user(user)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@token_required
+@admin_required
+def delete_user(current_user, user_id):
+    """Deactivate a user (soft delete)."""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        if current_user.role != 'superadmin':
+            if get_user_org_id(user) != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        user.is_active = False
+        _log_action(current_user, 'User Deactivated', user.name, 'Users')
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'{user.name} deactivated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/users/<int:user_id>/adjust-points', methods=['POST'])
+@token_required
+@admin_required
+def adjust_user_points(current_user, user_id):
+    """Manually adjust a user's point balance (add or subtract)."""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        if current_user.role != 'superadmin':
+            if get_user_org_id(user) != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        data = request.get_json() or {}
+        amount = data.get('amount')
+        reason = data.get('reason', 'Manual adjustment')
+
+        if amount is None or not isinstance(amount, (int, float)):
+            return jsonify({'success': False, 'error': 'Amount is required and must be a number'}), 400
+        amount = int(amount)
+        if amount == 0:
+            return jsonify({'success': False, 'error': 'Amount cannot be zero'}), 400
+
+        account = user.account
+        if not account:
+            return jsonify({'success': False, 'error': 'User has no account'}), 404
+
+        balance_before = account.points_balance
+        balance_after = balance_before + amount
+
+        if balance_after < 0:
+            return jsonify({'success': False, 'error': f'Insufficient balance. Current: {balance_before}, adjustment: {amount}'}), 400
+
+        account.points_balance = balance_after
+
+        txn = Transaction(
+            account_id=account.id,
+            transaction_type='adjustment',
+            amount=amount,
+            balance_before=balance_before,
+            balance_after=balance_after,
+            description=reason,
+            reference_id=f'ADJ-{user.id}-{current_user.id}',
+        )
+        db.session.add(txn)
+
+        direction = 'added' if amount > 0 else 'deducted'
+        _log_action(current_user, f'Points {direction.title()}',
+                     f'{abs(amount)} pts {direction} for {user.name} (was {balance_before}, now {balance_after})',
+                     'Users', notes=reason)
+        db.session.commit()
+
+>>>>>>> Stashed changes
         return jsonify({
             'success': True,
 <<<<<<< Updated upstream
@@ -1416,6 +1645,7 @@ def get_analytics(current_user):
 
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 @web_bp.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for web API"""
@@ -1425,6 +1655,8 @@ def health_check():
         'status': 'healthy'
     }), 200
 =======
+=======
+>>>>>>> Stashed changes
 # ══════════════════════════════════════════════════════════════════════════
 # SETTINGS: NOTIFICATIONS
 # ══════════════════════════════════════════════════════════════════════════
@@ -1883,4 +2115,7 @@ def get_bulk_session_detail(current_user, session_id):
         return jsonify({'success': True, 'session': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

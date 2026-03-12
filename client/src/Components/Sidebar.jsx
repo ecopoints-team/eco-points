@@ -11,6 +11,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
     LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 } from 'lucide-react';
 

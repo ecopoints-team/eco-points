@@ -10,5 +10,9 @@ gunicorn==21.2.0
 =======
 PyJWT>=2.8.0
 gunicorn>=21.2.0
+<<<<<<< Updated upstream
+twilio>=9.0.0
+>>>>>>> Stashed changes
+=======
 twilio>=9.0.0
 >>>>>>> Stashed changes
