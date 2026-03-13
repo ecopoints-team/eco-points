@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -214,6 +214,13 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             label: 'Analytics',
             icon: BarChart3,
             href: '/admin/analytics',
+            hidden: !hasPermission('logs', 'view')
+        },
+        {
+            type: 'item',
+            label: 'Bulk Sessions',
+            icon: Layers,
+            href: '/admin/bulk-sessions',
             hidden: !hasPermission('logs', 'view')
         },
         {

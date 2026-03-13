@@ -7,3 +7,4 @@ Flask-Migrate>=4.0.4
 Flask-Login
 PyJWT>=2.8.0
 gunicorn>=21.2.0
+twilio>=9.0.0

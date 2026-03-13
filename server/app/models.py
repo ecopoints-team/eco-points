@@ -73,6 +73,8 @@ class Organization(db.Model):
     community_groups = db.relationship('CommunityGroup', backref='organization', lazy=True, cascade='all, delete-orphan')
     rvms = db.relationship('RVM', backref='organization', lazy=True, cascade='all, delete-orphan')
     rewards = db.relationship('Reward', backref='organization', lazy=True, cascade='all, delete-orphan')
+    notification_settings = db.relationship('NotificationSetting', backref='organization', lazy=True, cascade='all, delete-orphan')
+    notification_logs = db.relationship('NotificationLog', backref='organization', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Organization {self.name}>'
@@ -298,6 +300,8 @@ class RecyclingSession(db.Model):
     total_points_earned = db.Column(db.Integer, default=0)
     item_count = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default='active')           # active, completed, timed_out
+    session_type = db.Column(db.String(20), default='standard')   # standard, bulk
+    notes = db.Column(db.Text, nullable=True)                     # Admin notes for bulk sessions
 
     # Relationships
     items = db.relationship('RecyclingItem', backref='session', lazy=True, cascade='all, delete-orphan')
@@ -447,3 +451,54 @@ class AdminLog(db.Model):
 
     def __repr__(self):
         return f'<AdminLog {self.action} by User {self.admin_user_id}>'
+
+
+# ============================================================================
+# Group 5: Notifications & Alerts
+# ============================================================================
+
+class NotificationSetting(db.Model):
+    """
+    Per-organization notification configuration.
+    Each org can independently enable/disable alert types and channels.
+    """
+    __tablename__ = 'notification_settings'
+    __table_args__ = (
+        db.UniqueConstraint('organization_id', 'alert_key', name='uq_org_alert_key'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True)
+
+    alert_key = db.Column(db.String(50), nullable=False)          # "low_reward_stock", "machine_offline", etc.
+    email_enabled = db.Column(db.Boolean, default=False)
+    sms_enabled = db.Column(db.Boolean, default=False)
+    threshold = db.Column(db.Integer, nullable=True)              # e.g. stock qty threshold for low_reward_stock
+    recipients_json = db.Column(db.Text, default='[]')            # JSON array of email/phone strings
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<NotificationSetting {self.alert_key} org={self.organization_id}>'
+
+
+class NotificationLog(db.Model):
+    """
+    Audit trail for every notification sent (or attempted).
+    """
+    __tablename__ = 'notification_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True)
+
+    alert_key = db.Column(db.String(50), nullable=False)
+    channel = db.Column(db.String(10), nullable=False)            # "email" or "sms"
+    recipient = db.Column(db.String(200), nullable=False)
+    subject = db.Column(db.String(300))
+    body_preview = db.Column(db.String(500))
+    status = db.Column(db.String(20), default='sent')             # "sent", "failed", "queued"
+    error_message = db.Column(db.Text, nullable=True)
+    sent_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<NotificationLog {self.alert_key} → {self.recipient} ({self.status})>'

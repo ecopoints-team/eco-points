@@ -1,7 +1,7 @@
 """
 EcoPoints Unified Seeder
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Populates all 16 tables with realistic sample data for development and testing.
+Populates all 18 tables with realistic sample data for development and testing.
 
 Tables seeded (in dependency order):
   1. org_types          2. cities              3. organizations
@@ -9,6 +9,7 @@ Tables seeded (in dependency order):
   7. access_credentials 8. rvms                9. recycling_sessions
  10. recycling_items   11. transactions       12. rewards
  13. reward_redemptions 14. maintenance_logs   15. admin_logs
+ 16. notification_settings 17. notification_logs 18. bulk_sessions
 
 Password for ALL seeded users: test123
 """
@@ -22,6 +23,7 @@ from ..models import (
     OrgType, City, Organization, CommunityGroup, Account, User,
     AccessCredential, RVM, RecyclingSession, RecyclingItem,
     MaintenanceLog, Transaction, Reward, RewardRedemption, AdminLog,
+    NotificationSetting, NotificationLog,
 )
 
 
@@ -749,10 +751,106 @@ def run_seed(fresh=False):
     db.session.commit()
     print('         → 100 admin logs')
 
+    # ── 16. Notification Settings (defaults for each org) ──────────────
+    print('  [16/18] Notification Settings...')
+    from ..services.notification_service import ALERT_TYPES
+    notif_count = 0
+    for org in org_map.values():
+        for key, info in ALERT_TYPES.items():
+            ns = NotificationSetting(
+                organization_id=org.id,
+                alert_key=key,
+                email_enabled=True,
+                sms_enabled=False,
+                threshold=info.get('default_threshold'),
+                recipients_json='[]',
+                is_active=True,
+            )
+            db.session.add(ns)
+            notif_count += 1
+        # Also seed points config row
+        pts = NotificationSetting(
+            organization_id=org.id,
+            alert_key='config_points',
+            email_enabled=False,
+            sms_enabled=False,
+            threshold=None,
+            recipients_json='{"smallWithLabel":5,"smallNoLabel":3,"mediumWithLabel":8,"mediumNoLabel":5,"largeWithLabel":10,"largeNoLabel":7}',
+            is_active=True,
+        )
+        db.session.add(pts)
+        notif_count += 1
+    db.session.commit()
+    print(f'         → {notif_count} notification settings')
+
+    # ── 17. Notification Logs (sample) ─────────────────────────────────
+    print('  [17/18] Notification Logs...')
+    now = datetime.now(timezone.utc)
+    sample_alerts = ['low_reward_stock', 'machine_offline', 'new_user_registered', 'new_redemption']
+    nl_count = 0
+    for org in list(org_map.values())[:2]:
+        for i, ak in enumerate(sample_alerts):
+            nl = NotificationLog(
+                organization_id=org.id,
+                alert_key=ak,
+                channel='email',
+                recipient=f'admin@{org.name.lower().replace(" ", "")}.com',
+                subject=f'[EcoPoints] {ak.replace("_", " ").title()} Alert',
+                body_preview=f'Sample notification for {ak}',
+                status='sent',
+                error_message=None,
+                sent_at=now - timedelta(hours=i * 6),
+            )
+            db.session.add(nl)
+            nl_count += 1
+    db.session.commit()
+    print(f'         → {nl_count} notification logs')
+
+    # ── 18. Bulk Sessions (sample) ─────────────────────────────────────
+    print('  [18/18] Bulk Sessions...')
+    bulk_count = 0
+    for org_key, org in list(org_map.items())[:2]:
+        rvms_for_org = [r for r in RVM.query.filter_by(organization_id=org.id).limit(1).all()]
+        accts_for_org = Account.query.join(CommunityGroup).filter(CommunityGroup.organization_id == org.id).limit(1).all()
+        if not rvms_for_org or not accts_for_org:
+            continue
+        rvm = rvms_for_org[0]
+        acct = accts_for_org[0]
+        for b in range(2):
+            s = RecyclingSession(
+                rvm_id=rvm.id,
+                account_id=acct.id,
+                start_time=now - timedelta(days=b + 1),
+                end_time=now - timedelta(days=b + 1, hours=-1),
+                total_points_earned=25 + b * 10,
+                item_count=5 + b * 2,
+                status='completed',
+                session_type='bulk',
+                notes=f'Bulk entry {b + 1} for {org.name}',
+            )
+            db.session.add(s)
+            db.session.flush()
+            for j in range(s.item_count):
+                ri = RecyclingItem(
+                    session_id=s.id,
+                    item_type='PET Bottle',
+                    material='Plastic',
+                    brand=_pick(['Coca-Cola', 'Pepsi', 'Nature Spring', 'Summit']),
+                    volume_ml=_pick([350, 500, 750, 1000]),
+                    condition=_pick(['With Label', 'No Label']),
+                    weight_grams=_rand_int(10, 40),
+                    points_awarded=5,
+                    deposited_at=s.start_time + timedelta(minutes=j),
+                )
+                db.session.add(ri)
+            bulk_count += 1
+    db.session.commit()
+    print(f'         → {bulk_count} bulk sessions')
+
     # ── Summary ────────────────────────────────────────────────────────
     print()
     print('═' * 55)
-    print('  ✅ SEED COMPLETE — All 16 tables populated')
+    print('  ✅ SEED COMPLETE — All 18 tables populated')
     print('═' * 55)
     counts = {
         'OrgTypes': OrgType.query.count(),
@@ -770,6 +868,8 @@ def run_seed(fresh=False):
         'Reward Redemptions': RewardRedemption.query.count(),
         'Maintenance Logs': MaintenanceLog.query.count(),
         'Admin Logs': AdminLog.query.count(),
+        'Notification Settings': NotificationSetting.query.count(),
+        'Notification Logs': NotificationLog.query.count(),
     }
     for table, count in counts.items():
         print(f'  {table:.<30s} {count}')

@@ -13,8 +13,10 @@ from ..models import (
     OrgType, City, Organization, CommunityGroup, Account, User, AccessCredential,
     RVM, RecyclingSession, RecyclingItem, MaintenanceLog,
     Transaction, Reward, RewardRedemption, AdminLog,
+    NotificationSetting, NotificationLog,
 )
 from ..middleware import token_required, admin_required, superadmin_required, get_user_org_id
+from ..services.notification_service import trigger_alert
 from .. import db
 
 web_bp = Blueprint('web', __name__, url_prefix='/api/web')
@@ -184,6 +186,7 @@ def _serialize_bottle_log(item):
         'timestamp': _dt(item.deposited_at),
         'depositedAt': _dt(item.deposited_at),
         'status': 'Accepted' if item.condition != 'Rejected' else 'Rejected',
+        'sessionType': session.session_type if session else 'standard',
     }
 
 
@@ -744,6 +747,15 @@ def create_user(current_user):
 
         _log_action(current_user, 'User Created', name, 'Users', f'Role: {role}')
         db.session.commit()
+
+        # ── Notification hook: new user registered ──
+        try:
+            trigger_alert(location_id, 'new_user_registered',
+                          f'New user registered: {name}',
+                          f'A new {role} "{name}" was created by {current_user.name}.')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'user': _serialize_user(user)}), 201
     except Exception as e:
         db.session.rollback()
@@ -958,6 +970,16 @@ def update_machine(current_user, machine_id):
 
         _log_action(current_user, 'Machine Updated', rvm.name, 'Machines')
         db.session.commit()
+
+        # ── Notification hook: machine offline ──
+        try:
+            if 'isOnline' in data and not data['isOnline']:
+                trigger_alert(rvm.organization_id, 'machine_offline',
+                              f'Machine offline: {rvm.name}',
+                              f'The machine "{rvm.name}" has been marked offline.')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'machine': _serialize_rvm(rvm)}), 200
     except Exception as e:
         db.session.rollback()
@@ -1063,6 +1085,25 @@ def update_reward(current_user, reward_id):
 
         _log_action(current_user, 'Reward Updated', reward.name, 'Rewards')
         db.session.commit()
+
+        # ── Notification hooks: low / out-of-stock ──
+        try:
+            org_id = reward.organization_id
+            if reward.stock_quantity is not None and reward.stock_quantity <= 0:
+                trigger_alert(org_id, 'reward_out_of_stock',
+                              f'Reward out of stock: {reward.name}',
+                              f'The reward "{reward.name}" has 0 remaining stock.')
+            elif reward.stock_quantity is not None:
+                setting = NotificationSetting.query.filter_by(
+                    organization_id=org_id, alert_key='low_reward_stock', is_active=True
+                ).first()
+                if setting and reward.stock_quantity <= (setting.threshold or 10):
+                    trigger_alert(org_id, 'low_reward_stock',
+                                  f'Low reward stock: {reward.name}',
+                                  f'"{reward.name}" has only {reward.stock_quantity} left (threshold: {setting.threshold}).')
+        except Exception:
+            pass  # never break the main response
+
         return jsonify({'success': True, 'reward': _serialize_reward(reward)}), 200
     except Exception as e:
         db.session.rollback()
@@ -1235,6 +1276,19 @@ def update_reward_redemption(current_user, redemption_id):
         _log_action(current_user, 'Redemption Status Updated',
                      f'{rd.redemption_code}: {old_status} → {new_status}', 'Rewards')
         db.session.commit()
+
+        # ── Notification hook: new redemption ──
+        try:
+            if new_status == 'claimed' and old_status == 'pending':
+                reward_name = rd.reward.name if rd.reward else 'Unknown'
+                org_id = rd.reward.organization_id if rd.reward else None
+                if org_id:
+                    trigger_alert(org_id, 'new_redemption',
+                                  f'Reward redeemed: {reward_name}',
+                                  f'Redemption {rd.redemption_code} for "{reward_name}" was claimed.')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'log': _serialize_reward_log(rd)}), 200
     except Exception as e:
         db.session.rollback()
@@ -1846,5 +1900,465 @@ def get_analytics(current_user):
                 },
             }
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: NOTIFICATIONS
+# ══════════════════════════════════════════════════════════════════════════
+
+@web_bp.route('/settings/notifications', methods=['GET'])
+@token_required
+@admin_required
+def get_notification_settings(current_user):
+    """Get all notification settings for the current org, creating defaults if needed."""
+    try:
+        import json as _json
+        from ..services.notification_service import get_alert_types, ensure_default_settings
+
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        ensure_default_settings(loc_id)
+
+        settings = NotificationSetting.query.filter_by(
+            organization_id=loc_id
+        ).order_by(NotificationSetting.alert_key).all()
+
+        alert_types = get_alert_types()
+        result = []
+        for s in settings:
+            info = alert_types.get(s.alert_key, {})
+            try:
+                recipients = _json.loads(s.recipients_json or '[]')
+            except (_json.JSONDecodeError, TypeError):
+                recipients = []
+            result.append({
+                'id': s.id,
+                'alertKey': s.alert_key,
+                'label': info.get('label', s.alert_key),
+                'description': info.get('description', ''),
+                'category': info.get('category', 'general'),
+                'emailEnabled': s.email_enabled,
+                'smsEnabled': s.sms_enabled,
+                'threshold': s.threshold,
+                'recipients': recipients,
+                'isActive': s.is_active,
+            })
+
+        return jsonify({'success': True, 'settings': result, 'alertTypes': alert_types}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/settings/notifications', methods=['PUT'])
+@token_required
+@admin_required
+def update_notification_settings(current_user):
+    """Batch-update notification settings for the current org.
+
+    Body: { settings: [{ alertKey, emailEnabled, smsEnabled, threshold, recipients, isActive }] }
+    """
+    try:
+        import json as _json
+
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        data = request.get_json() or {}
+        updates = data.get('settings', [])
+
+        for item in updates:
+            alert_key = item.get('alertKey')
+            if not alert_key:
+                continue
+            setting = NotificationSetting.query.filter_by(
+                organization_id=loc_id, alert_key=alert_key
+            ).first()
+            if not setting:
+                continue
+
+            if 'emailEnabled' in item:
+                setting.email_enabled = bool(item['emailEnabled'])
+            if 'smsEnabled' in item:
+                setting.sms_enabled = bool(item['smsEnabled'])
+            if 'threshold' in item:
+                setting.threshold = item['threshold']
+            if 'recipients' in item:
+                setting.recipients_json = _json.dumps(item['recipients'])
+            if 'isActive' in item:
+                setting.is_active = bool(item['isActive'])
+
+        _log_action(current_user, 'Notification Settings Updated', f'{len(updates)} alert(s)', 'Settings')
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'{len(updates)} notification setting(s) updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/settings/notifications/test', methods=['POST'])
+@token_required
+@admin_required
+def test_notification(current_user):
+    """Send a test notification.
+
+    Body: { channel: "email"|"sms", recipient: "..." }
+    """
+    try:
+        from ..services.notification_service import _send_email, _send_sms
+
+        data = request.get_json() or {}
+        channel = data.get('channel', 'email')
+        recipient = data.get('recipient', '')
+
+        if not recipient:
+            return jsonify({'success': False, 'error': 'Recipient is required'}), 400
+
+        subject = 'EcoPoints Test Notification'
+        body = 'This is a test notification from EcoPoints. If you received this, notifications are working correctly.'
+
+        if channel == 'email':
+            success, error = _send_email(recipient, subject, body)
+        elif channel == 'sms':
+            success, error = _send_sms(recipient, f'[EcoPoints] {body}')
+        else:
+            return jsonify({'success': False, 'error': 'Channel must be "email" or "sms"'}), 400
+
+        loc_id = _scope_location_id(current_user)
+        if loc_id:
+            log = NotificationLog(
+                organization_id=loc_id,
+                alert_key='test',
+                channel=channel,
+                recipient=recipient,
+                subject=subject,
+                body_preview=body[:500],
+                status='sent' if success else 'failed',
+                error_message=error,
+            )
+            db.session.add(log)
+            db.session.commit()
+
+        if success:
+            return jsonify({'success': True, 'message': f'Test {channel} sent to {recipient}'}), 200
+        else:
+            return jsonify({'success': False, 'error': f'Failed to send: {error}'}), 500
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/settings/notifications/logs', methods=['GET'])
+@token_required
+@admin_required
+def get_notification_logs(current_user):
+    """Get notification log history for the current org."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        logs = NotificationLog.query.filter_by(
+            organization_id=loc_id
+        ).order_by(NotificationLog.sent_at.desc()).limit(200).all()
+
+        result = [{
+            'id': l.id,
+            'alertKey': l.alert_key,
+            'channel': l.channel,
+            'recipient': l.recipient,
+            'subject': l.subject,
+            'bodyPreview': l.body_preview,
+            'status': l.status,
+            'errorMessage': l.error_message,
+            'sentAt': _dt(l.sent_at),
+        } for l in logs]
+
+        return jsonify({'success': True, 'logs': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: POINTS CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════
+
+# Points configuration is stored in a special NotificationSetting-like
+# mechanism using the Organization table's contact_email field as a JSON
+# store would be over-engineered. Instead, we use a simple JSON file or
+# env-based approach. For simplicity, we store bottle pricing in a
+# dedicated settings row. But to keep things simple and avoid schema
+# bloat, we use a key-value approach in notification_settings with
+# a special alert_key prefix of 'config_'.
+
+@web_bp.route('/settings/points', methods=['GET'])
+@token_required
+@admin_required
+def get_points_config(current_user):
+    """Get points-per-bottle configuration for the current org."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        import json as _json
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_points'
+        ).first()
+
+        if setting and setting.recipients_json:
+            try:
+                config = _json.loads(setting.recipients_json)
+            except (_json.JSONDecodeError, TypeError):
+                config = None
+        else:
+            config = None
+
+        # Defaults matching BOTTLE_PRICING
+        if not config:
+            config = {
+                'smallWithLabel': 5, 'smallNoLabel': 3,
+                'mediumWithLabel': 8, 'mediumNoLabel': 5,
+                'largeWithLabel': 10, 'largeNoLabel': 7,
+            }
+
+        return jsonify({'success': True, 'config': config}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/settings/points', methods=['PUT'])
+@token_required
+@admin_required
+def update_points_config(current_user):
+    """Update points-per-bottle configuration.
+
+    Body: { smallWithLabel, smallNoLabel, mediumWithLabel, mediumNoLabel, largeWithLabel, largeNoLabel }
+    """
+    try:
+        import json as _json
+
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        data = request.get_json() or {}
+        config = {
+            'smallWithLabel': int(data.get('smallWithLabel', 5)),
+            'smallNoLabel': int(data.get('smallNoLabel', 3)),
+            'mediumWithLabel': int(data.get('mediumWithLabel', 8)),
+            'mediumNoLabel': int(data.get('mediumNoLabel', 5)),
+            'largeWithLabel': int(data.get('largeWithLabel', 10)),
+            'largeNoLabel': int(data.get('largeNoLabel', 7)),
+        }
+
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_points'
+        ).first()
+
+        if not setting:
+            setting = NotificationSetting(
+                organization_id=loc_id,
+                alert_key='config_points',
+                email_enabled=False,
+                sms_enabled=False,
+                recipients_json=_json.dumps(config),
+                is_active=True,
+            )
+            db.session.add(setting)
+        else:
+            setting.recipients_json = _json.dumps(config)
+
+        _log_action(current_user, 'Points Config Updated', str(config), 'Settings')
+        db.session.commit()
+        return jsonify({'success': True, 'config': config, 'message': 'Points configuration updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# BULK SESSIONS
+# ══════════════════════════════════════════════════════════════════════════
+
+def _serialize_bulk_session(session):
+    """RecyclingSession (bulk) → frontend shape."""
+    account = session.account
+    user = account.users[0] if (account and account.users) else None
+    rvm = session.rvm
+    org = rvm.organization if rvm else None
+
+    return {
+        'id': session.id,
+        'userId': user.id if user else None,
+        'userName': user.name if user else 'Unknown',
+        'userEmail': user.email if user else None,
+        'machineId': rvm.id if rvm else None,
+        'machineName': rvm.name if rvm else 'Unknown',
+        'locationId': rvm.organization_id if rvm else None,
+        'locationName': org.name if org else 'Unknown',
+        'sessionType': session.session_type,
+        'notes': session.notes,
+        'itemCount': session.item_count,
+        'totalPointsEarned': session.total_points_earned,
+        'status': session.status,
+        'startTime': _dt(session.start_time),
+        'endTime': _dt(session.end_time),
+    }
+
+
+@web_bp.route('/sessions/bulk', methods=['GET'])
+@token_required
+@admin_required
+def get_bulk_sessions(current_user):
+    """List all bulk recycling sessions, scoped by location."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        query = RecyclingSession.query.filter_by(session_type='bulk').options(
+            joinedload(RecyclingSession.account).joinedload(Account.users),
+            joinedload(RecyclingSession.rvm).joinedload(RVM.organization),
+        )
+        if loc_id:
+            query = query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+        sessions = query.order_by(RecyclingSession.start_time.desc()).limit(200).all()
+        return jsonify({'success': True, 'sessions': [_serialize_bulk_session(s) for s in sessions]}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/sessions/bulk', methods=['POST'])
+@token_required
+@admin_required
+def create_bulk_session(current_user):
+    """Create a new bulk recycling session with items.
+
+    Body: {
+        rvmId: int,
+        accountId: int,
+        notes: str,
+        items: [{ itemType, material?, brand?, volumeMl?, condition, weightGrams?, pointsAwarded }]
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        rvm_id = data.get('rvmId')
+        account_id = data.get('accountId')
+        items_data = data.get('items', [])
+        notes = data.get('notes', '')
+
+        if not rvm_id:
+            return jsonify({'success': False, 'error': 'rvmId is required'}), 400
+        if not account_id:
+            return jsonify({'success': False, 'error': 'accountId is required'}), 400
+        if not items_data:
+            return jsonify({'success': False, 'error': 'At least one item is required'}), 400
+
+        rvm = RVM.query.get(rvm_id)
+        if not rvm:
+            return jsonify({'success': False, 'error': 'Machine not found'}), 404
+
+        account = Account.query.get(account_id)
+        if not account:
+            return jsonify({'success': False, 'error': 'Account not found'}), 404
+
+        if current_user.role != 'superadmin' and rvm.organization_id != get_user_org_id(current_user):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        now = datetime.now(timezone.utc)
+        session = RecyclingSession(
+            rvm_id=rvm_id,
+            account_id=account_id,
+            start_time=now,
+            end_time=now,
+            total_points_earned=0,
+            item_count=0,
+            status='completed',
+            session_type='bulk',
+            notes=notes,
+        )
+        db.session.add(session)
+        db.session.flush()
+
+        total_points = 0
+        for item_data in items_data:
+            pts = int(item_data.get('pointsAwarded', 0))
+            ri = RecyclingItem(
+                session_id=session.id,
+                item_type=item_data.get('itemType', 'PET Bottle'),
+                material=item_data.get('material', 'Plastic'),
+                brand=item_data.get('brand'),
+                volume_ml=item_data.get('volumeMl'),
+                condition=item_data.get('condition', 'With Label'),
+                weight_grams=item_data.get('weightGrams', 0),
+                points_awarded=pts,
+                deposited_at=now,
+            )
+            db.session.add(ri)
+            total_points += pts
+
+        session.item_count = len(items_data)
+        session.total_points_earned = total_points
+
+        # Credit account
+        balance_before = account.points_balance
+        account.points_balance += total_points
+
+        txn = Transaction(
+            account_id=account_id,
+            transaction_type='earn',
+            amount=total_points,
+            balance_before=balance_before,
+            balance_after=account.points_balance,
+            description=f'Bulk session: {len(items_data)} items',
+            reference_id=f'BULK-{session.id}',
+        )
+        db.session.add(txn)
+
+        # Update RVM stats
+        rvm.total_items_collected = (rvm.total_items_collected or 0) + len(items_data)
+
+        _log_action(current_user, 'Bulk Session Created',
+                     f'{len(items_data)} items, {total_points} pts for account {account_id}',
+                     'Logs', notes=notes)
+        db.session.commit()
+
+        return jsonify({'success': True, 'session': _serialize_bulk_session(session)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@web_bp.route('/sessions/bulk/<int:session_id>', methods=['GET'])
+@token_required
+@admin_required
+def get_bulk_session_detail(current_user, session_id):
+    """Get a single bulk session with its items."""
+    try:
+        session = RecyclingSession.query.get(session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        if session.session_type != 'bulk':
+            return jsonify({'success': False, 'error': 'Not a bulk session'}), 400
+
+        items = [{
+            'id': i.id,
+            'itemType': i.item_type,
+            'material': i.material,
+            'brand': i.brand,
+            'volumeMl': i.volume_ml,
+            'condition': i.condition,
+            'weightGrams': i.weight_grams,
+            'pointsAwarded': i.points_awarded,
+            'depositedAt': _dt(i.deposited_at),
+        } for i in session.items]
+
+        result = _serialize_bulk_session(session)
+        result['items'] = items
+
+        return jsonify({'success': True, 'session': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

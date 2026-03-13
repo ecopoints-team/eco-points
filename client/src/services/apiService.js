@@ -495,8 +495,85 @@ export const healthCheck = async () => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
+// SETTINGS (notifications + points configuration)
+// ═══════════════════════════════════════════════════════════════════════
+
+export const settings = {
+    getNotifications: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/notifications`, {
+            params: { location_id: locationId },
+        });
+        return { settings: data.settings, alertTypes: data.alertTypes };
+    },
+
+    updateNotifications: async (settingsArray, locationId = null) => {
+        return await request(`${API_BASE}/settings/notifications`, {
+            method: 'PUT',
+            body: { settings: settingsArray },
+            params: { location_id: locationId },
+        });
+    },
+
+    testNotification: async (channel, recipient) => {
+        return await request(`${API_BASE}/settings/notifications/test`, {
+            method: 'POST',
+            body: { channel, recipient },
+        });
+    },
+
+    getNotificationLogs: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/notifications/logs`, {
+            params: { location_id: locationId },
+        });
+        return data.logs;
+    },
+
+    getPointsConfig: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/points`, {
+            params: { location_id: locationId },
+        });
+        return data.config;
+    },
+
+    updatePointsConfig: async (config, locationId = null) => {
+        const data = await request(`${API_BASE}/settings/points`, {
+            method: 'PUT',
+            body: config,
+            params: { location_id: locationId },
+        });
+        return data;
+    },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// BULK SESSIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+export const bulkSessions = {
+    getAll: async (locationId = null) => {
+        const data = await request(`${API_BASE}/sessions/bulk`, {
+            params: { location_id: locationId },
+        });
+        return data.sessions;
+    },
+
+    create: async (sessionData) => {
+        const data = await request(`${API_BASE}/sessions/bulk`, {
+            method: 'POST',
+            body: sessionData,
+        });
+        return data.session;
+    },
+
+    getById: async (id) => {
+        const data = await request(`${API_BASE}/sessions/bulk/${id}`);
+        return data.session;
+    },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
 // DEFAULT EXPORT (for `import api from`)
 // ═══════════════════════════════════════════════════════════════════════
 
-const api = { auth, dashboard, analytics, orgTypes, cities, locations, users, machines, rewards, logs, leaderboard, groups, healthCheck };
+const api = { auth, dashboard, analytics, orgTypes, cities, locations, users, machines, rewards, logs, leaderboard, groups, settings, bulkSessions, healthCheck };
 export default api;

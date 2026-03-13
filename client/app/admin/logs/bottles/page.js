@@ -298,7 +298,14 @@ export default function BottleLogsPage() {
                                         <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Unknown'}</span></td>
                                     )}
                                     {showSession && (
-                                        <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.sessionId || '-'}</span></td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.sessionId || '-'}</span>
+                                                {log.sessionType === 'bulk' && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">BULK</span>
+                                                )}
+                                            </div>
+                                        </td>
                                     )}
                                     <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
                                     <td className="px-3 py-3">
