@@ -4,11 +4,24 @@ import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLa
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi } from '../../../src/services/apiService';
+import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/apiService';
 import {
     Layers, Plus, X, Search, ChevronLeft, ChevronRight, RefreshCw,
     Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2
 } from 'lucide-react';
+
+// Auto-calculate points from the org's points config (fetched from DB)
+const getAutoPoints = (condition, volumeMl, config) => {
+    if (!config || !volumeMl) return 0;
+    const vol = parseInt(volumeMl) || 0;
+    let sizeKey;
+    if (vol <= 350) sizeKey = 'small';
+    else if (vol <= 500) sizeKey = 'medium';
+    else if (vol <= 1000) sizeKey = 'large';
+    else return 0;
+    const condKey = condition === 'With Label' ? 'WithLabel' : 'NoLabel';
+    return parseInt(config[`${sizeKey}${condKey}`]) || 0;
+};
 
 export default function BulkSessionsPage() {
     const { currentUser, effectiveLocationId, isSuperAdmin } = useAuth();
@@ -21,6 +34,7 @@ export default function BulkSessionsPage() {
     const [showModal, setShowModal] = useState(false);
     const [machines, setMachines] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
+    const [pointsConfig, setPointsConfig] = useState(null);
     const [selectedRvm, setSelectedRvm] = useState('');
     const [selectedAccount, setSelectedAccount] = useState('');
     const [notes, setNotes] = useState('');
@@ -50,15 +64,29 @@ export default function BulkSessionsPage() {
         return () => { cancelled = true; };
     }, [effectiveLocationId, refreshKey]);
 
+    // Default points config (matches seeder BOTTLE_PRICING)
+    const DEFAULT_POINTS = {
+        smallWithLabel: 5, smallNoLabel: 3,
+        mediumWithLabel: 8, mediumNoLabel: 5,
+        largeWithLabel: 10, largeNoLabel: 7,
+    };
+
     // ── Load machines & users for modal ──
     const loadModalData = useCallback(async () => {
         try {
             const [m, u] = await Promise.all([
                 machinesApi.getAll(effectiveLocationId),
-                usersApi.getAll(effectiveLocationId),
+                usersApi.getAll({ locationId: effectiveLocationId }),
             ]);
             setMachines(m || []);
             setAllUsers(u || []);
+
+            // Points config is per-org — may fail for "All Locations" (no org), use defaults
+            let pc = null;
+            try {
+                pc = await settingsApi.getPointsConfig(effectiveLocationId);
+            } catch { /* falls back to defaults */ }
+            setPointsConfig(pc || DEFAULT_POINTS);
         } catch (err) { console.error('Failed to load modal data:', err); }
     }, [effectiveLocationId]);
 
@@ -67,18 +95,36 @@ export default function BulkSessionsPage() {
         setSelectedRvm('');
         setSelectedAccount('');
         setNotes('');
-        setItems([{ itemType: 'PET Bottle', condition: 'With Label', volumeMl: 500, pointsAwarded: 5, brand: '' }]);
+        setItems([{ itemType: 'PET Bottle', condition: 'With Label', volumeMl: '500', pointsAwarded: 0 }]);
         setModalError('');
         loadModalData();
     };
 
     // ── Items management ──
     const addItem = () => {
-        setItems(prev => [...prev, { itemType: 'PET Bottle', condition: 'With Label', volumeMl: 500, pointsAwarded: 5, brand: '' }]);
+        const pts = getAutoPoints('With Label', '500', pointsConfig);
+        setItems(prev => [...prev, { itemType: 'PET Bottle', condition: 'With Label', volumeMl: '500', pointsAwarded: pts }]);
     };
 
+    // Recalculate all item points when pointsConfig arrives from API
+    useEffect(() => {
+        if (!pointsConfig || !showModal) return;
+        setItems(prev => prev.map(item => ({
+            ...item,
+            pointsAwarded: getAutoPoints(item.condition, item.volumeMl, pointsConfig),
+        })));
+    }, [pointsConfig, showModal]);
+
     const updateItem = (idx, field, value) => {
-        setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+        setItems(prev => prev.map((item, i) => {
+            if (i !== idx) return item;
+            const updated = { ...item, [field]: value };
+            // Auto-recalculate points when condition or volume changes
+            if (field === 'condition' || field === 'volumeMl') {
+                updated.pointsAwarded = getAutoPoints(updated.condition, updated.volumeMl, pointsConfig);
+            }
+            return updated;
+        }));
     };
 
     const removeItem = (idx) => {
@@ -104,7 +150,7 @@ export default function BulkSessionsPage() {
                     condition: i.condition,
                     volumeMl: parseInt(i.volumeMl) || 0,
                     pointsAwarded: parseInt(i.pointsAwarded) || 0,
-                    brand: i.brand || null,
+                    brand: null,
                 })),
             });
             setShowModal(false);
@@ -125,6 +171,9 @@ export default function BulkSessionsPage() {
         if (sortColumn !== column) return <ChevronsUpDown size={12} className="text-slate-400" />;
         return sortDirection === 'asc' ? <ChevronUp size={12} className="text-emerald-500" /> : <ChevronDown size={12} className="text-emerald-500" />;
     };
+
+    const hasActiveSort = sortColumn !== 'startTime' || sortDirection !== 'desc';
+    const clearSort = () => { setSortColumn('startTime'); setSortDirection('desc'); setCurrentPage(1); };
 
     // ── Filtering & pagination ──
     const filtered = useMemo(() => {
@@ -203,6 +252,11 @@ export default function BulkSessionsPage() {
                                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                                 className="w-full text-sm rounded-lg pl-10 pr-4 py-2 outline-none bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300" />
                         </div>
+                        {hasActiveSort && (
+                            <button onClick={clearSort} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-500 hover:bg-red-500/20 font-medium transition-colors dark:text-red-400 dark:border-red-500/30">
+                                <X size={14} /> Clear Sort
+                            </button>
+                        )}
                         <button onClick={() => { setCurrentPage(1); setRefreshKey(k => k + 1); }} disabled={loading}
                             className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition-colors disabled:opacity-50" title="Refresh">
                             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -214,22 +268,30 @@ export default function BulkSessionsPage() {
                     <table className="w-full min-w-max text-left">
                         <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
                             <tr>
-                                <th className="px-4 py-3">ID</th>
+                                <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('id')}>
+                                    <div className="flex items-center gap-1">ID <SortIcon column="id" /></div>
+                                </th>
                                 <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('userName')}>
                                     <div className="flex items-center gap-1">User <SortIcon column="userName" /></div>
                                 </th>
-                                <th className="px-4 py-3">Machine</th>
+                                <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('machineName')}>
+                                    <div className="flex items-center gap-1">Machine <SortIcon column="machineName" /></div>
+                                </th>
                                 <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('itemCount')}>
                                     <div className="flex items-center gap-1">Items <SortIcon column="itemCount" /></div>
                                 </th>
                                 <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('totalPointsEarned')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="totalPointsEarned" /></div>
                                 </th>
-                                <th className="px-4 py-3">Notes</th>
+                                <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('notes')}>
+                                    <div className="flex items-center gap-1">Notes <SortIcon column="notes" /></div>
+                                </th>
                                 <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('startTime')}>
                                     <div className="flex items-center gap-1">Date <SortIcon column="startTime" /></div>
                                 </th>
-                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('status')}>
+                                    <div className="flex items-center gap-1">Status <SortIcon column="status" /></div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -301,20 +363,20 @@ export default function BulkSessionsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Machine (RVM) *</label>
-                                    <CustomDropdown value={selectedRvm} onChange={setSelectedRvm}
+                                    <CustomDropdown value={selectedRvm} onChange={setSelectedRvm} searchable showPlaceholder={false}
                                         options={machines.map(m => ({ value: String(m.id), label: m.name }))} placeholder="Select machine" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">User Account *</label>
-                                    <CustomDropdown value={selectedAccount} onChange={setSelectedAccount}
+                                    <CustomDropdown value={selectedAccount} onChange={setSelectedAccount} searchable showPlaceholder={false}
                                         options={allUsers.map(u => ({ value: String(u.accountId || u.id), label: `${u.name} (${u.email})` }))} placeholder="Select user" />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
-                                <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes..."
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500" />
+                                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes..." rows={3}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 resize-none" />
                             </div>
 
                             {/* Items */}
@@ -325,20 +387,27 @@ export default function BulkSessionsPage() {
                                         <Plus size={14} /> Add Item
                                     </button>
                                 </div>
-                                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                                <div className="space-y-3 pr-1">
                                     {items.map((item, idx) => (
                                         <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-3 flex-wrap">
                                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
-                                            <div className="flex-1 min-w-[100px]">
+                                            <div className="flex-1 min-w-[120px]">
                                                 <CustomDropdown value={item.condition} onChange={(v) => updateItem(idx, 'condition', v)}
-                                                    options={['With Label', 'No Label', 'Crushed']} showPlaceholder={false} />
+                                                    options={['With Label', 'No Label']} showPlaceholder={false} />
                                             </div>
-                                            <input type="number" min="0" value={item.volumeMl} onChange={(e) => updateItem(idx, 'volumeMl', e.target.value)}
-                                                className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-center outline-none text-slate-700 dark:text-slate-200" placeholder="ml" />
-                                            <input type="number" min="0" value={item.pointsAwarded} onChange={(e) => updateItem(idx, 'pointsAwarded', e.target.value)}
-                                                className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-center font-bold text-emerald-600 dark:text-emerald-400 outline-none" placeholder="pts" />
-                                            <input type="text" value={item.brand} onChange={(e) => updateItem(idx, 'brand', e.target.value)}
-                                                className="w-24 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm outline-none text-slate-700 dark:text-slate-200" placeholder="Brand" />
+                                            <div className="w-[140px]">
+                                                <CustomDropdown value={String(item.volumeMl)} onChange={(v) => updateItem(idx, 'volumeMl', v)}
+                                                    options={[
+                                                        { value: '350', label: '350ml (Small)' },
+                                                        { value: '500', label: '500ml (Medium)' },
+                                                        { value: '750', label: '750ml (Large)' },
+                                                        { value: '1000', label: '1000ml (Large)' },
+                                                    ]} showPlaceholder={false} />
+                                            </div>
+                                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
+                                                <Zap size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{item.pointsAwarded} pts</span>
+                                            </div>
                                             {items.length > 1 && (
                                                 <button onClick={() => removeItem(idx)} className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
                                                     <Trash2 size={14} />

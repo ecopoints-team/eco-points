@@ -6,6 +6,15 @@ import { useAuth } from '../../../../src/context/AuthContext';
 import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
+// Derive human-readable size from volume_ml (matches points config tiers)
+const getBottleSize = (volumeMl) => {
+    if (!volumeMl) return 'Unknown';
+    if (volumeMl <= 350) return 'Small (290-350ml)';
+    if (volumeMl <= 500) return 'Medium (351-500ml)';
+    if (volumeMl <= 1000) return 'Large (750-1000ml)';
+    return 'Unknown';
+};
+
 export default function BottleLogsPage() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
 
@@ -62,7 +71,7 @@ export default function BottleLogsPage() {
     };
 
     const machines = [...new Set(allBottleLogs.map(log => log.machineName))];
-    const bottleTypes = [...new Set(allBottleLogs.map(log => log.bottleType))];
+    const bottleSizes = [...new Set(allBottleLogs.map(log => getBottleSize(log.volumeMl)))].filter(s => s !== 'Unknown');
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
 
     // Stats computed from logs (already server-scoped by effectiveLocationId)
@@ -80,7 +89,7 @@ export default function BottleLogsPage() {
             const matchesSearch = searchQuery === '' || (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userId || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.bottleType || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
             return matchesSearch &&
                 (filterMachine === '' || log.machineName === filterMachine) &&
-                (filterBottleType === '' || log.bottleType === filterBottleType) &&
+                (filterBottleType === '' || getBottleSize(log.volumeMl) === filterBottleType) &&
                 (filterCondition === '' || log.condition === filterCondition) &&
                 (filterStatus === '' || log.status === filterStatus) &&
                 (filterLocation === '' || log.locationId === filterLocation);
@@ -120,10 +129,10 @@ export default function BottleLogsPage() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Brand', 'Volume', 'Type', 'Condition', 'Points', 'Status'];
+        const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Brand', 'Volume', 'Size', 'Condition', 'Points', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.machineName,
-            log.locationName || log.locationId, log.brand, log.volumeMl, log.bottleType,
+            log.locationName || log.locationId, log.brand, log.volumeMl, getBottleSize(log.volumeMl),
             log.condition, log.pointsAwarded, log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -187,7 +196,7 @@ export default function BottleLogsPage() {
                         {/* Filter Row */}
                         <div className="flex flex-wrap gap-3 items-center mb-3">
                             <CustomDropdown value={filterMachine} onChange={(v) => handleFilterChange(setFilterMachine, v)} options={machines} placeholder="All Machines" />
-                            <CustomDropdown value={filterBottleType} onChange={(v) => handleFilterChange(setFilterBottleType, v)} options={bottleTypes} placeholder="All Sizes" />
+                            <CustomDropdown value={filterBottleType} onChange={(v) => handleFilterChange(setFilterBottleType, v)} options={bottleSizes} placeholder="All Sizes" />
                             <CustomDropdown value={filterCondition} onChange={(v) => handleFilterChange(setFilterCondition, v)} options={['With Label', 'No Label', 'Rejected']} placeholder="All Conditions" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Statuses" />
 
@@ -268,7 +277,7 @@ export default function BottleLogsPage() {
                                 {showMachine && <th className="px-3 py-3">Machine</th>}
                                 {showLocation && <th className="px-3 py-3">Location</th>}
                                 {showSession && <th className="px-3 py-3">Session</th>}
-                                <th className="px-3 py-3">Bottle Type</th>
+                                <th className="px-3 py-3">Size</th>
                                 <th className="px-3 py-3">Condition</th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="pointsAwarded" /></div>
@@ -307,12 +316,11 @@ export default function BottleLogsPage() {
                                             </div>
                                         </td>
                                     )}
-                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{log.bottleType}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{getBottleSize(log.volumeMl)}</span></td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
                                             log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
-                                                    'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                                'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>{log.condition}</span>
                                     </td>
                                     <td className="px-3 py-3"><span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}</span></td>

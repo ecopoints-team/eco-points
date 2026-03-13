@@ -7,6 +7,15 @@ import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/a
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+// Derive human-readable size from volume_ml (matches points config tiers)
+const getBottleSize = (volumeMl) => {
+    if (!volumeMl) return 'Unknown';
+    if (volumeMl <= 350) return 'Small (290-350ml)';
+    if (volumeMl <= 500) return 'Medium (351-500ml)';
+    if (volumeMl <= 1000) return 'Large (750-1000ml)';
+    return 'Unknown';
+};
+
 // DUAL-THEME STAT CARD
 const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
     const themeMap = {
@@ -696,7 +705,7 @@ export default function AdminDashboard() {
                                 <th className="px-3 py-3">Username</th>
                                 <th className="px-3 py-3">Email</th>
                                 <th className="px-3 py-3">Location</th>
-                                <th className="px-3 py-3">Bottle Type</th>
+                                <th className="px-3 py-3">Size</th>
                                 <th className="px-3 py-3">Condition</th>
                                 <th className="px-3 py-3">Points</th>
                                 <th className="px-3 py-3">Timestamp</th>
@@ -725,13 +734,12 @@ export default function AdminDashboard() {
                                         <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{log.bottleType}</span>
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{getBottleSize(log.volumeMl)}</span>
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400' :
                                             log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                log.condition === 'Crushed' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
-                                                    'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                                'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                                             }`}>{log.condition}</span>
                                     </td>
                                     <td className="px-3 py-3">
