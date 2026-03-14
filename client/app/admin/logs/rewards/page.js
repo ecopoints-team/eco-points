@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
+import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
@@ -265,7 +266,7 @@ export default function RewardsLogsPage() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs font-mono text-slate-600 dark:text-slate-300">{log.id}</span></td>
                                     {showUser && (
                                         <td className="px-3 py-3 whitespace-nowrap">

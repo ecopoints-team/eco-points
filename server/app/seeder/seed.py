@@ -7,9 +7,9 @@ Tables seeded (in dependency order):
   1. org_types          2. cities              3. organizations
   4. community_groups   5. accounts            6. users
   7. access_credentials 8. rvms                9. recycling_sessions
- 10. recycling_items   11. transactions       12. rewards
- 13. reward_redemptions 14. maintenance_logs   15. admin_logs
- 16. notification_settings 17. notification_logs 18. bulk_sessions
+  10. recycling_items   11. transactions       12. rewards
+  13. reward_redemptions 14. maintenance_logs   15. admin_logs
+  16. notification_settings 17. notification_logs 18. bulk_sessions
 
 Password for ALL seeded users: test123
 """
@@ -74,6 +74,7 @@ CITIES_DATA = [
     {'name': 'Pasig City', 'province': 'Metro Manila', 'region': 'NCR'},
     {'name': 'Manila', 'province': 'Metro Manila', 'region': 'NCR'},
     {'name': 'Quezon City', 'province': 'Metro Manila', 'region': 'NCR'},
+    {'name': 'Makati City', 'province': 'Metro Manila', 'region': 'NCR'},
 ]
 
 ORG_TYPES_DATA = ['University', 'Corporation', 'HOA']
@@ -84,14 +85,35 @@ LOCATIONS = [
         'fullName': 'Arellano University - Andres Bonifacio Pasig Campus',
         'streetAddress': 'Pag-asa St, Caniogan', 'barangay': 'Caniogan', 'zipCode': '1600',
         'contactPerson': 'Dr. Josephine Reyes', 'contactEmail': 'admin@arellano.edu.ph',
-        'contactPhone': '(02) 8643-8881', 'status': 'Active', 'joinDate': '2024-01-15',
+        'contactPhone': '(02) 8643-8881', 'status': 'Active', 'joinDate': '2023-01-15',
     },
     {
         'id': 'LOC-002', 'name': 'Polytechnic University', 'type': 'University', 'cityIdx': 1,
         'fullName': 'Polytechnic University of the Philippines - Main Campus',
         'streetAddress': 'Anonas St, Sta. Mesa', 'barangay': 'Sta. Mesa', 'zipCode': '1016',
         'contactPerson': 'Engr. Manuel Bautista', 'contactEmail': 'admin@pup.edu.ph',
-        'contactPhone': '(02) 5335-1787', 'status': 'Active', 'joinDate': '2024-03-01',
+        'contactPhone': '(02) 5335-1787', 'status': 'Active', 'joinDate': '2023-03-01',
+    },
+    {
+        'id': 'LOC-003', 'name': 'De La Salle University', 'type': 'University', 'cityIdx': 1,
+        'fullName': 'De La Salle University - Manila Campus',
+        'streetAddress': '2401 Taft Ave, Malate', 'barangay': 'Malate', 'zipCode': '1004',
+        'contactPerson': 'Dr. Raymond Tan', 'contactEmail': 'admin@dlsu.edu.ph',
+        'contactPhone': '(02) 8524-4611', 'status': 'Active', 'joinDate': '2023-06-10',
+    },
+    {
+        'id': 'LOC-004', 'name': 'Ayala Corp HQ', 'type': 'Corporation', 'cityIdx': 3,
+        'fullName': 'Ayala Corporation - Makati Headquarters',
+        'streetAddress': 'Tower One, Ayala Triangle', 'barangay': 'Bel-Air', 'zipCode': '1226',
+        'contactPerson': 'Maria Isabel Cruz', 'contactEmail': 'sustainability@ayala.com.ph',
+        'contactPhone': '(02) 8908-3000', 'status': 'Active', 'joinDate': '2023-09-01',
+    },
+    {
+        'id': 'LOC-005', 'name': 'Greenfield HOA', 'type': 'HOA', 'cityIdx': 2,
+        'fullName': 'Greenfield Residences Homeowners Association',
+        'streetAddress': '12 Greenfield Ave, Brgy. Holy Spirit', 'barangay': 'Holy Spirit', 'zipCode': '1127',
+        'contactPerson': 'Ricardo Mendoza', 'contactEmail': 'admin@greenfieldhoa.ph',
+        'contactPhone': '(02) 8929-5100', 'status': 'Active', 'joinDate': '2024-01-20',
     },
 ]
 
@@ -126,63 +148,96 @@ SHS_STRANDS = [d for d in DEPARTMENTS if d['type'] == 'shs_strand']
 COLLEGE_DEPTS = [d for d in DEPARTMENTS if d['type'] == 'college']
 
 ADMIN_USERS_DATA = [
-    # Super Admins
-    {'name': 'System Administrator', 'username': 'sysadmin', 'email': 'superadmin@ecopoints.com', 'role': 'superadmin', 'locId': None, 'lastLogin': '2024-06-15T08:30:00'},
-    {'name': 'Chief Technology Officer', 'username': 'cto', 'email': 'cto@ecopoints.com', 'role': 'superadmin', 'locId': None, 'lastLogin': '2024-06-13T14:20:00'},
-    # Head Admins
-    {'name': 'Maria Santos', 'username': 'msantos', 'email': 'head@arellano.edu.ph', 'role': 'head_admin', 'locId': 'LOC-001', 'lastLogin': '2024-06-15T09:15:00'},
-    {'name': 'Roberto Garcia', 'username': 'rgarcia', 'email': 'rgarcia@arellano.edu.ph', 'role': 'head_admin', 'locId': 'LOC-001', 'lastLogin': '2024-06-14T11:45:00'},
-    {'name': 'Elena Cruz', 'username': 'ecruz', 'email': 'ecruz@arellano.edu.ph', 'role': 'head_admin', 'locId': 'LOC-001', 'lastLogin': '2024-06-12T16:30:00'},
-    # Auditors
-    {'name': 'Juan Dela Cruz', 'username': 'jdelacruz', 'email': 'auditor@arellano.edu.ph', 'role': 'auditor', 'locId': 'LOC-001', 'lastLogin': '2024-06-15T10:00:00'},
-    {'name': 'Angela Reyes', 'username': 'areyes', 'email': 'areyes@arellano.edu.ph', 'role': 'auditor', 'locId': 'LOC-001', 'lastLogin': '2024-06-10T13:20:00'},
-    {'name': 'Mark Gonzales', 'username': 'mgonzales', 'email': 'mgonzales@arellano.edu.ph', 'role': 'auditor', 'locId': 'LOC-001', 'lastLogin': '2024-05-11T09:45:00'},
-    # Inventory Officers
-    {'name': 'Ana Lim', 'username': 'alim', 'email': 'inventory@arellano.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-001', 'lastLogin': '2024-06-15T08:15:00'},
-    {'name': 'Patricia Tan', 'username': 'ptan', 'email': 'ptan@arellano.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-001', 'lastLogin': '2024-06-13T15:10:00'},
-    {'name': 'Jose Mendoza', 'username': 'jmendoza', 'email': 'jmendoza@arellano.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-001', 'lastLogin': '2024-06-08T10:30:00'},
-    # Technicians
-    {'name': 'Carlos Reyes', 'username': 'creyes', 'email': 'tech@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2024-06-15T07:45:00'},
-    {'name': 'Miguel Santos', 'username': 'misantos', 'email': 'msantos@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2024-06-14T14:50:00'},
-    {'name': 'Fernando Lopez', 'username': 'flopez', 'email': 'flopez@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2024-06-11T16:15:00'},
-    {'name': 'David Villanueva', 'username': 'dvillanueva', 'email': 'dvillanueva@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2024-05-06T11:20:00'},
-    # LOC-002 admins
-    {'name': 'Rosa Aquino', 'username': 'raquino', 'email': 'head@pup.edu.ph', 'role': 'head_admin', 'locId': 'LOC-002', 'lastLogin': '2024-09-15T09:00:00'},
-    {'name': 'Leo Bautista', 'username': 'lbautista', 'email': 'auditor@pup.edu.ph', 'role': 'auditor', 'locId': 'LOC-002', 'lastLogin': '2024-09-14T10:30:00'},
-    {'name': 'Carmen Diaz', 'username': 'cdiaz', 'email': 'inventory@pup.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-002', 'lastLogin': '2024-09-13T14:15:00'},
-    {'name': 'Rico Fernandez', 'username': 'rfernandez', 'email': 'tech@pup.edu.ph', 'role': 'technician', 'locId': 'LOC-002', 'lastLogin': '2024-09-15T07:45:00'},
-    {'name': 'Lorna Gutierrez', 'username': 'lgutierrez', 'email': 'tech2@pup.edu.ph', 'role': 'technician', 'locId': 'LOC-002', 'lastLogin': '2024-09-12T16:00:00'},
+    # ─── Super Admins (no location) ───
+    {'name': 'System Administrator', 'username': 'sysadmin', 'email': 'superadmin@ecopoints.com', 'role': 'superadmin', 'locId': None, 'lastLogin': '2026-03-10T08:30:00'},
+    {'name': 'Chief Technology Officer', 'username': 'cto', 'email': 'cto@ecopoints.com', 'role': 'superadmin', 'locId': None, 'lastLogin': '2026-03-08T14:20:00'},
+    # ─── LOC-001 Arellano (5 admins) ───
+    {'name': 'Maria Santos', 'username': 'msantos', 'email': 'head@arellano.edu.ph', 'role': 'head_admin', 'locId': 'LOC-001', 'lastLogin': '2026-03-12T09:15:00'},
+    {'name': 'Roberto Garcia', 'username': 'rgarcia', 'email': 'rgarcia@arellano.edu.ph', 'role': 'auditor', 'locId': 'LOC-001', 'lastLogin': '2026-03-11T11:45:00'},
+    {'name': 'Elena Cruz', 'username': 'ecruz', 'email': 'ecruz@arellano.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-001', 'lastLogin': '2026-03-10T16:30:00'},
+    {'name': 'Carlos Reyes', 'username': 'creyes', 'email': 'tech@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2026-03-12T07:45:00'},
+    {'name': 'Ana Lim', 'username': 'alim', 'email': 'alim@arellano.edu.ph', 'role': 'technician', 'locId': 'LOC-001', 'lastLogin': '2026-03-09T15:10:00'},
+    # ─── LOC-002 PUP (4 admins) ───
+    {'name': 'Rosa Aquino', 'username': 'raquino', 'email': 'head@pup.edu.ph', 'role': 'head_admin', 'locId': 'LOC-002', 'lastLogin': '2026-03-12T09:00:00'},
+    {'name': 'Leo Bautista', 'username': 'lbautista', 'email': 'auditor@pup.edu.ph', 'role': 'auditor', 'locId': 'LOC-002', 'lastLogin': '2026-03-11T10:30:00'},
+    {'name': 'Carmen Diaz', 'username': 'cdiaz', 'email': 'inventory@pup.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-002', 'lastLogin': '2026-03-10T14:15:00'},
+    {'name': 'Rico Fernandez', 'username': 'rfernandez', 'email': 'tech@pup.edu.ph', 'role': 'technician', 'locId': 'LOC-002', 'lastLogin': '2026-03-12T07:45:00'},
+    # ─── LOC-003 DLSU (4 admins) ───
+    {'name': 'Antonio Uy', 'username': 'auy', 'email': 'head@dlsu.edu.ph', 'role': 'head_admin', 'locId': 'LOC-003', 'lastLogin': '2026-03-11T08:00:00'},
+    {'name': 'Bianca Villanueva', 'username': 'bvillanueva', 'email': 'auditor@dlsu.edu.ph', 'role': 'auditor', 'locId': 'LOC-003', 'lastLogin': '2026-03-10T10:00:00'},
+    {'name': 'Dante Ramos', 'username': 'dramos', 'email': 'inventory@dlsu.edu.ph', 'role': 'inventory_officer', 'locId': 'LOC-003', 'lastLogin': '2026-03-09T13:00:00'},
+    {'name': 'Elisa Tan', 'username': 'etan', 'email': 'tech@dlsu.edu.ph', 'role': 'technician', 'locId': 'LOC-003', 'lastLogin': '2026-03-12T06:30:00'},
+    # ─── LOC-004 Ayala (3 admins) ───
+    {'name': 'Frances Gomez', 'username': 'fgomez', 'email': 'head@ayala.com.ph', 'role': 'head_admin', 'locId': 'LOC-004', 'lastLogin': '2026-03-12T08:30:00'},
+    {'name': 'George Lim', 'username': 'glim', 'email': 'auditor@ayala.com.ph', 'role': 'auditor', 'locId': 'LOC-004', 'lastLogin': '2026-03-11T09:45:00'},
+    {'name': 'Hannah Sy', 'username': 'hsy', 'email': 'tech@ayala.com.ph', 'role': 'technician', 'locId': 'LOC-004', 'lastLogin': '2026-03-10T07:00:00'},
+    # ─── LOC-005 Greenfield HOA (2 admins) ───
+    {'name': 'Ivan Torres', 'username': 'itorres', 'email': 'head@greenfieldhoa.ph', 'role': 'head_admin', 'locId': 'LOC-005', 'lastLogin': '2026-03-11T09:00:00'},
+    {'name': 'Julia Rivera', 'username': 'jrivera', 'email': 'tech@greenfieldhoa.ph', 'role': 'technician', 'locId': 'LOC-005', 'lastLogin': '2026-03-10T14:00:00'},
+]
+
+# Users per location: LOC-001=150, LOC-002=120, LOC-003=100, LOC-004=50, LOC-005=50   Total=470
+USERS_PER_LOC = [
+    ('LOC-001', 150, 'arellano.edu.ph'),
+    ('LOC-002', 120, 'pup.edu.ph'),
+    ('LOC-003', 100, 'dlsu.edu.ph'),
+    ('LOC-004', 50,  'ayala.com.ph'),
+    ('LOC-005', 50,  'greenfieldhoa.ph'),
 ]
 
 MACHINES_DATA = [
-    {'id': 'RVM-AU-01', 'name': 'Main Gate RVM', 'locId': 'LOC-001', 'area': 'Main Gate', 'online': True, 'bottles': 4520},
-    {'id': 'RVM-AU-02', 'name': 'Canteen RVM-A', 'locId': 'LOC-001', 'area': 'Canteen', 'online': True, 'bottles': 3850},
-    {'id': 'RVM-AU-03', 'name': 'Canteen RVM-B', 'locId': 'LOC-001', 'area': 'Canteen', 'online': True, 'bottles': 2800},
-    {'id': 'RVM-AU-04', 'name': 'Library RVM', 'locId': 'LOC-001', 'area': 'Library', 'online': True, 'bottles': 2100},
-    {'id': 'RVM-AU-05', 'name': 'Gym RVM', 'locId': 'LOC-001', 'area': 'Gymnasium', 'online': False, 'bottles': 3100},
-    {'id': 'RVM-AU-06', 'name': 'Nursing Bldg RVM', 'locId': 'LOC-001', 'area': 'Nursing Building', 'online': True, 'bottles': 1850},
-    {'id': 'RVM-PU-01', 'name': 'Main Entrance RVM', 'locId': 'LOC-002', 'area': 'Main Entrance', 'online': True, 'bottles': 3200},
-    {'id': 'RVM-PU-02', 'name': 'Canteen RVM', 'locId': 'LOC-002', 'area': 'Student Canteen', 'online': True, 'bottles': 2900},
-    {'id': 'RVM-PU-03', 'name': 'Library RVM', 'locId': 'LOC-002', 'area': 'Ninoy Aquino Library', 'online': False, 'bottles': 1800},
-    {'id': 'RVM-PU-04', 'name': 'Engineering RVM', 'locId': 'LOC-002', 'area': 'Engineering Building', 'online': True, 'bottles': 1970},
+    # LOC-001 Arellano (5 machines)
+    {'id': 'RVM-AU-01', 'name': 'Main Gate RVM', 'locId': 'LOC-001', 'area': 'Main Gate', 'online': True, 'bottles': 12400},
+    {'id': 'RVM-AU-02', 'name': 'Canteen RVM-A', 'locId': 'LOC-001', 'area': 'Canteen', 'online': True, 'bottles': 9800},
+    {'id': 'RVM-AU-03', 'name': 'Canteen RVM-B', 'locId': 'LOC-001', 'area': 'Canteen', 'online': True, 'bottles': 7200},
+    {'id': 'RVM-AU-04', 'name': 'Library RVM', 'locId': 'LOC-001', 'area': 'Library', 'online': True, 'bottles': 5600},
+    {'id': 'RVM-AU-05', 'name': 'Gym RVM', 'locId': 'LOC-001', 'area': 'Gymnasium', 'online': False, 'bottles': 4200},
+    # LOC-002 PUP (4 machines)
+    {'id': 'RVM-PU-01', 'name': 'Main Entrance RVM', 'locId': 'LOC-002', 'area': 'Main Entrance', 'online': True, 'bottles': 8900},
+    {'id': 'RVM-PU-02', 'name': 'Canteen RVM', 'locId': 'LOC-002', 'area': 'Student Canteen', 'online': True, 'bottles': 7500},
+    {'id': 'RVM-PU-03', 'name': 'Library RVM', 'locId': 'LOC-002', 'area': 'Ninoy Aquino Library', 'online': True, 'bottles': 5100},
+    {'id': 'RVM-PU-04', 'name': 'Engineering RVM', 'locId': 'LOC-002', 'area': 'Engineering Building', 'online': False, 'bottles': 3200},
+    # LOC-003 DLSU (4 machines)
+    {'id': 'RVM-DL-01', 'name': 'Taft Gate RVM', 'locId': 'LOC-003', 'area': 'Taft Gate', 'online': True, 'bottles': 7600},
+    {'id': 'RVM-DL-02', 'name': 'Henry Sy Hall RVM', 'locId': 'LOC-003', 'area': 'Henry Sy Hall', 'online': True, 'bottles': 6200},
+    {'id': 'RVM-DL-03', 'name': 'Gokongwei Hall RVM', 'locId': 'LOC-003', 'area': 'Gokongwei Hall', 'online': True, 'bottles': 4800},
+    {'id': 'RVM-DL-04', 'name': 'SJ Walk RVM', 'locId': 'LOC-003', 'area': 'SJ Walk', 'online': False, 'bottles': 2300},
+    # LOC-004 Ayala (3 machines)
+    {'id': 'RVM-AY-01', 'name': 'Lobby RVM', 'locId': 'LOC-004', 'area': 'Main Lobby', 'online': True, 'bottles': 4500},
+    {'id': 'RVM-AY-02', 'name': 'Pantry Floor 12 RVM', 'locId': 'LOC-004', 'area': 'Floor 12 Pantry', 'online': True, 'bottles': 3100},
+    {'id': 'RVM-AY-03', 'name': 'Parking Basement RVM', 'locId': 'LOC-004', 'area': 'Basement Parking', 'online': True, 'bottles': 1800},
+    # LOC-005 Greenfield (3 machines)
+    {'id': 'RVM-GF-01', 'name': 'Clubhouse RVM', 'locId': 'LOC-005', 'area': 'Clubhouse', 'online': True, 'bottles': 3200},
+    {'id': 'RVM-GF-02', 'name': 'Gate 1 RVM', 'locId': 'LOC-005', 'area': 'Main Gate', 'online': True, 'bottles': 2400},
+    {'id': 'RVM-GF-03', 'name': 'Park RVM', 'locId': 'LOC-005', 'area': 'Central Park', 'online': False, 'bottles': 1100},
 ]
 
 REWARDS_DATA = [
+    # LOC-001
     {'name': 'EcoPoints T-Shirt', 'locId': 'LOC-001', 'cat': 'Merchandise', 'pts': 500, 'stock': 45, 'desc': 'Official EcoPoints branded T-shirt'},
     {'name': 'Metal Straw Set', 'locId': 'LOC-001', 'cat': 'Sustainable', 'pts': 150, 'stock': 120, 'desc': 'Set of 4 reusable metal straws with brush'},
     {'name': 'Bamboo Tumbler', 'locId': 'LOC-001', 'cat': 'Sustainable', 'pts': 800, 'stock': 20, 'desc': '500ml insulated bamboo tumbler'},
-    {'name': 'Canvas Tote Bag', 'locId': 'LOC-001', 'cat': 'Merchandise', 'pts': 300, 'stock': 68, 'desc': 'Eco-friendly canvas tote bag'},
-    {'name': 'School Supplies Kit', 'locId': 'LOC-001', 'cat': 'Education', 'pts': 200, 'stock': 200, 'desc': 'Notebook, pens, and highlighters'},
     {'name': 'Canteen Voucher (P50)', 'locId': 'LOC-001', 'cat': 'Voucher', 'pts': 100, 'stock': 500, 'desc': 'P50 canteen food voucher'},
     {'name': 'Canteen Voucher (P100)', 'locId': 'LOC-001', 'cat': 'Voucher', 'pts': 200, 'stock': 350, 'desc': 'P100 canteen food voucher'},
-    {'name': 'Priority Enrollment', 'locId': 'LOC-001', 'cat': 'Education', 'pts': 5000, 'stock': 10, 'desc': 'Priority enrollment slot for next semester'},
-    {'name': 'Eco Notebook', 'locId': 'LOC-001', 'cat': 'Sustainable', 'pts': 120, 'stock': 150, 'desc': 'A5 recycled paper notebook'},
-    {'name': 'Laptop Sticker Pack', 'locId': 'LOC-001', 'cat': 'Merchandise', 'pts': 50, 'stock': 300, 'desc': '10-piece eco-themed sticker pack'},
+    {'name': 'School Supplies Kit', 'locId': 'LOC-001', 'cat': 'Education', 'pts': 200, 'stock': 200, 'desc': 'Notebook, pens, and highlighters'},
+    # LOC-002
     {'name': 'PUP Eco Tumbler', 'locId': 'LOC-002', 'cat': 'Sustainable', 'pts': 700, 'stock': 30, 'desc': 'PUP-branded eco tumbler'},
     {'name': 'PUP T-Shirt', 'locId': 'LOC-002', 'cat': 'Merchandise', 'pts': 450, 'stock': 50, 'desc': 'PUP EcoPoints branded shirt'},
     {'name': 'Cafeteria Voucher (P50)', 'locId': 'LOC-002', 'cat': 'Voucher', 'pts': 100, 'stock': 400, 'desc': 'P50 cafeteria voucher'},
     {'name': 'Cafeteria Voucher (P100)', 'locId': 'LOC-002', 'cat': 'Voucher', 'pts': 200, 'stock': 250, 'desc': 'P100 cafeteria voucher'},
-    {'name': 'Reusable Straw Kit', 'locId': 'LOC-002', 'cat': 'Sustainable', 'pts': 120, 'stock': 180, 'desc': 'Bamboo straw set with case'},
+    # LOC-003
+    {'name': 'DLSU Eco Bag', 'locId': 'LOC-003', 'cat': 'Merchandise', 'pts': 300, 'stock': 80, 'desc': 'Canvas tote bag with DLSU eco branding'},
+    {'name': 'DLSU Tumbler', 'locId': 'LOC-003', 'cat': 'Sustainable', 'pts': 650, 'stock': 40, 'desc': 'Stainless steel tumbler with DLSU logo'},
+    {'name': 'Agno Voucher (P50)', 'locId': 'LOC-003', 'cat': 'Voucher', 'pts': 100, 'stock': 300, 'desc': 'P50 Agno cafeteria voucher'},
+    {'name': 'Agno Voucher (P100)', 'locId': 'LOC-003', 'cat': 'Voucher', 'pts': 200, 'stock': 200, 'desc': 'P100 Agno cafeteria voucher'},
+    # LOC-004
+    {'name': 'Ayala Eco Kit', 'locId': 'LOC-004', 'cat': 'Sustainable', 'pts': 400, 'stock': 60, 'desc': 'Bamboo utensil set + metal straw'},
+    {'name': 'GCash Voucher (P100)', 'locId': 'LOC-004', 'cat': 'Voucher', 'pts': 200, 'stock': 150, 'desc': 'P100 GCash e-voucher'},
+    {'name': 'GCash Voucher (P500)', 'locId': 'LOC-004', 'cat': 'Voucher', 'pts': 1000, 'stock': 30, 'desc': 'P500 GCash e-voucher'},
+    # LOC-005
+    {'name': 'HOA Eco Tumbler', 'locId': 'LOC-005', 'cat': 'Sustainable', 'pts': 500, 'stock': 35, 'desc': 'Greenfield-branded tumbler'},
+    {'name': 'Grocery Voucher (P200)', 'locId': 'LOC-005', 'cat': 'Voucher', 'pts': 400, 'stock': 80, 'desc': 'P200 grocery voucher at SM'},
+    {'name': 'Condo Dues Discount', 'locId': 'LOC-005', 'cat': 'Voucher', 'pts': 2000, 'stock': 10, 'desc': 'P500 off next month condo dues'},
 ]
 
 FIRST_NAMES = [
@@ -191,6 +246,8 @@ FIRST_NAMES = [
     'Thomas', 'Sarah', 'Charles', 'Karen', 'Miguel', 'Ana', 'Juan', 'Maria',
     'Carlos', 'Sofia', 'Luis', 'Andrea', 'Jose', 'Isabella', 'Mark', 'Angela',
     'Daniel', 'Christine', 'Paul', 'Katherine', 'Steven', 'Rachel', 'Kevin', 'Nicole',
+    'Gabriel', 'Samantha', 'Nathan', 'Jasmine', 'Ethan', 'Vanessa', 'Joshua', 'Megan',
+    'Adrian', 'Trisha', 'Bryan', 'Kimberly', 'Aldrin', 'Clarisse', 'Francis', 'Denise',
 ]
 
 LAST_NAMES = [
@@ -198,6 +255,8 @@ LAST_NAMES = [
     'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson',
     'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Santos', 'Reyes', 'Cruz',
     'Dela Cruz', 'Villanueva', 'Mendoza', 'Torres', 'Flores', 'Rivera', 'Ramos',
+    'Aquino', 'Bautista', 'Diaz', 'Fernandez', 'Gutierrez', 'Tan', 'Lim', 'Uy',
+    'Chua', 'Go', 'Sy', 'Ang', 'Co', 'Ong', 'Yu', 'Tiongson',
 ]
 
 YEAR_LEVELS = ['1st Year', '2nd Year', '3rd Year', '4th Year']
@@ -256,9 +315,9 @@ def run_seed(fresh=False):
     _seed_state[0] = 12345
 
     if fresh:
-        print('🗑️  Dropping all tables...')
+        print('[DROP] Dropping all tables...')
         db.drop_all()
-        print('🏗️  Creating all tables...')
+        print('[CREATE] Creating all tables...')
         db.create_all()
     else:
         db.create_all()
@@ -267,28 +326,28 @@ def run_seed(fresh=False):
             return
 
     # ── 1. Org Types ───────────────────────────────────────────────────
-    print('  [ 1/15] Org Types...')
+    print('  [ 1/18] Org Types...')
     org_type_map = {}
     for ot_name in ORG_TYPES_DATA:
         ot = OrgType(name=ot_name)
         db.session.add(ot)
         db.session.flush()
         org_type_map[ot_name] = ot
-    print(f'         → {len(org_type_map)} org types')
+    print(f'         -> {len(org_type_map)} org types')
 
     # ── 2. Cities ──────────────────────────────────────────────────────
-    print('  [ 2/15] Cities...')
+    print('  [ 2/18] Cities...')
     city_list = []
     for c in CITIES_DATA:
         city = City(name=c['name'], province=c['province'], region=c['region'])
         db.session.add(city)
         db.session.flush()
         city_list.append(city)
-    print(f'         → {len(city_list)} cities')
+    print(f'         -> {len(city_list)} cities')
 
     # ── 3. Organizations ───────────────────────────────────────────────
-    print('  [ 3/15] Organizations...')
-    org_map = {}  # 'LOC-001' → Organization
+    print('  [ 3/18] Organizations...')
+    org_map = {}  # 'LOC-001' -> Organization
     for loc in LOCATIONS:
         org = Organization(
             name=loc['name'],
@@ -308,12 +367,12 @@ def run_seed(fresh=False):
         db.session.add(org)
         db.session.flush()
         org_map[loc['id']] = org
-    print(f'         → {len(org_map)} organizations')
+    print(f'         -> {len(org_map)} organizations')
 
     # ── 4. Community Groups ────────────────────────────────────────────
-    print('  [ 4/15] Community Groups...')
-    cg_map = {}       # 'LOC-001:BSIT' → CommunityGroup
-    staff_cg = {}     # 'LOC-001' → campus-staff CommunityGroup
+    print('  [ 4/18] Community Groups...')
+    cg_map = {}       # 'LOC-001:BSIT' -> CommunityGroup
+    staff_cg = {}     # 'LOC-001' -> campus-staff CommunityGroup
 
     # "Campus Staff" catch-all per org
     for loc_id, org in org_map.items():
@@ -351,11 +410,11 @@ def run_seed(fresh=False):
             cg_map[f"{org_loc_id}:{dept['id']}"] = cg
 
     total_cg = len(cg_map) + len(staff_cg) + 1
-    print(f'         → {total_cg} community groups')
+    print(f'         -> {total_cg} community groups')
 
-    # ── 5-6. Admin Accounts + Users (20) ───────────────────────────────
-    print('  [ 5/15] Admin Accounts...')
-    print('  [ 6/15] Admin Users...')
+    # ── 5-6. Admin Accounts + Users ────────────────────────────────────
+    print('  [ 5/18] Admin Accounts...')
+    print('  [ 6/18] Admin Users...')
     admin_user_list = []
     for adm in ADMIN_USERS_DATA:
         loc_id = adm['locId']
@@ -395,95 +454,101 @@ def run_seed(fresh=False):
         db.session.add(cred)
         admin_user_list.append(user)
 
-    print(f'         → {len(admin_user_list)} admin users (pw: {PASSWORD})')
+    print(f'         -> {len(admin_user_list)} admin users (pw: {PASSWORD})')
 
-    # ── 7. End-User Accounts + Users (200) ─────────────────────────────
-    print('  [ 7/15] End Users (200)...')
+    # ── 7. End-User Accounts + Users (~470) ────────────────────────────
+    print('  [ 7/18] End Users (~470)...')
     end_user_list = []
+    end_users_by_loc = {}  # 'LOC-001' -> [User, ...]
     used_emails = set()
-    base_date = datetime(2024, 6, 1, tzinfo=timezone.utc)
-    end_date = datetime(2026, 2, 27, tzinfo=timezone.utc)
+    global_start = datetime(2023, 1, 1, tzinfo=timezone.utc)
+    global_end = datetime(2026, 3, 14, tzinfo=timezone.utc)
 
-    for i in range(200):
-        first = _pick(FIRST_NAMES)
-        last = _pick(LAST_NAMES)
-        name = f'{first} {last}'
-        domain = 'arellano.edu.ph' if i < 150 else 'pup.edu.ph'
-        base_email = f'{first.lower()}.{last.lower().replace(" ", "")}@{domain}'
-        email = base_email
-        suffix = 2
-        while email in used_emails:
-            email = f'{first.lower()}.{last.lower().replace(" ", "")}{suffix}@{domain}'
-            suffix += 1
-        used_emails.add(email)
+    for loc_id, count, domain in USERS_PER_LOC:
+        loc_users = []
+        for i in range(count):
+            first = _pick(FIRST_NAMES)
+            last = _pick(LAST_NAMES)
+            name = f'{first} {last}'
+            base_email = f'{first.lower()}.{last.lower().replace(" ", "")}@{domain}'
+            email = base_email
+            suffix = 2
+            while email in used_emails:
+                email = f'{first.lower()}.{last.lower().replace(" ", "")}{suffix}@{domain}'
+                suffix += 1
+            used_emails.add(email)
 
-        loc_id = 'LOC-001' if i < 150 else 'LOC-002'
+            # Role distribution: 80% Student, 12% Faculty, 8% Staff
+            roll = _rand()
+            user_type = year_level = None
+            group_key = None
 
-        # Role distribution: 80% Student, 12% Faculty, 8% Staff
-        roll = _rand()
-        user_type = year_level = None
-        group_key = None
-
-        if roll < 0.80:
-            user_type = 'student'
-            if _rand() < 0.4:
-                strand = _pick(SHS_STRANDS)['id']
-                year_level = 'Grade 11' if _rand() < 0.5 else 'Grade 12'
-                group_key = strand
+            if roll < 0.80:
+                user_type = 'student'
+                if _rand() < 0.4:
+                    strand = _pick(SHS_STRANDS)['id']
+                    year_level = 'Grade 11' if _rand() < 0.5 else 'Grade 12'
+                    group_key = strand
+                else:
+                    dept_id = _pick(COLLEGE_DEPTS)['id']
+                    year_level = _pick(YEAR_LEVELS)
+                    group_key = dept_id
+            elif roll < 0.92:
+                user_type = 'faculty'
+                group_key = _pick(COLLEGE_DEPTS)['id']
             else:
-                dept_id = _pick(COLLEGE_DEPTS)['id']
-                year_level = _pick(YEAR_LEVELS)
-                group_key = dept_id
-        elif roll < 0.92:
-            user_type = 'faculty'
-            group_key = _pick(COLLEGE_DEPTS)['id']
-        else:
-            user_type = 'staff'
+                user_type = 'staff'
 
-        cg = cg_map.get(f"{loc_id}:{group_key}", staff_cg[loc_id]) if group_key else staff_cg[loc_id]
+            cg = cg_map.get(f"{loc_id}:{group_key}", staff_cg[loc_id]) if group_key else staff_cg[loc_id]
 
-        pts = _rand_int(0, 5000)
-        streak = _rand_int(0, 40)
-        join = _rand_date(base_date, end_date)
+            pts = _rand_int(0, 5000)
+            streak = _rand_int(0, 40)
+            # Stagger join dates: earlier locations join earlier
+            loc_idx = [l[0] for l in USERS_PER_LOC].index(loc_id)
+            loc_start = global_start + timedelta(days=loc_idx * 60)
+            join = _rand_date(loc_start, global_end)
 
-        acct = Account(
-            community_group_id=cg.id,
-            account_name=name,
-            points_balance=pts,
-            streak=streak,
-            created_at=join,
-        )
-        db.session.add(acct)
-        db.session.flush()
+            acct = Account(
+                community_group_id=cg.id,
+                account_name=name,
+                points_balance=pts,
+                streak=streak,
+                created_at=join,
+            )
+            db.session.add(acct)
+            db.session.flush()
 
-        user = User(
-            account_id=acct.id,
-            name=name,
-            email=email,
-            role='user',
-            user_type=user_type,
-            year_level=year_level,
-            is_active=True,
-            last_login=_rand_date(join, end_date),
-            created_at=join,
-        )
-        db.session.add(user)
-        db.session.flush()
+            user = User(
+                account_id=acct.id,
+                name=name,
+                email=email,
+                role='user',
+                user_type=user_type,
+                year_level=year_level,
+                is_active=True,
+                last_login=_rand_date(join, global_end),
+                created_at=join,
+            )
+            db.session.add(user)
+            db.session.flush()
 
-        user.display_id = User.generate_display_id('user', _org_abbr(org_map[loc_id]))
+            user.display_id = User.generate_display_id('user', _org_abbr(org_map[loc_id]))
 
-        cred = AccessCredential(
-            account_id=acct.id,
-            tag_id=str(uuid.uuid4()),
-            credential_type='qr_code',
-        )
-        db.session.add(cred)
-        end_user_list.append(user)
+            cred = AccessCredential(
+                account_id=acct.id,
+                tag_id=str(uuid.uuid4()),
+                credential_type='qr_code',
+            )
+            db.session.add(cred)
+            end_user_list.append(user)
+            loc_users.append(user)
 
-    print(f'         → {len(end_user_list)} end users')
+        end_users_by_loc[loc_id] = loc_users
 
-    # ── 8. RVMs (10 machines) ──────────────────────────────────────────
-    print('  [ 8/15] RVMs...')
+    print(f'         -> {len(end_user_list)} end users')
+
+    # ── 8. RVMs ────────────────────────────────────────────────────────
+    print('  [ 8/18] RVMs...')
     rvm_map = {}
     for m in MACHINES_DATA:
         rvm = RVM(
@@ -497,10 +562,10 @@ def run_seed(fresh=False):
         db.session.add(rvm)
         db.session.flush()
         rvm_map[m['id']] = rvm
-    print(f'         → {len(rvm_map)} machines')
+    print(f'         -> {len(rvm_map)} machines')
 
-    # ── 9. Rewards (15) ────────────────────────────────────────────────
-    print('  [ 9/15] Rewards...')
+    # ── 9. Rewards ─────────────────────────────────────────────────────
+    print('  [ 9/18] Rewards...')
     reward_list = []
     for r in REWARDS_DATA:
         reward = Reward(
@@ -515,16 +580,17 @@ def run_seed(fresh=False):
         db.session.add(reward)
         db.session.flush()
         reward_list.append(reward)
-    print(f'         → {len(reward_list)} rewards')
+    print(f'         -> {len(reward_list)} rewards')
 
     db.session.commit()
-    print('  ── Reference data committed ──')
+    print('  -- Reference data committed --')
 
-    # ── 10-11. Recycling Sessions + Items (500 items) ──────────────────
-    print('  [10/15] Recycling Sessions...')
-    print('  [11/15] Recycling Items (500)...')
-    log_end = datetime(2026, 2, 27, tzinfo=timezone.utc)
-    log_start = log_end - timedelta(days=30)
+    # ── 10-11. Recycling Sessions + Items (~3000 items) ────────────────
+    print('  [10/18] Recycling Sessions...')
+    print('  [11/18] Recycling Items (~3000)...')
+    # Spread data across entire timeline: 2023-01-15 -> 2026-03-14
+    log_start = datetime(2023, 1, 15, tzinfo=timezone.utc)
+    log_end = datetime(2026, 3, 14, tzinfo=timezone.utc)
     rvm_ids_list = list(rvm_map.keys())
 
     session_count = 0
@@ -532,7 +598,7 @@ def run_seed(fresh=False):
     current_session = None
     items_in_session = 0
 
-    for _ in range(500):
+    for _ in range(3000):
         user = _pick(end_user_list)
         rvm_key = _pick(rvm_ids_list)
         rvm = rvm_map[rvm_key]
@@ -585,10 +651,10 @@ def run_seed(fresh=False):
         current_session.end_time = log_end
 
     db.session.commit()
-    print(f'         → {item_count} items in {session_count} sessions')
+    print(f'         -> {item_count} items in {session_count} sessions')
 
     # ── 12. Transactions (earn from sessions + redeem placeholders) ────
-    print('  [12/15] Transactions...')
+    print('  [12/18] Transactions...')
     txn_count = 0
 
     # Earn transactions from recycling sessions
@@ -614,7 +680,7 @@ def run_seed(fresh=False):
         txn_count += 1
 
     # A few adjustment transactions
-    for _ in range(10):
+    for _ in range(25):
         user = _pick(end_user_list)
         acct = Account.query.get(user.account_id)
         adj = _rand_int(-50, 100)
@@ -637,15 +703,15 @@ def run_seed(fresh=False):
         txn_count += 1
 
     db.session.commit()
-    print(f'         → {txn_count} transactions')
+    print(f'         -> {txn_count} transactions')
 
-    # ── 13. Reward Redemptions (100) ───────────────────────────────────
-    print('  [13/15] Reward Redemptions (100)...')
+    # ── 13. Reward Redemptions (200) ───────────────────────────────────
+    print('  [13/18] Reward Redemptions (200)...')
     statuses = ['claimed', 'pending', 'expired', 'used']
     status_weights = [0.5, 0.2, 0.1, 0.2]
     redeem_txn_count = 0
 
-    for _ in range(100):
+    for _ in range(200):
         user = _pick(end_user_list)
         reward = _pick(reward_list)
 
@@ -658,7 +724,7 @@ def run_seed(fresh=False):
                 chosen_status = s
                 break
 
-        red_dt = _rand_date(log_end - timedelta(days=15), log_end)
+        red_dt = _rand_date(log_start + timedelta(days=30), log_end)
         code = f'RDM-{uuid.uuid4().hex[:8].upper()}'
 
         rr = RewardRedemption(
@@ -694,14 +760,14 @@ def run_seed(fresh=False):
         redeem_txn_count += 1
 
     db.session.commit()
-    print(f'         → 100 redemptions + {redeem_txn_count} redeem transactions')
+    print(f'         -> 200 redemptions + {redeem_txn_count} redeem transactions')
 
-    # ── 14. Maintenance Logs (50) ──────────────────────────────────────
-    print('  [14/15] Maintenance Logs (50)...')
+    # ── 14. Maintenance Logs (150) ─────────────────────────────────────
+    print('  [14/18] Maintenance Logs (150)...')
     techs = [u for u in admin_user_list if u.role in ('technician', 'head_admin')]
-    maint_start = log_end - timedelta(days=60)
+    maint_start = log_start
 
-    for _ in range(50):
+    for _ in range(150):
         rvm = rvm_map[_pick(rvm_ids_list)]
         tech = _pick(techs)
         issue = _pick(ISSUES)
@@ -719,13 +785,13 @@ def run_seed(fresh=False):
         )
         db.session.add(ml)
     db.session.commit()
-    print('         → 50 maintenance logs')
+    print('         -> 150 maintenance logs')
 
-    # ── 15. Admin Logs (100) ───────────────────────────────────────────
-    print('  [15/15] Admin Logs (100)...')
-    admin_log_start = log_end - timedelta(days=14)
+    # ── 15. Admin Logs (250) ───────────────────────────────────────────
+    print('  [15/18] Admin Logs (250)...')
+    admin_log_start = log_start
 
-    for _ in range(100):
+    for _ in range(250):
         admin = _pick(admin_user_list)
         action_text, category = _pick(ADMIN_ACTIONS)
         log_dt = _rand_date(admin_log_start, log_end)
@@ -749,7 +815,7 @@ def run_seed(fresh=False):
         )
         db.session.add(al)
     db.session.commit()
-    print('         → 100 admin logs')
+    print('         -> 250 admin logs')
 
     # ── 16. Notification Settings (defaults for each org) ──────────────
     print('  [16/18] Notification Settings...')
@@ -781,14 +847,14 @@ def run_seed(fresh=False):
         db.session.add(pts)
         notif_count += 1
     db.session.commit()
-    print(f'         → {notif_count} notification settings')
+    print(f'         -> {notif_count} notification settings')
 
     # ── 17. Notification Logs (sample) ─────────────────────────────────
     print('  [17/18] Notification Logs...')
     now = datetime.now(timezone.utc)
     sample_alerts = ['low_reward_stock', 'machine_offline', 'new_user_registered', 'new_redemption']
     nl_count = 0
-    for org in list(org_map.values())[:2]:
+    for org in org_map.values():
         for i, ak in enumerate(sample_alerts):
             nl = NotificationLog(
                 organization_id=org.id,
@@ -804,12 +870,12 @@ def run_seed(fresh=False):
             db.session.add(nl)
             nl_count += 1
     db.session.commit()
-    print(f'         → {nl_count} notification logs')
+    print(f'         -> {nl_count} notification logs')
 
     # ── 18. Bulk Sessions (sample) ─────────────────────────────────────
     print('  [18/18] Bulk Sessions...')
     bulk_count = 0
-    for org_key, org in list(org_map.items())[:2]:
+    for org_key, org in list(org_map.items())[:3]:
         rvms_for_org = [r for r in RVM.query.filter_by(organization_id=org.id).limit(1).all()]
         accts_for_org = Account.query.join(CommunityGroup).filter(CommunityGroup.organization_id == org.id).limit(1).all()
         if not rvms_for_org or not accts_for_org:
@@ -845,13 +911,13 @@ def run_seed(fresh=False):
                 db.session.add(ri)
             bulk_count += 1
     db.session.commit()
-    print(f'         → {bulk_count} bulk sessions')
+    print(f'         -> {bulk_count} bulk sessions')
 
     # ── Summary ────────────────────────────────────────────────────────
     print()
-    print('═' * 55)
-    print('  ✅ SEED COMPLETE — All 18 tables populated')
-    print('═' * 55)
+    print('=' * 55)
+    print('  SEED COMPLETE - All 18 tables populated')
+    print('=' * 55)
     counts = {
         'OrgTypes': OrgType.query.count(),
         'Cities': City.query.count(),

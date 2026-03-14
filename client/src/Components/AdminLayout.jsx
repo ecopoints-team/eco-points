@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { ROLES } from '../data/mockData';
 import { logs as logsApi } from '../services/apiService';
+import { formatDate } from '../utils/formatDate';
 
 // View-Only Banner for non-admin roles
 export const ViewOnlyBanner = () => {
@@ -151,6 +152,7 @@ export default function AdminLayout({ children }) {
         if (path === '/admin/logs/rewards') return { main: 'System', sub: 'Reward Logs' };
         if (path === '/admin/leaderboards') return { main: 'Leaderboards', sub: 'Overview' };
         if (path === '/admin/analytics') return { main: 'System', sub: 'Analytics' };
+        if (path === '/admin/bulk-sessions') return { main: 'Bulk', sub: 'Sessions' };
         if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
         if (path === '/admin/profile') return { main: 'My', sub: 'Profile' };
         return { main: 'Admin', sub: 'Panel' };
@@ -459,7 +461,7 @@ export default function AdminLayout({ children }) {
                                                                 {n.title}
                                                             </p>
                                                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{n.description}</p>
-                                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{n.time}</p>
+                                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{formatDate(n.time)}</p>
                                                         </div>
                                                     </div>
                                                 </button>

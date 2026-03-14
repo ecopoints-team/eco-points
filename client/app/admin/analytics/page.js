@@ -184,10 +184,7 @@ export default function AnalyticsPage() {
     // Recycling trends controls (matches dashboard)
     const [trendChartType, setTrendChartType] = useState('line');
     const [trendTimeRange, setTrendTimeRange] = useState('month');
-
-    // Year filters
-    const [userGrowthYear, setUserGrowthYear] = useState(new Date().getFullYear());
-    const [pointsYear, setPointsYear] = useState(new Date().getFullYear());
+    const [trendYear, setTrendYear] = useState(new Date().getFullYear());
 
     // Machine status popup
     const [showMachineStatus, setShowMachineStatus] = useState(false);
@@ -246,6 +243,19 @@ export default function AnalyticsPage() {
         });
     }, [data]);
 
+    // Available years for recycling trends
+    const availableTrendYears = useMemo(() => {
+        if (!recyclingTrendData.length) return [new Date().getFullYear()];
+        const years = [...new Set(recyclingTrendData.map(d => parseInt(d.year)))];
+        if (!years.includes(new Date().getFullYear())) years.push(new Date().getFullYear());
+        return years.sort();
+    }, [recyclingTrendData]);
+
+    // Year-filtered recycling data
+    const yearFilteredTrendData = useMemo(() => {
+        return recyclingTrendData.filter(d => parseInt(d.year) === trendYear);
+    }, [recyclingTrendData, trendYear]);
+
     // Weekly (daily) trend data from backend
     const weeklyTrendData = useMemo(() => {
         if (!data?.dailyTrends) return [];
@@ -276,8 +286,8 @@ export default function AnalyticsPage() {
         if (trendTimeRange === 'week') {
             return weeklyTrendData;
         }
-        return recyclingTrendData;
-    }, [recyclingTrendData, weeklyTrendData, trendTimeRange]);
+        return yearFilteredTrendData;
+    }, [recyclingTrendData, yearFilteredTrendData, weeklyTrendData, trendTimeRange]);
 
     // Pie data for trend chart pie mode
     const trendPieData = useMemo(() => {
@@ -303,12 +313,12 @@ export default function AnalyticsPage() {
     const userGrowthData = useMemo(() => {
         if (!data?.userGrowth) return [];
         return MONTH_LABELS.map((label, idx) => {
-            const monthKey = `${userGrowthYear}-${String(idx + 1).padStart(2, '0')}`;
+            const monthKey = `${trendYear}-${String(idx + 1).padStart(2, '0')}`;
             const found = data.userGrowth.months.find(m => m.month === monthKey);
             const newUsers = found ? found.count : 0;
             return { name: label, 'New Users': newUsers };
         });
-    }, [data, userGrowthYear]);
+    }, [data, trendYear]);
 
     // Available years for points economy
     const availablePointsYears = useMemo(() => {
@@ -320,7 +330,7 @@ export default function AnalyticsPage() {
 
     const pointsEconomyData = useMemo(() => {
         if (!data?.pointsEconomy) return [];
-        const filtered = data.pointsEconomy.filter(r => r.month.startsWith(String(pointsYear)));
+        const filtered = data.pointsEconomy.filter(r => r.month.startsWith(String(trendYear)));
         const grouped = {};
         filtered.forEach(row => {
             const [, m] = row.month.split('-');
@@ -531,12 +541,12 @@ export default function AnalyticsPage() {
         html += '</table>';
 
         // User Growth table
-        html += `<h2>User Growth (${userGrowthYear})</h2><table><tr><th>Month</th><th>New Users</th></tr>`;
+        html += `<h2>User Growth (${trendYear})</h2><table><tr><th>Month</th><th>New Users</th></tr>`;
         userGrowthData.forEach(d => { html += `<tr><td>${d.name}</td><td>${d['New Users']}</td></tr>`; });
         html += '</table>';
 
         // Points Economy table
-        html += `<h2>Points Economy (${pointsYear})</h2><table><tr><th>Month</th><th>Earned</th><th>Redeemed</th></tr>`;
+        html += `<h2>Points Economy (${trendYear})</h2><table><tr><th>Month</th><th>Earned</th><th>Redeemed</th></tr>`;
         pointsEconomyData.forEach(d => { html += `<tr><td>${d.name}</td><td>${d.Earned}</td><td>${d.Redeemed}</td></tr>`; });
         html += '</table>';
 
@@ -695,6 +705,15 @@ export default function AnalyticsPage() {
                 icon={TrendingUp}
                 headerRight={
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* Year Picker for Recycling Trends — only in Monthly mode */}
+                        {trendTimeRange === 'month' && (
+                            <YearPicker
+                                value={trendYear}
+                                onChange={setTrendYear}
+                                options={availableTrendYears}
+                            />
+                        )}
+
                         {/* Chart Type Toggle with Sliding Indicator */}
                         <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
                             <div
@@ -790,8 +809,8 @@ export default function AnalyticsPage() {
                     icon={Users}
                     headerRight={
                         <YearPicker
-                            value={userGrowthYear}
-                            onChange={setUserGrowthYear}
+                            value={trendYear}
+                            onChange={setTrendYear}
                             options={availableUserGrowthYears}
                             direction="up"
                         />
@@ -816,8 +835,8 @@ export default function AnalyticsPage() {
                     icon={Zap}
                     headerRight={
                         <YearPicker
-                            value={pointsYear}
-                            onChange={setPointsYear}
+                            value={trendYear}
+                            onChange={setTrendYear}
                             options={availablePointsYears}
                             direction="up"
                         />

@@ -7,7 +7,7 @@ import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ROLES } from '../../../../src/data/mockData';
 import { users as usersApi } from '../../../../src/services/apiService';
-import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle, BarChart3, Layers } from 'lucide-react';
 
 // ============================================================================
 // USING ADMIN_USERS FROM MOCKDATA - Connected to School A & B accounts
@@ -27,6 +27,8 @@ const ROLES_DATA = [
             users: { view: true, edit: true, delete: true, create: true },
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: true, edit: true, delete: true, create: true },
+            analytics: { view: true },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: true }
         }
@@ -43,6 +45,8 @@ const ROLES_DATA = [
             users: { view: true, edit: false, delete: false, create: false },
             machines: { view: true, edit: false, delete: false, create: false },
             rewards: { view: true, edit: false, delete: false, create: false },
+            analytics: { view: true },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: false }
         }
@@ -59,6 +63,8 @@ const ROLES_DATA = [
             users: { view: false, edit: false, delete: false, create: false },
             machines: { view: false, edit: false, delete: false, create: false },
             rewards: { view: true, edit: true, delete: true, create: true },
+            analytics: { view: false },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: true, edit: false }
         }
@@ -75,6 +81,8 @@ const ROLES_DATA = [
             users: { view: false, edit: false, delete: false, create: false },
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: false, edit: false, delete: false, create: false },
+            analytics: { view: false },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: true, edit: false }
         }
@@ -87,6 +95,8 @@ const PERMISSION_MODULES = [
     { key: 'users', label: 'User Management', icon: Users, actions: ['view', 'edit', 'create', 'delete'] },
     { key: 'machines', label: 'Machines (RVM)', icon: Package, actions: ['view', 'edit', 'create', 'delete'] },
     { key: 'rewards', label: 'Rewards Inventory', icon: FileText, actions: ['view', 'edit', 'create', 'delete'] },
+    { key: 'analytics', label: 'Analytics', icon: BarChart3, actions: ['view'] },
+    { key: 'bulk_sessions', label: 'Bulk Sessions', icon: Layers, actions: ['view', 'create'] },
     { key: 'logs', label: 'System Logs', icon: Activity, actions: ['view', 'export'] },
     { key: 'settings', label: 'System Settings', icon: Settings, actions: ['view', 'edit'] },
 ];

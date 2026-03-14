@@ -163,6 +163,8 @@ export const ROLES = {
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: true, edit: true, delete: true, create: true },
             leaderboards: { view: true, edit: true },
+            analytics: { view: true },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: true, delete: true },
             settings: { view: true, edit: true }
         }
@@ -178,6 +180,8 @@ export const ROLES = {
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: true, edit: true, delete: true, create: true },
             leaderboards: { view: true, edit: true },
+            analytics: { view: true },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: true }
         }
@@ -193,6 +197,8 @@ export const ROLES = {
             machines: { view: true, edit: false, delete: false, create: false },
             rewards: { view: true, edit: false, delete: false, create: false },
             leaderboards: { view: true, edit: false },
+            analytics: { view: true },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: true, delete: false },
             settings: { view: true, edit: false }
         }
@@ -208,6 +214,8 @@ export const ROLES = {
             machines: { view: false, edit: false, delete: false, create: false },
             rewards: { view: true, edit: true, delete: true, create: true },
             leaderboards: { view: true, edit: false },
+            analytics: { view: false },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: true, edit: false }
         }
@@ -223,6 +231,8 @@ export const ROLES = {
             machines: { view: true, edit: true, delete: true, create: true },
             rewards: { view: false, edit: false, delete: false, create: false },
             leaderboards: { view: true, edit: false },
+            analytics: { view: false },
+            bulk_sessions: { view: true, create: true },
             logs: { view: true, export: false, delete: false },
             settings: { view: true, edit: false }
         }

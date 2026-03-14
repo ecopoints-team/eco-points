@@ -4,6 +4,7 @@ import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { logs as logsApi, machines as machinesApi } from '../../../../src/services/apiService';
+import { formatDate } from '../../../../src/utils/formatDate';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Plus } from 'lucide-react';
 
 export default function MachineLogsPage() {
@@ -275,7 +276,7 @@ export default function MachineLogsPage() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
                                     {showMachine && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-sm font-medium text-slate-800 dark:text-white">{log.machineName}</span>

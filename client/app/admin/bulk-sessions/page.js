@@ -5,6 +5,7 @@ import CustomDropdown from '../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/apiService';
+import { formatDate } from '../../../src/utils/formatDate';
 import {
     Layers, Plus, X, Search, ChevronLeft, ChevronRight, RefreshCw,
     Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2
@@ -314,7 +315,7 @@ export default function BulkSessionsPage() {
                                     <td className="px-4 py-3"><span className="font-bold text-slate-700 dark:text-slate-200">{s.itemCount}</span></td>
                                     <td className="px-4 py-3"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{s.totalPointsEarned}</span></td>
                                     <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate block">{s.notes || '-'}</span></td>
-                                    <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{s.startTime}</span></td>
+                                    <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(s.startTime)}</span></td>
                                     <td className="px-4 py-3">
                                         <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">{s.status}</span>
                                     </td>

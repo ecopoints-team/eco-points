@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { logs as logsApi } from '../../../../src/services/apiService';
+import { formatDate } from '../../../../src/utils/formatDate';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
@@ -302,7 +303,7 @@ export default function AdminAccessLogsPage() {
                                             </span>
                                         </td>
                                     )}
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
                                     {showNotes && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-xs text-slate-500 dark:text-slate-400">{log.notes || '—'}</span>

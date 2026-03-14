@@ -4,6 +4,7 @@ import Link from 'next/link';
 import SlotCounter from '../../src/Components/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
 import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/apiService';
+import { formatDate } from '../../src/utils/formatDate';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -750,7 +751,7 @@ export default function AdminDashboard() {
                                     <td className="px-3 py-3">
                                         <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
                                             <Clock size={12} />
-                                            {log.timestamp}
+                                            {formatDate(log.timestamp)}
                                         </div>
                                     </td>
                                     <td className="px-3 py-3">

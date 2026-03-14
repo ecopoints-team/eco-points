@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
+import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
@@ -324,7 +325,7 @@ export default function BottleLogsPage() {
                                             }`}>{log.condition}</span>
                                     </td>
                                     <td className="px-3 py-3"><span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}</span></td>
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.timestamp}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
                                     <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
                                 </tr>
                             ))}

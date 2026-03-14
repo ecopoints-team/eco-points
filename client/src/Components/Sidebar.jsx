@@ -214,14 +214,14 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             label: 'Analytics',
             icon: BarChart3,
             href: '/admin/analytics',
-            hidden: !hasPermission('logs', 'view')
+            hidden: !hasPermission('analytics', 'view')
         },
         {
             type: 'item',
             label: 'Bulk Sessions',
             icon: Layers,
             href: '/admin/bulk-sessions',
-            hidden: !hasPermission('logs', 'view')
+            hidden: !hasPermission('bulk_sessions', 'view')
         },
         {
             type: 'group',

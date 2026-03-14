@@ -4,6 +4,7 @@ import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLa
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi } from '../../../src/services/apiService';
+import { formatDate } from '../../../src/utils/formatDate';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     CheckCircle2, Clock, User, Calendar, Building2,
@@ -624,7 +625,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
                                         <div className="flex items-start justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={14} className="text-slate-400" />
-                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{log.timestamp}</span>
+                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{formatDate(log.timestamp)}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <button onClick={() => setEditingLog({ ...log })}
