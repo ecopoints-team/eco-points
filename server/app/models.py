@@ -31,7 +31,7 @@ class City(db.Model):
     """
     __tablename__ = 'cities'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)              # "Pasig City"
+    name = db.Column(db.String(200), nullable=False, unique=True)  # "Pasig City"
     province = db.Column(db.String(200), nullable=True)           # "Metro Manila"
     region = db.Column(db.String(200), nullable=True)             # "NCR"
 
@@ -238,7 +238,7 @@ class AccessCredential(db.Model):
     """
     __tablename__ = 'access_credentials'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
     tag_id = db.Column(db.String(200), unique=True, nullable=False, index=True)  # UUID for QR or serial for RFID
     credential_type = db.Column(db.String(50), default='qr_code')                # 'qr_code', 'rfid'
     is_active = db.Column(db.Boolean, default=True)
@@ -502,3 +502,23 @@ class NotificationLog(db.Model):
 
     def __repr__(self):
         return f'<NotificationLog {self.alert_key} → {self.recipient} ({self.status})>'
+
+
+# ============================================================================
+# Group 6: Token Management
+# ============================================================================
+
+class TokenBlacklist(db.Model):
+    """
+    Stores invalidated JWT tokens (on logout).
+    Tokens are identified by their 'jti' (JWT ID) claim.
+    Expired entries can be periodically cleaned up.
+    """
+    __tablename__ = 'token_blacklist'
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f'<TokenBlacklist {self.jti}>'

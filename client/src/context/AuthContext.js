@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { auth as authApi, locations as locationsApi } from '../services/apiService';
-import { ROLES } from '../data/mockData';
+import { ROLES } from '../data/roleConfig';
 
 // ============================================================================
 // AUTH CONTEXT — JWT-Based Auth, Location Scoping, Permissions

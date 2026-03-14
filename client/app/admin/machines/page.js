@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { machines as machinesApi } from '../../../src/services/apiService';
+import { machines as machinesApi, logs } from '../../../src/services/apiService';
 import { formatDate } from '../../../src/utils/formatDate';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
@@ -823,10 +823,18 @@ export default function MachinesPage() {
         setRefreshKey(k => k + 1);
     };
 
-    const handleAddMaintenanceLog = (machineId, newLog) => {
-        // TODO: Call maintenance log API to persist the new maintenance log
-        // For now just refresh the selected machine to show new log
-        setSelectedMachine(prev => prev ? { ...prev } : null);
+    const handleAddMaintenanceLog = async (machineId, newLog) => {
+        try {
+            await logs.createMachineLog({
+                rvmId: machineId,
+                actionType: newLog.actionType || newLog.action_type || newLog.type,
+                resolved: newLog.resolved || false,
+                notes: newLog.notes || '',
+            });
+            setRefreshKey(k => k + 1);
+        } catch (err) {
+            console.error('Failed to create maintenance log:', err);
+        }
     };
 
     // Add machine handler

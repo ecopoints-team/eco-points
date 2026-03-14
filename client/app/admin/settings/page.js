@@ -1,10 +1,9 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { settings as settingsApi } from '../../../src/services/apiService';
-import { useTheme } from '../../../src/context/ThemeContext';
 import {
     Settings, Globe, Bell, Shield, Save, ToggleLeft, ToggleRight,
     Zap, Recycle, Palette, Plus, X, Send, Mail, Smartphone,
@@ -28,7 +27,6 @@ const ToggleSwitch = ({ enabled, onChange, label, description }) => (
 
 export default function SettingsPage() {
     const { effectiveLocationId } = useAuth();
-    const { theme } = useTheme();
 
     // ── Tab state ──
     const [activeSection, setActiveSection] = useState('general');

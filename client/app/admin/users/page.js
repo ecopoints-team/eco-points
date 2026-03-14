@@ -5,7 +5,7 @@ import PageSizeSelector from '../../../src/Components/PageSizeSelector';
 import CustomDropdown from '../../../src/Components/CustomDropdown';
 import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
-import { getDepartmentName } from '../../../src/data/mockData';
+// getDepartmentName replaced — server returns groupName directly
 import { users as usersApi } from '../../../src/services/apiService';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle, Coins } from 'lucide-react';
 
@@ -538,7 +538,7 @@ export default function ManageUsersPage() {
                                     </td>
                                     {showDepartment && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{getDepartmentName(user.department) || '—'}</span>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">{user.department || '—'}</span>
                                         </td>
                                     )}
                                     {showStrand && (

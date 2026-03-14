@@ -185,6 +185,10 @@ export default function AnalyticsPage() {
     const [trendChartType, setTrendChartType] = useState('line');
     const [trendTimeRange, setTrendTimeRange] = useState('month');
     const [trendYear, setTrendYear] = useState(new Date().getFullYear());
+    const [userGrowthYear, setUserGrowthYear] = useState(new Date().getFullYear());
+    const [userGrowthTimeRange, setUserGrowthTimeRange] = useState('month');
+    const [pointsYear, setPointsYear] = useState(new Date().getFullYear());
+    const [pointsTimeRange, setPointsTimeRange] = useState('month');
 
     // Machine status popup
     const [showMachineStatus, setShowMachineStatus] = useState(false);
@@ -235,7 +239,7 @@ export default function AnalyticsPage() {
         return data.recyclingTrends.map(row => {
             const [y, m] = row.month.split('-');
             return {
-                name: `${MONTH_LABELS[parseInt(m) - 1]} ${y}`,
+                name: MONTH_LABELS[parseInt(m) - 1],
                 year: y,
                 Accepted: row.accepted,
                 Rejected: row.rejected,
@@ -312,13 +316,22 @@ export default function AnalyticsPage() {
 
     const userGrowthData = useMemo(() => {
         if (!data?.userGrowth) return [];
+        if (userGrowthTimeRange === 'year') {
+            const yearMap = {};
+            data.userGrowth.months.forEach(m => {
+                const y = m.month.split('-')[0];
+                if (!yearMap[y]) yearMap[y] = { name: y, 'New Users': 0 };
+                yearMap[y]['New Users'] += m.count;
+            });
+            return Object.values(yearMap);
+        }
         return MONTH_LABELS.map((label, idx) => {
-            const monthKey = `${trendYear}-${String(idx + 1).padStart(2, '0')}`;
+            const monthKey = `${userGrowthYear}-${String(idx + 1).padStart(2, '0')}`;
             const found = data.userGrowth.months.find(m => m.month === monthKey);
             const newUsers = found ? found.count : 0;
             return { name: label, 'New Users': newUsers };
         });
-    }, [data, trendYear]);
+    }, [data, userGrowthYear, userGrowthTimeRange]);
 
     // Available years for points economy
     const availablePointsYears = useMemo(() => {
@@ -330,7 +343,17 @@ export default function AnalyticsPage() {
 
     const pointsEconomyData = useMemo(() => {
         if (!data?.pointsEconomy) return [];
-        const filtered = data.pointsEconomy.filter(r => r.month.startsWith(String(trendYear)));
+        if (pointsTimeRange === 'year') {
+            const yearMap = {};
+            data.pointsEconomy.forEach(row => {
+                const y = row.month.split('-')[0];
+                if (!yearMap[y]) yearMap[y] = { name: y, Earned: 0, Redeemed: 0 };
+                if (row.type === 'earn') yearMap[y].Earned += row.amount;
+                else if (row.type === 'redeem') yearMap[y].Redeemed += row.amount;
+            });
+            return Object.values(yearMap);
+        }
+        const filtered = data.pointsEconomy.filter(r => r.month.startsWith(String(pointsYear)));
         const grouped = {};
         filtered.forEach(row => {
             const [, m] = row.month.split('-');
@@ -340,7 +363,7 @@ export default function AnalyticsPage() {
             else if (row.type === 'redeem') grouped[label].Redeemed += row.amount;
         });
         return MONTH_LABELS.map(m => grouped[m] || { name: m, Earned: 0, Redeemed: 0 });
-    }, [data, pointsYear]);
+    }, [data, pointsYear, pointsTimeRange]);
 
     const machineData = useMemo(() => {
         if (!data?.machineUtilization) return [];
@@ -541,12 +564,12 @@ export default function AnalyticsPage() {
         html += '</table>';
 
         // User Growth table
-        html += `<h2>User Growth (${trendYear})</h2><table><tr><th>Month</th><th>New Users</th></tr>`;
+        html += `<h2>User Growth (${userGrowthYear})</h2><table><tr><th>Month</th><th>New Users</th></tr>`;
         userGrowthData.forEach(d => { html += `<tr><td>${d.name}</td><td>${d['New Users']}</td></tr>`; });
         html += '</table>';
 
         // Points Economy table
-        html += `<h2>Points Economy (${trendYear})</h2><table><tr><th>Month</th><th>Earned</th><th>Redeemed</th></tr>`;
+        html += `<h2>Points Economy (${pointsYear})</h2><table><tr><th>Month</th><th>Earned</th><th>Redeemed</th></tr>`;
         pointsEconomyData.forEach(d => { html += `<tr><td>${d.name}</td><td>${d.Earned}</td><td>${d.Redeemed}</td></tr>`; });
         html += '</table>';
 
@@ -808,12 +831,33 @@ export default function AnalyticsPage() {
                     title="User Growth"
                     icon={Users}
                     headerRight={
-                        <YearPicker
-                            value={trendYear}
-                            onChange={setTrendYear}
-                            options={availableUserGrowthYears}
-                            direction="up"
-                        />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {userGrowthTimeRange === 'month' && (
+                                <YearPicker
+                                    value={userGrowthYear}
+                                    onChange={setUserGrowthYear}
+                                    options={availableUserGrowthYears}
+                                    direction="up"
+                                />
+                            )}
+                            <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                                <div
+                                    className="absolute top-1 bottom-1 w-[64px] rounded-md bg-emerald-500 shadow-md transition-transform duration-300 ease-out"
+                                    style={{ transform: `translateX(${userGrowthTimeRange === 'month' ? '0px' : '64px'})` }}
+                                />
+                                {[{ key: 'month', label: 'Monthly' }, { key: 'year', label: 'Yearly' }].map((range) => (
+                                    <button
+                                        key={range.key}
+                                        onClick={() => setUserGrowthTimeRange(range.key)}
+                                        className={`relative z-10 w-[64px] py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-center ${userGrowthTimeRange === range.key
+                                            ? 'text-white'
+                                            : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60'}`}
+                                    >
+                                        {range.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     }
                 >
                     <div className="w-full h-80">
@@ -834,12 +878,33 @@ export default function AnalyticsPage() {
                     title="Points Economy"
                     icon={Zap}
                     headerRight={
-                        <YearPicker
-                            value={trendYear}
-                            onChange={setTrendYear}
-                            options={availablePointsYears}
-                            direction="up"
-                        />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {pointsTimeRange === 'month' && (
+                                <YearPicker
+                                    value={pointsYear}
+                                    onChange={setPointsYear}
+                                    options={availablePointsYears}
+                                    direction="up"
+                                />
+                            )}
+                            <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
+                                <div
+                                    className="absolute top-1 bottom-1 w-[64px] rounded-md bg-emerald-500 shadow-md transition-transform duration-300 ease-out"
+                                    style={{ transform: `translateX(${pointsTimeRange === 'month' ? '0px' : '64px'})` }}
+                                />
+                                {[{ key: 'month', label: 'Monthly' }, { key: 'year', label: 'Yearly' }].map((range) => (
+                                    <button
+                                        key={range.key}
+                                        onClick={() => setPointsTimeRange(range.key)}
+                                        className={`relative z-10 w-[64px] py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-center ${pointsTimeRange === range.key
+                                            ? 'text-white'
+                                            : 'text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60'}`}
+                                    >
+                                        {range.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     }
                 >
                     <div className="w-full h-80">

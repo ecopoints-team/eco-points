@@ -5,7 +5,7 @@ import CustomDropdown from '../../../../src/Components/CustomDropdown';
 import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
 import AddUserModal from '../../../../src/Components/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { ROLES } from '../../../../src/data/mockData';
+import { ROLES } from '../../../../src/data/roleConfig';
 import { users as usersApi } from '../../../../src/services/apiService';
 import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle, BarChart3, Layers } from 'lucide-react';
 

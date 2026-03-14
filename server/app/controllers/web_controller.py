@@ -285,6 +285,26 @@ def _log_action(user, action, target=None, category=None, notes=None):
     db.session.add(log)
 
 
+def _paginate(query, default_limit=50, max_limit=200):
+    """Apply pagination to a query. Reads ?page= and ?per_page= from request args.
+    Returns (items, pagination_meta).
+    """
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', default_limit, type=int)
+    per_page = min(per_page, max_limit)
+    if page < 1:
+        page = 1
+
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    return items, {
+        'page': page,
+        'perPage': per_page,
+        'total': total,
+        'totalPages': (total + per_page - 1) // per_page,
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # HEALTH (public)
 # ══════════════════════════════════════════════════════════════════════════
@@ -361,7 +381,7 @@ def dashboard_stats(current_user):
             }
         }), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -377,7 +397,7 @@ def get_org_types(current_user):
         types = OrgType.query.order_by(OrgType.name).all()
         return jsonify({'success': True, 'orgTypes': [_serialize_org_type(t) for t in types]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/org-types', methods=['POST'])
@@ -399,7 +419,7 @@ def create_org_type(current_user):
         return jsonify({'success': True, 'orgType': _serialize_org_type(ot)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/org-types/<int:ot_id>', methods=['DELETE'])
@@ -408,7 +428,7 @@ def create_org_type(current_user):
 def delete_org_type(current_user, ot_id):
     """Delete an organization type (superadmin only)."""
     try:
-        ot = OrgType.query.get(ot_id)
+        ot = db.session.get(OrgType, ot_id)
         if not ot:
             return jsonify({'success': False, 'error': 'Not found'}), 404
         # Prevent deletion if referenced by any organization
@@ -420,7 +440,7 @@ def delete_org_type(current_user, ot_id):
         return jsonify({'success': True, 'message': 'Deleted'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -436,7 +456,7 @@ def get_cities(current_user):
         cities = City.query.order_by(City.name).all()
         return jsonify({'success': True, 'cities': [_serialize_city(c) for c in cities]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/cities', methods=['POST'])
@@ -458,7 +478,7 @@ def create_city(current_user):
         return jsonify({'success': True, 'city': _serialize_city(city)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/cities/<int:city_id>', methods=['DELETE'])
@@ -467,7 +487,7 @@ def create_city(current_user):
 def delete_city(current_user, city_id):
     """Delete a city (superadmin only)."""
     try:
-        city = City.query.get(city_id)
+        city = db.session.get(City, city_id)
         if not city:
             return jsonify({'success': False, 'error': 'Not found'}), 404
         # Prevent deletion if referenced by any organization
@@ -479,7 +499,7 @@ def delete_city(current_user, city_id):
         return jsonify({'success': True, 'message': 'Deleted'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -505,7 +525,7 @@ def get_locations(current_user):
         orgs = query.all()
         return jsonify({'success': True, 'locations': [_serialize_organization(o) for o in orgs]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/locations', methods=['POST'])
@@ -546,7 +566,7 @@ def create_location(current_user):
         return jsonify({'success': True, 'location': _serialize_organization(org)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/locations/<int:loc_id>', methods=['PUT'])
@@ -555,7 +575,7 @@ def create_location(current_user):
 def update_location(current_user, loc_id):
     """Update an organization."""
     try:
-        org = Organization.query.get(loc_id)
+        org = db.session.get(Organization, loc_id)
         if not org:
             return jsonify({'success': False, 'error': 'Location not found'}), 404
 
@@ -583,7 +603,7 @@ def update_location(current_user, loc_id):
         return jsonify({'success': True, 'location': _serialize_organization(org)}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/locations/<int:loc_id>', methods=['DELETE'])
@@ -592,7 +612,7 @@ def update_location(current_user, loc_id):
 def delete_location(current_user, loc_id):
     """Deactivate an organization. Superadmin only."""
     try:
-        org = Organization.query.get(loc_id)
+        org = db.session.get(Organization, loc_id)
         if not org:
             return jsonify({'success': False, 'error': 'Location not found'}), 404
 
@@ -613,7 +633,7 @@ def delete_location(current_user, loc_id):
         return jsonify({'success': True, 'message': f'{org.name} deactivated'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -645,10 +665,11 @@ def get_users(current_user):
         elif is_admin_filter == 'false':
             query = query.filter(User.role.in_(['user', 'dependent']))
 
-        users = query.order_by(User.id.asc()).all()
-        return jsonify({'success': True, 'users': [_serialize_user(u) for u in users]}), 200
+        query = query.order_by(User.id.asc())
+        users, pagination = _paginate(query)
+        return jsonify({'success': True, 'users': [_serialize_user(u) for u in users], 'pagination': pagination}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/users/<int:user_id>', methods=['GET'])
@@ -657,7 +678,7 @@ def get_users(current_user):
 def get_user(current_user, user_id):
     """Get a single user by ID."""
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
@@ -667,7 +688,7 @@ def get_user(current_user, user_id):
 
         return jsonify({'success': True, 'user': _serialize_user(user)}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/users', methods=['POST'])
@@ -684,6 +705,12 @@ def create_user(current_user):
         email = data.get('email')
         password = data.get('password')
         role = data.get('role', 'user')
+
+        # ── Role hierarchy guard: prevent privilege escalation ──
+        from ..middleware import can_manage_role
+        if not can_manage_role(current_user.role, role):
+            return jsonify({'success': False, 'error': f'Your role ({current_user.role}) cannot create users with role "{role}"'}), 403
+
         location_id = data.get('locationId')
 
         if not name:
@@ -724,7 +751,7 @@ def create_user(current_user):
         db.session.flush()
 
         # Resolve org abbreviation for display_id
-        org = Organization.query.get(location_id)
+        org = db.session.get(Organization, location_id)
         org_abbr = _get_org_abbreviation(org) if org else 'SYS'
 
         user = User(
@@ -759,7 +786,7 @@ def create_user(current_user):
         return jsonify({'success': True, 'user': _serialize_user(user)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/users/<int:user_id>', methods=['PUT'])
@@ -768,7 +795,7 @@ def create_user(current_user):
 def update_user(current_user, user_id):
     """Update user fields."""
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
@@ -788,6 +815,12 @@ def update_user(current_user, user_id):
             if existing:
                 return jsonify({'success': False, 'error': 'Username already in use'}), 409
 
+        # ── Role hierarchy guard: prevent privilege escalation ──
+        from ..middleware import can_manage_role
+        if 'role' in data and data['role'] != user.role:
+            if not can_manage_role(current_user.role, data['role']):
+                return jsonify({'success': False, 'error': f'Your role ({current_user.role}) cannot assign role "{data["role"]}"'}), 403
+
         for front, back in [
             ('name', 'name'), ('username', 'username'), ('email', 'email'),
             ('phone', 'phone'), ('role', 'role'), ('userType', 'user_type'),
@@ -804,7 +837,7 @@ def update_user(current_user, user_id):
         return jsonify({'success': True, 'user': _serialize_user(user)}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/users/<int:user_id>', methods=['DELETE'])
@@ -813,7 +846,7 @@ def update_user(current_user, user_id):
 def delete_user(current_user, user_id):
     """Deactivate a user (soft delete)."""
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
@@ -827,7 +860,7 @@ def delete_user(current_user, user_id):
         return jsonify({'success': True, 'message': f'{user.name} deactivated'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/users/<int:user_id>/adjust-points', methods=['POST'])
@@ -836,7 +869,7 @@ def delete_user(current_user, user_id):
 def adjust_user_points(current_user, user_id):
     """Manually adjust a user's point balance (add or subtract)."""
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
@@ -891,7 +924,7 @@ def adjust_user_points(current_user, user_id):
         }), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -908,10 +941,11 @@ def get_machines(current_user):
         query = RVM.query
         if loc_id:
             query = query.filter_by(organization_id=loc_id)
-        machines = query.order_by(RVM.id.asc()).all()
-        return jsonify({'success': True, 'machines': [_serialize_rvm(m) for m in machines]}), 200
+        query = query.order_by(RVM.id.asc())
+        machines, pagination = _paginate(query)
+        return jsonify({'success': True, 'machines': [_serialize_rvm(m) for m in machines], 'pagination': pagination}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/machines', methods=['POST'])
@@ -943,7 +977,7 @@ def create_machine(current_user):
         return jsonify({'success': True, 'machine': _serialize_rvm(rvm)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/machines/<int:machine_id>', methods=['PUT'])
@@ -952,7 +986,7 @@ def create_machine(current_user):
 def update_machine(current_user, machine_id):
     """Update an RVM."""
     try:
-        rvm = RVM.query.get(machine_id)
+        rvm = db.session.get(RVM, machine_id)
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not found'}), 404
 
@@ -983,7 +1017,7 @@ def update_machine(current_user, machine_id):
         return jsonify({'success': True, 'machine': _serialize_rvm(rvm)}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/machines/<int:machine_id>', methods=['DELETE'])
@@ -992,7 +1026,7 @@ def update_machine(current_user, machine_id):
 def delete_machine(current_user, machine_id):
     """Decommission an RVM."""
     try:
-        rvm = RVM.query.get(machine_id)
+        rvm = db.session.get(RVM, machine_id)
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not found'}), 404
 
@@ -1005,7 +1039,7 @@ def delete_machine(current_user, machine_id):
         return jsonify({'success': True, 'message': f'{rvm.name} decommissioned'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1022,10 +1056,11 @@ def get_rewards(current_user):
         query = Reward.query
         if loc_id:
             query = query.filter_by(organization_id=loc_id)
-        rewards = query.order_by(Reward.id.asc()).all()
-        return jsonify({'success': True, 'rewards': [_serialize_reward(r) for r in rewards]}), 200
+        query = query.order_by(Reward.id.asc())
+        rewards, pagination = _paginate(query)
+        return jsonify({'success': True, 'rewards': [_serialize_reward(r) for r in rewards], 'pagination': pagination}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/rewards', methods=['POST'])
@@ -1058,7 +1093,7 @@ def create_reward(current_user):
         return jsonify({'success': True, 'reward': _serialize_reward(reward)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/rewards/<int:reward_id>', methods=['PUT'])
@@ -1067,7 +1102,7 @@ def create_reward(current_user):
 def update_reward(current_user, reward_id):
     """Update a reward."""
     try:
-        reward = Reward.query.get(reward_id)
+        reward = db.session.get(Reward, reward_id)
         if not reward:
             return jsonify({'success': False, 'error': 'Reward not found'}), 404
 
@@ -1107,7 +1142,7 @@ def update_reward(current_user, reward_id):
         return jsonify({'success': True, 'reward': _serialize_reward(reward)}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/rewards/<int:reward_id>', methods=['DELETE'])
@@ -1116,7 +1151,7 @@ def update_reward(current_user, reward_id):
 def delete_reward(current_user, reward_id):
     """Deactivate a reward."""
     try:
-        reward = Reward.query.get(reward_id)
+        reward = db.session.get(Reward, reward_id)
         if not reward:
             return jsonify({'success': False, 'error': 'Reward not found'}), 404
 
@@ -1129,7 +1164,7 @@ def delete_reward(current_user, reward_id):
         return jsonify({'success': True, 'message': f'{reward.name} deactivated'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1156,7 +1191,7 @@ def get_bottle_logs(current_user):
         items = query.order_by(RecyclingItem.deposited_at.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_bottle_log(i) for i in items]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/machines', methods=['GET'])
@@ -1172,7 +1207,7 @@ def get_machine_logs(current_user):
         logs = query.order_by(MaintenanceLog.timestamp.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_machine_log(l) for l in logs]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/machines', methods=['POST'])
@@ -1188,7 +1223,7 @@ def create_machine_log(current_user):
         if not rvm_id or not action_type:
             return jsonify({'success': False, 'error': 'rvmId and actionType are required'}), 400
 
-        rvm = RVM.query.get(rvm_id)
+        rvm = db.session.get(RVM, rvm_id)
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not found'}), 404
 
@@ -1210,7 +1245,7 @@ def create_machine_log(current_user):
         return jsonify({'success': True, 'log': _serialize_machine_log(log)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/access', methods=['GET'])
@@ -1228,7 +1263,7 @@ def get_access_logs(current_user):
         logs = query.order_by(AdminLog.timestamp.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_admin_log(l) for l in logs]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/rewards', methods=['GET'])
@@ -1249,7 +1284,7 @@ def get_reward_logs(current_user):
         logs = query.order_by(RewardRedemption.redeemed_at.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_reward_log(r) for r in logs]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/rewards/<int:redemption_id>', methods=['PUT'])
@@ -1258,9 +1293,14 @@ def get_reward_logs(current_user):
 def update_reward_redemption(current_user, redemption_id):
     """Update a reward redemption status (pending→claimed→used→expired)."""
     try:
-        rd = RewardRedemption.query.get(redemption_id)
+        rd = db.session.get(RewardRedemption, redemption_id)
         if not rd:
             return jsonify({'success': False, 'error': 'Redemption not found'}), 404
+
+        # ── Org scope check ──
+        if current_user.role != 'superadmin' and rd.reward:
+            if rd.reward.organization_id != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
 
         data = request.get_json() or {}
         new_status = data.get('status')
@@ -1292,7 +1332,7 @@ def update_reward_redemption(current_user, redemption_id):
         return jsonify({'success': True, 'log': _serialize_reward_log(rd)}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/logs/transactions', methods=['GET'])
@@ -1336,7 +1376,7 @@ def get_transaction_logs(current_user):
             })
         return jsonify({'success': True, 'logs': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1428,7 +1468,7 @@ def get_leaderboard(current_user):
             'topGroups': groups_list,
         }), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1455,7 +1495,7 @@ def get_groups(current_user):
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/groups', methods=['POST'])
@@ -1506,7 +1546,7 @@ def create_group(current_user):
         }}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/groups/<int:group_id>', methods=['PUT'])
@@ -1515,7 +1555,7 @@ def create_group(current_user):
 def update_group(current_user, group_id):
     """Update a community group."""
     try:
-        group = CommunityGroup.query.get(group_id)
+        group = db.session.get(CommunityGroup, group_id)
         if not group:
             return jsonify({'success': False, 'error': 'Group not found'}), 404
 
@@ -1541,7 +1581,7 @@ def update_group(current_user, group_id):
         }}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/groups/<int:group_id>', methods=['DELETE'])
@@ -1550,7 +1590,7 @@ def update_group(current_user, group_id):
 def delete_group(current_user, group_id):
     """Delete a community group. Prevents deletion if it has accounts."""
     try:
-        group = CommunityGroup.query.get(group_id)
+        group = db.session.get(CommunityGroup, group_id)
         if not group:
             return jsonify({'success': False, 'error': 'Group not found'}), 404
 
@@ -1568,7 +1608,7 @@ def delete_group(current_user, group_id):
         return jsonify({'success': True, 'message': 'Group deleted'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1589,11 +1629,40 @@ def get_analytics(current_user):
         now = datetime.now(timezone.utc)
         current_year = now.year
 
+        # ── Database-agnostic date formatting ──
+        dialect = db.engine.dialect.name  # 'sqlite' or 'postgresql'
+        if dialect == 'sqlite':
+            def _fmt_ym(col):
+                return func.strftime('%Y-%m', col)
+            def _fmt_ymd(col):
+                return func.strftime('%Y-%m-%d', col)
+            def _fmt_dow(col):
+                return func.strftime('%w', col)
+            def _fmt_hour(col):
+                return func.strftime('%H', col)
+            def _fmt_year(col):
+                return func.strftime('%Y', col)
+            def _fmt_date(col):
+                return func.date(col)
+        else:
+            def _fmt_ym(col):
+                return func.to_char(col, 'YYYY-MM')
+            def _fmt_ymd(col):
+                return func.to_char(col, 'YYYY-MM-DD')
+            def _fmt_dow(col):
+                return func.extract('dow', col).cast(db.String)
+            def _fmt_hour(col):
+                return func.to_char(col, 'HH24')
+            def _fmt_year(col):
+                return func.to_char(col, 'YYYY')
+            def _fmt_date(col):
+                return func.cast(col, db.Date)
+
         # ──────────────────────────────────────────────────────
         # 1. RECYCLING TRENDS  (monthly bottles for last 12 months)
         # ──────────────────────────────────────────────────────
         items_query = db.session.query(
-            func.strftime('%Y-%m', RecyclingItem.deposited_at).label('month'),
+            _fmt_ym(RecyclingItem.deposited_at).label('month'),
             func.count(RecyclingItem.id).label('total'),
             func.sum(db.case(
                 (RecyclingItem.condition != 'Rejected', 1),
@@ -1615,8 +1684,8 @@ def get_analytics(current_user):
         days_since_monday = today.weekday()  # 0=Mon
         week_start = today - timedelta(days=days_since_monday)
         daily_items_query = db.session.query(
-            func.strftime('%w', RecyclingItem.deposited_at).label('dow'),  # 0=Sun
-            func.strftime('%Y-%m-%d', RecyclingItem.deposited_at).label('day'),
+            _fmt_dow(RecyclingItem.deposited_at).label('dow'),  # 0=Sun
+            _fmt_ymd(RecyclingItem.deposited_at).label('day'),
             func.count(RecyclingItem.id).label('total'),
             func.sum(db.case(
                 (RecyclingItem.condition != 'Rejected', 1),
@@ -1627,25 +1696,23 @@ def get_analytics(current_user):
                 else_=0
             )).label('rejected'),
         ).join(RecyclingSession).filter(
-            func.date(RecyclingItem.deposited_at) >= week_start.isoformat(),
-            func.date(RecyclingItem.deposited_at) <= today.isoformat(),
+            _fmt_date(RecyclingItem.deposited_at) >= week_start.isoformat(),
+            _fmt_date(RecyclingItem.deposited_at) <= today.isoformat(),
         )
         if loc_id:
             daily_items_query = daily_items_query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
         daily_trends = daily_items_query.group_by('day').order_by('day').all()
 
         # ──────────────────────────────────────────────────────
-        # 2. USER GROWTH  (monthly new registrations for current year)
+        # 2. USER GROWTH  (monthly new registrations, all years)
         # ──────────────────────────────────────────────────────
         user_base_query = db.session.query(
-            func.strftime('%Y-%m', User.created_at).label('month'),
+            _fmt_ym(User.created_at).label('month'),
             func.count(User.id).label('count'),
         ).join(Account).join(CommunityGroup)
         if loc_id:
             user_base_query = user_base_query.filter(CommunityGroup.organization_id == loc_id)
-        user_growth = user_base_query.filter(
-            func.strftime('%Y', User.created_at) == str(current_year)
-        ).group_by('month').order_by('month').all()
+        user_growth = user_base_query.group_by('month').order_by('month').all()
 
         # Cumulative user count up to start of current year (baseline)
         baseline_query = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
@@ -1656,10 +1723,10 @@ def get_analytics(current_user):
         ).scalar() or 0
 
         # ──────────────────────────────────────────────────────
-        # 3. POINTS ECONOMY  (earn vs redeem per month, current year)
+        # 3. POINTS ECONOMY  (earn vs redeem per month, all years)
         # ──────────────────────────────────────────────────────
         txn_base = db.session.query(
-            func.strftime('%Y-%m', Transaction.created_at).label('month'),
+            _fmt_ym(Transaction.created_at).label('month'),
             Transaction.transaction_type,
             func.sum(func.abs(Transaction.amount)).label('total_amount'),
         ).join(Account)
@@ -1667,9 +1734,7 @@ def get_analytics(current_user):
             txn_base = txn_base.join(CommunityGroup, Account.community_group_id == CommunityGroup.id).filter(
                 CommunityGroup.organization_id == loc_id
             )
-        points_economy = txn_base.filter(
-            func.strftime('%Y', Transaction.created_at) == str(current_year)
-        ).group_by('month', Transaction.transaction_type).order_by('month').all()
+        points_economy = txn_base.group_by('month', Transaction.transaction_type).order_by('month').all()
 
         # ──────────────────────────────────────────────────────
         # 4. MACHINE UTILIZATION  (items per machine, all time)
@@ -1707,7 +1772,7 @@ def get_analytics(current_user):
         # 6. PEAK HOURS  (bottles by hour of day, all time)
         # ──────────────────────────────────────────────────────
         peak_base = db.session.query(
-            func.strftime('%H', RecyclingItem.deposited_at).label('hour'),
+            _fmt_hour(RecyclingItem.deposited_at).label('hour'),
             func.count(RecyclingItem.id).label('count'),
         ).join(RecyclingSession)
         if loc_id:
@@ -1718,7 +1783,7 @@ def get_analytics(current_user):
         # 7. PEAK DAYS OF WEEK  (bottles by day, all time)
         # ──────────────────────────────────────────────────────
         peak_day_base = db.session.query(
-            func.strftime('%w', RecyclingItem.deposited_at).label('dow'),  # 0=Sun
+            _fmt_dow(RecyclingItem.deposited_at).label('dow'),  # 0=Sun
             func.count(RecyclingItem.id).label('count'),
         ).join(RecyclingSession)
         if loc_id:
@@ -1901,7 +1966,7 @@ def get_analytics(current_user):
             }
         }), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1950,7 +2015,7 @@ def get_notification_settings(current_user):
 
         return jsonify({'success': True, 'settings': result, 'alertTypes': alert_types}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/settings/notifications', methods=['PUT'])
@@ -1997,7 +2062,7 @@ def update_notification_settings(current_user):
         return jsonify({'success': True, 'message': f'{len(updates)} notification setting(s) updated'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/settings/notifications/test', methods=['POST'])
@@ -2049,7 +2114,7 @@ def test_notification(current_user):
             return jsonify({'success': False, 'error': f'Failed to send: {error}'}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/settings/notifications/logs', methods=['GET'])
@@ -2080,7 +2145,7 @@ def get_notification_logs(current_user):
 
         return jsonify({'success': True, 'logs': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -2128,7 +2193,7 @@ def get_points_config(current_user):
 
         return jsonify({'success': True, 'config': config}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/settings/points', methods=['PUT'])
@@ -2178,7 +2243,7 @@ def update_points_config(current_user):
         return jsonify({'success': True, 'config': config, 'message': 'Points configuration updated'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -2227,7 +2292,7 @@ def get_bulk_sessions(current_user):
         sessions = query.order_by(RecyclingSession.start_time.desc()).limit(200).all()
         return jsonify({'success': True, 'sessions': [_serialize_bulk_session(s) for s in sessions]}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/sessions/bulk', methods=['POST'])
@@ -2257,13 +2322,18 @@ def create_bulk_session(current_user):
         if not items_data:
             return jsonify({'success': False, 'error': 'At least one item is required'}), 400
 
-        rvm = RVM.query.get(rvm_id)
+        rvm = db.session.get(RVM, rvm_id)
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not found'}), 404
 
-        account = Account.query.get(account_id)
+        account = db.session.get(Account, account_id)
         if not account:
             return jsonify({'success': False, 'error': 'Account not found'}), 404
+
+        # ── Validate account belongs to same org as RVM ──
+        if account.community_group:
+            if account.community_group.organization_id != rvm.organization_id:
+                return jsonify({'success': False, 'error': 'Account does not belong to the same organization as the machine'}), 400
 
         if current_user.role != 'superadmin' and rvm.organization_id != get_user_org_id(current_user):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
@@ -2329,7 +2399,7 @@ def create_bulk_session(current_user):
         return jsonify({'success': True, 'session': _serialize_bulk_session(session)}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @web_bp.route('/sessions/bulk/<int:session_id>', methods=['GET'])
@@ -2338,11 +2408,16 @@ def create_bulk_session(current_user):
 def get_bulk_session_detail(current_user, session_id):
     """Get a single bulk session with its items."""
     try:
-        session = RecyclingSession.query.get(session_id)
+        session = db.session.get(RecyclingSession, session_id)
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
         if session.session_type != 'bulk':
             return jsonify({'success': False, 'error': 'Not a bulk session'}), 400
+
+        # ── Org scope check ──
+        if current_user.role != 'superadmin' and session.rvm:
+            if session.rvm.organization_id != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
 
         items = [{
             'id': i.id,
@@ -2361,4 +2436,4 @@ def get_bulk_session_detail(current_user, session_id):
 
         return jsonify({'success': True, 'session': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

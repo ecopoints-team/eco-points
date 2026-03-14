@@ -3,11 +3,13 @@ Authentication Controller
 Handles login, logout, and current-user endpoints with JWT tokens.
 """
 import jwt
+import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app
-from ..models import User, AdminLog, Account, CommunityGroup
+from ..models import User, AdminLog, Account, CommunityGroup, TokenBlacklist
 from ..middleware import token_required
-from .. import db
+from .. import db, limiter
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/web/auth')
 
@@ -21,6 +23,7 @@ def _generate_token(user):
     payload = {
         'user_id': user.id,
         'role': user.role,
+        'jti': str(uuid.uuid4()),
         'exp': datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS),
         'iat': datetime.now(timezone.utc),
     }
@@ -62,6 +65,7 @@ def _serialize_auth_user(u):
 # ── Routes ────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
     """Authenticate an admin user and return a JWT token.
 
@@ -118,7 +122,7 @@ def login():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @auth_bp.route('/me', methods=['GET'])
@@ -138,6 +142,22 @@ def logout(current_user):
     For server-side blacklisting, add a token_blacklist table later.
     """
     try:
+        # Blacklist the current token
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ', 1)[1]
+            try:
+                payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+                jti = payload.get('jti')
+                if jti:
+                    blacklisted = TokenBlacklist(
+                        jti=jti,
+                        expires_at=datetime.fromtimestamp(payload['exp'], tz=timezone.utc),
+                    )
+                    db.session.add(blacklisted)
+            except jwt.InvalidTokenError:
+                pass
+
         log = AdminLog(
             admin_user_id=current_user.id,
             action='Admin Logout',
@@ -150,7 +170,7 @@ def logout(current_user):
         return jsonify({'success': True, 'message': 'Logged out successfully'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @auth_bp.route('/profile', methods=['PUT'])
@@ -200,7 +220,7 @@ def update_profile(current_user):
         }), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @auth_bp.route('/change-password', methods=['POST'])
@@ -218,8 +238,14 @@ def change_password(current_user):
         if not current_pw or not new_pw:
             return jsonify({'success': False, 'error': 'Current and new password are required'}), 400
 
-        if len(new_pw) < 6:
-            return jsonify({'success': False, 'error': 'New password must be at least 6 characters'}), 400
+        if len(new_pw) < 8:
+            return jsonify({'success': False, 'error': 'New password must be at least 8 characters'}), 400
+        if not re.search(r'[A-Z]', new_pw):
+            return jsonify({'success': False, 'error': 'New password must contain at least one uppercase letter'}), 400
+        if not re.search(r'[a-z]', new_pw):
+            return jsonify({'success': False, 'error': 'New password must contain at least one lowercase letter'}), 400
+        if not re.search(r'[0-9]', new_pw):
+            return jsonify({'success': False, 'error': 'New password must contain at least one digit'}), 400
 
         if not current_user.check_password(current_pw):
             return jsonify({'success': False, 'error': 'Current password is incorrect'}), 401
@@ -239,12 +265,13 @@ def change_password(current_user):
         return jsonify({'success': True, 'message': 'Password changed successfully'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 # ── Public Registration ───────────────────────────────────────────────
 
 @auth_bp.route('/register', methods=['POST'])
+@limiter.limit("5 per minute")
 def register():
     """Public registration for regular (non-admin) users.
 
@@ -259,6 +286,9 @@ def register():
         username = data.get('username')
         phone = data.get('phone')
         user_type = data.get('userType')
+        valid_user_types = ('student', 'faculty', 'staff')
+        if user_type and user_type not in valid_user_types:
+            return jsonify({'success': False, 'error': f'Invalid userType. Must be one of {valid_user_types}'}), 400
         location_id = data.get('locationId')
         group_id = data.get('groupId')
         year_level = data.get('yearLevel')
@@ -266,8 +296,14 @@ def register():
         # Validations
         if not name:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
-        if not password or len(password) < 6:
-            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
+        if not password or len(password) < 8:
+            return jsonify({'success': False, 'error': 'Password must be at least 8 characters with uppercase, lowercase, and a digit'}), 400
+        if not re.search(r'[A-Z]', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one uppercase letter'}), 400
+        if not re.search(r'[a-z]', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one lowercase letter'}), 400
+        if not re.search(r'[0-9]', password):
+            return jsonify({'success': False, 'error': 'Password must contain at least one digit'}), 400
         if not location_id:
             return jsonify({'success': False, 'error': 'Organization/location is required'}), 400
 
@@ -286,6 +322,11 @@ def register():
             if not default_group:
                 return jsonify({'success': False, 'error': 'No community group found for this location'}), 400
             group_id = default_group.id
+        else:
+            # Validate that groupId belongs to the specified locationId
+            group = CommunityGroup.query.get(group_id)
+            if not group or group.organization_id != int(location_id):
+                return jsonify({'success': False, 'error': 'Selected group does not belong to the chosen location'}), 400
 
         account = Account(
             community_group_id=group_id,
@@ -312,7 +353,7 @@ def register():
 
         # Generate display_id
         from ..models import Organization
-        org = Organization.query.get(location_id)
+        org = db.session.get(Organization, location_id)
         if org:
             words = [w for w in org.name.split() if w[0].isupper()]
             org_abbr = ''.join(w[0] for w in words).upper() or 'ORG'
@@ -325,7 +366,7 @@ def register():
         return jsonify({'success': True, 'message': 'Account created successfully'}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @auth_bp.route('/locations', methods=['GET'])
@@ -337,7 +378,7 @@ def public_locations():
         result = [{'id': o.id, 'name': o.name, 'fullName': o.full_name} for o in orgs]
         return jsonify({'success': True, 'locations': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @auth_bp.route('/groups', methods=['GET'])
@@ -360,4 +401,4 @@ def public_groups():
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

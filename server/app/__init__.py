@@ -3,12 +3,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 # Initialize Extensions
 load_dotenv()
 db = SQLAlchemy()
 migrate = Migrate()
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"], storage_uri="memory://")
 
 
 class Config:
@@ -30,8 +33,13 @@ def create_app():
     # Load Config from environment or defaults
     app.config.from_object(Config)
 
-    # Warn if using default secret key
+    # Block startup with default secret key in explicit production
     if app.config['SECRET_KEY'] == 'dev-key-DO-NOT-USE-IN-PRODUCTION':
+        if os.environ.get('FLASK_ENV') == 'production':
+            raise RuntimeError(
+                'SECRET_KEY is using the default dev value. '
+                'Set the SECRET_KEY environment variable before running in production!'
+            )
         import warnings
         warnings.warn(
             'SECRET_KEY is using the default dev value. '
@@ -50,7 +58,10 @@ def create_app():
 
     # Add additional origins from environment variable if provided
     if os.environ.get('CORS_ORIGINS'):
-        allowed_origins.extend(os.environ.get('CORS_ORIGINS').split(','))
+        allowed_origins.extend(
+            origin.strip() for origin in os.environ.get('CORS_ORIGINS').split(',')
+            if origin.strip()
+        )
     
     CORS(app, resources={
         r"/api/*": {
@@ -64,6 +75,7 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
 
     with app.app_context():
         # Import routes and models so they are registered
