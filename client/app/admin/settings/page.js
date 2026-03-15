@@ -268,7 +268,7 @@ export default function SettingsPage() {
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${activeSection === s.id
                                         ? 'bg-emerald-50 text-emerald-700 font-semibold dark:bg-emerald-900/20 dark:text-emerald-400'
                                         : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
-                                    }`}>
+                                        }`}>
                                     <s.icon size={18} />{s.label}
                                 </button>
                             ))}
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                                                                     className={`p-1.5 rounded-lg transition-colors ${setting.emailEnabled && setting.isActive
                                                                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
                                                                         : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                                                                    } disabled:opacity-40`} title="Email">
+                                                                        } disabled:opacity-40`} title="Email">
                                                                     <Mail size={16} />
                                                                 </button>
                                                                 <button onClick={() => updateNotifSetting(setting.alertKey, 'smsEnabled', !setting.smsEnabled)}
@@ -431,7 +431,7 @@ export default function SettingsPage() {
                                                                     className={`p-1.5 rounded-lg transition-colors ${setting.smsEnabled && setting.isActive
                                                                         ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400'
                                                                         : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                                                                    } disabled:opacity-40`} title="SMS">
+                                                                        } disabled:opacity-40`} title="SMS">
                                                                     <Smartphone size={16} />
                                                                 </button>
                                                             </div>
