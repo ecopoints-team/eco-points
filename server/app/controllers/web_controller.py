@@ -1238,6 +1238,29 @@ def get_machine_logs(current_user):
         if loc_id:
             query = query.filter(RVM.organization_id == loc_id)
         logs = query.order_by(MaintenanceLog.timestamp.desc()).limit(500).all()
+
+        # ── Notification hook: maintenance_unresolved ──
+        try:
+            if loc_id:
+                from ..services.notification_service import NotificationSetting
+                unresolved_setting = NotificationSetting.query.filter_by(
+                    organization_id=loc_id,
+                    alert_key='maintenance_unresolved', is_active=True
+                ).first()
+                if unresolved_setting:
+                    threshold_hrs = (unresolved_setting.threshold or 48)
+                    cutoff = datetime.now(timezone.utc) - timedelta(hours=threshold_hrs)
+                    unresolved = [l for l in logs if not l.resolved and l.timestamp and l.timestamp < cutoff]
+                    for log_entry in unresolved[:5]:  # Limit to 5 alerts per request
+                        rvm_obj = db.session.get(RVM, log_entry.rvm_id)
+                        rvm_name = rvm_obj.name if rvm_obj else f'RVM #{log_entry.rvm_id}'
+                        trigger_alert(loc_id, 'maintenance_unresolved',
+                                      f'Unresolved maintenance: {rvm_name}',
+                                      f'Maintenance log "{log_entry.action_type}" on "{rvm_name}" '
+                                      f'has been unresolved for over {threshold_hrs} hours.')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'logs': [_serialize_machine_log(l) for l in logs]}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
