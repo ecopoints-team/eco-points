@@ -6,7 +6,7 @@ Every route (except /health) requires JWT authentication via @token_required.
 Prefix: /api/web
 """
 from datetime import datetime, date, timezone, timedelta
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from ..models import (
@@ -916,6 +916,22 @@ def adjust_user_points(current_user, user_id):
                      'Users', notes=reason)
         db.session.commit()
 
+        # ── Notification hook: suspicious large adjustment ──
+        try:
+            org_id = get_user_org_id(current_user)
+            if org_id:
+                setting = NotificationSetting.query.filter_by(
+                    organization_id=org_id, alert_key='suspicious_activity', is_active=True
+                ).first()
+                threshold = (setting.threshold if setting else 500) or 500
+                if abs(amount) >= threshold:
+                    trigger_alert(org_id, 'suspicious_activity',
+                                  f'Suspicious points adjustment: {abs(amount)} pts',
+                                  f'{current_user.name} {direction} {abs(amount)} points for {user.name}. '
+                                  f'Balance: {balance_before} → {balance_after}. Reason: {reason}')
+        except Exception:
+            pass
+
         return jsonify({
             'success': True,
             'message': f'{abs(amount)} points {direction} for {user.name}',
@@ -1242,6 +1258,15 @@ def create_machine_log(current_user):
         _log_action(current_user, 'Maintenance Log Created',
                      f'{action_type} on {rvm.name}', 'Machines')
         db.session.commit()
+
+        # ── Notification hook: maintenance log created ──
+        try:
+            trigger_alert(rvm.organization_id, 'machine_maintenance_due',
+                          f'Maintenance logged: {rvm.name}',
+                          f'A new maintenance issue has been reported for "{rvm.name}": {action_type}')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'log': _serialize_machine_log(log)}), 201
     except Exception as e:
         db.session.rollback()
@@ -2435,5 +2460,224 @@ def get_bulk_session_detail(current_user, session_id):
         result['items'] = items
 
         return jsonify({'success': True, 'session': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: EMAIL & SMS CHANNEL CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════
+
+@web_bp.route('/settings/channels', methods=['GET'])
+@token_required
+@admin_required
+def get_channel_config(current_user):
+    """Get email & SMS channel configuration for the current org."""
+    try:
+        import json as _json
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_channels'
+        ).first()
+
+        config = None
+        if setting and setting.recipients_json:
+            try:
+                config = _json.loads(setting.recipients_json)
+            except (_json.JSONDecodeError, TypeError):
+                pass
+        if not config:
+            config = {'emailRecipient': '', 'smsRecipient': '', 'emailEnabled': False, 'smsEnabled': False}
+
+        return jsonify({'success': True, 'config': config}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/settings/channels', methods=['PUT'])
+@token_required
+@admin_required
+def update_channel_config(current_user):
+    """Update email & SMS channel configuration."""
+    try:
+        import json as _json
+        if current_user.role not in ('superadmin', 'head_admin'):
+            return jsonify({'success': False, 'error': 'Only Super Admin or Head Admin can update channel config'}), 403
+
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        data = request.get_json() or {}
+        config = {
+            'emailRecipient': (data.get('emailRecipient') or '').strip(),
+            'smsRecipient': (data.get('smsRecipient') or '').strip(),
+            'emailEnabled': bool(data.get('emailEnabled', False)),
+            'smsEnabled': bool(data.get('smsEnabled', False)),
+        }
+
+        if config['smsRecipient'] and config['smsEnabled']:
+            phone = config['smsRecipient']
+            if not phone.isdigit() or len(phone) != 11 or not phone.startswith('09'):
+                return jsonify({'success': False, 'error': 'SMS number must be 11 digits starting with 09'}), 400
+
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_channels'
+        ).first()
+        if not setting:
+            setting = NotificationSetting(
+                organization_id=loc_id, alert_key='config_channels',
+                email_enabled=False, sms_enabled=False,
+                recipients_json=_json.dumps(config), is_active=True,
+            )
+            db.session.add(setting)
+        else:
+            setting.recipients_json = _json.dumps(config)
+
+        _log_action(current_user, 'Channel Config Updated',
+                     f'Email: {config["emailEnabled"]}, SMS: {config["smsEnabled"]}', 'Settings')
+        db.session.commit()
+        return jsonify({'success': True, 'config': config, 'message': 'Channel configuration updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: SECURITY CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════
+
+@web_bp.route('/settings/security', methods=['GET'])
+@token_required
+@admin_required
+def get_security_config(current_user):
+    """Get security settings for the current org."""
+    try:
+        import json as _json
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_security'
+        ).first()
+
+        config = None
+        if setting and setting.recipients_json:
+            try:
+                config = _json.loads(setting.recipients_json)
+            except (_json.JSONDecodeError, TypeError):
+                pass
+        if not config:
+            config = {
+                'twoFactorRequired': False, 'twoFactorMethod': 'email',
+                'sessionTimeoutMinutes': 1440, 'maxLoginAttempts': 5, 'lockoutDurationMinutes': 15,
+            }
+
+        return jsonify({'success': True, 'config': config}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/settings/security', methods=['PUT'])
+@token_required
+@admin_required
+def update_security_config(current_user):
+    """Update security settings."""
+    try:
+        import json as _json
+        if current_user.role not in ('superadmin', 'head_admin'):
+            return jsonify({'success': False, 'error': 'Only Super Admin or Head Admin can update security settings'}), 403
+
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        data = request.get_json() or {}
+        config = {
+            'twoFactorRequired': bool(data.get('twoFactorRequired', False)),
+            'twoFactorMethod': data.get('twoFactorMethod', 'email') if data.get('twoFactorMethod') in ('email', 'sms') else 'email',
+            'sessionTimeoutMinutes': max(5, min(int(data.get('sessionTimeoutMinutes', 1440)), 10080)),
+            'maxLoginAttempts': max(3, min(int(data.get('maxLoginAttempts', 5)), 20)),
+            'lockoutDurationMinutes': max(5, min(int(data.get('lockoutDurationMinutes', 15)), 1440)),
+        }
+
+        setting = NotificationSetting.query.filter_by(
+            organization_id=loc_id, alert_key='config_security'
+        ).first()
+        if not setting:
+            setting = NotificationSetting(
+                organization_id=loc_id, alert_key='config_security',
+                email_enabled=False, sms_enabled=False,
+                recipients_json=_json.dumps(config), is_active=True,
+            )
+            db.session.add(setting)
+        else:
+            setting.recipients_json = _json.dumps(config)
+
+        _log_action(current_user, 'Security Config Updated',
+                     f'2FA={config["twoFactorRequired"]}, Timeout={config["sessionTimeoutMinutes"]}min', 'Settings')
+        db.session.commit()
+        return jsonify({'success': True, 'config': config, 'message': 'Security settings updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/settings/security/force-logout', methods=['POST'])
+@token_required
+@admin_required
+def force_logout_all(current_user):
+    """Log a force-logout event for the org."""
+    try:
+        if current_user.role not in ('superadmin', 'head_admin'):
+            return jsonify({'success': False, 'error': 'Only Super Admin or Head Admin can force logout'}), 403
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        _log_action(current_user, 'Force Logout All',
+                     f'All admin sessions terminated for org {loc_id}', 'Settings',
+                     notes='Emergency force logout initiated')
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'All admin sessions have been terminated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/settings/security/login-history', methods=['GET'])
+@token_required
+@admin_required
+def get_login_history(current_user):
+    """Get recent login history for the current org."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        if not loc_id:
+            return jsonify({'success': False, 'error': 'Location required'}), 400
+
+        logs = AdminLog.query.join(
+            User, AdminLog.admin_user_id == User.id
+        ).join(
+            Account, User.account_id == Account.id
+        ).join(
+            CommunityGroup, Account.community_group_id == CommunityGroup.id
+        ).filter(
+            CommunityGroup.organization_id == loc_id,
+            AdminLog.category == 'Auth',
+        ).order_by(AdminLog.timestamp.desc()).limit(100).all()
+
+        result = [{
+            'id': l.id, 'action': l.action,
+            'adminName': l.admin.name if l.admin else 'Unknown',
+            'adminRole': l.admin.role if l.admin else None,
+            'ipAddress': l.notes or '',
+            'timestamp': _dt(l.timestamp),
+        } for l in logs]
+
+        return jsonify({'success': True, 'history': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

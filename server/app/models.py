@@ -166,6 +166,10 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime, nullable=True)
 
+    # Two-Factor Authentication
+    otp_enabled = db.Column(db.Boolean, default=False)
+    otp_method = db.Column(db.String(10), nullable=True)      # "email" or "sms"
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
@@ -522,3 +526,18 @@ class TokenBlacklist(db.Model):
 
     def __repr__(self):
         return f'<TokenBlacklist {self.jti}>'
+
+
+class LoginAttempt(db.Model):
+    """Tracks login attempts for security monitoring and account lockout."""
+    __tablename__ = 'login_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    identifier = db.Column(db.String(200), nullable=False, index=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    success = db.Column(db.Boolean, default=False)
+    failure_reason = db.Column(db.String(100), nullable=True)
+    attempted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<LoginAttempt {self.identifier} ({"OK" if self.success else "FAIL"})>'

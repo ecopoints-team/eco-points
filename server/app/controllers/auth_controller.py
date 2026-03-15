@@ -4,30 +4,143 @@ Handles login, logout, and current-user endpoints with JWT tokens.
 """
 import jwt
 import re
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app
-from ..models import User, AdminLog, Account, CommunityGroup, TokenBlacklist
-from ..middleware import token_required
+from ..models import (
+    User, AdminLog, Account, CommunityGroup, TokenBlacklist,
+    LoginAttempt, NotificationSetting,
+)
+from ..middleware import token_required, get_user_org_id
 from .. import db, limiter
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/web/auth')
 
 # ── Token Helpers ─────────────────────────────────────────────────────────
 
-TOKEN_EXPIRY_HOURS = 24  # Tokens valid for 24 hours
+TOKEN_EXPIRY_HOURS = 24
+TEMP_TOKEN_MINUTES = 10
 
 
-def _generate_token(user):
+def _generate_token(user, expiry_hours=None):
     """Create a signed JWT for the given user."""
+    if expiry_hours is None:
+        expiry_hours = TOKEN_EXPIRY_HOURS
     payload = {
         'user_id': user.id,
         'role': user.role,
         'jti': str(uuid.uuid4()),
-        'exp': datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS),
+        'exp': datetime.now(timezone.utc) + timedelta(hours=expiry_hours),
         'iat': datetime.now(timezone.utc),
     }
     return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
+def _generate_temp_token(user):
+    """Create a short-lived temp JWT for 2FA verification."""
+    payload = {
+        'user_id': user.id,
+        'purpose': '2fa',
+        'jti': str(uuid.uuid4()),
+        'exp': datetime.now(timezone.utc) + timedelta(minutes=TEMP_TOKEN_MINUTES),
+        'iat': datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
+def _get_session_timeout(user):
+    """Get the session timeout (in hours) from the org's security config."""
+    try:
+        org_id = get_user_org_id(user)
+        if org_id:
+            setting = NotificationSetting.query.filter_by(
+                organization_id=org_id, alert_key='config_security'
+            ).first()
+            if setting and setting.recipients_json:
+                config = json.loads(setting.recipients_json)
+                minutes = config.get('sessionTimeoutMinutes', 1440)
+                return max(minutes / 60, 0.1)
+    except Exception:
+        pass
+    return TOKEN_EXPIRY_HOURS
+
+
+def _check_lockout(identifier, org_id=None):
+    """Check if the identifier is locked out. Returns (is_locked, remaining_minutes)."""
+    try:
+        max_attempts = 5
+        lockout_minutes = 15
+        if org_id:
+            setting = NotificationSetting.query.filter_by(
+                organization_id=org_id, alert_key='config_security'
+            ).first()
+            if setting and setting.recipients_json:
+                config = json.loads(setting.recipients_json)
+                max_attempts = config.get('maxLoginAttempts', 5)
+                lockout_minutes = config.get('lockoutDurationMinutes', 15)
+
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=lockout_minutes)
+        failed_count = LoginAttempt.query.filter(
+            LoginAttempt.identifier == identifier,
+            LoginAttempt.success == False,
+            LoginAttempt.attempted_at >= cutoff,
+        ).count()
+
+        if failed_count >= max_attempts:
+            last_fail = LoginAttempt.query.filter(
+                LoginAttempt.identifier == identifier,
+                LoginAttempt.success == False,
+                LoginAttempt.attempted_at >= cutoff,
+            ).order_by(LoginAttempt.attempted_at.desc()).first()
+            if last_fail:
+                unlock_at = last_fail.attempted_at + timedelta(minutes=lockout_minutes)
+                remaining = (unlock_at - datetime.now(timezone.utc)).total_seconds() / 60
+                return True, max(1, int(remaining))
+            return True, lockout_minutes
+        return False, 0
+    except Exception:
+        return False, 0
+
+
+def _log_attempt(identifier, ip, user_id=None, success=False, reason=None):
+    """Log a login attempt."""
+    try:
+        attempt = LoginAttempt(
+            identifier=identifier, ip_address=ip, user_id=user_id,
+            success=success, failure_reason=reason,
+        )
+        db.session.add(attempt)
+        db.session.commit()
+
+        # ── Notification hook: failed login alert ──
+        if not success and user_id:
+            try:
+                from ..services.notification_service import trigger_alert
+                user = db.session.get(User, user_id)
+                org_id = get_user_org_id(user) if user else None
+                if org_id:
+                    # Count recent failures (last 30 min)
+                    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+                    fail_count = LoginAttempt.query.filter(
+                        LoginAttempt.identifier == identifier,
+                        LoginAttempt.success == False,
+                        LoginAttempt.attempted_at >= cutoff,
+                    ).count()
+                    # Check threshold from settings
+                    threshold_setting = NotificationSetting.query.filter_by(
+                        organization_id=org_id, alert_key='failed_login_alert', is_active=True
+                    ).first()
+                    threshold = (threshold_setting.threshold if threshold_setting else 3) or 3
+                    if fail_count >= threshold:
+                        trigger_alert(org_id, 'failed_login_alert',
+                                      f'Multiple failed logins: {identifier}',
+                                      f'{fail_count} failed login attempts for "{identifier}" '
+                                      f'from IP {ip} in the last 30 minutes.')
+            except Exception:
+                pass
+    except Exception:
+        db.session.rollback()
 
 
 def _serialize_auth_user(u):
@@ -45,20 +158,15 @@ def _serialize_auth_user(u):
             }
 
     return {
-        'id': u.id,
-        'name': u.name,
-        'username': u.username,
-        'email': u.email,
-        'phone': u.phone,
-        'role': u.role,
-        'userType': u.user_type,
-        'yearLevel': u.year_level,
-        'isActive': u.is_active,
-        'locationId': location_id,
+        'id': u.id, 'name': u.name, 'username': u.username,
+        'email': u.email, 'phone': u.phone, 'role': u.role,
+        'userType': u.user_type, 'yearLevel': u.year_level,
+        'isActive': u.is_active, 'locationId': location_id,
         'organization': org,
         'pointsBalance': u.account.points_balance if u.account else 0,
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
+        'otpEnabled': u.otp_enabled, 'otpMethod': u.otp_method,
     }
 
 
@@ -67,59 +175,146 @@ def _serialize_auth_user(u):
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("10 per minute")
 def login():
-    """Authenticate an admin user and return a JWT token.
+    """Authenticate an admin user. If 2FA enabled, returns { requires2FA, tempToken }.
 
     Body: { "email": "...", "password": "..." }
-      OR  { "username": "...", "password": "..." }
     """
     try:
         data = request.get_json() or {}
         identifier = data.get('email') or data.get('username') or data.get('identifier')
         password = data.get('password')
+        ip = request.remote_addr
 
         if not identifier or not password:
             return jsonify({'success': False, 'error': 'Email/username and password are required'}), 400
 
-        # Look up by email first, then username — identifier could be either
         user = User.query.filter_by(email=identifier).first()
         if not user:
             user = User.query.filter_by(username=identifier).first()
 
+        org_id = get_user_org_id(user) if user else None
+
+        # Check lockout
+        is_locked, remaining = _check_lockout(identifier, org_id)
+        if is_locked:
+            _log_attempt(identifier, ip, user.id if user else None, False, 'locked_out')
+            return jsonify({'success': False, 'error': f'Account is temporarily locked. Try again in {remaining} minute(s).'}), 429
+
         if not user:
+            _log_attempt(identifier, ip, None, False, 'user_not_found')
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
 
         if not user.check_password(password):
+            _log_attempt(identifier, ip, user.id, False, 'invalid_password')
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
 
         if not user.is_active:
+            _log_attempt(identifier, ip, user.id, False, 'deactivated')
             return jsonify({'success': False, 'error': 'Account is deactivated'}), 403
 
         if not user.is_admin:
+            _log_attempt(identifier, ip, user.id, False, 'not_admin')
             return jsonify({'success': False, 'error': 'Admin access only'}), 403
 
-        # Update last_login timestamp
+        # Check if 2FA is required (per-user or per-org)
+        requires_2fa = user.otp_enabled
+        if not requires_2fa and org_id:
+            try:
+                sec_setting = NotificationSetting.query.filter_by(
+                    organization_id=org_id, alert_key='config_security'
+                ).first()
+                if sec_setting and sec_setting.recipients_json:
+                    sec_config = json.loads(sec_setting.recipients_json)
+                    if sec_config.get('twoFactorRequired'):
+                        requires_2fa = True
+            except Exception:
+                pass
+
+        if requires_2fa:
+            from ..services.otp_service import send_otp
+            method = user.otp_method or 'email'
+            _code, otp_success, otp_error = send_otp(user, method)
+            temp_token = _generate_temp_token(user)
+            return jsonify({
+                'success': True, 'requires2FA': True,
+                'tempToken': temp_token, 'otpMethod': method,
+                'otpSent': otp_success,
+                'otpError': otp_error if not otp_success else None,
+                'message': f'Verification code sent via {method}',
+            }), 200
+
+        # No 2FA — complete login
+        _log_attempt(identifier, ip, user.id, True)
         user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
-        token = _generate_token(user)
+        session_hours = _get_session_timeout(user)
+        token = _generate_token(user, session_hours)
 
-        # Log the login action
-        log = AdminLog(
-            admin_user_id=user.id,
-            action='Admin Login',
-            target=user.name,
-            category='Auth',
-            notes=f'Login from {request.remote_addr}',
-        )
+        log = AdminLog(admin_user_id=user.id, action='Admin Login',
+                       target=user.name, category='Auth', notes=f'Login from {ip}')
         db.session.add(log)
         db.session.commit()
 
-        return jsonify({
-            'success': True,
-            'token': token,
-            'user': _serialize_auth_user(user),
-        }), 200
+        return jsonify({'success': True, 'token': token, 'user': _serialize_auth_user(user)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
+
+@auth_bp.route('/verify-otp', methods=['POST'])
+@limiter.limit("10 per minute")
+def verify_otp_route():
+    """Verify a 2FA OTP code and complete the login.
+
+    Body: { "tempToken": "...", "code": "123456" }
+    """
+    try:
+        data = request.get_json() or {}
+        temp_token = data.get('tempToken')
+        code = data.get('code', '').strip()
+        ip = request.remote_addr
+
+        if not temp_token or not code:
+            return jsonify({'success': False, 'error': 'Token and code are required'}), 400
+
+        try:
+            payload = jwt.decode(temp_token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return jsonify({'success': False, 'error': 'Verification session expired. Please login again.'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'success': False, 'error': 'Invalid verification token'}), 401
+
+        if payload.get('purpose') != '2fa':
+            return jsonify({'success': False, 'error': 'Invalid token type'}), 401
+
+        user = db.session.get(User, payload['user_id'])
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 401
+
+        from ..services.otp_service import verify_otp
+        success, error = verify_otp(user.id, code)
+        if not success:
+            return jsonify({'success': False, 'error': error}), 401
+
+        # OTP verified — complete login
+        identifier = user.email or user.username
+        _log_attempt(identifier, ip, user.id, True)
+        user.last_login = datetime.now(timezone.utc)
+        if not user.otp_enabled:
+            user.otp_enabled = True
+            user.otp_method = user.otp_method or 'email'
+        db.session.commit()
+
+        session_hours = _get_session_timeout(user)
+        token = _generate_token(user, session_hours)
+
+        log = AdminLog(admin_user_id=user.id, action='Admin Login (2FA)',
+                       target=user.name, category='Auth', notes=f'Login from {ip} (2FA verified)')
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({'success': True, 'token': token, 'user': _serialize_auth_user(user)}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

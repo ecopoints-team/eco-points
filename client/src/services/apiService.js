@@ -543,6 +543,52 @@ export const settings = {
         });
         return data;
     },
+
+    // ── Channel Config (Email & SMS) ──
+    getChannelConfig: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/channels`, {
+            params: { location_id: locationId },
+        });
+        return data.config;
+    },
+
+    updateChannelConfig: async (config, locationId = null) => {
+        return await request(`${API_BASE}/settings/channels`, {
+            method: 'PUT',
+            body: config,
+            params: { location_id: locationId },
+        });
+    },
+
+    // ── Security Config ──
+    getSecurityConfig: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/security`, {
+            params: { location_id: locationId },
+        });
+        return data.config;
+    },
+
+    updateSecurityConfig: async (config, locationId = null) => {
+        return await request(`${API_BASE}/settings/security`, {
+            method: 'PUT',
+            body: config,
+            params: { location_id: locationId },
+        });
+    },
+
+    forceLogoutAll: async (locationId = null) => {
+        return await request(`${API_BASE}/settings/security/force-logout`, {
+            method: 'POST',
+            params: { location_id: locationId },
+        });
+    },
+
+    getLoginHistory: async (locationId = null) => {
+        const data = await request(`${API_BASE}/settings/security/login-history`, {
+            params: { location_id: locationId },
+        });
+        return data.history;
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════════════

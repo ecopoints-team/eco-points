@@ -72,6 +72,24 @@ ALERT_TYPES = {
         'default_threshold': 500,
         'category': 'security',
     },
+    'machine_capacity_high': {
+        'label': 'Machine Capacity High',
+        'description': 'When an RVM reaches a high percentage of its max capacity',
+        'default_threshold': 80,
+        'category': 'hardware',
+    },
+    'failed_login_alert': {
+        'label': 'Failed Login Attempts',
+        'description': 'When multiple failed login attempts are detected for an account',
+        'default_threshold': 3,
+        'category': 'security',
+    },
+    'bulk_session_completed': {
+        'label': 'Bulk Session Completed',
+        'description': 'When a bulk recycling session is completed',
+        'default_threshold': None,
+        'category': 'activity',
+    },
 }
 
 
