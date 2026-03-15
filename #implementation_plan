@@ -1,0 +1,219 @@
+# Email/SMS Notifications & Security Settings Feature
+
+Three-part plan: replace General tab with Email & SMS config, enhance Notifications tab, and make the Security tab fully functional with real 2FA.
+
+---
+
+## Part 1 — Email & SMS Configuration (General Tab Replacement)
+
+### Current State
+- **General tab** (lines 284–310 in [page.js](file:///c:/Users/pc/Documents/Github/client/app/admin/settings/page.js)) shows cosmetic, non-API-backed settings (site name, timezone, language, maintenance mode)
+- Backend already has [NotificationSetting](file:///c:/Users/pc/Documents/Github/server/app/models.py#460-484) model with key-value pattern (used for `config_points`)
+- [notification_service.py](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py) already has [_send_email()](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#87-116) and [_send_sms()](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#122-142) working with SMTP/Twilio
+
+### Proposed Changes
+
+#### [MODIFY] [web_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/web_controller.py)
+
+Add 2 endpoints for global email/SMS channel configuration:
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `GET` | `/settings/channels` | superadmin, head_admin | Get org's email & SMS channel config |
+| `PUT` | `/settings/channels` | superadmin, head_admin | Save email & SMS channel config |
+
+Stored as [NotificationSetting](file:///c:/Users/pc/Documents/Github/server/app/models.py#460-484) row with `alert_key = 'config_channels'`, `recipients_json` holding:
+```json
+{
+  "emailRecipient": "admin@example.com",
+  "smsRecipient": "09171234567",
+  "emailEnabled": true,
+  "smsEnabled": false
+}
+```
+
+#### [MODIFY] [apiService.js](file:///c:/Users/pc/Documents/Github/client/src/services/apiService.js)
+
+Add `getChannelConfig(locationId)` and `updateChannelConfig(config, locationId)` to the [settings](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#221-248) export.
+
+#### [MODIFY] [page.js](file:///c:/Users/pc/Documents/Github/client/app/admin/settings/page.js)
+
+- Rename sidebar "General" → "Email & SMS" with `Mail` icon
+- Replace General tab content with:
+  - **Email section**: Enable toggle + email address input
+  - **SMS section**: Enable toggle + phone number input (11-digit PH, `09XXXXXXXXX`)
+  - Info note linking to Notifications tab for per-alert config
+- Role-gated to superadmin/head_admin
+
+---
+
+## Part 2 — Notifications Tab Enhancements
+
+#### [MODIFY] [page.js](file:///c:/Users/pc/Documents/Github/client/app/admin/settings/page.js)
+
+1. **Test Notification — SMS phone field**: When channel dropdown = SMS, switch input to `type="tel"`, `maxLength={11}`, digits only, must start with `09`
+2. **Info banner**: "Notifications sent to email/phone configured in Email & SMS tab"
+3. Existing alert matrix (9 alert types with per-alert toggles, recipients, thresholds) remains — already functional
+
+---
+
+## Part 3 — Security Tab (Make Functional + New Features)
+
+### Current State
+The Security tab is **entirely cosmetic** — all settings are local React state:
+- 2FA toggle → does nothing
+- Session timeout input → does nothing
+- Audit logging toggle → does nothing (audit logging is always on)
+
+The backend has: rate limiting (`10/min` on login), JWT tokens (24h fixed expiry), token blacklisting on logout, password validation (8+ chars, upper/lower/digit). **No 2FA exists.**
+
+### 3A — Two-Factor Authentication (Email/SMS OTP)
+
+#### [MODIFY] [models.py](file:///c:/Users/pc/Documents/Github/server/app/models.py)
+
+Add fields to [User](file:///c:/Users/pc/Documents/Github/server/app/models.py#131-232) model:
+```python
+# 2FA fields
+otp_secret = db.Column(db.String(32), nullable=True)     # For TOTP/random OTP generation
+otp_enabled = db.Column(db.Boolean, default=False)        # Whether 2FA is active for this user
+otp_method = db.Column(db.String(10), nullable=True)      # "email" or "sms"
+```
+
+#### [NEW] [otp_service.py](file:///c:/Users/pc/Documents/Github/server/app/services/otp_service.py)
+
+Lightweight OTP service using Python's `secrets` module (no external deps):
+- `generate_otp(user)` → generates 6-digit code, stores hashed in a temporary cache (Redis-free: use a simple DB table or in-memory dict with TTL)
+- `verify_otp(user, code)` → validates code within 5-minute window
+- `send_otp(user)` → dispatches OTP via [_send_email()](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#87-116) or [_send_sms()](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#122-142) based on `user.otp_method`
+
+#### [MODIFY] [auth_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/auth_controller.py)
+
+Change login flow to support 2FA:
+1. First step: validate credentials → if 2FA enabled, return `{ requires2FA: true, tempToken: "..." }` instead of final JWT
+2. New endpoint `POST /auth/verify-otp` → accepts `{ tempToken, code }` → returns real JWT
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/auth/verify-otp` | Verify OTP code and complete login |
+
+#### [MODIFY] Frontend login flow
+
+Update the login page to handle the `requires2FA` response — show an OTP input screen before completing authentication.
+
+### 3B — Configurable Session Timeout
+
+#### [MODIFY] [web_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/web_controller.py)
+
+Add `GET/PUT /settings/security` endpoints storing security config in [NotificationSetting](file:///c:/Users/pc/Documents/Github/server/app/models.py#460-484) with `alert_key = 'config_security'`:
+```json
+{
+  "twoFactorRequired": false,
+  "sessionTimeoutMinutes": 30,
+  "maxLoginAttempts": 5,
+  "lockoutDurationMinutes": 15,
+  "passwordExpiryDays": 0,
+  "ipAllowlist": []
+}
+```
+
+#### [MODIFY] [auth_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/auth_controller.py)
+
+- Read `sessionTimeoutMinutes` from org config → set JWT `exp` dynamically instead of fixed 24h
+- When `twoFactorRequired` is true, enforce 2FA for all admin users in the org
+
+### 3C — Login Attempt Tracking & Account Lockout
+
+#### [NEW] [login_attempts table / model]
+
+```python
+class LoginAttempt(db.Model):
+    __tablename__ = 'login_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    identifier = db.Column(db.String(200), nullable=False)  # email/username tried
+    ip_address = db.Column(db.String(50))
+    success = db.Column(db.Boolean, default=False)
+    attempted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+```
+
+#### [MODIFY] [auth_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/auth_controller.py)
+
+- Log every login attempt (success/fail) to `login_attempts` table
+- Before authenticating, check failed attempts in the last `lockoutDurationMinutes` — if count ≥ `maxLoginAttempts`, return `429 Too Many Attempts`
+- Show failed attempt count in the Security tab UI
+
+### 3D — Additional Security Features (Suggested)
+
+These are **additional features** to consider for the Security tab:
+
+| Feature | Description | Effort |
+|---------|-------------|--------|
+| **Password Expiry** | Force password change after N days (configurable, 0 = disabled) | Medium |
+| **IP Allowlist** | Restrict admin access to specific IP addresses/ranges | Medium |
+| **Force Logout All** | Button to blacklist all active tokens for the org (emergency) | Small |
+| **Active Sessions** | Show list of active admin sessions (token JTI, IP, last activity) | Medium |
+| **Login History** | Display recent login attempts (success/fail) with IP and timestamp | Small |
+
+> [!IMPORTANT]
+> **Recommendation**: For this implementation round, I suggest implementing **3A (2FA)**, **3B (Session Timeout)**, **3C (Login Attempts)**, **Force Logout All**, and **Login History**. Password Expiry and IP Allowlist can be deferred to a future update.
+
+### 3E — Security Tab UI Overhaul
+
+#### [MODIFY] [page.js](file:///c:/Users/pc/Documents/Github/client/app/admin/settings/page.js)
+
+Replace the cosmetic Security tab with functional sections:
+
+```
+Security Tab
+├── Two-Factor Authentication
+│   ├── "Require 2FA for all admins" toggle → saves to config_security
+│   ├── Method: Email / SMS dropdown
+│   └── Status indicator per admin user (enabled/disabled)
+├── Session Management
+│   ├── Session Timeout (minutes) input → saves to config_security
+│   └── "Force Logout All Sessions" button → POST endpoint
+├── Login Protection
+│   ├── Max Login Attempts input (default: 5)
+│   ├── Lockout Duration (minutes) input (default: 15)
+│   └── Recent Login History (table: time, user, IP, status)
+└── Audit Logging
+    └── Always-on indicator (non-toggleable, informational)
+```
+
+#### [MODIFY] [apiService.js](file:///c:/Users/pc/Documents/Github/client/src/services/apiService.js)
+
+Add to [settings](file:///c:/Users/pc/Documents/Github/server/app/services/notification_service.py#221-248):
+- `getSecurityConfig(locationId)` / `updateSecurityConfig(config, locationId)`
+- `forceLogoutAll(locationId)`
+- `getLoginHistory(locationId)`
+
+---
+
+## Summary of All Changes
+
+| File | Action | What Changes |
+|------|--------|-------------|
+| [server/app/models.py](file:///c:/Users/pc/Documents/Github/server/app/models.py) | MODIFY | +3 fields on [User](file:///c:/Users/pc/Documents/Github/server/app/models.py#131-232) (otp), +`LoginAttempt` model |
+| `server/app/services/otp_service.py` | NEW | OTP generation, verification, delivery |
+| [server/app/controllers/auth_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/auth_controller.py) | MODIFY | 2FA login flow, login attempt tracking, verify-otp endpoint |
+| [server/app/controllers/web_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/web_controller.py) | MODIFY | +channels config endpoints, +security config endpoints, +force logout, +login history |
+| [server/requirements.txt](file:///c:/Users/pc/Documents/Github/server/requirements.txt) | NO CHANGE | No new deps needed (OTP uses `secrets` stdlib) |
+| [client/src/services/apiService.js](file:///c:/Users/pc/Documents/Github/client/src/services/apiService.js) | MODIFY | +channel config, +security config, +force logout, +login history API calls |
+| [client/app/admin/settings/page.js](file:///c:/Users/pc/Documents/Github/client/app/admin/settings/page.js) | MODIFY | Replace General tab, enhance Notifications tab, overhaul Security tab |
+| Client login page | MODIFY | Handle `requires2FA` response with OTP input screen |
+
+---
+
+## Verification Plan
+
+### Automated
+- Run backend server and check all new endpoints return correct responses
+- Test OTP flow: login → get `requires2FA` → verify-otp → get JWT
+
+### Manual Browser Testing
+1. **Email & SMS tab**: Configure email/phone → Save → Refresh → verify persistence
+2. **Notifications tab**: Select SMS → verify phone field has 11-digit limit; test notification
+3. **Security tab — 2FA**: Enable 2FA → logout → login → verify OTP prompt → enter code → login succeeds
+4. **Security tab — Session timeout**: Set timeout to 5 min → verify token expires after 5 min
+5. **Security tab — Lockout**: Fail login 5 times → verify lockout message → wait → try again
+6. **Force Logout**: Click "Force Logout All" → verify all other sessions are invalidated
+7. **Login History**: Verify table shows recent login attempts with correct data
