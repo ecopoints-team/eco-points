@@ -1030,6 +1030,23 @@ def update_machine(current_user, machine_id):
         except Exception:
             pass
 
+        # ── Notification hook: machine capacity high ──
+        try:
+            if 'currentCapacity' in data:
+                from ..services.notification_service import NotificationSetting
+                cap_setting = NotificationSetting.query.filter_by(
+                    organization_id=rvm.organization_id,
+                    alert_key='machine_capacity_high', is_active=True
+                ).first()
+                threshold = (cap_setting.threshold if cap_setting else 80) or 80
+                if int(data['currentCapacity']) >= threshold:
+                    trigger_alert(rvm.organization_id, 'machine_capacity_high',
+                                  f'Capacity high: {rvm.name}',
+                                  f'Machine "{rvm.name}" is at {data["currentCapacity"]}% capacity '
+                                  f'(threshold: {threshold}%).')
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'machine': _serialize_rvm(rvm)}), 200
     except Exception as e:
         db.session.rollback()
@@ -2111,14 +2128,18 @@ def test_notification(current_user):
         subject = 'EcoPoints Test Notification'
         body = 'This is a test notification from EcoPoints. If you received this, notifications are working correctly.'
 
+        # Resolve org name for branded email footer
+        loc_id = _scope_location_id(current_user)
+        org = db.session.get(Organization, loc_id) if loc_id else None
+        org_name = org.name if org else None
+
         if channel == 'email':
-            success, error = _send_email(recipient, subject, body)
+            success, error = _send_email(recipient, subject, body, org_name=org_name)
         elif channel == 'sms':
             success, error = _send_sms(recipient, f'[EcoPoints] {body}')
         else:
             return jsonify({'success': False, 'error': 'Channel must be "email" or "sms"'}), 400
 
-        loc_id = _scope_location_id(current_user)
         if loc_id:
             log = NotificationLog(
                 organization_id=loc_id,
@@ -2420,6 +2441,15 @@ def create_bulk_session(current_user):
                      f'{len(items_data)} items, {total_points} pts for account {account_id}',
                      'Logs', notes=notes)
         db.session.commit()
+
+        # -- Notification hook: bulk session completed --
+        try:
+            trigger_alert(rvm.organization_id, 'bulk_session_completed',
+                          f'Bulk session completed: {len(items_data)} items',
+                          f'A bulk session of {len(items_data)} items ({total_points} pts) '
+                          f'was created for account {account_id} on "{rvm.name}".')
+        except Exception:
+            pass
 
         return jsonify({'success': True, 'session': _serialize_bulk_session(session)}), 201
     except Exception as e:

@@ -5,12 +5,17 @@ Handles sending email and SMS alerts based on per-organization notification sett
 import json
 import os
 import smtplib
+import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from datetime import datetime, timezone
 
 from .. import db
 from ..models import NotificationSetting, NotificationLog, Organization
+
+# Path to the inline logo image
+_LOGO_PATH = os.path.join(os.path.dirname(__file__), 'logo.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -99,11 +104,79 @@ def get_alert_types():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# BRANDED HTML EMAIL TEMPLATE
+# ══════════════════════════════════════════════════════════════════════════
+
+def _build_email_html(subject, body, org_name=None):
+    """Wrap notification content in a branded EcoPoints HTML email template."""
+    year = datetime.now().year
+    org_line = f' — {org_name}' if org_name else ''
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f0fdf4;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#166534 0%,#15803d 50%,#16a34a 100%);padding:32px 40px;text-align:center;">
+            <img src="cid:ecopoints_logo" alt="EcoPoints" width="240" style="display:block;margin:0 auto;max-width:100%;height:auto;" />
+          </td>
+        </tr>
+
+        <!-- Subject Banner -->
+        <tr>
+          <td style="background-color:#dcfce7;padding:16px 40px;border-bottom:1px solid #bbf7d0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="font-size:13px;font-weight:600;color:#166534;">&#x1f514; {subject}</td>
+                <td align="right" style="font-size:11px;color:#4ade80;">{datetime.now(timezone.utc).strftime('%b %d, %Y at %I:%M %p')} UTC</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 40px;">
+            <div style="font-size:15px;line-height:1.7;color:#374151;">
+              {body}
+            </div>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr>
+          <td style="padding:0 40px;">
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:0;" />
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 40px 32px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#166534;">EcoPoints Notification System{org_line}</p>
+            <p style="margin:0;font-size:11px;color:#9ca3af;">This is an automated alert. Manage your notification preferences in the EcoPoints admin panel.</p>
+            <p style="margin:12px 0 0;font-size:11px;color:#d1d5db;">&copy; {year} EcoPoints. All rights reserved.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # EMAIL SENDER
 # ══════════════════════════════════════════════════════════════════════════
 
-def _send_email(to_email, subject, body):
-    """Send an email via SMTP. Returns (success: bool, error: str|None)."""
+def _send_email(to_email, subject, body, org_name=None):
+    """Send a branded HTML email via SMTP with inline logo. Returns (success: bool, error: str|None)."""
     smtp_host = os.environ.get('SMTP_HOST', '')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
     smtp_user = os.environ.get('SMTP_USER', '')
@@ -114,11 +187,29 @@ def _send_email(to_email, subject, body):
         return False, 'SMTP not configured (SMTP_HOST and SMTP_USER required)'
 
     try:
-        msg = MIMEMultipart()
-        msg['From'] = smtp_from
+        html_content = _build_email_html(subject, body, org_name)
+
+        msg = MIMEMultipart('related')
+        msg['From'] = f'EcoPoints <{smtp_from}>'
         msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
+        msg['Subject'] = f'[EcoPoints] {subject}'
+
+        msg_alt = MIMEMultipart('alternative')
+        msg.attach(msg_alt)
+
+        # Plain text fallback
+        plain_text = f"{subject}\n\n{body}\n\n— EcoPoints Notification System"
+        msg_alt.attach(MIMEText(plain_text, 'plain'))
+        msg_alt.attach(MIMEText(html_content, 'html'))
+
+        # Attach logo as inline image (CID)
+        if os.path.exists(_LOGO_PATH):
+            with open(_LOGO_PATH, 'rb') as f:
+                logo_data = f.read()
+            logo_img = MIMEImage(logo_data, _subtype='png')
+            logo_img.add_header('Content-ID', '<ecopoints_logo>')
+            logo_img.add_header('Content-Disposition', 'inline', filename='ecopoints-logo.png')
+            msg.attach(logo_img)
 
         with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.ehlo()
@@ -191,12 +282,16 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     if not recipients:
         return []
 
+    # Look up org name for email branding
+    org = db.session.get(Organization, org_id)
+    org_name = org.name if org else None
+
     logs_created = []
 
     for recipient in recipients:
         # Email channel
         if setting.email_enabled and '@' in recipient:
-            success, error = _send_email(recipient, subject, body)
+            success, error = _send_email(recipient, subject, body, org_name=org_name)
             log = NotificationLog(
                 organization_id=org_id,
                 alert_key=alert_key,

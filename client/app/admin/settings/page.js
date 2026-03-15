@@ -30,14 +30,10 @@ export default function SettingsPage() {
     const { effectiveLocationId } = useAuth();
 
     // ── Tab state ──
-    const [activeSection, setActiveSection] = useState('general');
+    const [activeSection, setActiveSection] = useState('appearance');
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState(null);
-
-    // ── Channel config (Email & SMS — API-backed) ──
-    const [channelConfig, setChannelConfig] = useState(null);
-    const [channelLoading, setChannelLoading] = useState(false);
 
     // ── Points config (API-backed) ──
     const [pointsConfig, setPointsConfig] = useState(null);
@@ -66,19 +62,6 @@ export default function SettingsPage() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [forceLogoutLoading, setForceLogoutLoading] = useState(false);
-
-    // ═══ LOAD CHANNEL CONFIG ═══
-    const loadChannelConfig = useCallback(async () => {
-        setChannelLoading(true);
-        try {
-            const config = await settingsApi.getChannelConfig(effectiveLocationId);
-            setChannelConfig(config);
-        } catch (err) {
-            console.error('Failed to load channel config:', err);
-            setChannelConfig({ emailRecipient: '', smsRecipient: '', emailEnabled: false, smsEnabled: false });
-        }
-        setChannelLoading(false);
-    }, [effectiveLocationId]);
 
     // ═══ LOAD POINTS CONFIG ═══
     const loadPointsConfig = useCallback(async () => {
@@ -148,11 +131,10 @@ export default function SettingsPage() {
 
     // Auto-load when tab changes
     useEffect(() => {
-        if (activeSection === 'general' && !channelConfig) loadChannelConfig();
         if (activeSection === 'points' && !pointsConfig) loadPointsConfig();
         if (activeSection === 'notifications' && notifSettings.length === 0) loadNotifSettings();
         if (activeSection === 'security' && !securityConfig) loadSecurityConfig();
-    }, [activeSection, channelConfig, pointsConfig, notifSettings.length, securityConfig, loadChannelConfig, loadPointsConfig, loadNotifSettings, loadSecurityConfig]);
+    }, [activeSection, pointsConfig, notifSettings.length, securityConfig, loadPointsConfig, loadNotifSettings, loadSecurityConfig]);
 
     // ═══ SAVE HANDLERS ═══
     const flashSave = (msg, isError = false) => {
@@ -195,17 +177,6 @@ export default function SettingsPage() {
         setSaving(false);
     };
 
-    const handleSaveChannels = async () => {
-        if (!channelConfig) return;
-        setSaving(true);
-        try {
-            await settingsApi.updateChannelConfig(channelConfig, effectiveLocationId);
-            flashSave('Email & SMS configuration saved!');
-            setHasChanges(false);
-        } catch (err) { flashSave(err.message || 'Failed to save channel config', true); }
-        setSaving(false);
-    };
-
     const handleSaveSecurity = async () => {
         if (!securityConfig) return;
         setSaving(true);
@@ -228,8 +199,7 @@ export default function SettingsPage() {
     };
 
     const handleSave = () => {
-        if (activeSection === 'general') handleSaveChannels();
-        else if (activeSection === 'points') handleSavePoints();
+        if (activeSection === 'points') handleSavePoints();
         else if (activeSection === 'notifications') handleSaveNotifications();
         else if (activeSection === 'security') handleSaveSecurity();
         else { setHasChanges(false); flashSave('Settings saved!'); }
@@ -281,11 +251,6 @@ export default function SettingsPage() {
         setHasChanges(true);
     };
 
-    const updateChannelField = (key, value) => {
-        setChannelConfig(prev => ({ ...prev, [key]: value }));
-        setHasChanges(true);
-    };
-
     const updateSecurityField = (key, value) => {
         setSecurityConfig(prev => ({ ...prev, [key]: value }));
         setHasChanges(true);
@@ -301,7 +266,6 @@ export default function SettingsPage() {
     };
 
     const sections = [
-        { id: 'general', label: 'Email & SMS', icon: Mail },
         { id: 'appearance', label: 'Appearance', icon: Palette },
         { id: 'points', label: 'Points Config', icon: Zap },
         { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -362,78 +326,6 @@ export default function SettingsPage() {
                 <div className="lg:col-span-3">
                     <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
 
-                        {/* ═══ EMAIL & SMS CONFIGURATION ═══ */}
-                        {activeSection === 'general' && (<>
-                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                    <Mail size={20} className="text-emerald-600" /> Email & SMS Configuration
-                                </h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure where system notification alerts will be sent</p>
-                            </div>
-                            {channelLoading || !channelConfig ? (
-                                <div className="p-12 text-center text-slate-400"><RefreshCw size={24} className="animate-spin mx-auto mb-2" />Loading...</div>
-                            ) : (
-                            <div className="p-6 space-y-8">
-                                {/* Email Config */}
-                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-200/50 dark:border-blue-800/30 p-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><Mail size={20} className="text-blue-600 dark:text-blue-400" /></div>
-                                            <div>
-                                                <h4 className="font-semibold text-slate-800 dark:text-white">Email Notifications</h4>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400">Receive system alerts via email</p>
-                                            </div>
-                                        </div>
-                                        <ToggleSwitch enabled={channelConfig.emailEnabled}
-                                            onChange={() => updateChannelField('emailEnabled', !channelConfig.emailEnabled)} />
-                                    </div>
-                                    {channelConfig.emailEnabled && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
-                                            <input type="email" value={channelConfig.emailRecipient}
-                                                onChange={(e) => updateChannelField('emailRecipient', e.target.value)}
-                                                placeholder="admin@example.com"
-                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" />
-                                        </div>
-                                    )}
-                                </div>
-                                {/* SMS Config */}
-                                <div className="bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl border border-purple-200/50 dark:border-purple-800/30 p-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-xl"><Smartphone size={20} className="text-purple-600 dark:text-purple-400" /></div>
-                                            <div>
-                                                <h4 className="font-semibold text-slate-800 dark:text-white">SMS Notifications</h4>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400">Receive system alerts via SMS</p>
-                                            </div>
-                                        </div>
-                                        <ToggleSwitch enabled={channelConfig.smsEnabled}
-                                            onChange={() => updateChannelField('smsEnabled', !channelConfig.smsEnabled)} />
-                                    </div>
-                                    {channelConfig.smsEnabled && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone Number (PH)</label>
-                                            <input type="tel" value={channelConfig.smsRecipient}
-                                                onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 11); updateChannelField('smsRecipient', v); }}
-                                                placeholder="09171234567" maxLength={11}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none" />
-                                            <p className="text-xs text-slate-400 mt-1.5">11-digit Philippine mobile number starting with 09</p>
-                                            {channelConfig.smsRecipient && channelConfig.smsRecipient.length > 0 && (!channelConfig.smsRecipient.startsWith('09') || channelConfig.smsRecipient.length !== 11) && (
-                                                <p className="text-xs text-amber-500 mt-1 flex items-center gap-1"><AlertTriangle size={12} /> Must be 11 digits starting with 09</p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                {/* Info Note */}
-                                <div className="flex items-start gap-3 p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
-                                    <Info size={18} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                                        Configure <strong>which notifications</strong> are sent to these addresses in the <strong>Notifications</strong> tab.
-                                    </p>
-                                </div>
-                            </div>
-                            )}
-                        </>)}
 
                         {/* ═══ APPEARANCE ═══ */}
                         {activeSection === 'appearance' && (<>
