@@ -387,7 +387,7 @@ export default function UserRewards({ onLoginClick }) {
   );
 
   return (
-    <section className="relative background-color min-h-screen pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
+    <section className="relative deep-forest-bg min-h-screen pt-30 sm:pt-34 overflow-hidden scroll-mt-28">
       <style>
         @import
         url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&display=swap');
@@ -400,7 +400,7 @@ export default function UserRewards({ onLoginClick }) {
           className={
             color
               ? "nav nav-bg backdrop-blur-sm"
-              : "fixed top-1 w-full z-50 transition-all duration-300"
+              : "fixed top-1 w-full z-50 transition-all duration-300 "
           }
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -580,9 +580,9 @@ export default function UserRewards({ onLoginClick }) {
       {/* CHALLENGES SECTION */}
       <section id="challenges" className="scroll-mt-25">
         {/* OUTER CONTAINER */}
-        <div className="mt-10 mb-10 mx-20 px-4 py-4 max-w-auto">
+        <div className="mt-10 mb-10 mx-10 max-w-auto">
           {/* CONTENT */}
-          <div className="background-color text-color">
+          <div className="p-2 text-color">
             <div className="grid grid-cols-4 gap-4">
               {/* CONTENT #1 */}
               {challenges
@@ -599,8 +599,8 @@ export default function UserRewards({ onLoginClick }) {
                     <div
                       className={
                         index === 0
-                          ? "secondary-color px-2 py-2"
-                          : "secondary-color px-2 py-2"
+                          ? "background-color px-[.5rem] py-[.5rem]"
+                          : "background-color px-2 py-2"
                       }
                     >
                       {/* INNER CONTENT */}
@@ -618,7 +618,7 @@ export default function UserRewards({ onLoginClick }) {
                             className={
                               index >= 1
                                 ? "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-in group-hover:scale-120 group-hover:rotate-4"
-                                : "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
+                                : "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:rotate-4"
                             }
                           />
                         </div>
@@ -626,7 +626,7 @@ export default function UserRewards({ onLoginClick }) {
                         <div
                           className={
                             index === 0
-                              ? "primary-color grid grid-row-3 px-4 py-4"
+                              ? "primary-color grid grid-row-3 px-4 py-6"
                               : "primary-color grid grid-row-3 px-4 py-4"
                           }
                         >
@@ -676,12 +676,12 @@ export default function UserRewards({ onLoginClick }) {
       {/* LEADERBOARD SECTION */}
       <section id="leaderboard" className="scroll-mt-25 mt-10 mb-4 mx-10">
         {/* CONTAINER */}
-        <div className="primary-color grid grid-row-4 px-10 py-10">
+        <div className="grid grid-row-4 px-10 py-10">
           {/* HEADER */}
-          <div className="relative grid text-center justify-center gap-4 mb-10">
+          <div className="relative grid text-center justify-center gap-4 mb-2">
             {/* AREA LEADERBOARD (LIKE KUNG SA RIZAL PA MANILA O KAYA PWEDE DIN PER UNIVERSITIES) */}
-            <div className="soft-sage-bg ">
-              <div className="flex justify-between px-2 py-2">
+            <div className="background-color">
+              <div className="flex justify-between text-color px-2 py-2">
                 <button className="hover:cursor-pointer">
                   <ChevronLeft></ChevronLeft>
                 </button>
@@ -741,9 +741,9 @@ export default function UserRewards({ onLoginClick }) {
                   index >= 3
                     ? "grid grid-cols-3 items-center gap-8 mx-30 my-2 secondary-color"
                     : index === 0
-                      ? "grid grid-cols-3 items-center my-2 background-color"
+                      ? "grid grid-cols-3 items-center my-2 accent-color-background "
                       : index === 1
-                        ? "grid grid-cols-3 items-center my-2 accent-color-background"
+                        ? "grid grid-cols-3 items-center my-2 background-color"
                         : "grid grid-cols-3 items-center my-2 soft-sage-bg"
                 }
               >
@@ -813,7 +813,7 @@ export default function UserRewards({ onLoginClick }) {
           {/*  */}
           {/* VIEW FULL LEADERBOARD (BUTTON) */}
           <div className="flex justify-center mt-10 group">
-            <button className="text-xl sour-gummy-body-500 transition-transform duration-500 ease-out hover:cursor-pointer hover:scale-110 hover:-translate-y-2 ">
+            <button className="text-xl text-color sour-gummy-body-500 transition-transform duration-500 ease-out hover:cursor-pointer hover:scale-110 hover:-translate-y-2 ">
               <div className="soft-sage-bg px-4 py-4 rounded-lg hover:underline">
                 View the Full Leaderboard
               </div>
@@ -824,7 +824,7 @@ export default function UserRewards({ onLoginClick }) {
       {/* USER REWARDS REDEMPTION SECTION */}
       <section
         id="redeem"
-        className="background-color relative min-h-screen flex item-center justify-center sm:pt-12 px-4 mx-10 sm:px-6 lg:px-8 overflow-hidden scroll-mt-12"
+        className="background-color relative min-h-screen flex item-center justify-center sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-12"
       >
         <div className="relative justify-center overflow-hidden">
           {/* TEXT Above Container */}
@@ -845,11 +845,11 @@ export default function UserRewards({ onLoginClick }) {
                     type="text"
                     value={searchTerm}
                     onChange={handleInputChange}
-                    className="w-full rounded-full border border-white accent-color-background px-5 py-3 pr-20 text-base shadow-md transition-all duration-300 shadow-lg focus:border-gray-300 focus:outline-none"
+                    className="w-full rounded-full border border-slate accent-color-background px-5 py-3 pr-20 text-base shadow-md transition-all duration-300 shadow-lg focus:border-white focus:outline-none"
                     placeholder="Search For Your Desired Rewards!"
                   />
                   <div className="absolute right-0 top-0 mr-4 mt-3 flex items-center">
-                    <button type="submit" className="primary-color-header">
+                    <button type="submit" className="text-color">
                       <Search size={20} />
                     </button>
                   </div>

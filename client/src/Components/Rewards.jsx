@@ -260,14 +260,32 @@ export default function RewardsOrg({ onLoginClick }) {
     },
   ];
 
-  const earnLinks = [
-    { label: "Earn Here", value: "EarnHere" },
-    { label: "Click Here", value: "ClickHere" },
-    { label: "Explore the Rewards", value: "Explore" },
+  const howToEarnSection = [
+    {
+      title: "Earn Here",
+      description:
+        " Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusamus ut id nulla illo. Porro ea vitae accusamus dolorem eveniet, incidunt qui iusto natus explicabo aliquid temporibus, obcaecati, nobis laudantium fugit!",
+      image: "/SampleImage-Streak.png",
+      id: "EarnHere",
+    },
+    {
+      title: "Leaderboard & Challenges",
+      description:
+        " Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusamus ut id nulla illo. Porro ea vitae accusamus dolorem eveniet, incidunt qui iusto natus explicabo aliquid temporibus, obcaecati, nobis laudantium fugit!",
+      image: "/SampleImage-Streak.png",
+      id: "ClickHere",
+    },
+    {
+      title: "Discover Rewards",
+      description:
+        " Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusamus ut id nulla illo. Porro ea vitae accusamus dolorem eveniet, incidunt qui iusto natus explicabo aliquid temporibus, obcaecati, nobis laudantium fugit!",
+      image: "/SampleImage-Streak.png",
+      id: "Explore",
+    },
   ];
 
   return (
-    <section className="relative flex flex-grid lg:grid lg:grid-row-2 min-h-screen background-color flex items-center justify-center pt-28 sm:pt-32 px-4 sm:px-6 lg:px-0 overflow-hidden">
+    <section className="relative flex flex-grid lg:grid lg:grid-row-2 min-h-screen deep-forest-bg flex items-center justify-center lg:pt-28 sm:pt-32 px-4 sm:px-6 lg:px-0 overflow-hidden">
       <style>
         @import
         url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&display=swap');
@@ -280,7 +298,7 @@ export default function RewardsOrg({ onLoginClick }) {
           className={
             color
               ? "nav nav-bg backdrop-blur-sm"
-              : "fixed top-1 w-full z-50 transition-all duration-300"
+              : "fixed top-1 w-full z-50 transition-all duration-300 opacity-0"
           }
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -387,7 +405,7 @@ export default function RewardsOrg({ onLoginClick }) {
       {/* COL-1 EXAMPLE CONTAINER */}
       <div
         id="home"
-        className="scroll-mt-35 flex text-center primary-color items-center p-4 py-12 lg:px-10 justify-center transition-transform duration-300"
+        className="scroll-mt-28 flex text-center deep-forest-bg items-center p-4 py-12 lg:px-10 justify-center transition-transform duration-300"
       >
         {/* CONTAINER CONTENT */}
         <div className="lg:grid lg:grid-cols-2 secondary-color backdrop-blur-xl rounded-md sm:rounded-xl p-4 lg:p-6 sm:p-4 gap-20 mb-10 shadow-2xl border border-white/10">
@@ -395,13 +413,13 @@ export default function RewardsOrg({ onLoginClick }) {
           {/* Inside Container */}
           <div className="order-1">
             {/* Header Text */}
-            <h1 className="text-6xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-              <span className="text-shadow-lg text-white bg-clip-text text-transparent block mb-1 sm:2 ">
+            <h2 className="text-6xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+              <span className="text-shadow-lg text-color bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints: Rewards
               </span>
-            </h1>
+            </h2>
             {/* Content Text */}
-            <p className="text-xl sm:text-base lg:text-2xl text-white text-justify max-w-2xl sour-gummy-body-400 lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
+            <p className="text-xl sm:text-base lg:text-2xl text-color text-justify max-w-2xl sour-gummy-body-400 lg:mx-0 mb-6 sm:mb-8 animate-in slide-in-from-bottom duration-700 delay-200 leading-relaxed">
               Earn rewards with EcoPoints. Just by simply recycling. Sign in or
               create an EcoPoints account and get points for School-Related
               rewards, Essentials, and more.
@@ -449,15 +467,15 @@ export default function RewardsOrg({ onLoginClick }) {
               <div className="flex flex-row lg:grid lg:grid-row-2 px-10 py-10">
                 {/* HEADER */}
                 <div className="text-center mb-2 sm:mb-6 lg:mb-2">
-                  <h2 className="text-5xl sm:text-4xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6">
-                    <span className="chewy-regular text-color bg-clip-text text-transparent">
+                  <h2 className="sm:text-4xl lg:text-7xl font-bold mb-4 sm:mb-6">
+                    <span className="chewy-regular accent-color-text bg-clip-text text-transparent">
                       Want to Start Earning Points?
                     </span>
                   </h2>
                 </div>
                 {/* CONTENT */}
                 <div className="text-center mb-2 sm:mb-4 lg:mb-4 order-2">
-                  <p className="sour-gummy-body-300 text-color text-xl sm:text-3xl lg:text-2xl">
+                  <p className="sour-gummy-body-300 text-white text-xl sm:text-3xl lg:text-2xl">
                     Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     Deserunt nobis eveniet quas incidunt nemo itaque omnis
                     voluptate repudiandae quae neque distinctio dolor placeat
@@ -473,17 +491,17 @@ export default function RewardsOrg({ onLoginClick }) {
                 <div key="" className="soft-sage-bg">
                   <div className="px-2 py-2">
                     {/* ICON */}
-                    <div className="deep-forest-bg">
-                      <img src={visualInstruction.image} alt="Sign in Here" />
+                    <div className="secondary-color">
+                      <img src={visualInstruction.image} />
                     </div>
                     {/* TEXT */}
-                    <h1 className="text-3xl mb-4 mt-4">
+                    <h1 className="text-color text-3xl mb-4 mt-4">
                       {visualInstruction.title}
                     </h1>
-                    <p className="text-xl sour-gummy-body-400">
+                    <p className="text-color text-xl sour-gummy-body-400">
                       {visualInstruction.description}
                     </p>
-                    <button className="text-xl px-2 py-2 mt-6 cursor-pointer hover:underline">
+                    <button className="text-color text-xl px-2 py-2 mt-6 cursor-pointer hover:underline">
                       {visualInstruction.visualLink}
                     </button>
                   </div>
@@ -492,11 +510,11 @@ export default function RewardsOrg({ onLoginClick }) {
             </div>
           </section>
           {/* REWARDS SECTION */}
-          <section id="rewards" className="scroll-mt-24">
+          <section id="rewards" className="scroll-mt-24 mt-20">
             {/* TEXT CONTENT */}
             <div className="relative text-center mb-2 sm:mb-6 lg:mb-6 lg:px-0 lg:py-0 ">
-              <h2 className="text-5xl sm:text-4xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
-                <span className="chewy-regular text-color bg-clip-text text-transparent">
+              <h2 className="sm:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6">
+                <span className="chewy-regular accent-color-text bg-clip-text text-transparent">
                   Here are some Rewards you can Redeem!
                 </span>
                 <br />
@@ -518,7 +536,7 @@ export default function RewardsOrg({ onLoginClick }) {
                         <div className="relative group">
                           {/* OUTER CONTAINER */}
                           <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-70 " />
-                          <div className="relative bg-white/20 backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
+                          <div className="relative soft-sage-bg backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
                             {/* INNER CONTAINER */}
                             <div className="relative group bg-gray-800/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
                               <img
@@ -546,10 +564,10 @@ export default function RewardsOrg({ onLoginClick }) {
                   ))}
               </div>
               {/* NAVIGATION */}
-              <div className="flex items-center justify-center gap-4 mb-8 cursor-pointer lg:mb-18">
+              <div className="flex items-center justify-center gap-4 mb-8 cursor-pointer text-color lg:mb-18">
                 <button
                   onClick={previous}
-                  className="p-3 rounded-full primary-color transition-all cursor-pointer"
+                  className="p-3 rounded-full soft-sage-bg transition-all cursor-pointer"
                 >
                   <ChevronLeft />
                 </button>
@@ -561,8 +579,8 @@ export default function RewardsOrg({ onLoginClick }) {
                       onClick={() => setActiveIdx(idx)}
                       className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                         idx === activeIdx
-                          ? "w-8 primary-color"
-                          : "w-2 primary-color"
+                          ? "w-8 soft-sage-bg"
+                          : "w-2 soft-sage-bg"
                       }`}
                     />
                   ))}
@@ -570,7 +588,7 @@ export default function RewardsOrg({ onLoginClick }) {
 
                 <button
                   onClick={next}
-                  className="p-3 rounded-full primary-color transition-all cursor-pointer"
+                  className="p-3 rounded-full soft-sage-bg transition-all cursor-pointer"
                 >
                   <ChevronRight />
                 </button>
@@ -582,11 +600,11 @@ export default function RewardsOrg({ onLoginClick }) {
             {/* HEADER */}
             <div className="text-center mb-2 sm:mb-6 lg:mb-2">
               <h2 className="text-5xl sm:text-4xl md:text-5xl lg:text-7xl mb-4">
-                <span className="chewy-regular text-color bg-clip-text text-transparent">
+                <span className="chewy-regular accent-color-text bg-clip-text text-transparent">
                   There are Many Ways to Earn EcoPoints!
                 </span>
               </h2>
-              <p className="text-4xl sour-gummy-body-400 text-color mb-10">
+              <p className="text-4xl sour-gummy-body-400 text-white mb-10">
                 Click Below and discover all the possible ways of earning points
               </p>
             </div>
@@ -596,17 +614,17 @@ export default function RewardsOrg({ onLoginClick }) {
                 <div className="soft-sage-bg">
                   <div className="px-2 py-2">
                     {/* ICON */}
-                    <div className="deep-forest-bg">
+                    <div className="background-color rounded-lg p-2">
                       <img
                         src={howToEarnLinks.image}
                         alt={howToEarnLinks.alt}
                       />
                     </div>
                     {/* TEXT */}
-                    <h1 className="text-4xl mb-4 mt-4">
+                    <h1 className="text-3xl text-color mb-4 mt-4">
                       {howToEarnLinks.title}
                     </h1>
-                    <p className="text-xl sour-gummy-body-400">
+                    <p className="text-lg text-color sour-gummy-body-400">
                       {howToEarnLinks.description}
                     </p>
                     {/* CLICKABLE BUTTON */}
@@ -622,7 +640,7 @@ export default function RewardsOrg({ onLoginClick }) {
                           });
                         }
                       }}
-                      className="text-xl px-4 py-4 mt-6 cursor-pointer hover:underline"
+                      className="text-xl text-color px-4 py-4 mt-6 cursor-pointer hover:underline"
                     >
                       {howToEarnLinks.clickableLink}
                     </button>
@@ -637,74 +655,31 @@ export default function RewardsOrg({ onLoginClick }) {
             {/* INNER CONTAINER */}
             <div className="grid lg:grid lg:grid-row-3 gap-10">
               {/* SECTION 1 */}
-              <section id="EarnHere" className="secondary-color scroll-mt-28">
-                <div className=" order-1">
-                  {/* INNER SECTION */}
-                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
-                    {/* COLUMN 1 (EARN HERE) */}
-                    <div className="background-color text-color px-4 py-4">
-                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
-                        EARN HERE
-                      </h1>
-                      <p className="text-center sour-gummy-body-400 text-xl">
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Aliquid corporis illum distinctio labore debitis ullam
-                        esse.
-                      </p>
-                    </div>
-                    {/* COLUMN 2 */}
-                    <div className="primary-color text-white px-4 py-4">
-                      <img src="SampleImage-Streak.png" />
-                    </div>
-                  </div>
-                </div>
-              </section>
-              {/* SECTION 2 */}
-              <section id="ClickHere" className="primary-color scroll-mt-28">
-                <div className="order-2">
-                  {/* INNER SECTION */}
-                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
-                    {/* COLUMN 1 */}
-                    <div className="background-color text-color px-4 py-4">
-                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
-                        LEADERBOARD & CHALLENGES
-                      </h1>
-                      <p className="text-center sour-gummy-body-400 text-xl">
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Aliquid corporis illum distinctio labore debitis ullam
-                        esse.
-                      </p>
-                    </div>
-                    {/* COLUMN 2 */}
-                    <div className="secondary-color text-color px-4 py-4">
-                      <img src="SampleImage-Streak.png" />
+              {howToEarnSection.map((howToEarnSection, key) => (
+                <section
+                  id={howToEarnSection.id}
+                  className="background-color scroll-mt-28"
+                >
+                  <div className="order-1">
+                    {/* INNER SECTION */}
+                    <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
+                      {/* COLUMN 1 (EARN HERE) */}
+                      <div className="text-color px-4 py-4">
+                        <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
+                          {howToEarnSection.title}
+                        </h1>
+                        <p className="text-center sour-gummy-body-400 text-xl">
+                          {howToEarnSection.description}
+                        </p>
+                      </div>
+                      {/* COLUMN 2 */}
+                      <div className="secondary-color px-4 py-4">
+                        <img src={howToEarnSection.image} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
-              {/* SECTION 3 */}
-              <section id="Explore" className="secondary-color scroll-mt-28">
-                <div className="order-3">
-                  {/* INNER SECTION */}
-                  <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
-                    {/* COLUMN 1 */}
-                    <div className="background-color text-color px-4 py-4">
-                      <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
-                        DISCOVER REWARDS
-                      </h1>
-                      <p className="text-center sour-gummy-body-400 text-xl">
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Aliquid corporis illum distinctio labore debitis ullam
-                        esse.
-                      </p>
-                    </div>
-                    {/* COLUMN 2 */}
-                    <div className="primary-color text-white px-4 py-4">
-                      <img src="SampleImage-Streak.png" />
-                    </div>
-                  </div>
-                </div>
-              </section>
+                </section>
+              ))}
             </div>
           </div>
         </div>

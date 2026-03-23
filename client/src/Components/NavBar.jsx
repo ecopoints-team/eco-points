@@ -83,7 +83,7 @@ export default function NavBar({ onLoginClick }) {
       className={
         color
           ? "nav nav-bg backdrop-blur-sm"
-          : "fixed top-1 w-full z-50 transition-all duration-300"
+          : "fixed top-1 w-full z-50 transition-all duration-300 opacity-0"
       }
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">

@@ -25,20 +25,22 @@ export default function Footer() {
               src="/EcoPoints Logo Mark with Name (Light Version).png"
               className="lg:w-60 lg:h-auto mb-2 transition-transform duration-500 hover:cursor-pointer hover:scale-110"
             />
-            <h1 className="sour-gummy-body-300">
+            <p className="sour-gummy-body-300 text-color">
               A smart recycling initiative powered by technology and
               sustainability.
-            </h1>
+            </p>
           </div>
           {/* QUICK LINKS */}
           <div className="order-2">
             <ul className="lg:space-y-4">
               {/* HEADER */}
               <li>
-                <h1 className="chewy-regular text-3xl">QUICK LINKS</h1>
+                <h1 className="chewy-regular text-3xl text-color">
+                  QUICK LINKS
+                </h1>
               </li>
               {/* CONTENT */}
-              <ul className="list-none space-y-3 uppercase sour-gummy-body text-xl">
+              <ul className="list-none space-y-3 uppercase sour-gummy-body text-xl text-color">
                 {[
                   "Home",
                   "Features",
@@ -63,10 +65,10 @@ export default function Footer() {
             <ul className="lg:space-y-4">
               {/* HEADER */}
               <li>
-                <h1 className="chewy-regular text-3xl">RESOURCES</h1>
+                <h1 className="chewy-regular text-3xl text-color">RESOURCES</h1>
               </li>
               {/* CONTENT */}
-              <ul className="list-none space-y-3 uppercase sour-gummy-body text-xl">
+              <ul className="list-none space-y-3 uppercase sour-gummy-body text-xl text-color">
                 {[
                   "About Us",
                   "FAQs",
@@ -88,9 +90,9 @@ export default function Footer() {
           </div>
           {/* CONTACT */}
           <div className="order-4 lg:grid lg:grid-row-3">
-            <ul className="lg:space-y-4">
+            <ul className="lg:space-y-4 text-color">
               <li>
-                <h1 className="chewy-regular text-2xl">CONTACT</h1>
+                <h1 className="chewy-regular text-2xl text-color">CONTACT</h1>
               </li>
               <li className="sour-gummy-body text-2xl">
                 <h1>PUP Mabini Campus, Manila</h1>
@@ -104,7 +106,7 @@ export default function Footer() {
         <div className="flex order-2 justify-center">
           <hr className="hr-line"></hr>
         </div>
-        <div className="flex order-3 justify-center lg:px-10 lg:py-10 sour-gummy-body text-xl">
+        <div className="flex order-3 justify-center lg:px-10 lg:py-10 sour-gummy-body text-xl text-color">
           <h1>
             © 2025 EcoPoints. A PUP Institute of Technology Research Project.
           </h1>
