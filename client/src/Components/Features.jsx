@@ -87,7 +87,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative -mt-12 scroll-mt-12 background-color"
+      className="py-16 sm:py-20 px-10 sm:px-6 lg:px-8 relative -mt-12 scroll-mt-12 deep-forest-bg"
     >
       {/* Root Div */}
       <div className="max-w-6xl mx-auto">
@@ -113,25 +113,17 @@ export default function Features() {
         <div className="static text-center font-header mb-12 sm:mb-16 lg:mb-20">
           {/* Text Content */}
           <h2 className="relative chewy-regular text-6xl sm:text-5xl md:text-6xl lg:text-7xl mb-4 sm:mb-6">
-            <span className="text-color bg-clip-text text-transparent">
+            <span className="accent-color-text bg-clip-text text-transparent">
               Our Capstone
             </span>
             <br />
-            <span className="text-color bg-clip-text text-transparent">
+            <span className="accent-color-text bg-clip-text text-transparent">
               {/* bg-gradient-to-b from-white to-white bg-clip-text text-transparent */}
               Machine Features!
             </span>
           </h2>
         </div>
-
-        {/* PULSE BACKGROUND */}
-        {/* Top Part */}
-        {/* <div className="absolute top-75 right-4 sm:right-10 w-52 sm:w-62 h-52 sm:h-62 secondary-color rounded-full blur-2xl animate-pulse"></div> */}
-        {/* <div className="absolute top-20 left-10 sm:left-10 w-64 sm:w-96 sm:h-64 sm:h-96 secondary-color rounded-full blur-2xl animate-pulse delay-1000"></div> */}
-
-        {/* Bottom Part */}
-        {/* <div className="absolute bottom-15 right-4 sm:right-10 w-64 sm:w-96 sm:h-64 sm:h-96 secondary-color rounded-full blur-3xl animate-pulse delay-1000"></div> */}
-
+        {/* FEATURES SECTION */}
         <div className="space-y-16 sm:space-y-20 lg:space-y-32">
           {features.map((feature, key) => (
             <div
@@ -144,14 +136,14 @@ export default function Features() {
               <div className="flex w-full transition-transform duration-300 overflow-hidden shadow-2xl transition-shadow duration-300">
                 <div className="relative group">
                   {/* Inner-Container (Image) */}
-                  <div className="accent-color-background rounded-lg p-2 sm:text-sm ">
+                  <div className="soft-sage-bg rounded-lg p-2 sm:text-sm ">
                     {/* Pictures */}
                     <div>
                       {/* If mag lalagay ng Photo dito ilalagay */}
                       <img
                         src={feature.image}
                         alt={feature.image}
-                        className="rounded-lg hover:rotate-6 hover:scale-130 transition-transform duration-500 sm:w-200 sm:h-80 md:w-450 md:h-60 lg:w-150 lg:h-100"
+                        className="rounded-lg hover:rotate-6 hover:scale-130 hover:rounded-lg transition-transform duration-500 sm:w-200 sm:h-80 md:w-450 md:h-60 lg:w-150 lg:h-100"
                       />
                     </div>
                   </div>
@@ -160,14 +152,16 @@ export default function Features() {
               {/* TEXT SECTION */}
               <div className="flex w-full">
                 <div className="max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                  <h3 className="text-4xl sm:text-3xl lg:text-5xl sour-gummy-body-600 mb-4 sm:mb-6 text-color">
+                  {/* TITLE */}
+                  <h3 className="text-4xl sm:text-3xl lg:text-5xl sour-gummy-body-600 mb-4 sm:mb-6 accent-color-text">
                     {feature.title}
                   </h3>
-                  <ul className="list-disc pl-6 marker:text-slate-900 marker:text-2xl sm:space-y-6 md:space-y-6 lg:space-x-auto lg:space-y-6">
+                  {/* DESCRIPTION */}
+                  <ul className="list-disc pl-0 marker:[accent-color-text] marker:text-2xl sm:space-y-6 md:space-y-6 lg:space-x-auto lg:space-y-6">
                     {feature.listFeatures?.map((item, index) => (
                       <li
                         key={index}
-                        className="text-color sour-gummy-body-600 text-justify text-xl sm:text-lg lg:text-lg leading-relaxed transition-transform duration-500"
+                        className="text-white sour-gummy-body-600 text-justify text-xl sm:text-lg lg:text-lg leading-relaxed transition-transform duration-500"
                       >
                         {item}
                       </li>

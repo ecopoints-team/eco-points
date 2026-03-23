@@ -228,6 +228,10 @@
     border-color: #86f096;
   }
 
+  .border-slate {
+    border-color: #102027;
+  }
+
   /* Light Fern */
   .text-color-header {
     color: #81c784;
@@ -267,6 +271,7 @@
   /* SAMPLE DESIGNS */
   .hr-line {
     border: 1px solid;
+    border-color: #102027;
     margin: 6px 0;
     width: 80%;
   }
