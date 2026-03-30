@@ -55,7 +55,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen deep-forest-bg flex item-center justify-center sm:px-6 md:px-6 lg:px-20 pt-28 sm:pt-32 overflow-hidden mb-8 scroll-mt-24"
+      className="relative min-h-screen deep-forest-bg flex item-center justify-center sm:px-6 md:px-6 lg:px-20 lg:pt-28 sm:pt-32 overflow-hidden mb-8 scroll-mt-24"
     >
       <style>
         @import
@@ -63,10 +63,15 @@ export default function Hero() {
         @import
         url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap');
       </style>
+      {/* CIRCLE GRADIENT */}
+      <div className="absolute -top-20 -right-80 gradient-circle-lg blur-xl"></div>
+      <div className="absolute top-100 -left-80 gradient-circle-lg blur-xl"></div>
+      <div className="absolute top-80 right-20 gradient-circle-sm blur-xl"></div>
+      <div className="absolute top-100 left-20 gradient-circle-sm blur-xl"></div>
 
       {/* Grid Container Hero Section */}
       <div className="max-w-7xl mx-auto text-center relative w-full">
-        <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
+        <div className="max-w-7xl mx-auto flex flex-col text-center gap-6 sm:gap-8 lg:gap-12 items-center relative">
           {/* Grid #1 */}
           <div className="">
             {/* Introducing EcoPoints */}
@@ -78,7 +83,7 @@ export default function Hero() {
             </div>
             {/* Header Text */}
             <h1 className="text-6xl sm:text-5xl md:text-6xl lg:text-5xl chewy-regular text-center mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
-              <span className="text-shadow-lg accent-color-text sm:text-8xl md:text-9xl lg:text-9xl  bg-clip-text text-transparent block mb-1 sm:2 ">
+              <span className="text-shadow-lg accent-color-text sm:text-8xl md:text-9xl lg:text-[13rem]  bg-clip-text text-transparent block mb-1 sm:2 ">
                 EcoPoints:
               </span>
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 ">
@@ -105,41 +110,24 @@ export default function Hero() {
                     </button>
                 </div> */}
           </div>
-
-          {/* Grid #2 EXAMPLE CONTAINER */}
-          <div className="relative order-2 w-full">
-            <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10 transition-transform delay-300 ease-out duration-700 hover:scale-90">
-              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[450px] border border-white/5 transition-transform ease-in duration-300 hover:scale-110">
-                {/* Container */}
-                <img
-                  src="SampleImage-Face1.jpeg"
-                  alt="Sample"
-                  className="w-full h-auto"
-                />
-                {/* Inside Container */}
-              </div>
-            </div>
-          </div>
-
-          {/* Floating Cards */}
         </div>
         {/* HEADER SECTION */}
         <div className=" max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
           {/* BACKGROUND IF MAGLALAGAY */}
           <div className="">
-            <h1 className="sm:text-4xl md:text-5xl lg:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h2 className="sm:text-4xl md:text-6xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
                 WELCOME TO THE OFFICIAL PLATFORM
               </span>
-            </h1>
-            <h2 className="sm:text-6xl md:text-7xl lg:text-8xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
+            </h2>
+            <h2 className="sm:text-4xl md:text-6xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
                 FOR ECOPOINTS
               </span>
             </h2>
           </div>
           {/* CONCEPT AREA */}
-          <h2 className="text-4xl sm:text-7xl md:text-5xl lg:text-6xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+          <h2 className="sm:text-7xl md:text-6xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
             <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
               Concept
             </span>
@@ -181,8 +169,8 @@ export default function Hero() {
             ))}
           </div>
           {/* HOW IT WORKS AREA */}
-          <h2 className="text-4xl sm:text-6xl md:text-5xl lg:text-6xl lg:py-5 sm:py-8 chewy-regular sm:mb-6 md:mb-6 lg:mb-10  animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
+          <h2 className="sm:text-6xl md:text-6xl lg:py-5 sm:py-8 chewy-regular sm:mb-6 lg:mt-10 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block text-center uppercase tracking-[0.2em]">
               How it Works?
             </span>
           </h2>

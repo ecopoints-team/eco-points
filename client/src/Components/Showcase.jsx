@@ -134,7 +134,7 @@ export default function Rewards() {
   return (
     <section
       id="showcase"
-      className="relative min-h-screen flex items-center justify-center pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-0 -mt-20 background-color"
+      className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
     >
       <div className="relative max-w-6xl mx-auto">
         {/* Text Content */}
@@ -163,10 +163,10 @@ export default function Rewards() {
                 <div className="flex-1 w-full hover:translate-y-4 hover:scale-110 transition-transform duration-500 ease-out">
                   <div className="relative group">
                     {/* Outer Container */}
-                    <div className="absolute inset-0 accent-color-background rounded-lg sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-50" />
-                    <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-lg sm:rounded-2xl p-2 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
+                    <div className="absolute inset-0 secondary-color rounded-lg sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-50" />
+                    <div className="relative backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-lg sm:rounded-2xl p-2 sm:px-2 sm:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
                       {/* Inner Container */}
-                      <div className="relative group accent-color-background rounded-lg p-4 font-mono text-xs sm:text-sm">
+                      <div className="relative group secondary-color rounded-lg p-2 font-mono text-xs sm:text-sm">
                         <img
                           src={feature.image}
                           alt={feature.image}
@@ -195,7 +195,7 @@ export default function Rewards() {
         <div className="flex items-center justify-center gap-4 mb-8 cursor-pointer">
           <button
             onClick={previous}
-            className="p-3 rounded-full accent-color-background transition-all cursor-pointer"
+            className="p-3 rounded-full secondary-color transition-all cursor-pointer"
           >
             <ChevronLeft className="text-color" />
           </button>
@@ -207,8 +207,8 @@ export default function Rewards() {
                 onClick={() => setActiveIdx(idx)}
                 className={`h-2 rounded-full transition-all duration-300  ${
                   idx === activeIdx
-                    ? "w-8 accent-color-background"
-                    : "w-2 accent-color-background"
+                    ? "w-8 secondary-color"
+                    : "w-2 secondary-color"
                 }`}
               />
             ))}
@@ -216,7 +216,7 @@ export default function Rewards() {
 
           <button
             onClick={next}
-            className="p-3 rounded-full accent-color-background transition-all cursor-pointer"
+            className="p-3 rounded-full secondary-color transition-all cursor-pointer"
           >
             <ChevronRight className="text-color" />
           </button>
