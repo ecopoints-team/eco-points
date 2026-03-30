@@ -134,7 +134,7 @@ export default function Rewards() {
   return (
     <section
       id="showcase"
-      className="relative min-h-screen flex items-center justify-center pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-0 -mt-20 background-color"
+      className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
     >
       <div className="relative max-w-6xl mx-auto">
         {/* Text Content */}

@@ -63,6 +63,11 @@ export default function Hero() {
         @import
         url('https://fonts.googleapis.com/css2?family=Chewy&family=Instrument+Serif:ital@0;1&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap');
       </style>
+      {/* CIRCLE GRADIENT */}
+      <div className="absolute -top-20 -right-80 gradient-circle-lg blur-xl"></div>
+      <div className="absolute top-100 -left-80 gradient-circle-lg blur-xl"></div>
+      <div className="absolute top-80 right-20 gradient-circle-sm blur-xl"></div>
+      <div className="absolute top-100 left-20 gradient-circle-sm blur-xl"></div>
 
       {/* Grid Container Hero Section */}
       <div className="max-w-7xl mx-auto text-center relative w-full">
@@ -110,19 +115,19 @@ export default function Hero() {
         <div className=" max-w-7xl lg:py-20 sm:py-20 text-center relative w-full">
           {/* BACKGROUND IF MAGLALAGAY */}
           <div className="">
-            <h1 className="sm:text-4xl md:text-5xl lg:text-5xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+            <h2 className="sm:text-4xl md:text-6xl text-center chewy-regular mt-10 lg:mb-6 md:mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2">
                 WELCOME TO THE OFFICIAL PLATFORM
               </span>
-            </h1>
-            <h2 className="sm:text-6xl md:text-7xl lg:text-8xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
+            </h2>
+            <h2 className="sm:text-4xl md:text-6xl text-center chewy-regular mb-4 sm:mb-20 animate-in slide-in-from-bottom duration-700 delay-100">
               <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-10 sm:2">
                 FOR ECOPOINTS
               </span>
             </h2>
           </div>
           {/* CONCEPT AREA */}
-          <h2 className="text-4xl sm:text-7xl md:text-5xl lg:text-6xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
+          <h2 className="sm:text-7xl md:text-6xl lg:py-5 sm:py-8 chewy-regular mb-4 sm:mb-6 animate-in slide-in-from-bottom duration-700 delay-100">
             <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
               Concept
             </span>
@@ -164,8 +169,8 @@ export default function Hero() {
             ))}
           </div>
           {/* HOW IT WORKS AREA */}
-          <h2 className="text-4xl sm:text-6xl md:text-5xl lg:text-6xl lg:py-5 sm:py-8 chewy-regular sm:mb-6 md:mb-6 lg:mb-10  animate-in slide-in-from-bottom duration-700 delay-100">
-            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block mb-1 sm:2 text-center uppercase tracking-[0.2em]">
+          <h2 className="sm:text-6xl md:text-6xl lg:py-5 sm:py-8 chewy-regular sm:mb-6 lg:mt-10 animate-in slide-in-from-bottom duration-700 delay-100">
+            <span className="text-shadow-lg accent-color-text bg-clip-text text-transparent block text-center uppercase tracking-[0.2em]">
               How it Works?
             </span>
           </h2>

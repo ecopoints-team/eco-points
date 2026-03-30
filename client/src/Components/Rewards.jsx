@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MenuIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, LeafyGreen, MenuIcon } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 
 export default function RewardsOrg({ onLoginClick }) {
@@ -146,17 +146,54 @@ export default function RewardsOrg({ onLoginClick }) {
   ];
 
   // PAGINATION FOR REWARDS
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(true);
   const itemsPerPage = 3;
   const totalPages = Math.ceil(features.length / itemsPerPage);
 
+  const pagedFeatures = Array.from({ length: totalPages }).map((_, pageIdx) =>
+    features.slice(
+      pageIdx * itemsPerPage,
+      pageIdx * itemsPerPage + itemsPerPage,
+    ),
+  );
+
+  const extendedPages = [
+    pagedFeatures[totalPages - 1],
+    ...pagedFeatures,
+    pagedFeatures[0],
+  ];
+
   const next = () => {
-    setActiveIdx((prev) => (prev + 1) % totalPages);
+    setActiveIdx((prev) => prev + 1);
   };
 
   const previous = () => {
-    setActiveIdx((prev) => (prev - 1 + totalPages) % totalPages);
+    setActiveIdx((prev) => prev - 1);
   };
+
+  // PAUSE THE REWARDS ON HOVER
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return;
+
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setActiveIdx((prev) => prev + 1);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isHovered]);
+
+  useEffect(() => {
+    if (!isTransitioning) {
+      const timeout = setTimeout(() => {
+        setIsTransitioning(true);
+      }, 50);
+      return () => clearTimeout(timeout);
+    }
+  }, [isTransitioning]);
 
   // Mobile Setting Nav
   const [mobileMenuIsOpen, setMobileMenuIsOpen] = useState(false);
@@ -426,7 +463,7 @@ export default function RewardsOrg({ onLoginClick }) {
             </p>
 
             {/* BUTTONS Inside Grid #1 */}
-            <div className="flex flex-row items-center justify-center mt-4 sm:mt-6 lg:mt-10">
+            <div className="flex flex-row items-center justify-center sm:mt-6 lg:mt-4">
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-3 mb:-8 sm:mb-12 ">
                 <Link
                   href="/userRewards"
@@ -440,8 +477,8 @@ export default function RewardsOrg({ onLoginClick }) {
 
           {/* COL-2 CONTAINER */}
           <div className="relative order-2 w-full">
-            <div className="relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10 transition-transform delay-300 ease-out duration-700 hover:scale-90">
-              <div className="rounded-lg overflow-hidden h-[280px] sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform delay-300 ease-in duration-300 hover:scale-140">
+            <div className="group relative bg-gray-600/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl border border-white/10 transition-transform delay-300 ease-out duration-700 hover:scale-90">
+              <div className="rounded-lg overflow-hidden sm:h-[350px] lg:h-[320px] border border-white/5 transition-transform delay-300 ease-in duration-300 group-hover:scale-140">
                 {/* Container */}
                 <img
                   src="SampleImage-UserIcon.png"
@@ -463,33 +500,22 @@ export default function RewardsOrg({ onLoginClick }) {
           {/* VISUAL AREA SECTION */}
           <section id="earnPoints" className="scroll-mt-20">
             {/* DESCRIPTION AREA */}
-            <section id="" className="">
-              <div className="flex flex-row lg:grid lg:grid-row-2 px-10 py-10">
-                {/* HEADER */}
-                <div className="text-center mb-2 sm:mb-6 lg:mb-2">
-                  <h2 className="sm:text-4xl lg:text-7xl font-bold mb-4 sm:mb-6">
-                    <span className="chewy-regular accent-color-text bg-clip-text text-transparent">
-                      Want to Start Earning Points?
-                    </span>
-                  </h2>
-                </div>
-                {/* CONTENT */}
-                <div className="text-center mb-2 sm:mb-4 lg:mb-4 order-2">
-                  <p className="sour-gummy-body-300 text-white text-xl sm:text-3xl lg:text-2xl">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Deserunt nobis eveniet quas incidunt nemo itaque omnis
-                    voluptate repudiandae quae neque distinctio dolor placeat
-                    aliquid cupiditate, inventore sunt enim alias officiis.
-                  </p>
-                </div>
+            <div className="flex flex-row lg:grid lg:grid-row-2 px-10">
+              {/* HEADER */}
+              <div className="text-center">
+                <h2 className="sm:text-4xl lg:text-7xl font-bold">
+                  <span className="chewy-regular accent-color-text bg-clip-text text-transparent">
+                    Want to Start Earning Points?
+                  </span>
+                </h2>
               </div>
-            </section>
+            </div>
             {/* VISUAL INSTRUCTION */}
-            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center mb-12 gap-6 chewy-regular">
+            <div className="flex flex-col lg:grid lg:grid-cols-3 text-center gap-6 px-10 py-10 chewy-regular">
               {/* 1ST SECTION */}
               {visualInstruction.map((visualInstruction) => (
                 <div key="" className="soft-sage-bg">
-                  <div className="px-2 py-2">
+                  <div className="px-4 py-4">
                     {/* ICON */}
                     <div className="secondary-color">
                       <img src={visualInstruction.image} />
@@ -521,48 +547,77 @@ export default function RewardsOrg({ onLoginClick }) {
               </h2>
             </div>
             {/* REWARDS */}
-            <div className="relative max-w-6xl mx-auto">
+            <div
+              className="relative max-w-6xl mx-auto"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
               {/* CONTAINER */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-10 space-y-8 sm:space-y-12 lg:space-y-12">
-                {features
-                  .slice(
-                    activeIdx * itemsPerPage,
-                    activeIdx * itemsPerPage + itemsPerPage,
-                  )
-                  .map((feature, key) => (
-                    <div key={`${feature.title}-${key}`}>
-                      {/* CONTAINER CONTENTS */}
-                      <div className="flex-1 w-full hover:translate-y-4 hover:scale-110 transition-transform duration-500 ease-out">
-                        <div className="relative group">
-                          {/* OUTER CONTAINER */}
-                          <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-70 " />
-                          <div className="relative soft-sage-bg backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
-                            {/* INNER CONTAINER */}
-                            <div className="relative group bg-gray-800/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
-                              <img
-                                src={feature.image}
-                                alt={feature.image}
-                                className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-100 lg:h-60 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:-translate-y-1"
-                              />
-                              <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
-                              <div className="flex-1 w-full">
-                                {/* TITLE & DESCRIPTION */}
-                                <div className="overflow-hidden max-h-[3.5rem] group-hover:max-h-[9rem] transition-[max-height] duration-500 ease-out max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
-                                  <h3 className="chewy-regular text-4xl sm:text-3xl lg:text-5xl text-color">
-                                    {feature.title}
-                                  </h3>
-                                  <p className="sour-gummy-body-300 text-color text-base text-xl sm:text-lg leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
-                                    {feature.description}
-                                  </p>
+              <div className="mb-15">
+                <div
+                  onTransitionEnd={() => {
+                    if (activeIdx === 0) {
+                      setIsTransitioning(false);
+                      setActiveIdx(totalPages);
+                    }
+
+                    if (activeIdx === totalPages + 1) {
+                      setIsTransitioning(false);
+                      setActiveIdx(1);
+                    }
+                  }}
+                  className={`flex ${
+                    isTransitioning
+                      ? "transition-transform duration-500 ease-out gap-6"
+                      : "transition-transform duration-700 ease-in-out"
+                  }`}
+                  style={{
+                    transform: `translateX(-${activeIdx * 100}%)`,
+                  }}
+                >
+                  {extendedPages.map((page, pageIdx) => (
+                    <div
+                      key={pageIdx}
+                      className="min-w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                    >
+                      {page.map((feature, key) => (
+                        <div key={`${feature.title}-${key}`}>
+                          {/* CONTAINER CONTENTS */}
+                          <div className="flex-1 w-full hover:translate-y-4 hover:scale-110 transition-transform duration-500 ease-out">
+                            <div className="relative group">
+                              {/* OUTER CONTAINER */}
+                              <div className="absolute inset-0 soft-sage-bg rounded-xl sm:rounded-2xl transition-opacity duration-300 group-hover:opacity-70 " />
+                              <div className="relative soft-sage-bg backdrop-blur-sm border border-gray-700/50 lg:h-auto rounded-xl sm:rounded-2xl sm:p-6 lg:px-2 lg:py-2 overflow-hidden transition-shadow duration-300 ease-out shadow-2xl group-hover:cursor-pointer">
+                                {/* INNER CONTAINER */}
+                                <div className="relative group bg-gray-800/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
+                                  <img
+                                    src={feature.image}
+                                    alt={feature.image}
+                                    className="rounded-lg sm:w-80 sm:h-60 md:w-450 md:h-60 lg:w-100 lg:h-60 transition-transform duration-500 ease-out group-hover:scale-112 group-hover:-translate-y-1"
+                                  />
+                                  <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4"></div>
+                                  <div className="flex-1 w-full">
+                                    {/* TITLE & DESCRIPTION */}
+                                    <div className="overflow-hidden max-h-[3.5rem] group-hover:max-h-[9rem] transition-[max-height] duration-500 ease-out max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                                      <h3 className="chewy-regular text-4xl sm:text-3xl lg:text-5xl text-color">
+                                        {feature.title}
+                                      </h3>
+                                      <p className="sour-gummy-body-300 text-color text-base text-xl sm:text-lg leading-relaxed text-justify opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                                        {feature.description}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
                   ))}
+                </div>
               </div>
+
               {/* NAVIGATION */}
               <div className="flex items-center justify-center gap-4 mb-8 cursor-pointer text-color lg:mb-18">
                 <button
@@ -576,9 +631,9 @@ export default function RewardsOrg({ onLoginClick }) {
                   {Array.from({ length: totalPages }).map((_, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActiveIdx(idx)}
+                      onClick={() => setActiveIdx(idx + 1)}
                       className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === activeIdx
+                        idx === activeIdx - 1
                           ? "w-8 soft-sage-bg"
                           : "w-2 soft-sage-bg"
                       }`}
@@ -612,7 +667,7 @@ export default function RewardsOrg({ onLoginClick }) {
               {/* 1ST SECTION */}
               {howToEarnLinks.map((howToEarnLinks) => (
                 <div className="soft-sage-bg">
-                  <div className="px-2 py-2">
+                  <div className="px-4 py-4">
                     {/* ICON */}
                     <div className="background-color rounded-lg p-2">
                       <img
@@ -662,7 +717,7 @@ export default function RewardsOrg({ onLoginClick }) {
                 >
                   <div className="order-1">
                     {/* INNER SECTION */}
-                    <div className="flex lg:grid lg:grid-cols-2 mx-2 my-2 gap-2">
+                    <div className="flex lg:grid lg:grid-cols-2 px-4 py-4 gap-2">
                       {/* COLUMN 1 (EARN HERE) */}
                       <div className="text-color px-4 py-4">
                         <h1 className="text-center chewy-regular text-4xl mt-4 mb-2">
