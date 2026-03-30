@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Search, ChevronLeft, ChevronRight, MenuIcon } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, MenuIcon, X } from "lucide-react";
 import Link from "next/link";
 export default function UserRewards({ onLoginClick }) {
   // REWARDS
-  const rewards = [
+  const rewards =[
     {
       title: "Pencil",
       description: "",
@@ -135,7 +135,7 @@ export default function UserRewards({ onLoginClick }) {
   ];
 
   // LEADERBOARD CATEGORIES
-  const leadCategories = [
+  const leadCategories =[
     {
       title: "DAILY",
     },
@@ -146,7 +146,7 @@ export default function UserRewards({ onLoginClick }) {
   ];
 
   // CHALLENGES
-  const challenges = [
+  const challenges =[
     {
       title: "Sample Challenge #1",
       description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
@@ -199,7 +199,7 @@ export default function UserRewards({ onLoginClick }) {
   ];
 
   // FOR CATEGORIES
-  const categories = [
+  const categories =[
     { label: "All Rewards", value: "All" },
     { label: "School Supplies", value: "SchoolSupplies" },
     { label: "Essentials", value: "Essentials" },
@@ -215,7 +215,7 @@ export default function UserRewards({ onLoginClick }) {
       : rewards.filter((reward) => reward.catID === selectedCategory);
 
   // UNIVERSITY #1 LEADERBAORD
-  const leaderboard1 = [
+  const leaderboard1 =[
     {
       icon: "/SampleImage-UserIcon.png",
       name: "Tyrion Lannister",
@@ -255,7 +255,7 @@ export default function UserRewards({ onLoginClick }) {
   ];
 
   // UNIVERSITY #2 LEADERBOARD
-  const leaderboard2 = [
+  const leaderboard2 =[
     {
       icon: "/SampleImage-UserIcon.png",
       name: "Tyrion Lannister",
@@ -289,13 +289,12 @@ export default function UserRewards({ onLoginClick }) {
       );
 
       setSearchResults(results);
-    }, 300),
-    [rewards],
+    }, 300),[rewards],
   );
 
   useEffect(() => {
     handleSearch(searchTerm);
-  }, [searchTerm, handleSearch]);
+  },[searchTerm, handleSearch]);
 
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);
@@ -315,7 +314,7 @@ export default function UserRewards({ onLoginClick }) {
   };
 
   // NAVIGATION LINKS
-  const navLinks = [
+  const navLinks =[
     { label: "Rewards", target: "home" },
     { label: "Challenges", target: "challenges" },
     { label: "Leaderboard", target: "leaderboard" },
@@ -335,7 +334,7 @@ export default function UserRewards({ onLoginClick }) {
     };
     window.addEventListener("scroll", changeColor);
     return () => window.removeEventListener("scroll", changeColor);
-  }, []);
+  },[]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -357,7 +356,7 @@ export default function UserRewards({ onLoginClick }) {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  },[]);
 
   // Close Menu of Click
   const handleNavClick = useCallback((target) => {
@@ -370,7 +369,7 @@ export default function UserRewards({ onLoginClick }) {
     }
     setMobileMenuIsOpen(false);
     setActiveSection(target);
-  }, []);
+  },[]);
 
   const handleNavLinkClick = useCallback(
     (link) => {
@@ -593,73 +592,53 @@ export default function UserRewards({ onLoginClick }) {
                 .map((challenges, index) => (
                   <div
                     key={`${challenges.title}-${index}`}
-                    className={index === 0 ? "col-span-2" : "col-span-1"}
+                    className={index === 0 ? "col-span-2 h-full" : "col-span-1 h-full"}
                   >
                     {/* OUTER CONTENT */}
-                    <div
-                      className={
-                        index === 0
-                          ? "secondary-color px-2 py-2"
-                          : "secondary-color px-2 py-2"
-                      }
-                    >
+                    <div className="secondary-color px-2 py-2 h-full flex flex-col">
                       {/* INNER CONTENT */}
                       <div
-                        className={
-                          index >= 1
-                            ? "grid grid-row-2 gap-2 group"
-                            : "grid grid-cols-2 gap-2 group"
-                        }
+                        className={`group h-full ${
+                          index === 0
+                            ? "grid grid-cols-2 gap-2"
+                            : "flex flex-col gap-2"
+                        }`}
                       >
                         {/* IMAGE AREA */}
-                        <div className="">
+                        <div className={`overflow-hidden flex items-center justify-center ${index === 0 ? "h-full" : "w-full aspect-square"}`}>
                           <img
                             src={challenges.image}
-                            className={
-                              index >= 1
-                                ? "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-in group-hover:scale-120 group-hover:rotate-4"
-                                : "h-full w-full max-h-full max-w-full transition-transform duration-500 ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
-                            }
+                            className={`object-cover w-full h-full transition-transform duration-500 ${
+                              index === 0
+                                ? "ease-out delay-300 group-hover:scale-90 group-hover:-rotate-2"
+                                : "ease-in group-hover:scale-110 group-hover:rotate-4"
+                            }`}
                           />
                         </div>
                         {/* HEADER & DESCRIPTION */}
-                        <div
-                          className={
-                            index === 0
-                              ? "primary-color grid grid-row-3 px-4 py-4"
-                              : "primary-color grid grid-row-3 px-4 py-4"
-                          }
-                        >
+                        <div className="primary-color px-4 py-4 flex flex-col flex-grow">
                           <div className="text-white sour-gummy-body-300">
-                            <h1 className={index >= 1 ? "text-xl" : "text-4xl"}>
+                            <h1 className={index === 0 ? "text-4xl" : "text-xl"}>
                               {challenges.title}
                             </h1>
                           </div>
-                          <div className="text-white sour-gummy-body-300">
+                          <div className="text-white sour-gummy-body-300 flex-grow">
                             <p
                               className={
-                                index >= 1
-                                  ? "text-md mb-2 mt-2"
-                                  : "text-2xl mb-8 mt-10"
+                                index === 0
+                                  ? "text-2xl mb-8 mt-6"
+                                  : "text-md mb-2 mt-2"
                               }
                             >
                               {challenges.description}
                             </p>
                           </div>
                           {/* REDEEM POINTS */}
-                          <div
-                            className={
-                              index === 0
-                                ? "flex justify-center text-white sour-gummy-body-300"
-                                : "flex justify-center text-white sour-gummy-body-300"
-                            }
-                          >
+                          <div className="flex justify-center text-white sour-gummy-body-300 mt-auto">
                             <button
-                              className={
-                                index === 0
-                                  ? "self-end text-xl duration-300 transition-transform delay-300 hover:underline group-hover:cursor-pointer"
-                                  : "self-end text-md duration-300 transition-transform delay-300 hover:underline group-hover:cursor-pointer"
-                              }
+                              className={`duration-300 transition-transform delay-300 hover:underline group-hover:cursor-pointer ${
+                                index === 0 ? "text-xl" : "text-md"
+                              }`}
                             >
                               {challenges.points}
                             </button>
