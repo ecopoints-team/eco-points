@@ -224,6 +224,10 @@
     color: #98ff99;
   }
 
+  .accent-color-text-orange {
+    color: #ffcf56;
+  }
+
   .accent-color-border {
     border-color: #86f096;
   }
@@ -265,15 +269,33 @@
   }
 
   .soft-sage-bg {
-    background-color: #86f096;
+    background-color: #98ff99;
+  }
+
+  /* GRADIENT CIRCLES */
+
+  .gradient-circle-lg {
+    background-color: #98ff99;
+    opacity: 30%;
+    border-radius: 50%;
+    height: 35rem;
+    width: 35rem;
+  }
+  .gradient-circle-sm {
+    background-color: #98ff99;
+    opacity: 70%;
+    border-radius: 50%;
+    height: 8rem;
+    width: 8rem;
   }
 
   /* SAMPLE DESIGNS */
   .hr-line {
     border: 1px solid;
     border-color: #102027;
-    margin: 6px 0;
-    width: 80%;
+    opacity: 50%;
+    margin: 2px 0;
+    width: 90%;
   }
   /* NAVIGATION BAR */
 

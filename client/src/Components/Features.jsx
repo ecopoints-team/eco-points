@@ -4,16 +4,10 @@ const features = [
   {
     title: "Vision System",
     listFeatures: [
-      "The prototype is equipped with intelligent sensors that act as its “Eyes”",
-      "Scans and Analyzes to verify that it is a valid PET bottle and reject anything that says otherwise.",
-      "This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
+      "Intelligent Sensors: Act as its “Eyes”",
+      "Scans and Analyzes to verify a valid PET bottle and will Reject anything that says otherwise.",
+      "Ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
     ],
-    // description:
-    //   "The prototype is equipped with intelligent sensors that act as its “Eyes”",
-    // description2:
-    //   "Scans and Analyzes to verify that it is a valid PET bottle and reject anything that says otherwise.",
-    // description3:
-    //   "This ensures that only recyclable materials are accepted and prevents non-plastic trash from contaminating the bin.",
     image: "/SampleImage-Features.webp",
     imageDetails: "Camera and Image Processing",
     imagePosition: "left",
@@ -21,11 +15,10 @@ const features = [
   {
     title: "User-Friendly Experience",
     listFeatures: [
-      "EcoPoints was designed with people in mind. From the height of the scanner to the clarity of the touchscreen instructions, every aspect follows ergonomic standards.",
-      "Interface is Simple, and Intuitive, and guides you through the recycling process in seconds, making it easy for students, faculty, and staff to use without any training.",
+      "EcoPoints was designed with people in mind. Every aspect follows ergonomic standards.",
+      "Simple and Intuitive Interface that guides you through the recycling process in seconds.",
+      "Easy for students, faculty, and staff to use without any training.",
     ],
-    description:
-      "EcoPoints was designed with people in mind. From the height of the scanner to the clarity of the touchscreen instructions, every aspect follows ergonomic standards. The interface is simple, intuitive, and guides you through the recycling process in seconds, making it easy for students, faculty, and staff to use without any training.",
     image: "/SampleImage-Features-two.jpg",
     imageDetails: "User-Friendly",
     imagePosition: "left",
@@ -33,11 +26,10 @@ const features = [
   {
     title: "QR-Based User Authentication System",
     listFeatures: [
-      "Our system uses a secure Quick Response (QR) code technology for instant login. Every user gets a unique personal QR code on our website. ",
-      "Simply show this code to the machine’s scanner, and it immediately identifies you and opens your account, making the process touch-free and secure.",
+      "A secure Quick Response (QR) code technology for instant login.",
+      "Every user gets a unique personal QR code on our website.",
+      "Show this code to the machine’s scanner, and it immediately identifies your account, making the process touch-free and secure.",
     ],
-    description:
-      "Our system uses a secure Quick Response (QR) code technology for instant login. Every user gets a unique personal QR code on our website. Simply show this code to the machine’s scanner, and it immediately identifies you and opens your account, making the process touch-free and secure.",
     image: "/SampleImage-Features-three.webp",
     imageDetails: "QR-Code",
     imagePosition: "right",
@@ -45,13 +37,11 @@ const features = [
   {
     title: "Reverse Vending Machine (RVM)",
     listFeatures: [
-      "Acts as an autonomous collection point capable of identifying valid PET materials and rejecting contaminants.",
+      "Scalable and technology-driven alternative to manual waste sorting.",
       "Equipped with an industrial-grade internal compactor",
       "Efficiently reduces bottle volume to maximize storage",
-      "Scalable and technology-driven alternative to manual waste sorting.",
+      "Acts as an autonomous collection point capable of identifying valid PET materials and rejecting contaminants.",
     ],
-    description:
-      "EcoPoints redefines recycling through an automated, hardware-integrated solution. Our Reverse Vending Machine (RVM) acts as an autonomous collection point capable of identifying valid PET materials and rejecting contaminants. Equipped with an industrial-grade internal compactor, the unit efficiently reduces bottle volume to maximize storage, offering a scalable and technology-driven alternative to manual waste sorting.",
     image: "/SampleImage-Features-four.jpg",
     imageDetails: "RVM-Showcase",
     imagePosition: "right",
@@ -59,12 +49,10 @@ const features = [
   {
     title: "Web-Connected Rewards System",
     listFeatures: [
-      "The EcoPoints machine is fully IoT-enabled (Internet of Things). This means it is constantly connected to the internet.",
+      "A fully IoT-enabled (Internet of Things) Machine. This means it is constantly connected to the internet.",
       "As soon as you recycle a bottle, the machine sends a signal to our cloud server, and your reward points are instantly updated on your web dashboard.",
       "You can check your balance from any device anytime and anywhere.",
     ],
-    description:
-      "The EcoPoints machine is fully IoT-enabled (Internet of Things). This means it is constantly connected to the internet. As soon as you recycle a bottle, the machine sends a signal to our cloud server, and your reward points are instantly updated on your web dashboard. You can check your balance from any device anytime and anywhere.",
     image: "/SampleImage-Features-five.png",
     imageDetails: "Rewards-Showcase",
     imagePosition: "right",
@@ -91,24 +79,6 @@ export default function Features() {
     >
       {/* Root Div */}
       <div className="max-w-6xl mx-auto">
-        {/* LEAF BORDER LEFT  */}
-        <div dir="ltr">
-          <div className="absolute lg:start-0 lg:top-10 sm:top-12 sm:start-0 md:start-0 md:top-20">
-            <img
-              src="/Leaf-Border-Left.png"
-              className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
-            />
-          </div>
-        </div>
-        {/* LEAF BORDER RIGHT */}
-        <div dir="rtl">
-          <div className="absolute lg:start-0 lg:top-8 sm:top-15 sm:start-0 md:start-0 md:top-20">
-            <img
-              src="/Leaf-Border-Right.png"
-              className="rounded-lg sm:w-60 sm:h-40 md:w-50 md:h-40 lg:w-130 lg:h-70"
-            />
-          </div>
-        </div>
         {/* UPPER HEADER */}
         <div className="static text-center font-header mb-12 sm:mb-16 lg:mb-20">
           {/* Text Content */}
@@ -161,7 +131,11 @@ export default function Features() {
                     {feature.listFeatures?.map((item, index) => (
                       <li
                         key={index}
-                        className="text-white sour-gummy-body-600 text-justify text-xl sm:text-lg lg:text-lg leading-relaxed transition-transform duration-500"
+                        className={
+                          index === 0
+                            ? "text-white sour-gummy-body-600 sm:text-lg lg:text-2xl leading-relaxed transition-transform duration-500"
+                            : "text-white sour-gummy-body-500 sm:text-lg lg:text-md leading-relaxed transition-transform duration-500"
+                        }
                       >
                         {item}
                       </li>

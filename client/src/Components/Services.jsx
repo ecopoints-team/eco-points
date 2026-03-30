@@ -1,20 +1,9 @@
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
-
-// const services = [
-//   {
-//     title: "",
-//     description: "",
-//     image: "",
-//     imagePosition: "left",
-//   },
-// ];
-
 export default function Services() {
   return (
     <section
       id="services"
-      className="relative min-h-screen background-color flex item-center justify-center pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
+      className="relative min-h-screen background-color flex item-center justify-center sm:pt-12 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-10 background-color"
     >
       <div className="max-w-7xl mx-auto text-center relative w-full">
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 text-center text-left gap-6 sm:gap-8 lg:gap-12 items-center relative">
@@ -33,13 +22,13 @@ export default function Services() {
           {/* Grid #1 */}
           <div>
             {/* Header Text */}
-            <h1 className="flex justify-center sm:text-5xl md:text-5xl lg:text-6xl chewy-regular lg:mb-4 sm:mb-6">
+            <h1 className="flex justify-center sm:text-5xl md:text-5xl lg:text-6xl chewy-regular">
               <span className="text-color bg-clip-text text-transparent">
                 Services on EcoPoints
               </span>
             </h1>
             {/* Content Text */}
-            <p className="text-md sm:text-base lg:text-lg text-color sour-gummy-body-500 text-center max-w-2xl mx-auto lg:mx-0 mb-6 sm:mb-8">
+            <p className="text-md sm:text-base lg:text-lg text-color sour-gummy-body-500 text-center max-w-2xl mx-auto lg:mx-0">
               We offer a bunch of services including rewards blah blah. Lorem
               ipsum, dolor sit amet consectetur adipisicing elit. Illo error eos
               nisi, provident modi quidem amet ab eum voluptas numquam debitis,
@@ -47,7 +36,7 @@ export default function Services() {
             </p>
             {/* Button */}
             <div className="flex items-center justify-center mt-4 sm:mt-6 lg:mt-10 ">
-              <div className="text-color items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 lg:mb-8 sm:mb-12 w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-center accent-color-background transition-transform duration-300 ease-in-out hover:scale-110 hover:underline hover:border hover:cursor-pointer">
+              <div className="text-color items-center justify-center lg:justify-start sour-gummy-body-600 sm:text-base lg:text-xl gap-3 sm:gap-3 w-full sm:w-auto p-6 rounded-lg text-center accent-color-background transition-transform duration-300 ease-in-out hover:scale-110 hover:border hover:cursor-pointer">
                 <Link href="/rewards" className="">
                   Continue to Rewards
                 </Link>
