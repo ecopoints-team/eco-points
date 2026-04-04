@@ -222,3 +222,28 @@ git merge origin/dev
 ```
 
 ---
+
+# 👑 Main Merge for Lead
+
+> This section is for the **Lead Developer only**.  
+> Use this when you've pushed changes directly to `main` and need to bring them into `dev`.
+
+## 🔄 Sync `dev` with `main` after a direct push
+
+```bash
+git checkout dev
+git pull origin dev        # sync local dev with remote first
+git merge main             # bring main changes into dev
+git push origin dev        # push the updated dev to remote
+```
+
+## ✅ When to use this
+- You committed hotfixes or lead-only changes directly to `main`
+- You need `dev` to reflect the latest `main` before the team continues working
+
+## ⚠️ Reminders
+- Always run `git pull origin dev` first to avoid overwriting teammates' work
+- If there are merge conflicts, resolve them carefully before pushing
+- After this, teammates should run `git pull origin dev` on their own branches to stay in sync
+
+---
