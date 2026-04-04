@@ -26,11 +26,41 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-l from-lime-900 to-lime-950">
-      <NavBar onLoginClick={() => setIsLoginOpen(true)} />
+      {!isLoginOpen && (
+        <NavBar onLoginClick={() => setIsLoginOpen(true)} />
+      )}
 
       {isLoginOpen && (
         <LogIn onClose={handleLoginClose} />
       )}
+
+      {/* Navigation Bar Test Sections */}
+      <div className="p-8 pt-32">
+        {/* Section 1: Home */}
+        <section id="home" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
+          <h1 className="text-4xl font-bold text-white">Home</h1>
+        </section>
+
+        {/* Section 2: How It Works */}
+        <section id="how-it-works" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
+          <h2 className="text-3xl font-bold text-white">How It Works</h2>
+        </section>
+
+        {/* Section 3: Features */}
+        <section id="features" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
+          <h2 className="text-3xl font-bold text-white">Features</h2>
+        </section>
+
+        {/* Section 4: Leaderboard */}
+        <section id="leaderboard" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
+          <h2 className="text-3xl font-bold text-white">Leaderboard</h2>
+        </section>
+
+        {/* Section 5: Rewards */}
+        <section id="rewards" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
+          <h2 className="text-3xl font-bold text-white">Rewards</h2>
+        </section>
+      </div>
     </div>
   );
 }
