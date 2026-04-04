@@ -15,13 +15,6 @@ This is the task that needs to be solved:
 
 # Pre-task
 
-- If possible, avoid merge conflicts at all cost.
-- Do not put any comments on any updates.
 - Thoroughly scan the client folder for you to understand the codespace and the task that will be given.
 
 # Main Task
-
-- Remove all the related code about our website. Keep the log in modal and the login page. Remove all the code related to the website, including the website page and the related components. The landing page, the sections, the header, the footer, and the related components should be removed. The login page and the login modal should be kept as they are. The website page and the related components should be removed completely. The code related to the website page and the related components should be removed from the codebase. The code related to the website page and the related components should be removed from the codebase without leaving any traces. 
-- DO NOT CHANGE ANYTHING THAT IS CONNECTED TO THE ADMIN SIDE OR ADMIN DASHBOARD.
-- Only remove the files that are related to the website page and the related components. Do not remove any files that are related to the admin side or the admin dashboard. Do not remove any files that are related to the login page or the login modal. Only remove the files that are related to the website page and the related components.
-- Fix these items only. DO NOT CHANGE ANYTHING ELSE.
