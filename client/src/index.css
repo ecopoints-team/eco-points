@@ -186,6 +186,35 @@
     cursor: pointer;
   }
 
+<<<<<<< Updated upstream
+=======
+  /* GRADIENT CIRCLES */
+
+  .gradient-circle-lg {
+    background-color: #98ff9ace;
+    opacity: 30%;
+    border-radius: 50%;
+    height: 35rem;
+    width: 35rem;
+  }
+
+  .gradient-circle-md {
+    background-color: #98ff9aa1;
+    opacity: 30%;
+    border-radius: 50%;
+    height: 20rem;
+    width: 20rem;
+  }
+
+  .gradient-circle-sm {
+    background-color: #f8fafcab;
+    opacity: 0%;
+    border-radius: 50%;
+    height: 8rem;
+    width: 8rem;
+  }
+
+>>>>>>> Stashed changes
   /* Main Color Palette (Reusable) */
 
   /* Fresh Mint */
@@ -272,6 +301,7 @@
     background-color: #98ff99;
   }
 
+<<<<<<< Updated upstream
   /* GRADIENT CIRCLES */
 
   .gradient-circle-lg {
@@ -289,6 +319,8 @@
     width: 8rem;
   }
 
+=======
+>>>>>>> Stashed changes
   /* SAMPLE DESIGNS */
   .hr-line {
     border: 1px solid;
