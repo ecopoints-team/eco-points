@@ -51,7 +51,7 @@ export default function NavBar({ onLoginClick }) {
 
   return (
     <nav
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1000px] transition-all duration-700 ease-out ${
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1200px] transition-all duration-700 ease-out ${
         scrolled
           ? "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-3 px-4 md:px-6"
           : "bg-transparent py-3 px-4 md:px-6"
@@ -65,7 +65,7 @@ export default function NavBar({ onLoginClick }) {
           <img
             src={scrolled ? "/EcoPoints Logo Mark with Name.png" : "/EcoPoints Logo Mark with Name (Light Version).png"}
             alt="EcoPoints Logo"
-            className="h-10 md:h-12 w-auto transition-all duration-300 ease-in-out group-hover:scale-110 group-hover:rotate-3"
+            className="h-10 md:h-12 w-auto transition-all duration-300 ease-in-out group-hover:scale-110"
           />
         </div>
 
