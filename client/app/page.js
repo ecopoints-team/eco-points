@@ -7,6 +7,8 @@ import LogIn from "../src/Components/LogIn";
 import LeaderboardCTA from "../src/Components/Leaderboard";
 import Footer from "../src/Components/Footer";
 
+import HowItWorks from "../src/Components/HowItWorks";
+
 // Inner component that uses useSearchParams (requires Suspense boundary)
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -43,11 +45,11 @@ function HomeContent() {
         </section>
 
         {/* Section 2: How It Works */}
-        <section
-          id="how-it-works"
-          className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg"
-        >
+        <section id="how-it-works" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
           <h2 className="text-3xl font-bold text-white">How It Works</h2>
+        <section id="how-it-works">
+          <HowItWorks />
+
         </section>
 
         {/* Section 3: Features */}

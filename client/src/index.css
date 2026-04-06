@@ -168,6 +168,35 @@
     animation: scaleOut 0.2s ease-in forwards;
   }
 
+  /* ANIMATION - BOUNCE */
+  /* animation: var(--animate-bounce); /* bounce 1s infinite */
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  .button {
+    cursor: pointer;
+  }
+
+  /* Main Color Palette (Reusable) */
+
+  /* Fresh Mint */
+  .background-color {
+    background-color: #d4eadd;
+  }
+
+  /* Forest Green */
+  .primary-color {
+    background-color: #2e7d32;
+
   /* SAMPLE DESIGNS */
   .hr-line {
     border: 1px solid;
@@ -175,6 +204,7 @@
     opacity: 50%;
     margin: 1px 0;
     width: 80%;
+
   }
 
   /* Fonts */
@@ -266,6 +296,31 @@
     color: #7ba05b !important;
   }
 
+  /* GRADIENT CIRCLES */
+
+  .gradient-circle-lg {
+    background-color: #98ff99;
+    opacity: 30%;
+    border-radius: 50%;
+    height: 35rem;
+    width: 35rem;
+  }
+  .gradient-circle-sm {
+    background-color: #98ff99;
+    opacity: 70%;
+    border-radius: 50%;
+    height: 8rem;
+    width: 8rem;
+  }
+
+  /* SAMPLE DESIGNS */
+  .hr-line {
+    border: 1px solid;
+    border-color: #102027;
+    opacity: 50%;
+    margin: 2px 0;
+    width: 90%;
+
   html.system .dark\:bg-emerald-500\/20,
   html.system [class*="dark:bg-emerald-500\/"] {
     background-color: rgba(123, 160, 91, 0.15) !important;
@@ -274,6 +329,7 @@
   html.system .dark\:border-emerald-500\/20,
   html.system [class*="dark:border-emerald-500"] {
     border-color: rgba(123, 160, 91, 0.2) !important;
+
   }
 
   /* System theme — Border overrides */
