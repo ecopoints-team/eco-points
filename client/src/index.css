@@ -186,35 +186,6 @@
     cursor: pointer;
   }
 
-<<<<<<< Updated upstream
-=======
-  /* GRADIENT CIRCLES */
-
-  .gradient-circle-lg {
-    background-color: #98ff9ace;
-    opacity: 30%;
-    border-radius: 50%;
-    height: 35rem;
-    width: 35rem;
-  }
-
-  .gradient-circle-md {
-    background-color: #98ff9aa1;
-    opacity: 30%;
-    border-radius: 50%;
-    height: 20rem;
-    width: 20rem;
-  }
-
-  .gradient-circle-sm {
-    background-color: #f8fafcab;
-    opacity: 0%;
-    border-radius: 50%;
-    height: 8rem;
-    width: 8rem;
-  }
-
->>>>>>> Stashed changes
   /* Main Color Palette (Reusable) */
 
   /* Fresh Mint */
@@ -225,83 +196,106 @@
   /* Forest Green */
   .primary-color {
     background-color: #2e7d32;
+
+  /* SAMPLE DESIGNS */
+  .hr-line {
+    border: 1px solid;
+    border-color: #ffffff;
+    opacity: 50%;
+    margin: 1px 0;
+    width: 80%;
+
   }
 
-  .primary-color-header {
-    color: #2e7d32;
+  /* Fonts */
+  .font-header {
+    font-family: fredoka, sans-serif;
   }
 
-  /* Light Fern */
-  .secondary-color {
-    background-color: #81c784;
+  /* Custom Scrollar */
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
   }
 
-  .secondary-color-header {
-    color: #81c784;
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
 
-  /* Safety Orange */
-  .accent-color-background {
-    background-color: #ffcf56;
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px;
   }
 
-  .accent-color-bg-20 {
-    background-color: #86f0968a;
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+    transition: background 0.3s ease;
   }
 
-  .accent-color-text {
-    color: #98ff99;
+  ::-webkit-scrollbar-thumb:hover {
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
   }
 
-  .accent-color-text-orange {
-    color: #ffcf56;
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
-  .accent-color-border {
-    border-color: #86f096;
+  /* ============================================================================
+   SYSTEM THEME - Environmental Dark Mode
+   Background: #0F1B11 (deep forest green-black)
+   Card surfaces: #1A2E1F (elevated elements)
+   Text: #E1E4E1 (high contrast)
+   Borders: rgba(123, 160, 91, 0.2) (accent green with transparency)
+   ============================================================================ */
+
+  html.system {
+    background-color: #0f1b11;
+    color: #e1e4e1;
   }
 
-  .border-slate {
-    border-color: #102027;
+  html.system body {
+    background-color: #0f1b11;
   }
 
-  /* Light Fern */
-  .text-color-header {
-    color: #81c784;
+  /* System theme scrollbar */
+  html.system * {
+    scrollbar-color: rgba(123, 160, 91, 0.3) transparent;
   }
 
-  /* Deep Slate */
-  .text-color {
-    color: #102027;
+  html.system ::-webkit-scrollbar-thumb {
+    background: rgba(123, 160, 91, 0.3);
   }
 
-  .deep-slate-bg {
-    background-color: #102027;
+  html.system ::-webkit-scrollbar-thumb:hover {
+    background: #7ba05b;
+    box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
   }
 
-  /* SAMPLE COLOR PALETTE */
-  /* MINT GREEN */
-  .deep-forest-bg {
-    background-color: #00563e;
+  /* System theme — Cards & Surfaces */
+  html.system .dark\:bg-\[1e293b\]\/60,
+  html.system .dark\:bg-slate-800\/50,
+  html.system .dark\:bg-slate-800,
+  html.system [class*="dark:bg-slate-800"],
+  html.system [class*="dark:bg-\[#1e293b\]"] {
+    background-color: #1a2e1f !important;
+    border-color: rgba(123, 160, 91, 0.2) !important;
   }
 
-  .text-color-content {
-    color: #f7e7ce;
+  /* System theme — Table headers */
+  html.system [class*="dark:bg-slate-900"] {
+    background-color: #0f1b11 !important;
   }
 
-  .text-color-header {
-    color: #f6ae2d;
+  /* System theme — Accent colors (emerald → system green) */
+  html.system .dark\:text-emerald-400,
+  html.system [class*="dark:text-emerald-400"] {
+    color: #7ba05b !important;
   }
 
-  .champagne-bg {
-    background-color: #f7e7ce;
-  }
-
-  .soft-sage-bg {
-    background-color: #98ff99;
-  }
-
-<<<<<<< Updated upstream
   /* GRADIENT CIRCLES */
 
   .gradient-circle-lg {
@@ -319,8 +313,6 @@
     width: 8rem;
   }
 
-=======
->>>>>>> Stashed changes
   /* SAMPLE DESIGNS */
   .hr-line {
     border: 1px solid;
@@ -328,272 +320,92 @@
     opacity: 50%;
     margin: 2px 0;
     width: 90%;
-  }
-  /* NAVIGATION BAR */
 
-  .nav {
-    position: fixed;
-    top: 0;
-    height: 80px;
-    width: 100%;
-    z-index: 1;
-    transition: 0.3s ease-in;
-    overflow: hidden;
+  html.system .dark\:bg-emerald-500\/20,
+  html.system [class*="dark:bg-emerald-500\/"] {
+    background-color: rgba(123, 160, 91, 0.15) !important;
   }
 
-  .nav-bg {
-    background-color: #2c74b370;
+  html.system .dark\:border-emerald-500\/20,
+  html.system [class*="dark:border-emerald-500"] {
+    border-color: rgba(123, 160, 91, 0.2) !important;
+
   }
 
-  /* Fonts */
-  .font-header {
-    font-family: "Montserrat";
-    font-weight: bold;
-    font-style: normal;
+  /* System theme — Border overrides */
+  html.system [class*="dark:border-slate-700"] {
+    border-color: rgba(123, 160, 91, 0.15) !important;
   }
 
-  .font-body-light {
-    font-family: "Lato", sans-serif;
-    font-weight: 300;
-    font-style: normal;
+  /* System theme — Hover effects on table rows */
+  html.system [class*="dark:hover:bg-emerald-900"] {
+    --tw-bg-opacity: 1;
+  }
+  html.system tr:hover {
+    background-color: rgba(123, 160, 91, 0.05) !important;
   }
 
-  .font-body-regular {
-    font-family: "Lato", sans-serif;
-    font-weight: 500;
-    font-style: normal;
+  /* System theme — Active/selected elements */
+  html.system .bg-emerald-600 {
+    background-color: #5c8a3e !important;
+  }
+  html.system .bg-emerald-600:hover {
+    background-color: #7ba05b !important;
   }
 
-  .font-body-bold {
-    font-family: "Lato", sans-serif;
-    font-weight: 700;
-    font-style: normal;
+  /* System theme — Badge refinements */
+  html.system .dark\:text-white,
+  html.system [class*="dark:text-white"] {
+    color: #e1e4e1 !important;
   }
 
-  .font-body-black {
-    font-family: "Lato", sans-serif;
-    font-weight: 900;
-    font-style: normal;
+  html.system .dark\:text-slate-300,
+  html.system [class*="dark:text-slate-300"] {
+    color: #c5c9c5 !important;
   }
 
-  font-body-italic {
-    font-family: "Lato", sans-serif;
-    font-style: italic;
+  html.system .dark\:text-slate-400,
+  html.system [class*="dark:text-slate-400"] {
+    color: #9ba09b !important;
   }
 
-  /* Sample Fonts */
-
-  .chewy-regular {
-    font-family: "Chewy", system-ui;
-    font-weight: 400;
-    font-style: normal;
+  /* System theme — Input/select fields */
+  html.system select,
+  html.system input[type="text"],
+  html.system input[type="email"],
+  html.system input[type="number"],
+  html.system input[type="password"],
+  html.system input[type="search"],
+  html.system textarea {
+    background-color: #1a2e1f !important;
+    border-color: rgba(123, 160, 91, 0.2) !important;
+    color: #e1e4e1 !important;
   }
 
-  .sour-gummy-body {
-    font-family: "Sour Gummy", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 200;
-    font-style: normal;
-    font-variation-settings: 100;
-  }
-  .sour-gummy-body-300 {
-    font-family: "Sour Gummy", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 300;
-    font-style: normal;
-    font-variation-settings: 100;
+  html.system select:focus,
+  html.system input:focus,
+  html.system textarea:focus {
+    border-color: #7ba05b !important;
+    box-shadow: 0 0 0 2px rgba(123, 160, 91, 0.2) !important;
   }
 
-  .sour-gummy-body-400 {
-    font-family: "Sour Gummy", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-    font-variation-settings: 100;
+  /* System theme — Stat cards & overview cards */
+  html.system .dark\:bg-slate-800\/60,
+  html.system [class*="dark:bg-slate-800\/"] {
+    background-color: #1a2e1f !important;
   }
-  .sour-gummy-body-500 {
-    font-family: "Sour Gummy", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: normal;
-    font-variation-settings: 100;
-  }
-  .sour-gummy-body-600 {
-    font-family: "Sour Gummy", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 600;
-    font-style: normal;
-    font-variation-settings: 100;
-  }
-}
 
-/* Custom Scrollar */
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* ============================================================================
-   SYSTEM THEME - Environmental Dark Mode
-   Background: #0F1B11 (deep forest green-black)
-   Card surfaces: #1A2E1F (elevated elements)
-   Text: #E1E4E1 (high contrast)
-   Borders: rgba(123, 160, 91, 0.2) (accent green with transparency)
-   ============================================================================ */
-
-html.system {
-  background-color: #0f1b11;
-  color: #e1e4e1;
-}
-
-html.system body {
-  background-color: #0f1b11;
-}
-
-/* System theme scrollbar */
-html.system * {
-  scrollbar-color: rgba(123, 160, 91, 0.3) transparent;
-}
-
-html.system ::-webkit-scrollbar-thumb {
-  background: rgba(123, 160, 91, 0.3);
-}
-
-html.system ::-webkit-scrollbar-thumb:hover {
-  background: #7ba05b;
-  box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
-}
-
-/* System theme — Cards & Surfaces */
-html.system .dark\:bg-\[1e293b\]\/60,
-html.system .dark\:bg-slate-800\/50,
-html.system .dark\:bg-slate-800,
-html.system [class*="dark:bg-slate-800"],
-html.system [class*="dark:bg-\[#1e293b\]"] {
-  background-color: #1a2e1f !important;
-  border-color: rgba(123, 160, 91, 0.2) !important;
-}
-
-/* System theme — Table headers */
-html.system [class*="dark:bg-slate-900"] {
-  background-color: #0f1b11 !important;
-}
-
-/* System theme — Accent colors (emerald → system green) */
-html.system .dark\:text-emerald-400,
-html.system [class*="dark:text-emerald-400"] {
-  color: #7ba05b !important;
-}
-
-html.system .dark\:bg-emerald-500\/20,
-html.system [class*="dark:bg-emerald-500\/"] {
-  background-color: rgba(123, 160, 91, 0.15) !important;
-}
-
-html.system .dark\:border-emerald-500\/20,
-html.system [class*="dark:border-emerald-500"] {
-  border-color: rgba(123, 160, 91, 0.2) !important;
-}
-
-/* System theme — Border overrides */
-html.system [class*="dark:border-slate-700"] {
-  border-color: rgba(123, 160, 91, 0.15) !important;
-}
-
-/* System theme — Hover effects on table rows */
-html.system [class*="dark:hover:bg-emerald-900"] {
-  --tw-bg-opacity: 1;
-}
-html.system tr:hover {
-  background-color: rgba(123, 160, 91, 0.05) !important;
-}
-
-/* System theme — Active/selected elements */
-html.system .bg-emerald-600 {
-  background-color: #5c8a3e !important;
-}
-html.system .bg-emerald-600:hover {
-  background-color: #7ba05b !important;
-}
-
-/* System theme — Badge refinements */
-html.system .dark\:text-white,
-html.system [class*="dark:text-white"] {
-  color: #e1e4e1 !important;
-}
-
-html.system .dark\:text-slate-300,
-html.system [class*="dark:text-slate-300"] {
-  color: #c5c9c5 !important;
-}
-
-html.system .dark\:text-slate-400,
-html.system [class*="dark:text-slate-400"] {
-  color: #9ba09b !important;
-}
-
-/* System theme — Input/select fields */
-html.system select,
-html.system input[type="text"],
-html.system input[type="email"],
-html.system input[type="number"],
-html.system input[type="password"],
-html.system input[type="search"],
-html.system textarea {
-  background-color: #1a2e1f !important;
-  border-color: rgba(123, 160, 91, 0.2) !important;
-  color: #e1e4e1 !important;
-}
-
-html.system select:focus,
-html.system input:focus,
-html.system textarea:focus {
-  border-color: #7ba05b !important;
-  box-shadow: 0 0 0 2px rgba(123, 160, 91, 0.2) !important;
-}
-
-/* System theme — Stat cards & overview cards */
-html.system .dark\:bg-slate-800\/60,
-html.system [class*="dark:bg-slate-800\/"] {
-  background-color: #1a2e1f !important;
-}
-
-/* Smooth expand/collapse animation */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    max-height: 500px;
-    transform: translateY(0);
+  /* Smooth expand/collapse animation */
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+      transform: translateY(0);
+    }
   }
 }
