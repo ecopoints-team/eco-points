@@ -79,7 +79,7 @@ export default function Footer() {
 
   return (
     <section className="">
-      <div className="grid grid-cols-5 bg-lime-800 rounded-lg p-4">
+      <div className="grid grid-cols-5 bg-lime-800 p-4">
         {/*  */}
         <div className="col-span-1">
           <img
@@ -129,24 +129,27 @@ export default function Footer() {
             <h3 className="col-span-2 justify-self-center text-2xl font-bold text-amber-300">
               Contact Us
             </h3>
-            <ul className="mt-4 space-y-2 grid grid-cols-2 gap-2">
-              {footerContactDetails.map((contact, index) => (
-                <li
-                  key={index}
-                  className={
-                    index === 4
-                      ? "col-span-2 bg-lime-700 p-4 rounded-lg "
-                      : "col-span-1 bg-lime-700 p-4 rounded-lg"
-                  }
-                >
-                  <p className="text-amber-300 text-lg font-bold">
-                    {contact.name}
-                  </p>
-                  <p className="text-white text-sm">{contact.position}</p>
-                  <p className="text-white text-sm">{contact.personalEmail}</p>
-                </li>
-              ))}
-            </ul>
+
+            <div className="justify-self-center">
+              <ul className="mt-4 space-y-2 grid grid-cols-2 gap-2">
+                {footerContactDetails.map((contact, index) => (
+                  <li
+                    key={index}
+                    className={
+                      index === 4 ? "col-span-2 m-4" : "col-span-1 m-4"
+                    }
+                  >
+                    <p className="text-amber-300 text-lg font-bold">
+                      {contact.name}
+                    </p>
+                    <p className="text-white text-sm">{contact.position}</p>
+                    <p className="text-white text-sm">
+                      {contact.personalEmail}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
         {/* COPYRIGHT */}
