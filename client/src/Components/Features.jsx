@@ -106,6 +106,14 @@ export default function Features() {
     };
   }, []);
 
+  const blobs = [
+    { id: "blob-1", speed: 0.12 }, // closest (moves more)
+    { id: "blob-2", speed: -0.09 },
+    { id: "blob-3", speed: 0.07 },
+    { id: "blob-4", speed: -0.05 },
+    { id: "blob-5", speed: 0.04 }, // farthest (moves less)
+  ];
+
   // PARALLAX SCROLL EFFECT
   useEffect(() => {
     const handleScroll = () => {
@@ -127,11 +135,22 @@ export default function Features() {
         topLeaf2.style.transform = `translateY(${offset * -0.1}px)`;
       }
       if (bottomLeaf1) {
-        bottomLeaf1.style.transform = `translateY(${offset * 0.08}px)`;
+        bottomLeaf1.style.transform = `translateY(${offset * 0.8}px)`;
       }
       if (bottomLeaf2) {
-        bottomLeaf2.style.transform = `translateY(${offset * -0.06}px)`;
+        bottomLeaf2.style.transform = `translateY(${offset * -0.6}px)`;
       }
+
+      blobs.forEach(({ id, speed }) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.transform = `
+            translateY(${offset * speed}px)
+            translateX(${offset * speed * 0.6}px)
+            scale(${1 + Math.abs(offset * speed) * 0.005})
+            `;
+        }
+      });
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -143,7 +162,7 @@ export default function Features() {
     <section
       ref={sectionRef}
       id="features"
-      className="relative mb-32 min-h-300 flex items-center justify-center bg-slate-50 rounded-lg"
+      className="relative mb-32 min-h-300 flex items-center justify-center bg-gradient-to-b from-emerald-200 via-white to-emerald-100 rounded-lg"
     >
       {/* ROOT DIV */}
       <div className="p-10">
@@ -177,12 +196,35 @@ export default function Features() {
           Our smart recycling bin combines cutting-edge technology to make
           recycling easier and more efficient.
         </p>
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-400 opacity-20 blur-3xl rounded-full"></div>
-          <div className="absolute bottom-20 right-10 w-72 h-72 bg-emerald-600 opacity-20 blur-3xl rounded-full"></div>
+
+        {/* CIRCLE GRADIENTS */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          {/* BIG SOFT BLOBS */}
+          <div
+            id="blob-1"
+            className="absolute top-10 left-10 w-80 h-80 bg-emerald-400 opacity-10 blur-3xl rounded-full will-change-transform"
+          ></div>
+          <div
+            id="blob-2"
+            className="absolute top-1/3 -right-30 w-96 h-96 bg-emerald-500 opacity-10 blur-3xl rounded-full will-change-transform"
+          ></div>
+          <div
+            id="blob-3"
+            className="absolute bottom-10 left-10 w-72 h-72 bg-emerald-600 opacity-10 blur-3xl rounded-full will-change-transform"
+          ></div>
+          {/* SMALLER ACCENTS */}
+          <div
+            id="blob-4"
+            className="absolute top-1/2 left-20 w-40 h-40 bg-emerald-400 opacity-10 blur-2xl rounded-full will-change-transform"
+          ></div>
+
+          <div
+            id="blob-5"
+            className="absolute bottom-40 right-10 w-52 h-52 bg-emerald-500 opacity-10 blur-2xl rounded-full will-change-transform"
+          ></div>
         </div>
         {/* CONTENT ROOT */}
-        <div className="max-w-6xl grid grid-cols-2 gap-4 items-center">
+        <div className="max-w-7xl z-10 grid grid-cols-2 gap-4 items-center">
           {featuresList.map((feature, index) => (
             // FEATURE CARD
             <div
@@ -192,14 +234,16 @@ export default function Features() {
               {/* FEATURE CONTENT */}
               <div
                 key={index}
-                className={`grid grid-cols-1 gap-6 mb-4 p-10 rounded-lg border border-green-500/50 bg-green-50/5 backdrop-blur-sm shadow-md overflow-hidden transition-all duration-300 ${
+                className={`group grid grid-cols-1 gap-6 mb-4 p-10 rounded-lg border border-green-500/50 bg-green-50/5 backdrop-blur-sm shadow-md overflow-hidden transition-all duration-300 ${
                   visibleFeatures.includes(index)
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-8"
                 }`}
               >
                 {/* ICON */}
-                <div className="mb-4">{feature.icon}</div>
+                <div className="mb-4 transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-4">
+                  {feature.icon}
+                </div>
                 {/* TITLE */}
                 <h3
                   className={
@@ -229,20 +273,6 @@ export default function Features() {
             </div>
           ))}
         </div>
-      </div>
-      {/* GRADIENT BACKGROUND */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
-        <svg
-          className="relative block w-full h-[120px]"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1440 320"
-        >
-          <path
-            fill="#10b981" // emerald-500
-            fillOpacity="0.3"
-            d="M0,192L60,186.7C120,181,240,171,360,165.3C480,160,600,160,720,170.7C840,181,960,203,1080,202.7C1200,203,1320,181,1380,170.7L1440,160V320H0Z"
-          ></path>
-        </svg>
       </div>
     </section>
   );
