@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import NavBar from "../src/Components/NavBar";
 import LogIn from "../src/Components/LogIn";
 import LeaderboardCTA from "../src/Components/Leaderboard";
-import Footer from "../src/Components/Footer";
-
+import Features from "../src/Components/Features";
 import HowItWorks from "../src/Components/HowItWorks";
+import Footer from "../src/Components/Footer";
 
 // Inner component that uses useSearchParams (requires Suspense boundary)
 function HomeContent() {
@@ -45,19 +45,13 @@ function HomeContent() {
         </section>
 
         {/* Section 2: How It Works */}
-        <section id="how-it-works" className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg">
-          <h2 className="text-3xl font-bold text-white">How It Works</h2>
         <section id="how-it-works">
           <HowItWorks />
-
         </section>
 
         {/* Section 3: Features */}
-        <section
-          id="features"
-          className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg"
-        >
-          <h2 className="text-3xl font-bold text-white">Features</h2>
+        <section id="features">
+          <Features />
         </section>
 
         {/* Section 4: Leaderboard */}
@@ -70,10 +64,9 @@ function HomeContent() {
         >
           <h2 className="text-3xl font-bold text-white">Rewards</h2>
         </section>
-
-        {/* Footer */}
-        <Footer />
       </div>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
