@@ -104,7 +104,7 @@ export default function Carousel() {
   }, []);
 
   return (
-    <section id="rewards" className="py-24 relative overflow-hidden w-full mb-16">
+    <section id="rewards" className="min-h-screen py-24 relative overflow-hidden w-full flex flex-col justify-center">
       {/* Background glow blobs */}
       <div className="pointer-events-none absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-3xl" />
       <div className="pointer-events-none absolute top-32 -right-32 w-[450px] h-[450px] rounded-full bg-[#34d399]/10 blur-3xl" />

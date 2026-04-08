@@ -162,7 +162,7 @@ export default function Features() {
     <section
       ref={sectionRef}
       id="features"
-      className="relative mb-32 min-h-300 flex items-center justify-center bg-gradient-to-b from-emerald-200 via-white to-emerald-100 rounded-lg"
+      className="relative mb-32 min-h-300 flex items-center justify-center bg-gradient-to-b from-emerald-200 via-white to-emerald-100 rounded-lg overflow-hidden"
     >
       {/* ROOT DIV */}
       <div className="p-10">

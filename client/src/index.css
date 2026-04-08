@@ -72,6 +72,7 @@
       opacity: 0;
       transform: translateX(-150px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -128,10 +129,12 @@
 
   /* Shake Animation (Password Mismatch) */
   @keyframes shake {
+
     0%,
     100% {
       transform: translateX(0);
     }
+
     10%,
     30%,
     50%,
@@ -139,6 +142,7 @@
     90% {
       transform: translateX(-4px);
     }
+
     20%,
     40%,
     60%,
@@ -171,11 +175,13 @@
   /* ANIMATION - BOUNCE */
   /* animation: var(--animate-bounce); /* bounce 1s infinite */
   @keyframes bounce {
+
     0%,
     100% {
       transform: translateY(-25%);
       animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
     }
+
     50% {
       transform: none;
       animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
@@ -196,45 +202,46 @@
   /* Forest Green */
   .primary-color {
     background-color: #2e7d32;
+  }
 
-    /* Fonts */
-    .font-header {
-      font-family: fredoka, sans-serif;
-    }
+  /* Fonts */
+  .font-header {
+    font-family: fredoka, sans-serif;
+  }
 
-    /* Custom Scrollar */
+  /* Custom Scrollar */
 
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: #334155 transparent;
-    }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+  }
 
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
-      margin: 4px;
-    }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px;
+  }
 
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 10px;
-      transition: background 0.3s ease;
-    }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+    transition: background 0.3s ease;
+  }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #10b981;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-    }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
 
-    ::-webkit-scrollbar-corner {
-      background: transparent;
-    }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 
-    /* ============================================================================
+  /* ============================================================================
    SYSTEM THEME - Environmental Dark Mode
    Background: #0F1B11 (deep forest green-black)
    Card surfaces: #1A2E1F (elevated elements)
@@ -242,161 +249,170 @@
    Borders: rgba(123, 160, 91, 0.2) (accent green with transparency)
    ============================================================================ */
 
-    html.system {
-      background-color: #0f1b11;
-      color: #e1e4e1;
+  html.system {
+    background-color: #0f1b11;
+    color: #e1e4e1;
+  }
+
+  html.system body {
+    background-color: #0f1b11;
+  }
+
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* System theme scrollbar */
+  html.system * {
+    scrollbar-color: rgba(123, 160, 91, 0.3) transparent;
+  }
+
+  html.system ::-webkit-scrollbar-thumb {
+    background: rgba(123, 160, 91, 0.3);
+  }
+
+  html.system ::-webkit-scrollbar-thumb:hover {
+    background: #7ba05b;
+    box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
+  }
+
+  /* System theme — Cards & Surfaces */
+  html.system .dark\:bg-\[1e293b\]\/60,
+  html.system .dark\:bg-slate-800\/50,
+  html.system .dark\:bg-slate-800,
+  html.system [class*="dark:bg-slate-800"],
+  html.system [class*="dark:bg-\[#1e293b\]"] {
+    background-color: #1a2e1f !important;
+    border-color: rgba(123, 160, 91, 0.2) !important;
+  }
+
+  /* System theme — Table headers */
+  html.system [class*="dark:bg-slate-900"] {
+    background-color: #0f1b11 !important;
+  }
+
+  /* System theme — Accent colors (emerald → system green) */
+  html.system .dark\:text-emerald-400,
+  html.system [class*="dark:text-emerald-400"] {
+    color: #7ba05b !important;
+  }
+
+  /* GRADIENT CIRCLES */
+
+  .gradient-circle-lg {
+    background-color: #98ff99;
+    opacity: 30%;
+    border-radius: 50%;
+    height: 35rem;
+    width: 35rem;
+  }
+
+  .gradient-circle-sm {
+    background-color: #98ff99;
+    opacity: 70%;
+    border-radius: 50%;
+    height: 8rem;
+    width: 8rem;
+  }
+
+  /* SAMPLE DESIGNS */
+  .hr-line {
+    border: 1px solid;
+    border-color: #102027;
+    opacity: 50%;
+    margin: 2px 0;
+    width: 90%;
+  }
+
+  html.system .dark\:bg-emerald-500\/20,
+  html.system [class*="dark:bg-emerald-500\/"] {
+    background-color: rgba(123, 160, 91, 0.15) !important;
+  }
+
+  html.system .dark\:border-emerald-500\/20,
+  html.system [class*="dark:border-emerald-500"] {
+    border-color: rgba(123, 160, 91, 0.2) !important;
+  }
+
+  /* System theme — Border overrides */
+  html.system [class*="dark:border-slate-700"] {
+    border-color: rgba(123, 160, 91, 0.15) !important;
+  }
+
+  /* System theme — Hover effects on table rows */
+  html.system [class*="dark:hover:bg-emerald-900"] {
+    --tw-bg-opacity: 1;
+  }
+
+  html.system tr:hover {
+    background-color: rgba(123, 160, 91, 0.05) !important;
+  }
+
+  /* System theme — Active/selected elements */
+  html.system .bg-emerald-600 {
+    background-color: #5c8a3e !important;
+  }
+
+  html.system .bg-emerald-600:hover {
+    background-color: #7ba05b !important;
+  }
+
+  /* System theme — Badge refinements */
+  html.system .dark\:text-white,
+  html.system [class*="dark:text-white"] {
+    color: #e1e4e1 !important;
+  }
+
+  html.system .dark\:text-slate-300,
+  html.system [class*="dark:text-slate-300"] {
+    color: #c5c9c5 !important;
+  }
+
+  html.system .dark\:text-slate-400,
+  html.system [class*="dark:text-slate-400"] {
+    color: #9ba09b !important;
+  }
+
+  /* System theme — Input/select fields */
+  html.system select,
+  html.system input[type="text"],
+  html.system input[type="email"],
+  html.system input[type="number"],
+  html.system input[type="password"],
+  html.system input[type="search"],
+  html.system textarea {
+    background-color: #1a2e1f !important;
+    border-color: rgba(123, 160, 91, 0.2) !important;
+    color: #e1e4e1 !important;
+  }
+
+  html.system select:focus,
+  html.system input:focus,
+  html.system textarea:focus {
+    border-color: #7ba05b !important;
+    box-shadow: 0 0 0 2px rgba(123, 160, 91, 0.2) !important;
+  }
+
+  /* System theme — Stat cards & overview cards */
+  html.system .dark\:bg-slate-800\/60,
+  html.system [class*="dark:bg-slate-800\/"] {
+    background-color: #1a2e1f !important;
+  }
+
+  /* Smooth expand/collapse animation */
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-8px);
     }
 
-    html.system body {
-      background-color: #0f1b11;
-    }
-
-    /* System theme scrollbar */
-    html.system * {
-      scrollbar-color: rgba(123, 160, 91, 0.3) transparent;
-    }
-
-    html.system ::-webkit-scrollbar-thumb {
-      background: rgba(123, 160, 91, 0.3);
-    }
-
-    html.system ::-webkit-scrollbar-thumb:hover {
-      background: #7ba05b;
-      box-shadow: 0 0 10px rgba(123, 160, 91, 0.5);
-    }
-
-    /* System theme — Cards & Surfaces */
-    html.system .dark\:bg-\[1e293b\]\/60,
-    html.system .dark\:bg-slate-800\/50,
-    html.system .dark\:bg-slate-800,
-    html.system [class*="dark:bg-slate-800"],
-    html.system [class*="dark:bg-\[#1e293b\]"] {
-      background-color: #1a2e1f !important;
-      border-color: rgba(123, 160, 91, 0.2) !important;
-    }
-
-    /* System theme — Table headers */
-    html.system [class*="dark:bg-slate-900"] {
-      background-color: #0f1b11 !important;
-    }
-
-    /* System theme — Accent colors (emerald → system green) */
-    html.system .dark\:text-emerald-400,
-    html.system [class*="dark:text-emerald-400"] {
-      color: #7ba05b !important;
-    }
-
-    /* GRADIENT CIRCLES */
-
-    .gradient-circle-lg {
-      background-color: #98ff99;
-      opacity: 30%;
-      border-radius: 50%;
-      height: 35rem;
-      width: 35rem;
-    }
-    .gradient-circle-sm {
-      background-color: #98ff99;
-      opacity: 70%;
-      border-radius: 50%;
-      height: 8rem;
-      width: 8rem;
-    }
-
-    /* SAMPLE DESIGNS */
-    .hr-line {
-      border: 1px solid;
-      border-color: #102027;
-      opacity: 50%;
-      margin: 2px 0;
-      width: 90%;
-    }
-
-    html.system .dark\:bg-emerald-500\/20,
-    html.system [class*="dark:bg-emerald-500\/"] {
-      background-color: rgba(123, 160, 91, 0.15) !important;
-    }
-
-    html.system .dark\:border-emerald-500\/20,
-    html.system [class*="dark:border-emerald-500"] {
-      border-color: rgba(123, 160, 91, 0.2) !important;
-    }
-
-    /* System theme — Border overrides */
-    html.system [class*="dark:border-slate-700"] {
-      border-color: rgba(123, 160, 91, 0.15) !important;
-    }
-
-    /* System theme — Hover effects on table rows */
-    html.system [class*="dark:hover:bg-emerald-900"] {
-      --tw-bg-opacity: 1;
-    }
-    html.system tr:hover {
-      background-color: rgba(123, 160, 91, 0.05) !important;
-    }
-
-    /* System theme — Active/selected elements */
-    html.system .bg-emerald-600 {
-      background-color: #5c8a3e !important;
-    }
-    html.system .bg-emerald-600:hover {
-      background-color: #7ba05b !important;
-    }
-
-    /* System theme — Badge refinements */
-    html.system .dark\:text-white,
-    html.system [class*="dark:text-white"] {
-      color: #e1e4e1 !important;
-    }
-
-    html.system .dark\:text-slate-300,
-    html.system [class*="dark:text-slate-300"] {
-      color: #c5c9c5 !important;
-    }
-
-    html.system .dark\:text-slate-400,
-    html.system [class*="dark:text-slate-400"] {
-      color: #9ba09b !important;
-    }
-
-    /* System theme — Input/select fields */
-    html.system select,
-    html.system input[type="text"],
-    html.system input[type="email"],
-    html.system input[type="number"],
-    html.system input[type="password"],
-    html.system input[type="search"],
-    html.system textarea {
-      background-color: #1a2e1f !important;
-      border-color: rgba(123, 160, 91, 0.2) !important;
-      color: #e1e4e1 !important;
-    }
-
-    html.system select:focus,
-    html.system input:focus,
-    html.system textarea:focus {
-      border-color: #7ba05b !important;
-      box-shadow: 0 0 0 2px rgba(123, 160, 91, 0.2) !important;
-    }
-
-    /* System theme — Stat cards & overview cards */
-    html.system .dark\:bg-slate-800\/60,
-    html.system [class*="dark:bg-slate-800\/"] {
-      background-color: #1a2e1f !important;
-    }
-
-    /* Smooth expand/collapse animation */
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        max-height: 0;
-        transform: translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        max-height: 500px;
-        transform: translateY(0);
-      }
+    to {
+      opacity: 1;
+      max-height: 500px;
+      transform: translateY(0);
     }
   }
 }

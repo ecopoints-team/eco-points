@@ -8,6 +8,7 @@ import LeaderboardCTA from "../src/Components/Leaderboard";
 import Features from "../src/Components/Features";
 import HowItWorks from "../src/Components/HowItWorks";
 import Footer from "../src/Components/Footer";
+import Carousel from "../src/Components/Carousel";
 
 // Inner component that uses useSearchParams (requires Suspense boundary)
 function HomeContent() {
@@ -45,26 +46,16 @@ function HomeContent() {
         </section>
 
         {/* Section 2: How It Works */}
-        <section id="how-it-works">
-          <HowItWorks />
-        </section>
+        <HowItWorks />
 
         {/* Section 3: Features */}
-        <section id="features">
-          <Features />
-        </section>
+        <Features />
 
         {/* Section 4: Leaderboard */}
         <LeaderboardCTA onLoginClick={() => setIsLoginOpen(true)} />
 
-        {/* Section 5: Rewards */}
-        <section
-          id="rewards"
-          className="mb-32 min-h-300 flex items-center justify-center bg-lime-800 rounded-lg"
-        >
-          <h2 className="text-3xl font-bold text-white">Rewards</h2>
-        </section>
       </div>
+      <Carousel />
       {/* Footer */}
       <Footer />
     </div>
