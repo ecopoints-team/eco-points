@@ -1,0 +1,224 @@
+# Local Endpoints for Testing:
+@apiHost = http://localhost:5000
+@webHost = http://localhost:3000
+@rewardsHost = http://localhost:3000
+
+# Production Endpoints:
+# @apiHost = https://api.ecopoints.org
+# @webHost = https://www.ecopoints.org
+# @rewardsHost = https://rewards.ecopoints.org
+
+### --------------------------------------------------
+### Core Health Checks
+### --------------------------------------------------
+
+GET {{apiHost}}/
+Accept: application/json
+
+###
+GET {{apiHost}}/health
+Accept: application/json
+
+
+### ============================================================================
+### 1. Account Creation
+### ============================================================================
+
+# Public Registration (No token required)
+# Use this to simulate a new user signing up from the frontend.
+# @name registerUser
+POST {{apiHost}}/api/web/auth/register
+Content-Type: application/json
+
+{
+	"username": "janedoe",
+	"email": "jane@example.com",
+	"password": "SecurePass123!",
+	"name": "Jane Doe",
+	"userType": "student",
+	"locationId": 1
+}
+
+###
+
+# Login to get an authentication token
+# After running this, copy the "token" value from the response if needed manually
+# @name loginUser
+POST {{apiHost}}/api/web/auth/login
+Content-Type: application/json
+
+{
+	"email": "jane@example.com",
+	"password": "SecurePass123!"
+}
+
+
+### ============================================================================
+### 2. Authenticating Personal QR to the RVM
+### ============================================================================
+
+# Authenticate QR code during scan flow at the RVM.
+# @name authenticateRVMQR
+POST {{apiHost}}/api/rpi/authenticate
+Content-Type: application/json
+
+{
+	"qr_code": "USER-QR-EXAMPLE"
+}
+
+###
+
+# Kick off a recycling session when a QR code is successfully authenticated.
+# @name startRecyclingSession
+POST {{apiHost}}/api/rpi/session/start
+Content-Type: application/json
+
+{
+	"machine_uuid": "RVM-001",
+	"user_qr": "USER-QR-EXAMPLE",
+	"scanned_at": "{{$datetime iso8601}}"
+}
+
+
+### ============================================================================
+### 3. Logging Bottles In
+### ============================================================================
+
+# Bottle scan logger (individual item physical scan detection).
+# @name scanBottle
+POST {{apiHost}}/api/rpi/scan
+Content-Type: application/json
+
+{
+	"bottle_type": "PET_BOTTLE",
+	"qr_code": "USER-QR-EXAMPLE",
+	"timestamp": "{{$datetime iso8601}}"
+}
+
+###
+
+# Register each deposited item to the current session. 
+# Server accumulates totals but doesn't finalize user balance yet.
+# @name depositItem
+POST {{apiHost}}/api/rpi/item/deposit
+Content-Type: application/json
+
+{
+	"session_id": {{startRecyclingSession.response.body.session.session_id}},
+	"item_type": "PET_BOTTLE",
+	"weight_grams": 28,
+	"points": 5,
+	"deposit_time": "{{$datetime iso8601}}"
+}
+
+
+### ============================================================================
+### 4. Accumulate and Query Points
+### ============================================================================
+
+# Finish the session: backend posts the final Transaction and ACCUMULATES user balance.
+# @name endRecyclingSession
+POST {{apiHost}}/api/rpi/session/end
+Content-Type: application/json
+
+{
+	"session_id": {{startRecyclingSession.response.body.session.session_id}},
+	"machine_uuid": "RVM-001"
+}
+
+###
+
+# Query the user's accumulated points balance and profile.
+# @name queryUserPoints
+GET {{apiHost}}/api/web/users/1/points
+Accept: application/json
+# Authorization: Bearer {{loginUser.response.body.token}}
+
+
+### ============================================================================
+### 5. Redeem an Item
+### ============================================================================
+
+# Customer views rewards catalogue from rewards subdomain.
+# @name getRewardsCatalogue
+GET {{apiHost}}/api/web/rewards
+Accept: application/json
+
+###
+
+# User initiates redemption for an item (e.g., 1kg Local Organic Rice).
+#   - Verifies sufficient points
+#   - Creates RewardRedemption entry (status=pending)
+# @name redeemReward
+POST {{apiHost}}/api/web/rewards/1/redeem
+Content-Type: application/json
+# Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+	"user_id": 1,
+	"quantity": 1
+}
+
+
+### ============================================================================
+### 6. Generation of Redeem QR Code
+### ============================================================================
+
+# Fetch the generated Redeem QR code data for a specific pending redemption.
+# This represents the QR code shown on the user's phone to give to the distributor.
+# @name getRedemptionQRCode
+GET {{apiHost}}/api/web/redemptions/1/qr
+Accept: application/json
+# Authorization: Bearer {{loginUser.response.body.token}}
+
+
+### ============================================================================
+### 7. Redeem Process Authenticate by Reward Distributor
+### ============================================================================
+
+# Partner/Distributor verifies redemption when item is claimed.
+# Authenticates the redeem QR code scanned by the distributor's device.
+# @name claimRedemption
+PATCH {{apiHost}}/api/web/redemptions/1/claim
+Content-Type: application/json
+
+{
+	"partner_id": 1,
+	"verification_device": "Partner-Tablet-01",
+	"redemption_code": "REDEEM-QR-CONTENT-123"
+}
+
+
+### ============================================================================
+### 8. Maintenance QR Code
+### ============================================================================
+
+# Authenticate a maintenance personnel's QR code at the RVM.
+# Opens the RVM maintenance dashboard or unlocks physical maintenance hatch.
+# @name authenticateMaintenanceQR
+POST {{apiHost}}/api/rpi/maintenance/authenticate
+Content-Type: application/json
+
+{
+	"machine_uuid": "RVM-001",
+	"qr_code": "MAINTENANCE-ADMIN-QR-001",
+	"scanned_at": "{{$datetime iso8601}}"
+}
+
+
+### --------------------------------------------------
+### Miscellaneous & Frontend Smoke Checks
+### --------------------------------------------------
+
+# Health check for web-specific blueprint
+GET {{apiHost}}/api/web/health
+Accept: application/json
+
+###
+
+GET {{webHost}}/
+Accept: text/html
+
+###
+GET {{rewardsHost}}/
+Accept: text/html

@@ -17,11 +17,11 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"]
 class Config:
     """Standard Flask configuration class."""
     # Production: set DATABASE_URL to your Postgres connection string.
-    # Local dev fallback: SQLite file in the server/ directory.
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL',
-        'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'ecopoints.db')
-    )
+    # We strictly use PostgreSQL, so there is no SQLite fallback.
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("DATABASE_URL is not set. Please ensure you have set up your PostgreSQL connection in .env")
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-DO-NOT-USE-IN-PRODUCTION')
     JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
