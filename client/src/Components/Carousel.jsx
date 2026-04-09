@@ -1,3 +1,6 @@
+// Home Page
+// Rewards Section
+
 "use client";
 
 import { useRef, useState, useEffect } from "react";
@@ -53,18 +56,18 @@ export default function Carousel() {
     let animationId;
     let exactScroll = -1;
     let setWidth = 0;
-    
+
     const autoScroll = () => {
       // Must have enough elements mounted
       if (carouselRef.current && carouselRef.current.children.length > SHOWCASE_PRODUCTS.length) {
-        
+
         // Dynamically measure exact pixel width of 1 complete repetition set
         if (setWidth === 0) {
           const firstChild = carouselRef.current.children[0];
           const secondSetChild = carouselRef.current.children[SHOWCASE_PRODUCTS.length];
           // Geometric center point immune to layout CSS differences
           setWidth = secondSetChild.offsetLeft - firstChild.offsetLeft;
-          
+
           if (setWidth > 0) {
             // Jump scrollbar instantly into the middle of the large buffer
             carouselRef.current.scrollLeft = setWidth * 4;
@@ -79,7 +82,7 @@ export default function Carousel() {
           if (currentScroll <= setWidth * 2) {
             carouselRef.current.scrollLeft = currentScroll + setWidth;
             exactScroll = currentScroll + setWidth;
-          } 
+          }
           else if (currentScroll >= setWidth * 6) {
             carouselRef.current.scrollLeft = currentScroll - setWidth;
             exactScroll = currentScroll - setWidth;
@@ -110,7 +113,7 @@ export default function Carousel() {
       <div className="pointer-events-none absolute top-32 -right-32 w-[450px] h-[450px] rounded-full bg-[#34d399]/10 blur-3xl" />
 
       <div className="relative w-full z-10">
-        
+
         <div className="max-w-[1200px] mx-auto px-6 md:px-12 mb-16">
           <div className="flex flex-col md:flex-row justify-between items-end gap-6 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start w-full md:w-auto">
@@ -152,9 +155,9 @@ export default function Carousel() {
             {/* Scale array 10x to effortlessly swallow any widescreen monitor's right boundary logic */}
             {Array(10).fill(SHOWCASE_PRODUCTS).flat().map((product, idx) => (
               <div key={`${product.id}-${idx}`} className="relative group shrink-0 w-[264px] md:w-[304px] pr-6">
-                
+
                 <div className="bg-white rounded-[25px] p-6 pt-16 border-2 border-transparent shadow-[0_5px_20px_rgba(0,0,0,0.05)] hover:border-[#34d399]/30 hover:-translate-y-[15px] hover:shadow-[0_25px_60px_rgba(16,185,129,0.15)] transition-all duration-500 flex flex-col h-full relative select-none">
-                  
+
                   {/* Illusion Art Image Container */}
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-28 h-28 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-4 group-hover:scale-110 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
@@ -177,7 +180,7 @@ export default function Carousel() {
                     <div className="flex justify-between items-center pointer-events-none px-2">
                       <span className="font-bold text-slate-400 text-xs uppercase tracking-wider">Cost</span>
                       <div className="font-black font-mono text-[1.5rem] bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent flex items-center gap-1">
-                         {product.points.toLocaleString()} <span className="text-xs text-[#10b981] font-sans ml-0.5">EP</span>
+                        {product.points.toLocaleString()} <span className="text-xs text-[#10b981] font-sans ml-0.5">EP</span>
                       </div>
                     </div>
                   </div>

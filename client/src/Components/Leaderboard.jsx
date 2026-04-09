@@ -1,3 +1,6 @@
+// Home Page
+// Leaderboard Section
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
