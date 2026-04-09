@@ -1,3 +1,6 @@
+// Home Page
+// Navigation Bar
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";

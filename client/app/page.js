@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Gift, User, Trophy, Menu, X } from "lucide-react";
 
 import NavBar from "../src/Components/NavBar";
 import LogIn from "../src/Components/LogIn";

@@ -1,3 +1,6 @@
+// Home Page
+// Features Section
+
 "use client";
 
 import {

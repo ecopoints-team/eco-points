@@ -1,3 +1,6 @@
+// Home Page
+// How It Works Section
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
