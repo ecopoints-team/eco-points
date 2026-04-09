@@ -446,9 +446,9 @@ const FloatingSearchDropdown = ({
 // ============================================================================
 // Main LogIn Component
 // ============================================================================
-export default function LogIn({ onClose }) {
+export default function LogIn({ onClose, initialSignUp = false }) {
   const router = useRouter();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(initialSignUp);
   const [isExpanding, setIsExpanding] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [signUpPhase, setSignUpPhase] = useState(1); // 1 = Basic, 2 = User Info
@@ -838,36 +838,8 @@ export default function LogIn({ onClose }) {
     setYearLevel("");
   }, [role]);
 
-  // Mouse tracking for parallax + cursor trail
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [rawMousePos, setRawMousePos] = useState({ x: 0, y: 0 });
-  const [cursorTrail, setCursorTrail] = useState([]);
-  const trailTimerRef = useRef(null);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 2;
-      const y = (e.clientY / window.innerHeight - 0.5) * 2;
-      setMousePos({ x, y });
-      setRawMousePos({ x: e.clientX, y: e.clientY });
 
-      // Add to cursor trail
-      setCursorTrail(prev => {
-        const newTrail = [...prev, { x: e.clientX, y: e.clientY, id: Date.now() + Math.random() }];
-        return newTrail.slice(-20); // Keep last 20 positions
-      });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  // Fade out trail dots over time
-  useEffect(() => {
-    trailTimerRef.current = setInterval(() => {
-      setCursorTrail(prev => prev.length > 0 ? prev.slice(1) : prev);
-    }, 50);
-    return () => clearInterval(trailTimerRef.current);
-  }, []);
 
   // Force remove dark/neutral theme class from <html> when login is mounted
   // This prevents dark-themed form fields after admin signout
@@ -878,7 +850,7 @@ export default function LogIn({ onClose }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-hidden">
       {/* Animation styles */}
       <style>{`
         @keyframes shake {
@@ -920,174 +892,11 @@ export default function LogIn({ onClose }) {
         }
       `}</style>
 
-      {/* ===== PARALLAX BACKGROUND ===== */}
+      {/* ===== BLURRED BACKDROP OVERLAY ===== */}
       <div
-        className={`absolute inset-0 transition-opacity duration-500 ${isClosing ? "opacity-0" : "opacity-100"}`}
-      >
-        {/* Base gradient mesh */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0a2f1f] via-[#0d3b2d] to-[#061f15]" />
-
-        {/* Animated gradient orbs - react to mouse */}
-        <div
-          className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
-          style={{
-            background: "radial-gradient(circle, #10b981 0%, transparent 70%)",
-            top: "10%",
-            left: "15%",
-            transform: `translate(${mousePos.x * 30}px, ${mousePos.y * 20}px)`,
-            transition: "transform 0.3s ease-out",
-            animation: "pulse-glow 8s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[100px]"
-          style={{
-            background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)",
-            bottom: "5%",
-            right: "10%",
-            transform: `translate(${mousePos.x * -25}px, ${mousePos.y * -15}px)`,
-            transition: "transform 0.3s ease-out",
-            animation: "pulse-glow 10s ease-in-out infinite 2s",
-          }}
-        />
-        <div
-          className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[80px]"
-          style={{
-            background: "radial-gradient(circle, #84cc16 0%, transparent 70%)",
-            top: "50%",
-            left: "60%",
-            transform: `translate(${mousePos.x * 20}px, ${mousePos.y * 25}px)`,
-            transition: "transform 0.3s ease-out",
-            animation: "pulse-glow 12s ease-in-out infinite 4s",
-          }}
-        />
-
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-            transform: `translate(${mousePos.x * 5}px, ${mousePos.y * 5}px)`,
-            transition: "transform 0.4s ease-out",
-          }}
-        />
-
-        {/* Floating particles layer 1 - leaves/circles — spread evenly */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            transform: `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)`,
-            transition: "transform 0.4s ease-out",
-          }}
-        >
-          {[...Array(20)].map((_, i) => {
-            // Golden-angle distribution for even spread
-            const row = Math.floor(i / 5);
-            const col = i % 5;
-            const topPos = row * 22 + 5 + (col % 2) * 8;
-            const leftPos = col * 18 + 3 + (row % 2) * 7;
-            return (
-              <div
-                key={`leaf-${i}`}
-                className="absolute"
-                style={{
-                  width: `${14 + (i % 3) * 8}px`,
-                  height: `${14 + (i % 3) * 8}px`,
-                  borderRadius: i % 2 === 0 ? "50% 0 50% 0" : "50%",
-                  background: `rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, ${0.12 + (i % 3) * 0.06})`,
-                  border: `1px solid rgba(${i % 2 === 0 ? "16, 185, 129" : "20, 184, 166"}, 0.18)`,
-                  top: `${topPos}%`,
-                  left: `${leftPos}%`,
-                  animation: `float-${(i % 3) + 1} ${15 + i * 3}s ease-in-out infinite ${i * 1.5}s`,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Floating particles layer 2 - small dots — spread evenly */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 8}px)`,
-            transition: "transform 0.6s ease-out",
-          }}
-        >
-          {[...Array(28)].map((_, i) => {
-            const row = Math.floor(i / 7);
-            const col = i % 7;
-            const topPos = row * 22 + 2 + (col % 2) * 8;
-            const leftPos = col * 13 + 2 + (row % 2) * 5;
-            return (
-              <div
-                key={`dot-${i}`}
-                className="absolute rounded-full"
-                style={{
-                  width: `${3 + (i % 4) * 2}px`,
-                  height: `${3 + (i % 4) * 2}px`,
-                  background: `rgba(16, 185, 129, ${0.15 + (i % 3) * 0.1})`,
-                  top: `${topPos}%`,
-                  left: `${leftPos}%`,
-                  animation: `float-slow ${10 + i * 2}s ease-in-out infinite ${i * 1.2}s`,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Rising particles - bottles/eco motif — spread wider */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(14)].map((_, i) => (
-            <div
-              key={`rise-${i}`}
-              className="absolute"
-              style={{
-                width: `${6 + (i % 3) * 4}px`,
-                height: `${6 + (i % 3) * 4}px`,
-                borderRadius: "50%",
-                background: `rgba(132, 204, 22, ${0.15 + (i % 3) * 0.08})`,
-                boxShadow: `0 0 ${8 + i * 2}px rgba(132, 204, 22, 0.1)`,
-                left: `${5 + (i * 12) % 90}%`,
-                animation: `drift-up ${18 + i * 4}s linear infinite ${i * 3}s`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* === CURSOR TRAIL === */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {cursorTrail.map((point, i) => {
-            const opacity = ((i + 1) / cursorTrail.length) * 0.6;
-            const size = 4 + ((i + 1) / cursorTrail.length) * 8;
-            return (
-              <div
-                key={point.id}
-                className="absolute rounded-full"
-                style={{
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  left: `${point.x - size / 2}px`,
-                  top: `${point.y - size / 2}px`,
-                  background: `radial-gradient(circle, rgba(16, 185, 129, ${opacity}) 0%, rgba(132, 204, 22, ${opacity * 0.5}) 60%, transparent 100%)`,
-                  boxShadow: `0 0 ${size * 2}px rgba(16, 185, 129, ${opacity * 0.5})`,
-                  transition: 'opacity 0.15s ease-out',
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Vignette overlay for depth */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)",
-          }}
-        />
-      </div>
+        className={`absolute inset-0 bg-[#064e3b]/40 backdrop-blur-md transition-opacity duration-500 ${isClosing ? "opacity-0" : "opacity-100"}`}
+        onClick={handleClose}
+      />
 
       {/* Restore Dialog Popup */}
       {showRestoreDialog && (
