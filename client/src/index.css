@@ -1,6 +1,35 @@
 @config "../tailwind.config.js";
 @import "tailwindcss";
 
+/* ============================================================================
+   CUSTOM SCROLLBAR — Global
+   ============================================================================ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #34d399 transparent;
+}
+
+/* Chromium / Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #10b981, #34d399);
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #059669, #10b981);
+}
+
 @layer utilities {
   .animate-in {
     animation-fill-mode: both;
@@ -413,6 +442,310 @@
       opacity: 1;
       max-height: 500px;
       transform: translateY(0);
+    }
+  }
+
+  /* ============================================================================
+     HERO SECTION — Parallax Background
+     ============================================================================ */
+
+  .parallax-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .parallax-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .floating-shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.6;
+    filter: blur(40px);
+    mix-blend-mode: multiply;
+    will-change: transform;
+  }
+
+  .shape-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation: heroShapeFloat 20s ease-in-out infinite;
+  }
+
+  .shape-1 {
+    width: 400px;
+    height: 400px;
+    top: 10%;
+    left: 5%;
+  }
+
+  .shape-1 .shape-inner {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    animation-delay: 0s;
+  }
+
+  .shape-2 {
+    width: 300px;
+    height: 300px;
+    top: 50%;
+    right: 5%;
+  }
+
+  .shape-2 .shape-inner {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    animation-delay: 2s;
+  }
+
+  .shape-3 {
+    width: 200px;
+    height: 200px;
+    bottom: 10%;
+    left: 25%;
+  }
+
+  .shape-3 .shape-inner {
+    background: #fbbf24;
+    animation-delay: 4s;
+  }
+
+  @keyframes heroShapeFloat {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate3d(30px, -30px, 0) scale(1.1);
+    }
+
+    66% {
+      transform: translate3d(-20px, 20px, 0) scale(0.9);
+    }
+  }
+
+  /* ============================================================================
+     HERO SECTION — Text Reveal Animation
+     ============================================================================ */
+
+  .hero-text-reveal span {
+    display: inline-block;
+    animation: heroRevealText 1s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes heroRevealText {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ============================================================================
+     HERO SECTION — Gradient Text Shimmer
+     ============================================================================ */
+
+  .hero-gradient-text {
+    position: relative;
+  }
+
+  .hero-gradient-text::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: heroShimmer 3s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  @keyframes heroShimmer {
+    0%,
+    100% {
+      opacity: 0;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* ============================================================================
+     HERO SECTION — Entrance & Float Animations
+     ============================================================================ */
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes heroBounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes heroFloat {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate3d(5px, -10px, 0) scale(1.02);
+    }
+
+    66% {
+      transform: translate3d(-5px, 5px, 0) scale(0.98);
+    }
+  }
+
+  /* ============================================================================
+     CTA SECTION — Animations
+     ============================================================================ */
+
+  @keyframes shimmer-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes ctaFloat {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate3d(10px, -15px, 0) scale(1.05);
+    }
+
+    66% {
+      transform: translate3d(-10px, 10px, 0) scale(0.95);
+    }
+  }
+
+  /* ============================================================================
+     FEATURES BENTO GRID — Animations
+     ============================================================================ */
+
+  @keyframes scanLine {
+    0%,
+    100% {
+      top: 10%;
+      opacity: 0;
+    }
+
+    10% {
+      opacity: 1;
+    }
+
+    50% {
+      top: 90%;
+      opacity: 1;
+    }
+
+    90% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes bottleProcess {
+    0% {
+      transform: translateY(-40px) scaleY(1);
+      opacity: 0;
+    }
+
+    15% {
+      transform: translateY(0) scaleY(1);
+      opacity: 1;
+    }
+
+    45% {
+      transform: translateY(0) scaleY(1);
+      opacity: 1;
+    }
+
+    60% {
+      transform: translateY(15px) scaleY(0.3);
+      opacity: 1;
+    }
+
+    75% {
+      transform: translateY(30px) scaleY(0.3);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateY(-40px) scaleY(1);
+      opacity: 0;
+    }
+  }
+
+  @keyframes laserScan {
+    0%,
+    15% {
+      top: 0;
+      opacity: 0;
+    }
+
+    20% {
+      opacity: 1;
+    }
+
+    40% {
+      top: 100%;
+      opacity: 1;
+    }
+
+    45%,
+    100% {
+      top: 100%;
+      opacity: 0;
     }
   }
 }

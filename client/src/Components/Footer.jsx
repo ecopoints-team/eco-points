@@ -3,45 +3,21 @@
 
 "use client";
 
-import { University } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Footer() {
   const footerQuickLinks = [
-    {
-      name: "Home",
-      link: "/",
-    },
-    {
-      name: "How It Works",
-      link: "How It Works",
-    },
-    {
-      name: "Features",
-      link: "Features",
-    },
-    {
-      name: "Leaderboard",
-      link: "Leaderboard",
-    },
-    {
-      name: "Rewards",
-      link: "Rewards",
-    },
+    { name: "Home", link: "#home" },
+    { name: "How It Works", link: "#how-it-works" },
+    { name: "Features", link: "#features" },
+    { name: "Leaderboard", link: "#leaderboard" },
+    { name: "Rewards", link: "#rewards" },
   ];
 
   const footerResources = [
-    {
-      name: "FAQs",
-      link: "/FAQs",
-    },
-    {
-      name: "Terms and Conditions",
-      link: "/Terms and Conditions",
-    },
-    {
-      name: "Documentation and Support",
-      link: "/Documentation and Support",
-    },
+    { name: "FAQs", link: "#" },
+    { name: "Terms and Conditions", link: "#" },
+    { name: "Documentation and Support", link: "#" },
   ];
 
   const footerContactDetails = [
@@ -53,17 +29,17 @@ export default function Footer() {
     {
       name: "Justine James S. Ibale",
       position: "Project Manager & System Integrator",
-      personalEmail: "ibalejustine03@gmail.com ",
+      personalEmail: "ibalejustine03@gmail.com",
     },
     {
       name: "John Paul D. Elias",
       position: "Backend Developer",
-      personalEmail: "johnpaul.elias101@gmail.com ",
+      personalEmail: "johnpaul.elias101@gmail.com",
     },
     {
       name: "Jaydine C. Nuval",
       position: "Frontend Developer",
-      personalEmail: "jaydinenuval@gmail.com ",
+      personalEmail: "jaydinenuval@gmail.com",
     },
     {
       name: "Rodge Steven Jude D. Funtalba",
@@ -72,98 +48,123 @@ export default function Footer() {
     },
   ];
 
-  const copyrightDetails = [
-    {
-      name: "Eco-Points",
-      university: "Polytechnic University of the Philippines",
-      year: new Date().getFullYear(),
-    },
-  ];
+  const year = new Date().getFullYear();
+  const [isVisible, setIsVisible] = useState(false);
+  const footerRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (footerRef.current) observer.observe(footerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section className="">
-      <div className="grid grid-cols-5 bg-lime-800 p-4">
-        {/*  */}
-        <div className="col-span-1">
-          <img
-            src="/Logo ELements (Light).png"
-            className="h-auto w-auto p-16"
-          />
-        </div>
-        {/* QUICK LINKS */}
-        <div className="col-span-1">
-          <div className="m-4">
-            <h3 className="text-2xl font-bold text-amber-300">Quick Links</h3>
-            <ul className="mt-4 space-y-2">
-              {footerQuickLinks.map((link, index) => (
-                <li key={index}>
-                  <a
-                    href={link.link}
-                    className="text-white text-lg hover:text-amber-300 hover:font-medium"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
+    <footer ref={footerRef} className="bg-[#064e3b] text-white pt-20 pb-8 px-4 md:px-8 relative z-10">
+      <div className={`max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12 transition-all duration-1000 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+        {/* Logo & Description */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <img
+              src="/EcoPoints Primary Logo (Light version).png"
+              alt="EcoPoints Logo"
+              className="h-12 w-auto"
+            />
           </div>
-        </div>
-        {/* RESOURCES */}
-        <div className="col-span-1">
-          <div className="m-4">
-            <h3 className="text-2xl font-bold text-amber-300">Resources</h3>
-            <ul className="mt-4 space-y-2">
-              {footerResources.map((resource, index) => (
-                <li key={index}>
-                  <a
-                    href={resource.link}
-                    className="text-white text-lg hover:text-amber-300 hover:font-medium"
-                  >
-                    {resource.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        {/* CONTACT INFORMATION */}
-        <div className="col-span-2">
-          <div className="m-4">
-            <h3 className="col-span-2 justify-self-center text-2xl font-bold text-amber-300">
-              Contact Us
-            </h3>
-
-            <div className="justify-self-center">
-              <ul className="mt-4 space-y-2 grid grid-cols-2 gap-2">
-                {footerContactDetails.map((contact, index) => (
-                  <li
-                    key={index}
-                    className={
-                      index === 4 ? "col-span-2 m-4" : "col-span-1 m-4"
-                    }
-                  >
-                    <p className="text-amber-300 text-lg font-bold">
-                      {contact.name}
-                    </p>
-                    <p className="text-white text-sm">{contact.position}</p>
-                    <p className="text-white text-sm">
-                      {contact.personalEmail}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-        {/* COPYRIGHT */}
-        <div className="hr-line justify-self-center col-span-5" />
-        <div className="justify-self-center col-span-5 m-4">
-          <p className="text-white mt-4">
-            &copy; {copyrightDetails[0].year} {copyrightDetails[0].name}. All
-            rights reserved.
+          <p
+            className="text-[rgba(255,255,255,0.8)] leading-relaxed"
+            style={{ fontFamily: "'Quicksand', sans-serif" }}
+          >
+            A smart recycling initiative powered by technology and
+            sustainability.
           </p>
         </div>
+
+        {/* Quick Links */}
+        <div>
+          <h4
+            className="mb-4 font-bold text-lg text-white"
+            style={{ fontFamily: "'Fredoka', sans-serif" }}
+          >
+            Quick Links
+          </h4>
+          <ul className="list-none space-y-3">
+            {footerQuickLinks.map((link) => (
+              <li key={link.name}>
+                <a
+                  href={link.link}
+                  className="text-[rgba(255,255,255,0.8)] no-underline hover:text-[#34d399] transition-colors duration-300"
+                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                >
+                  {link.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Resources */}
+        <div>
+          <h4
+            className="mb-4 font-bold text-lg text-white"
+            style={{ fontFamily: "'Fredoka', sans-serif" }}
+          >
+            Resources
+          </h4>
+          <ul className="list-none space-y-3">
+            {footerResources.map((resource) => (
+              <li key={resource.name}>
+                <a
+                  href={resource.link}
+                  className="text-[rgba(255,255,255,0.8)] no-underline hover:text-[#34d399] transition-colors duration-300"
+                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                >
+                  {resource.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Contact */}
+        <div>
+          <h4
+            className="mb-4 font-bold text-lg text-white"
+            style={{ fontFamily: "'Fredoka', sans-serif" }}
+          >
+            Contact Us
+          </h4>
+          <ul className="list-none space-y-4">
+            {footerContactDetails.slice(0, 3).map((contact) => (
+              <li key={contact.name}>
+                <p
+                  className="text-[#34d399] text-sm font-bold"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  {contact.name}
+                </p>
+                <p
+                  className="text-[rgba(255,255,255,0.7)] text-xs"
+                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                >
+                  {contact.position}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </section>
+
+      {/* Copyright */}
+      <div
+        className="max-w-[1400px] mx-auto pt-8 border-t border-[rgba(255,255,255,0.1)] text-center text-[rgba(255,255,255,0.7)]"
+        style={{ fontFamily: "'Quicksand', sans-serif" }}
+      >
+        &copy; {year} EcoPoints. A PUP Institute of Technology Research
+        Project.
+      </div>
+    </footer>
   );
 }

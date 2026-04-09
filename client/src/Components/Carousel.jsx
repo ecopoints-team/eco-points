@@ -6,6 +6,11 @@
 import { useRef, useState, useEffect } from "react";
 import { ArrowUpRight, Zap } from "lucide-react";
 
+const fonts = {
+  heading: { fontFamily: "'Fredoka', sans-serif" },
+  body: { fontFamily: "'Quicksand', sans-serif" },
+};
+
 // Mock Data
 const SHOWCASE_PRODUCTS = [
   { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "✏️" },
@@ -19,6 +24,8 @@ export default function Carousel() {
   const carouselRef = useRef(null);
   const dragState = useRef({ isDragging: false, isHovered: false, startX: 0, scrollLeft: 0 });
   const [isDraggingUI, setIsDraggingUI] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(false);
+  const sectionHeaderRef = useRef(null);
 
   const handleMouseEnter = () => {
     dragState.current.isHovered = true;
@@ -106,6 +113,16 @@ export default function Carousel() {
     return () => cancelAnimationFrame(animationId);
   }, []);
 
+  // Header entrance animation
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setHeaderVisible(true); },
+      { threshold: 0.2 }
+    );
+    if (sectionHeaderRef.current) observer.observe(sectionHeaderRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section id="rewards" className="min-h-screen py-24 relative overflow-hidden w-full flex flex-col justify-center">
       {/* Background glow blobs */}
@@ -115,17 +132,26 @@ export default function Carousel() {
       <div className="relative w-full z-10">
 
         <div className="max-w-[1200px] mx-auto px-6 md:px-12 mb-16">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-6 text-center md:text-left">
+        <div
+          ref={sectionHeaderRef}
+          className={`flex flex-col md:flex-row justify-between items-end gap-6 text-center md:text-left transition-all duration-700 ease-out ${headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+        >
             <div className="flex flex-col items-center md:items-start w-full md:w-auto">
               <div className="inline-flex items-center gap-2 mb-4 px-5 py-2 rounded-full bg-[rgba(16,185,129,0.1)]">
                 <span className="text-[#10b981] text-[0.95rem] font-bold uppercase tracking-[0.1em]">
                   Redeem Points
                 </span>
               </div>
-              <h2 className="text-[clamp(2rem,4vw,4.5rem)] font-black text-white mb-4 leading-tight tracking-tight">
+              <h2
+                className="text-[clamp(2rem,4vw,4.5rem)] font-black text-[#064e3b] mb-4 leading-tight tracking-tight"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
                 Rewards Catalog
               </h2>
-              <p className="text-white/70 font-medium text-lg md:text-xl max-w-xl">
+              <p
+                className="text-[#6b7280] font-medium text-lg md:text-xl max-w-xl"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
                 Exchange your hard-earned points for eco-friendly products, school supplies, and exclusive merchandise.
               </p>
             </div>
@@ -171,8 +197,8 @@ export default function Carousel() {
                     <div className="text-[10px] font-black text-[#10b981] tracking-widest uppercase mb-2">
                       {product.category}
                     </div>
-                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2">{product.name}</h3>
-                    <p className="text-sm text-[#6b7280] leading-relaxed">{product.desc}</p>
+                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>{product.name}</h3>
+                    <p className="text-sm text-[#6b7280] leading-relaxed" style={{ fontFamily: "'Quicksand', sans-serif" }}>{product.desc}</p>
                   </div>
 
                   {/* Corresponding Points Needed */}

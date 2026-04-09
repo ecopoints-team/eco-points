@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 
 const navItems = ["Home", "How It Works", "Features", "Leaderboard", "Rewards"];
@@ -14,30 +14,44 @@ export default function NavBar({ onLoginClick }) {
   const [activeSection, setActiveSection] = useState("home");
 
   // Scroll-responsive background
+  const scrolledRef = useRef(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => {
+      const val = window.scrollY > 50;
+      if (val !== scrolledRef.current) {
+        scrolledRef.current = val;
+        setScrolled(val);
+      }
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Scroll spy — single observer tracking all sections, only the LAST one to enter wins
   useEffect(() => {
     const ids = navItems.map((item) => item.toLowerCase().replace(/\s+/g, "-"));
-    const observers = [];
+    const sections = ids
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
 
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setActiveSection(id);
-        },
-        { threshold: 0.1 }
-      );
-      observer.observe(el);
-      observers.push(observer);
-    });
+    if (sections.length === 0) return;
 
-    return () => observers.forEach((o) => o.disconnect());
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the entry that is intersecting and closest to the top of the detection zone
+        const intersecting = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (intersecting.length > 0) {
+          setActiveSection(intersecting[0].target.id);
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+    );
+
+    sections.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   const handleNavigate = (id) => {
@@ -65,7 +79,7 @@ export default function NavBar({ onLoginClick }) {
           onClick={() => handleNavigate("home")}
         >
           <img
-            src={scrolled ? "/EcoPoints Logo Mark with Name.png" : "/EcoPoints Logo Mark with Name (Light Version).png"}
+            src="/EcoPoints Logo Mark with Name.png"
             alt="EcoPoints Logo"
             className="h-10 md:h-12 w-auto transition-all duration-300 ease-in-out group-hover:scale-110"
           />
@@ -75,8 +89,9 @@ export default function NavBar({ onLoginClick }) {
         <ul
           className={`hidden md:flex gap-8 font-bold text-sm px-6 py-2.5 rounded-full border shadow-sm transition-all duration-500 ${scrolled
             ? "bg-white/50 backdrop-blur-md border-white/60"
-            : "bg-white/10 backdrop-blur-sm border-white/20"
+            : "bg-white/50 backdrop-blur-sm border-slate-200/40"
             }`}
+          style={{ fontFamily: "'Quicksand', sans-serif" }}
         >
           {navItems.map((item) => {
             const id = item.toLowerCase().replace(/\s+/g, "-");
@@ -85,21 +100,18 @@ export default function NavBar({ onLoginClick }) {
               <li
                 key={item}
                 className={`relative group cursor-pointer transition-colors ${isActive
-                  ? scrolled
-                    ? "text-green-600"
-                    : "text-lime-300"
+                  ? "text-[#10b981]"
                   : scrolled
                     ? "text-slate-500 hover:text-slate-900"
-                    : "text-white/70 hover:text-white"
+                    : "text-[#064e3b] hover:text-[#10b981]"
                   }`}
                 onClick={() => handleNavigate(id)}
               >
                 {item}
                 <span
-                  className={`absolute -bottom-1.5 left-0 w-full h-[2px] transition-all duration-300 origin-left ${scrolled ? "bg-green-600" : "bg-lime-300"
-                    } ${isActive
-                      ? "scale-x-100 opacity-100"
-                      : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100"
+                  className={`absolute -bottom-1.5 left-0 w-full h-[2px] bg-gradient-to-r from-[#10b981] to-[#34d399] transition-all duration-300 origin-left ${isActive
+                    ? "scale-x-100 opacity-100"
+                    : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100"
                     }`}
                 />
               </li>
@@ -113,18 +125,16 @@ export default function NavBar({ onLoginClick }) {
             id="navbar-login-btn"
             type="button"
             onClick={onLoginClick}
-            className={`px-6 py-2.5 font-bold text-sm rounded-xl cursor-pointer transition-all duration-300 ${scrolled
-                ? "bg-green-600 text-white hover:bg-green-700 hover:shadow-md hover:-translate-y-0.5"
-                : "border border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
-              }`}
+            className="px-8 py-3 bg-gradient-to-r from-[#10b981] to-[#34d399] border-none rounded-full text-white font-semibold cursor-pointer transition-all duration-300 shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:-translate-y-[2px] hover:shadow-[0_8px_25px_rgba(16,185,129,0.4)]"
+            style={{ fontFamily: "'Quicksand', sans-serif" }}
           >
-            Log In
+            Login
           </button>
         </div>
 
         {/* Mobile Hamburger */}
         <button
-          className={`md:hidden p-2 focus:outline-none transition-colors ${scrolled ? "text-slate-900" : "text-white"
+          className={`md:hidden p-2 focus:outline-none transition-colors ${scrolled ? "text-slate-900" : "text-[#064e3b]"
             }`}
           aria-label="Toggle menu"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -159,9 +169,9 @@ export default function NavBar({ onLoginClick }) {
               setIsMobileMenuOpen(false);
               onLoginClick?.();
             }}
-            className="w-full py-4 bg-slate-900 text-white font-bold text-lg rounded-xl mt-2 shadow-md hover:bg-green-600 transition-colors"
+            className="w-full py-4 bg-gradient-to-r from-[#10b981] to-[#34d399] text-white font-bold text-lg rounded-full mt-2 shadow-[0_4px_15px_rgba(16,185,129,0.3)] cursor-pointer transition-colors"
           >
-            Log In
+            Login
           </button>
         </div>
       )}

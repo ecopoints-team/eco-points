@@ -10,230 +10,326 @@ import {
   CoinsIcon,
   HandCoinsIcon,
   Leaf,
+  Cpu,
+  Wifi,
+  Zap,
 } from "lucide-react";
 
-export default function HowItWorks() {
-  const [visibleSteps, setVisibleSteps] = useState([]);
-  const [headerVisible, setHeaderVisible] = useState(false);
-  const sectionRef = useRef(null);
+const fonts = {
+  heading: { fontFamily: "'Fredoka', sans-serif" },
+  body: { fontFamily: "'Quicksand', sans-serif" },
+  data: { fontFamily: "'Space Mono', monospace" },
+};
 
-  // SCROLL-TRIGGERED STEP REVEAL ANIMATION
+export default function HowItWorks() {
+  const sectionRef = useRef(null);
+  const lineRef = useRef(null);
+  const [headerVisible, setHeaderVisible] = useState(false);
+  const [visibleSteps, setVisibleSteps] = useState([]);
+  const rafIdRef = useRef(null);
+
+  // Header reveal
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // First reveal header
-            setHeaderVisible(true);
-
-            // Then reveal steps one by one with delay after header animation
-            setTimeout(() => {
-              steps.forEach((_, index) => {
-                setTimeout(() => {
-                  setVisibleSteps((prev) => [...prev, index]);
-                }, index * 300); // 300ms delay between each step
-              });
-            }, 600); // Wait 600ms after header starts animating
-          }
-        });
+      ([entry]) => {
+        if (entry.isIntersecting) setHeaderVisible(true);
       },
-      { threshold: 0.3 }, // Trigger when 30% of section is visible
+      { threshold: 0.1 }
     );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
-      }
-    };
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
   }, []);
 
-  // PARALLAX SCROLL EFFECT
+  // Step reveal with stagger
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const bigCircle1 = document.getElementById("big-circle-1");
-      const bigCircle2 = document.getElementById("big-circle-2");
-      const smallCircle1 = document.getElementById("small-circle-1");
+    const stepEls = document.querySelectorAll(".hiw-step-item");
+    const observers = [];
 
-      const bigLeaf1 = document.getElementById("big-leaf-1");
-      const bigLeaf2 = document.getElementById("big-leaf-2");
-      const smallLeaf1 = document.getElementById("small-leaf-1");
-      const smallLeaf2 = document.getElementById("small-leaf-2");
+    stepEls.forEach((el, i) => {
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setVisibleSteps((prev) => [...new Set([...prev, i])]);
+          }
+        },
+        { threshold: 0.15 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
 
-      // CIRCLES - slower parallax
-      if (bigCircle1) {
-        bigCircle1.style.transform = `translateY(${scrollY * -0.3}px)`;
-      }
-      if (bigCircle2) {
-        bigCircle2.style.transform = `translateY(${scrollY * -0.3}px)`;
-      }
-      if (smallCircle1) {
-        smallCircle1.style.transform = `translateY(${scrollY * 0.2}px)`;
-      }
-      //   LEAFS WITH DIFFERENT SPEEDS AND DIRECTIONS FOR MORE DYNAMIC EFFECT
-      if (bigLeaf1) {
-        bigLeaf1.style.transform = `translateY(${scrollY * 0.5}px)`;
-      }
-      if (bigLeaf2) {
-        bigLeaf2.style.transform = `translateY(${scrollY * -0.3}px)`;
-      }
-      if (smallLeaf1) {
-        smallLeaf1.style.transform = `translateY(${scrollY * 0.2}px)`;
-      }
-      if (smallLeaf2) {
-        smallLeaf2.style.transform = `translateY(${scrollY * -0.2}px)`;
-      }
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
+
+  // Combined scroll handler: line progress + parallax (single listener, rAF throttled, no React state)
+  useEffect(() => {
+    const container = document.querySelector(".hiw-steps-container");
+    const techIds = ["hiw-tech-1", "hiw-tech-2", "hiw-tech-3", "hiw-tech-4"];
+    const speeds = [0.08, -0.06, 0.1, -0.07];
+    const techEls = techIds.map((id) => document.getElementById(id));
+
+    const onScroll = () => {
+      if (rafIdRef.current) return;
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+
+        // Line progress — write directly to DOM, no setState
+        if (container && lineRef.current) {
+          const rect = container.getBoundingClientRect();
+          const windowH = window.innerHeight;
+          const start = windowH * 0.7;
+          const end = windowH * 0.3;
+          const total = rect.height + start - end;
+          const scrolled = start - rect.top;
+          const progress = Math.min(Math.max(scrolled / total, 0), 1);
+          lineRef.current.style.height = `${progress * 100}%`;
+        }
+
+        // Parallax tech icons
+        if (sectionRef.current) {
+          const offset = sectionRef.current.getBoundingClientRect().top;
+          techEls.forEach((el, i) => {
+            if (!el) return;
+            const s = speeds[i];
+            el.style.transform = `translate3d(${offset * s * 0.5}px, ${offset * s}px, 0)`;
+          });
+        }
+      });
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
   }, []);
+
   const steps = [
     {
-      number: "Step 1",
+      icon: <ScanQrCodeIcon className="w-7 h-7 text-emerald-600" />,
+      num: "01",
       title: "Scan QR Code",
-      description: "Authenticate instantly with your unique QR code",
-      icon: (
-        <ScanQrCodeIcon className="w-42 h-42 text-amber-400 mb-8 justify-self-center" />
-      ),
+      desc: "Authenticate instantly with your unique QR code at the machine.",
     },
     {
-      number: "Step 2",
-      title: "Insert Bottle Here",
-      description: "Place your clean PET bottle for automated verification",
-      icon: (
-        <BottleWineIcon className="w-42 h-42 text-amber-400 mb-8 justify-self-center" />
-      ),
+      icon: <BottleWineIcon className="w-7 h-7 text-emerald-600" />,
+      num: "02",
+      title: "Insert Bottle",
+      desc: "Place your clean PET bottle for automated material verification.",
     },
     {
-      number: "Step 3",
+      icon: <CoinsIcon className="w-7 h-7 text-emerald-600" />,
+      num: "03",
       title: "Earn Points",
-      description: "Points received is instantly credited to your account!",
-      icon: (
-        <CoinsIcon className="w-42 h-42 text-amber-400 mb-8 justify-self-center" />
-      ),
+      desc: "Receive 10 points instantly credited to your digital wallet.",
     },
     {
-      number: "Step 4",
+      icon: <HandCoinsIcon className="w-7 h-7 text-emerald-600" />,
+      num: "04",
       title: "Redeem Rewards",
-      description: "Browse catalog and redeem items with your points",
-      icon: (
-        <HandCoinsIcon className="w-42 h-42 text-amber-400 mb-8 justify-self-center" />
-      ),
+      desc: "Browse our catalog and redeem items with your hard-earned points.",
     },
   ];
 
   return (
     <section
-      ref={sectionRef}
       id="how-it-works"
-      className="mb-32 min-h-300 flex items-center justify-center relative border border-white/10 bg-white/5 backdrop-blur-sm rounded-3xl px-2 py-12 md:px-12 md:py-16 overflow-hidden"
+      ref={sectionRef}
+      className="py-32 px-4 md:px-8 relative z-10 overflow-hidden bg-white/80"
     >
-      {/* PARALLAX CIRCLE GRADIENT */}
+      {/* Parallax futuristic tech decorations */}
       <div
-        id="big-circle-1"
-        className="absolute gradient-circle-lg blur-3xl -bottom-150 -right-100 w-full h-full"
-      />
+        id="hiw-tech-1"
+        className="pointer-events-none absolute top-20 left-8 text-emerald-400/15 will-change-transform"
+      >
+        <Cpu size={60} />
+      </div>
       <div
-        id="big-circle-2"
-        className="absolute gradient-circle-lg blur-3xl top-60 -left-80 w-full h-full"
-      />
+        id="hiw-tech-2"
+        className="pointer-events-none absolute top-1/3 right-10 text-emerald-500/10 will-change-transform"
+      >
+        <Wifi size={80} />
+      </div>
       <div
-        id="small-circle-1"
-        className="absolute gradient-circle-md blur-3xl -top-70 -right-10 w-full h-full"
-      />
+        id="hiw-tech-3"
+        className="pointer-events-none absolute bottom-32 left-16 text-emerald-400/10 will-change-transform"
+      >
+        <Zap size={50} />
+      </div>
+      <div
+        id="hiw-tech-4"
+        className="pointer-events-none absolute bottom-20 right-20 will-change-transform"
+      >
+        <Leaf size={70} className="text-emerald-400/10" fill="currentColor" />
+      </div>
 
-      {/* PARALLAX LEAF ELEMENTS */}
-      <Leaf
-        size={200}
-        id="big-leaf-1"
-        className="pointer-events-none absolute -top-50 -right-10 text-lime-400/8 rotate-12"
-        fill="currentColor"
-      />
-      <Leaf
-        size={180}
-        id="big-leaf-2"
-        className="pointer-events-none absolute -bottom-60 -left-10 text-lime-400/8 rotate-12"
-        fill="currentColor"
-      />
-      <Leaf
-        size={90}
-        id="small-leaf-1"
-        className="pointer-events-none absolute top-70 right-15 text-lime-400/8 rotate-180"
-        fill="currentColor"
-      />
-      <Leaf
-        size={120}
-        id="small-leaf-2"
-        className="pointer-events-none absolute -top-50 -left-10 text-lime-400/8 rotate-180"
-        fill="currentColor"
-      />
-
-      {/* CONTENT */}
-      <div className="relative z-10 w-full flex flex-col items-center">
-        {/* HEADER */}
-        <div className="text-center mb-16">
+      <div className="max-w-[1200px] mx-auto">
+        {/* Header */}
+        <div
+          className={`text-center mb-24 md:mb-32 transition-all duration-1000 ease-out ${headerVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+            }`}
+        >
           <span
-            className={`mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-white mb-4 transition-all duration-700 ease-out ${headerVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-              }`}
+            className="inline-block text-[#10b981] text-sm font-bold uppercase tracking-[0.2em] mb-4 px-6 py-2 bg-[rgba(16,185,129,0.08)] backdrop-blur-md border border-[rgba(16,185,129,0.2)] rounded-full"
+            style={fonts.body}
           >
-            How It
+            The Journey
           </span>
-          <span
-            className={` mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-transparent bg-clip-text bg-amber-400 transition-all duration-700 ease-out ${headerVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-              }`}
+          <h2
+            className="text-[clamp(2.5rem,6vw,5rem)] font-black mb-6 text-[#064e3b] tracking-tight leading-none"
+            style={fonts.heading}
           >
-            Works
-          </span>
+            How It{" "}
+            <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">
+              Works
+            </span>
+          </h2>
           <p
-            className={`my-4 text-gray-300 max-w-5xl mx-auto text-lg md:text-xl lg:text-2xl transition-all duration-700 ease-out delay-200 ${headerVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-              }`}
+            className="text-xl text-[#6b7280] max-w-[600px] mx-auto font-medium leading-relaxed"
+            style={fonts.body}
           >
-            Join the movement towards a more sustainable future by following
-            these simple steps.
+            A seamless experience designed for a sustainable campus life.
           </p>
         </div>
 
-        {/* GRID AREA */}
-        <div className="grid grid-cols-8 gap-16 w-full max-w-7xl justify-items-center">
-          {steps.map((step, index) => (
+        {/* Steps with vertical timeline */}
+        <div className="hiw-steps-container relative">
+          {/* Vertical Progress Line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-slate-100 hidden md:block -translate-x-1/2 rounded-full overflow-hidden">
             <div
-              key={index}
-              className={`overflow-hidden group col-span-2 border border-white/30 bg-white/10 px-6 py-12 rounded-lg flex flex-col items-center text-center w-full h-full transition-all duration-700 ease-out hover:scale-110 ${visibleSteps.includes(index)
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-8"
-                }`}
-            >
-              <div className="rounded-lg w-full h-full flex flex-col items-center">
-                {step.icon}
-                <div className="absolute -z-10 gradient-circle-sm blur-2xl transition-opacity group-hover:opacity-60 " />
-                {/* {step.image && (
-                  <img
-                    src={step.image}
-                    alt={step.title}
-                    className="w-full h-auto mb-4"
-                  />
-                )} */}
-                <h2 className="text-lg font-bold text-white mb-4">
-                  {step.number}
-                </h2>
-                <h2 className="text-2xl font-bold text-amber-400">
-                  {step.title}
-                </h2>
-                <p className="text-white text-lg">{step.description}</p>
-              </div>
-            </div>
-          ))}
+              ref={lineRef}
+              className="w-full bg-gradient-to-b from-[#10b981] via-[#34d399] to-[#059669] rounded-full"
+              style={{
+                height: "0%",
+                transition: "height 0.1s linear",
+              }}
+            />
+          </div>
+
+          <div className="space-y-20 md:space-y-32">
+            {steps.map((step, i) => {
+              const isLeft = i % 2 === 0;
+              const isVisible = visibleSteps.includes(i);
+
+              return (
+                <div
+                  key={i}
+                  className={`hiw-step-item flex flex-col ${isLeft ? "md:flex-row" : "md:flex-row-reverse"
+                    } items-center gap-8 md:gap-24 relative`}
+                >
+                  {/* Step Number Circle with icon on the line */}
+                  <div className="absolute left-1/2 -translate-x-1/2 w-16 h-16 bg-white border-4 border-[#10b981] rounded-full hidden md:flex flex-col items-center justify-center z-20 shadow-lg">
+                    <div className="mb-0.5">{step.icon}</div>
+                  </div>
+
+                  {/* Content side — Title only outside */}
+                  <div
+                    className={`flex-1 ${isLeft ? "md:text-right" : "md:text-left"
+                      } w-full transition-all duration-1000 ease-out ${isVisible
+                        ? "opacity-100 translate-x-0"
+                        : isLeft
+                          ? "opacity-0 -translate-x-20"
+                          : "opacity-0 translate-x-20"
+                      }`}
+                    style={{ transitionDelay: `${i * 100}ms` }}
+                  >
+                    {/* Mobile icon */}
+                    <div className="md:hidden w-14 h-14 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                      {step.icon}
+                    </div>
+                    <h3
+                      className="text-2xl md:text-3xl font-black text-[#064e3b] mb-2"
+                      style={fonts.heading}
+                    >
+                      {step.title}
+                    </h3>
+                    <span
+                      className="text-sm font-black text-emerald-400 tracking-widest"
+                      style={fonts.data}
+                    >
+                      Step {step.num}
+                    </span>
+                  </div>
+
+                  {/* Card side — description slides in from icon, fills white space */}
+                  <div
+                    className={`flex-1 hidden md:block transition-all duration-1000 ease-out ${isVisible
+                        ? "opacity-100 translate-x-0"
+                        : isLeft
+                          ? "opacity-0 translate-x-20"
+                          : "opacity-0 -translate-x-20"
+                      }`}
+                    style={{ transitionDelay: `${i * 150 + 200}ms` }}
+                  >
+                    <div className="w-full bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[24px] shadow-xl p-8 group hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 relative overflow-hidden">
+                      {/* Futuristic grid pattern inside card */}
+                      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+                        <svg width="100%" height="100%">
+                          <defs>
+                            <pattern
+                              id={`hiw-grid-${i}`}
+                              width="20"
+                              height="20"
+                              patternUnits="userSpaceOnUse"
+                            >
+                              <path
+                                d="M 20 0 L 0 0 0 20"
+                                fill="none"
+                                stroke="#10b981"
+                                strokeWidth="0.5"
+                              />
+                            </pattern>
+                          </defs>
+                          <rect
+                            width="100%"
+                            height="100%"
+                            fill={`url(#hiw-grid-${i})`}
+                          />
+                        </svg>
+                      </div>
+
+                      {/* Glowing accent dot */}
+                      <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+
+                      {/* Step number watermark */}
+                      <div
+                        className="absolute bottom-2 right-4 text-5xl font-black text-slate-100 select-none"
+                        style={fonts.data}
+                      >
+                        {step.num}
+                      </div>
+
+                      {/* Content that slides in */}
+                      <div className="relative z-10">
+                        <p
+                          className="text-base md:text-lg text-[#6b7280] font-medium leading-relaxed"
+                          style={fonts.body}
+                        >
+                          {step.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile description */}
+                  <div
+                    className={`md:hidden transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                      }`}
+                  >
+                    <p
+                      className="text-base text-[#6b7280] text-center leading-relaxed"
+                      style={fonts.body}
+                    >
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
