@@ -1,3 +1,6 @@
+// Home Page
+// How It Works Section
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -175,29 +178,26 @@ export default function HowItWorks() {
         {/* HEADER */}
         <div className="text-center mb-16">
           <span
-            className={`mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-white mb-4 transition-all duration-700 ease-out ${
-              headerVisible
+            className={`mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-white mb-4 transition-all duration-700 ease-out ${headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
-            }`}
+              }`}
           >
             How It
           </span>
           <span
-            className={` mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-transparent bg-clip-text bg-amber-400 transition-all duration-700 ease-out ${
-              headerVisible
+            className={` mx-2 sm:text-4xl md:text-5xl lg:text-8xl font-bold text-transparent bg-clip-text bg-amber-400 transition-all duration-700 ease-out ${headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
-            }`}
+              }`}
           >
             Works
           </span>
           <p
-            className={`my-4 text-gray-300 max-w-5xl mx-auto text-lg md:text-xl lg:text-2xl transition-all duration-700 ease-out delay-200 ${
-              headerVisible
+            className={`my-4 text-gray-300 max-w-5xl mx-auto text-lg md:text-xl lg:text-2xl transition-all duration-700 ease-out delay-200 ${headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
-            }`}
+              }`}
           >
             Join the movement towards a more sustainable future by following
             these simple steps.
@@ -209,11 +209,10 @@ export default function HowItWorks() {
           {steps.map((step, index) => (
             <div
               key={index}
-              className={`overflow-hidden group col-span-2 border border-white/30 bg-white/10 px-6 py-12 rounded-lg flex flex-col items-center text-center w-full h-full transition-all duration-700 ease-out hover:scale-110 ${
-                visibleSteps.includes(index)
+              className={`overflow-hidden group col-span-2 border border-white/30 bg-white/10 px-6 py-12 rounded-lg flex flex-col items-center text-center w-full h-full transition-all duration-700 ease-out hover:scale-110 ${visibleSteps.includes(index)
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-8"
-              }`}
+                }`}
             >
               <div className="rounded-lg w-full h-full flex flex-col items-center">
                 {step.icon}

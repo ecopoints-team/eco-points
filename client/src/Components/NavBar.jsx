@@ -1,3 +1,6 @@
+// Home Page
+// Navigation Bar
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -51,11 +54,10 @@ export default function NavBar({ onLoginClick }) {
 
   return (
     <nav
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1200px] transition-all duration-700 ease-out ${
-        scrolled
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1200px] transition-all duration-700 ease-out ${scrolled
           ? "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-3 px-4 md:px-6"
           : "bg-transparent py-3 px-4 md:px-6"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center">
         <div
@@ -72,8 +74,8 @@ export default function NavBar({ onLoginClick }) {
         {/* Desktop Nav Items */}
         <ul
           className={`hidden md:flex gap-8 font-bold text-sm px-6 py-2.5 rounded-full border shadow-sm transition-all duration-500 ${scrolled
-              ? "bg-white/50 backdrop-blur-md border-white/60"
-              : "bg-white/10 backdrop-blur-sm border-white/20"
+            ? "bg-white/50 backdrop-blur-md border-white/60"
+            : "bg-white/10 backdrop-blur-sm border-white/20"
             }`}
         >
           {navItems.map((item) => {
@@ -83,12 +85,12 @@ export default function NavBar({ onLoginClick }) {
               <li
                 key={item}
                 className={`relative group cursor-pointer transition-colors ${isActive
-                    ? scrolled
-                      ? "text-green-600"
-                      : "text-lime-300"
-                    : scrolled
-                      ? "text-slate-500 hover:text-slate-900"
-                      : "text-white/70 hover:text-white"
+                  ? scrolled
+                    ? "text-green-600"
+                    : "text-lime-300"
+                  : scrolled
+                    ? "text-slate-500 hover:text-slate-900"
+                    : "text-white/70 hover:text-white"
                   }`}
                 onClick={() => handleNavigate(id)}
               >
@@ -111,11 +113,10 @@ export default function NavBar({ onLoginClick }) {
             id="navbar-login-btn"
             type="button"
             onClick={onLoginClick}
-            className={`px-6 py-2.5 font-bold text-sm rounded-xl cursor-pointer transition-all duration-300 ${
-              scrolled
+            className={`px-6 py-2.5 font-bold text-sm rounded-xl cursor-pointer transition-all duration-300 ${scrolled
                 ? "bg-green-600 text-white hover:bg-green-700 hover:shadow-md hover:-translate-y-0.5"
                 : "border border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
-            }`}
+              }`}
           >
             Log In
           </button>
@@ -143,8 +144,8 @@ export default function NavBar({ onLoginClick }) {
                 key={item}
                 onClick={() => handleNavigate(id)}
                 className={`text-left text-lg font-bold p-3 rounded-xl transition-colors ${isActive
-                    ? "bg-green-100 text-green-600"
-                    : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-green-100 text-green-600"
+                  : "text-slate-600 hover:bg-slate-100"
                   }`}
               >
                 {item}

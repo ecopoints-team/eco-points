@@ -1,3 +1,6 @@
+// Home Page
+// Features Section
+
 "use client";
 
 import {
@@ -234,11 +237,10 @@ export default function Features() {
               {/* FEATURE CONTENT */}
               <div
                 key={index}
-                className={`group grid grid-cols-1 gap-6 mb-4 p-10 rounded-lg border border-green-500/50 bg-green-50/5 backdrop-blur-sm shadow-md overflow-hidden transition-all duration-300 ${
-                  visibleFeatures.includes(index)
+                className={`group grid grid-cols-1 gap-6 mb-4 p-10 rounded-lg border border-green-500/50 bg-green-50/5 backdrop-blur-sm shadow-md overflow-hidden transition-all duration-300 ${visibleFeatures.includes(index)
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-8"
-                }`}
+                  }`}
               >
                 {/* ICON */}
                 <div className="mb-4 transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-4">

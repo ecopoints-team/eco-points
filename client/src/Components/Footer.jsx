@@ -1,3 +1,6 @@
+// Home Page
+// Footer
+
 "use client";
 
 import { University } from "lucide-react";
