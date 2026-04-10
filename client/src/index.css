@@ -158,7 +158,6 @@
 
   /* Shake Animation (Password Mismatch) */
   @keyframes shake {
-
     0%,
     100% {
       transform: translateX(0);
@@ -204,7 +203,6 @@
   /* ANIMATION - BOUNCE */
   /* animation: var(--animate-bounce); /* bounce 1s infinite */
   @keyframes bounce {
-
     0%,
     100% {
       transform: translateY(-25%);
@@ -215,6 +213,27 @@
       transform: none;
       animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
     }
+  }
+
+  .react-calendar-heatmap text {
+    font-size: 10px;
+    fill: #065f46; /* emerald-900 */
+  }
+
+  .react-calendar-heatmap .fill-slate-200 {
+    fill: #e2e8f0;
+  }
+
+  .react-calendar-heatmap .fill-emerald-200 {
+    fill: #a7f3d0;
+  }
+
+  .react-calendar-heatmap .fill-emerald-400 {
+    fill: #34d399;
+  }
+
+  .react-calendar-heatmap .fill-emerald-600 {
+    fill: #059669;
   }
 
   .button {
