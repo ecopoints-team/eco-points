@@ -67,7 +67,7 @@ export default function ProfileSection() {
     {
       icon: <ArrowUpRight />,
       title: "10 Big Bottles Recycled",
-      date: "April 10, 2026",
+      date: "April 11, 2026",
       status: "Completed",
       points: "+50",
     },
