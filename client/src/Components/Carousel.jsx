@@ -4,7 +4,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ArrowUpRight, Zap } from "lucide-react";
+import { ArrowUpRight, Zap, Leaf, Cloud, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 const fonts = {
   heading: { fontFamily: "'Fredoka', sans-serif" },
@@ -95,8 +96,8 @@ export default function Carousel() {
             exactScroll = currentScroll - setWidth;
           }
 
-          // Coasting marquee logic (Only when idle)
-          if (!dragState.current.isDragging && !dragState.current.isHovered) {
+          // Coasting marquee logic (Only when not dragging)
+          if (!dragState.current.isDragging) {
             // Sync up fractional math with any native touchpad events
             if (Math.abs(exactScroll - carouselRef.current.scrollLeft) > 5) {
               exactScroll = carouselRef.current.scrollLeft;
@@ -124,10 +125,14 @@ export default function Carousel() {
   }, []);
 
   return (
-    <section id="rewards" className="min-h-screen py-24 relative overflow-hidden w-full flex flex-col justify-center">
-      {/* Background glow blobs */}
+    <section id="rewards" className="min-h-screen py-24 relative overflow-hidden w-full flex flex-col justify-center bg-[#f0fdf4]/30">
+      {/* Background glow blobs & floating elements */}
       <div className="pointer-events-none absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-3xl" />
       <div className="pointer-events-none absolute top-32 -right-32 w-[450px] h-[450px] rounded-full bg-[#34d399]/10 blur-3xl" />
+      <Leaf className="pointer-events-none absolute left-10 top-24 h-12 w-12 text-emerald-400 opacity-20 -rotate-45" />
+      <Leaf className="pointer-events-none absolute right-24 bottom-32 h-10 w-10 text-emerald-500 opacity-15 rotate-12" />
+      <Cloud className="pointer-events-none absolute right-1/4 top-16 h-16 w-16 text-emerald-400 opacity-10" />
+      <Sparkles className="pointer-events-none absolute left-1/4 bottom-1/4 h-8 w-8 text-teal-400 opacity-20" />
 
       <div className="relative w-full z-10">
 
@@ -146,7 +151,7 @@ export default function Carousel() {
                 className="text-[clamp(2rem,4vw,4.5rem)] font-black text-[#064e3b] mb-4 leading-tight tracking-tight"
                 style={{ fontFamily: "'Fredoka', sans-serif" }}
               >
-                Rewards Catalog
+                Rewards <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">Catalog</span>
               </h2>
               <p
                 className="text-[#6b7280] font-medium text-lg md:text-xl max-w-xl"
@@ -157,12 +162,13 @@ export default function Carousel() {
             </div>
 
             {/* Alert Button */}
-            <button
-              onClick={() => alert("Redirecting to full Rewards Page...")}
-              className="px-8 py-5 bg-gradient-to-r from-[#10b981] to-[#34d399] border-none text-white font-bold text-lg rounded-full hover:-translate-y-1 shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.4)] transition-all duration-400 inline-flex items-center gap-2 shrink-0 w-full md:w-auto justify-center group"
+            <Link
+              href="/rewards"
+              className="px-8 py-5 bg-[#064e3b] border-none text-white font-bold text-lg rounded-full hover:-translate-y-1 shadow-[0_10px_20px_rgba(6,78,59,0.2)] hover:shadow-[0_15px_30px_rgba(6,78,59,0.3)] transition-all duration-500 inline-flex items-center gap-2 shrink-0 w-full md:w-auto justify-center group overflow-hidden relative"
             >
-              Browse All Rewards <ArrowUpRight size={20} className="text-white group-hover:rotate-45 transition-transform" />
-            </button>
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-[#10b981] to-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="relative z-10 flex items-center gap-2">Browse All Rewards <ArrowUpRight size={20} className="text-white group-hover:rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" /></span>
+            </Link>
           </div>
         </div>
 
@@ -182,19 +188,26 @@ export default function Carousel() {
             {Array(10).fill(SHOWCASE_PRODUCTS).flat().map((product, idx) => (
               <div key={`${product.id}-${idx}`} className="relative group shrink-0 w-[264px] md:w-[304px] pr-6">
 
-                <div className="bg-white rounded-[25px] p-6 pt-16 border-2 border-transparent shadow-[0_5px_20px_rgba(0,0,0,0.05)] hover:border-[#34d399]/30 hover:-translate-y-[15px] hover:shadow-[0_25px_60px_rgba(16,185,129,0.15)] transition-all duration-500 flex flex-col h-full relative select-none">
+                <div className="bg-white rounded-[30px] p-6 pt-20 border-2 border-emerald-50 shadow-[0_10px_30px_rgba(16,185,129,0.05)] hover:border-emerald-200 hover:-translate-y-[10px] hover:shadow-[0_20px_50px_rgba(16,185,129,0.15)] transition-all duration-700 ease-out flex flex-col h-full relative select-none group/card z-10">
+
+                  {/* Decorative background shape in card (clipped) */}
+                  <div className="absolute inset-0 overflow-hidden rounded-[30px] pointer-events-none z-0">
+                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-full group-hover/card:scale-[2.5] transition-transform duration-700 ease-out opacity-50" />
+                  </div>
 
                   {/* Illusion Art Image Container */}
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-28 h-28 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-4 group-hover:scale-110 pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-                    <span className="text-7xl drop-shadow-md transition-all duration-500 hover:drop-shadow-[0_20px_25px_rgba(0,0,0,0.15)]">
-                      {product.image}
-                    </span>
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-28 h-28 flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/card:-translate-y-4 group-hover/card:scale-110 pointer-events-none z-20">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#10b981] to-[#34d399] rounded-full blur-xl opacity-30 group-hover/card:opacity-50 transition-opacity duration-700"></div>
+                    <div className="absolute inset-2 bg-gradient-to-br from-white to-emerald-50 rounded-full shadow-inner flex items-center justify-center border border-white/60">
+                      <span className="text-5xl drop-shadow-sm transition-all duration-700 group-hover/card:drop-shadow-[0_10px_15px_rgba(16,185,129,0.3)] group-hover/card:scale-110">
+                        {product.image}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Product Details */}
-                  <div className="text-center mb-6 flex-grow pt-4 pointer-events-none">
-                    <div className="text-[10px] font-black text-[#10b981] tracking-widest uppercase mb-2">
+                  <div className="text-center mb-6 flex-grow pt-4 pointer-events-none z-10">
+                    <div className="text-[10px] font-black text-[#10b981] tracking-widest uppercase mb-3 px-3 py-1 bg-emerald-50/80 inline-block rounded-full backdrop-blur-sm">
                       {product.category}
                     </div>
                     <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>{product.name}</h3>
@@ -202,10 +215,12 @@ export default function Carousel() {
                   </div>
 
                   {/* Corresponding Points Needed */}
-                  <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                    <div className="flex justify-between items-center pointer-events-none px-2">
-                      <span className="font-bold text-slate-400 text-xs uppercase tracking-wider">Cost</span>
-                      <div className="font-black font-mono text-[1.5rem] bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent flex items-center gap-1">
+                  <div className="pt-4 border-t border-emerald-50 flex flex-col gap-3 z-10 w-full">
+                    <div className="flex justify-between items-center pointer-events-none px-2 w-full">
+                      <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 group-hover/card:bg-emerald-500 group-hover/card:text-white transition-colors duration-500 shrink-0">
+                        <Zap size={18} className="group-hover/card:scale-110 transition-transform" />
+                      </div>
+                      <div className="font-black font-mono text-[1.5rem] bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent flex items-center gap-1 group-hover/card:scale-105 transition-transform duration-500 ml-auto p-1 overflow-visible">
                         {product.points.toLocaleString()} <span className="text-xs text-[#10b981] font-sans ml-0.5">EP</span>
                       </div>
                     </div>
