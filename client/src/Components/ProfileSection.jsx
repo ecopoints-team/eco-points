@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import {
   Award,
   AwardIcon,
@@ -8,11 +10,34 @@ import {
   University,
   UniversityIcon,
   UserIcon,
+  XIcon,
+  DownloadIcon,
 } from "lucide-react";
 
 import RecentActivity from "./RecentActivity";
 
 export default function ProfileSection() {
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Mocking the user's tag ID from AccessCredential
+  const userTagId = "12345-ABCDE";
+  const qrPayload = `USER:${userTagId}`;
+
+  const downloadQR = () => {
+    const canvas = document.getElementById("user-qr-code");
+    if (canvas) {
+      const pngUrl = canvas
+        .toDataURL("image/png")
+        .replace("image/png", "image/octet-stream");
+      let downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = "my-qr-code.png";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
   return (
     <section className="bg-slate-200 min-h-screen p-4">
       {/* ROOT DIV - Using flex to ensure height alignment is precise */}
@@ -89,7 +114,9 @@ export default function ProfileSection() {
             </div>
 
             {/* QR CODE - THE ANCHOR FOR ALIGNMENT */}
-            <button className="w-full p-4 bg-emerald-400 hover:bg-emerald-500 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-md transform active:scale-95 group">
+            <button 
+              onClick={() => setIsQrModalOpen(true)}
+              className="w-full p-4 bg-emerald-400 hover:bg-emerald-500 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-md transform active:scale-95 group">
               <QrCodeIcon size={24} className="text-emerald-900 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Show Personal QR</span>
             </button>
@@ -113,6 +140,53 @@ export default function ProfileSection() {
 
       {/* FOOTER PADDING */}
       <div className="h-12" />
+
+      {/* QR CODE MODAL */}
+      {isQrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsQrModalOpen(false)}
+          />
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative flex flex-col items-center transform transition-all z-10">
+            <button
+              onClick={() => setIsQrModalOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+            >
+              <XIcon size={20} />
+            </button>
+            <div className="mb-4 bg-emerald-100 p-3 rounded-full">
+              <QrCodeIcon className="text-emerald-600 w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight text-center">Your Personal QR</h3>
+            <p className="text-xs text-slate-500 mb-6 text-center font-medium">Scan this QR code at any Reverse Vending Machine to start recycling.</p>
+
+            <div className="bg-white p-4 rounded-xl shadow-inner border border-slate-100 mb-6 flex justify-center items-center">
+              <QRCodeCanvas
+                id="user-qr-code"
+                value={qrPayload}
+                size={220}
+                bgColor={"#ffffff"}
+                fgColor={"#0f172a"}
+                level={"H"}
+                includeMargin={false}
+              />
+            </div>
+            
+            <p className="text-xs font-mono bg-slate-100 text-slate-600 px-3 py-1 rounded-md mb-6 tracking-widest">
+              ID: {userTagId}
+            </p>
+
+            <button
+              onClick={downloadQR}
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-emerald-600/20"
+            >
+              <DownloadIcon size={18} />
+              Download QR Code
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
