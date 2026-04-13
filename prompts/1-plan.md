@@ -18,4 +18,267 @@ This is the task that needs to be solved:
 - Thoroughly scan the client folder for you to understand the codespace and the task that will be given.
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
-# Main Task / Minor Changes
+# Main Task
+
+
+## High Priority
+
+- Fix this runtime error:
+
+Unhandled Runtime Error
+Error: Text content does not match server-rendered HTML.
+See more info here: https://nextjs.org/docs/messages/react-hydration-error
+
+Text content did not match. Server: "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: &#x27;Fredoka&#x27;, sans-serif; }
+        .font-body { font-family: &#x27;Quicksand&#x27;, sans-serif; }
+        .font-data { font-family: &#x27;Space Mono&#x27;, monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      " Client: "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: 'Fredoka', sans-serif; }
+        .font-body { font-family: 'Quicksand', sans-serif; }
+        .font-data { font-family: 'Space Mono', monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      "
+
+
+<RewardsPage>
+  <Rewards>
+    <div>
+      <style>
+        "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: &#x27;Fredoka&#x27;, sans-serif; }
+        .font-body { font-family: &#x27;Quicksand&#x27;, sans-serif; }
+        .font-data { font-family: &#x27;Space Mono&#x27;, monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      "
+        "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: 'Fredoka', sans-serif; }
+        .font-body { font-family: 'Quicksand', sans-serif; }
+        .font-data { font-family: 'Space Mono', monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      "

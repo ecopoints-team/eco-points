@@ -1,102 +1,91 @@
 "use client";
 
 import { useState } from "react";
+import { Zap, HelpCircle, Settings, ArrowRight, X } from "lucide-react";
 
 function HowItWorksModal({ onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/5 backdrop-blur-sm" onClick={onClose}>
-      <div 
-        className="glass-effect relative w-full max-w-4xl overflow-hidden rounded-xl shadow-2xl shadow-on-surface/10 flex flex-col md:flex-row"
+    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-[#064e3b]/40 backdrop-blur-sm" />
+
+      <div
+        className="relative bg-white/90 backdrop-blur-xl w-full max-w-4xl overflow-hidden rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] flex flex-col md:flex-row border border-white"
         onClick={(e) => e.stopPropagation()}
+        style={{ animation: "scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
       >
-        <button 
+        <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-20 p-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full active:scale-95"
+          className="absolute top-6 right-6 z-20 p-2 text-slate-400 hover:text-slate-800 transition-colors bg-white/50 rounded-full backdrop-blur-sm"
         >
-          <span className="material-symbols-outlined text-2xl">close</span>
+          <X size={24} />
         </button>
-        
-        {/* Sidebar / Visual Hero Section */}
-        <div className="hidden md:flex w-1/3 bg-primary-container/40 p-8 flex-col justify-between relative overflow-hidden">
+
+        {/* Sidebar / Visual Hero */}
+        <div className="hidden md:flex w-1/3 bg-gradient-to-br from-[#10b981] to-[#064e3b] p-8 flex-col justify-between relative overflow-hidden">
           <div className="z-10">
-            <div className="text-primary font-black tracking-widest text-sm uppercase mb-4">EcoPoints</div>
-            <h2 className="text-4xl font-black text-on-primary-container leading-tight">Start Your Impact Today.</h2>
+            <div className="text-[#34d399] font-black tracking-widest text-sm uppercase mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              EcoPoints
+            </div>
+            <h2 className="text-4xl font-black text-white leading-tight" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+              Start Your Impact Today.
+            </h2>
           </div>
           <div className="relative z-10">
-            <p className="text-on-secondary-container font-medium text-lg leading-relaxed">Join thousands of students turning waste into rewards.</p>
+            <p className="text-white/80 font-medium text-lg leading-relaxed" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              Join thousands of students turning waste into rewards.
+            </p>
           </div>
-          {/* Abstract Organic Shape Decoration */}
-          <div className="absolute bottom-[-20%] left-[-20%] w-[150%] h-[150%] opacity-20 pointer-events-none">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <path d="M44.7,-76.4C58.1,-69.2,69.5,-57.4,77.3,-43.8C85.1,-30.3,89.3,-15.1,88.4,-0.5C87.5,14.1,81.5,28.2,73.1,40.8C64.7,53.4,53.8,64.5,41.1,72.4C28.4,80.3,14.2,84.9,-0.6,85.9C-15.4,87,-30.8,84.5,-44.6,77.2C-58.4,70,-70.6,58,-78.3,44.1C-86,30.2,-89.2,14.4,-88.4,0.4C-87.6,-13.5,-82.9,-27.1,-75,-39.8C-67.1,-52.5,-56.1,-64.4,-43.1,-71.9C-30.1,-79.4,-15,-82.5,0.4,-83.2C15.8,-83.9,31.4,-83.6,44.7,-76.4Z" fill="#006947" transform="translate(100 100)"></path>
-            </svg>
-          </div>
+          {/* Decorative circle */}
+          <div className="absolute bottom-[-40%] right-[-40%] w-[80%] h-[80%] bg-white/10 rounded-full pointer-events-none" />
+          <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-white/5 rounded-full pointer-events-none" />
         </div>
 
         {/* Content Area */}
         <div className="flex-1 p-6 md:p-8">
           <div className="max-w-md mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-black text-on-surface mb-1">How It Works</h1>
-              <p className="text-on-surface-variant text-base">Follow these simple steps to start earning EcoPoints for every recycled container.</p>
+              <h1 className="text-2xl font-black text-[#064e3b] mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>How It Works</h1>
+              <p className="text-slate-500 text-base" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                Follow these simple steps to start earning EcoPoints for every recycled container.
+              </p>
             </div>
-            
+
             {/* Roadmap Steps */}
-            <div className="space-y-4 relative">
-              {/* Step 1 */}
-              <div className="group flex items-start gap-4 p-4 rounded-lg bg-surface-container-low/50 hover:bg-surface-container-high transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-black text-lg shadow-lg shadow-primary/20">1</div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-primary text-xl">qr_code_scanner</span>
-                    <h3 className="font-bold text-on-surface text-lg">Scan QR</h3>
+            <div className="space-y-3">
+              {[
+                { num: 1, icon: "qr_code_scanner", title: "Scan QR", desc: "Find a kiosk and scan your personal ID on the mobile app to link your session." },
+                { num: 2, icon: "recycling", title: "Insert Bottle", desc: "Place your clean plastic bottles or cans into the intake slot." },
+                { num: 3, icon: "stars", title: "Earn Points", desc: "Watch your balance grow! Points are calculated instantly based on container type." },
+                { num: 4, icon: "redeem", title: "Redeem", desc: "Exchange points for campus rewards, coffee vouchers, or meal discounts." },
+              ].map((step) => (
+                <div key={step.num} className="group flex items-start gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-[#10b981]/5 transition-colors border border-transparent hover:border-[#10b981]/10">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center text-white font-black text-lg shadow-[0_4px_12px_rgba(16,185,129,0.3)]">
+                    {step.num}
                   </div>
-                  <p className="text-on-surface-variant text-sm">Find a kiosk and scan your personal ID on the mobile app to link your session.</p>
-                </div>
-              </div>
-              {/* Step 2 */}
-              <div className="group flex items-start gap-4 p-4 rounded-lg bg-surface-container-low/50 hover:bg-surface-container-high transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-black text-lg shadow-lg shadow-primary/20">2</div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-primary text-xl">recycling</span>
-                    <h3 className="font-bold text-on-surface text-lg">Insert Bottle</h3>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="material-symbols-outlined text-[#10b981] text-xl">{step.icon}</span>
+                      <h3 className="font-bold text-[#064e3b] text-lg" style={{ fontFamily: "'Fredoka', sans-serif" }}>{step.title}</h3>
+                    </div>
+                    <p className="text-slate-500 text-sm" style={{ fontFamily: "'Quicksand', sans-serif" }}>{step.desc}</p>
                   </div>
-                  <p className="text-on-surface-variant text-sm">Place your clean plastic bottles or cans into the intake slot.</p>
                 </div>
-              </div>
-              {/* Step 3 */}
-              <div className="group flex items-start gap-4 p-4 rounded-lg bg-surface-container-low/50 hover:bg-surface-container-high transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-black text-lg shadow-lg shadow-primary/20">3</div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-tertiary text-xl">stars</span>
-                    <h3 className="font-bold text-on-surface text-lg">Earn Points</h3>
-                  </div>
-                  <p className="text-on-surface-variant text-sm">Watch your balance grow! Points are calculated instantly based on container type.</p>
-                </div>
-              </div>
-              {/* Step 4 */}
-              <div className="group flex items-start gap-4 p-4 rounded-lg bg-surface-container-low/50 hover:bg-surface-container-high transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-black text-lg shadow-lg shadow-primary/20">4</div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-secondary text-xl">redeem</span>
-                    <h3 className="font-bold text-on-surface text-lg">Redeem</h3>
-                  </div>
-                  <p className="text-on-surface-variant text-sm">Exchange points for campus rewards, coffee vouchers, or meal discounts.</p>
-                </div>
-              </div>
+              ))}
             </div>
 
             {/* Footer Action */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <button onClick={onClose} className="flex-1 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-black text-base py-4 px-8 rounded-xl active:scale-95 transition-transform shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
+            <div className="mt-8">
+              <button
+                onClick={onClose}
+                className="w-full bg-[#064e3b] text-white font-bold text-base py-4 px-8 rounded-xl hover:bg-[#0a6c53] transition-all shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)] flex items-center justify-center gap-2"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
                 Continue
-                <span className="material-symbols-outlined">arrow_forward</span>
+                <ArrowRight size={18} />
               </button>
             </div>
-            <p className="mt-4 text-center text-xs text-on-surface-variant/70 font-medium">
+            <p className="mt-4 text-center text-xs text-slate-400 font-medium" style={{ fontFamily: "'Quicksand', sans-serif" }}>
               By continuing, you agree to our sustainability pledge.
             </p>
           </div>
@@ -111,43 +100,85 @@ export default function UserSummary() {
 
   return (
     <section className="mb-12">
-      <div className="glass-card rounded-2xl p-8 border border-white/50 shadow-xl shadow-emerald-900/5">
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
+
+          {/* Left: User Avatar & Info */}
           <div className="lg:col-span-4 flex flex-col md:flex-row lg:flex-col items-center md:items-start gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-black text-3xl border-4 border-white shadow-lg">AR</div>
-              <button className="absolute bottom-0 right-0 p-2 rounded-full bg-white text-on-surface-variant hover:text-primary transition-colors shadow-md">
-                <span className="material-symbols-outlined text-sm">settings</span>
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-3xl border-4 border-white shadow-[0_8px_24px_rgba(16,185,129,0.25)]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                AR
+              </div>
+              <button className="absolute bottom-0 right-0 p-2 rounded-full bg-white text-slate-400 hover:text-[#10b981] transition-colors shadow-md border border-slate-100">
+                <Settings size={14} />
               </button>
             </div>
             <div className="text-center md:text-left">
-              <h2 className="text-3xl font-black text-on-surface tracking-tight mb-1">Alex Rivers</h2>
-              <p className="text-sm font-bold text-on-surface-variant mb-4">@arivers</p>
-              <div className="flex gap-2 justify-center md:justify-start">
-                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">Active Member</span>
-                <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 text-primary font-bold text-xs hover:underline">
-                  <span className="material-symbols-outlined text-base">help</span>
+              <h2 className="text-3xl font-black text-[#064e3b] tracking-tight mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                Alex Rivers
+              </h2>
+              <p className="text-sm font-bold text-slate-400 mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                @arivers
+              </p>
+              <div className="flex gap-2 justify-center md:justify-start flex-wrap">
+                <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#10b981]/20">
+                  Active Member
+                </span>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-1.5 text-[#10b981] font-bold text-xs hover:underline transition-colors"
+                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                >
+                  <HelpCircle size={14} />
                   How It Works
                 </button>
               </div>
             </div>
           </div>
 
+          {/* Right: Stats Cards */}
           <div className="lg:col-span-8 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Available Balance</p>
+              {/* Available Balance */}
+              <div className="bg-gradient-to-br from-[#10b981]/5 to-[#34d399]/10 rounded-[1.5rem] p-6 border border-[#10b981]/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[#10b981]/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#10b981] mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                  Available Balance
+                </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-primary">2,450</span>
-                  <span className="text-lg font-bold text-primary/70">pts</span>
+                  <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    2,450
+                  </span>
+                  <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                    EP
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5">
+                  <Zap size={14} className="text-[#10b981] fill-[#10b981]" />
+                  <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                    Ready to redeem
+                  </span>
                 </div>
               </div>
-              <div className="bg-tertiary-container/20 rounded-2xl p-6 border border-tertiary-container/30">
-                <p className="text-[10px] font-black uppercase tracking-widest text-tertiary mb-2">Total Redeemed</p>
+
+              {/* Total Redeemed */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-[1.5rem] p-6 border border-amber-100/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/30 rounded-full -mr-6 -mt-6 pointer-events-none" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                  Total Redeemed
+                </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-tertiary">500</span>
-                  <span className="text-lg font-bold text-tertiary/70">pts</span>
+                  <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
+                    500
+                  </span>
+                  <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                    EP
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                    Across 3 rewards
+                  </span>
                 </div>
               </div>
             </div>
