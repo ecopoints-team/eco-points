@@ -15,7 +15,7 @@ This is the task that needs to be solved:
 
 # Pre-task
 
-- Thoroughly scan the client folder for you to understand the codespace and the task that will be given.
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task / Minor Changes
+
