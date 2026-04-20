@@ -18,4 +18,5 @@ This is the task that needs to be solved:
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task / Minor Changes
-
+- go to the client files codebase
+- can you change the rounded corners the recent activities dropdown filters. make it less
