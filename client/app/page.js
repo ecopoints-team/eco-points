@@ -2,18 +2,21 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Gift, User, Trophy, Menu, X } from "lucide-react";
 
 import NavBar from "../src/components/website/NavBar";
-import LogIn from "../src/components/pages/LogIn";
-import LeaderboardCTA from "../src/components/pages/Leaderboard";
-import Features from "../src/components/website/sections/Features";
-import HowItWorks from "../src/components/website/sections/HowItWorks";
-import Footer from "../src/components/website/Footer";
-import Carousel from "../src/components/website/sections/Carousel";
 import HeroSection from "../src/components/website/sections/HeroSection";
-import CTASection from "../src/components/website/sections/CTASection";
+import Footer from "../src/components/website/Footer";
 import ScrollToTop from "../src/components/website/ScrollToTop";
+
+// Lazy-load below-fold sections for faster initial paint
+const LogIn = dynamic(() => import("../src/components/pages/LogIn"), { ssr: false });
+const LeaderboardCTA = dynamic(() => import("../src/components/pages/Leaderboard"));
+const Features = dynamic(() => import("../src/components/website/sections/Features"));
+const HowItWorks = dynamic(() => import("../src/components/website/sections/HowItWorks"));
+const Carousel = dynamic(() => import("../src/components/website/sections/Carousel"));
+const CTASection = dynamic(() => import("../src/components/website/sections/CTASection"));
 
 
 // Inner component that uses useSearchParams (requires Suspense boundary)

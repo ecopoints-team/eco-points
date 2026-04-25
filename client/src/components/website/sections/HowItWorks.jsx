@@ -9,10 +9,6 @@ import {
   BottleWineIcon,
   CoinsIcon,
   HandCoinsIcon,
-  Leaf,
-  Cpu,
-  Wifi,
-  Zap,
 } from "lucide-react";
 
 const fonts = {
@@ -61,12 +57,9 @@ export default function HowItWorks() {
     return () => observers.forEach((o) => o.disconnect());
   }, []);
 
-  // Combined scroll handler: line progress + parallax (single listener, rAF throttled, no React state)
+  // Scroll handler: line progress (single listener, rAF throttled, no React state)
   useEffect(() => {
     const container = document.querySelector(".hiw-steps-container");
-    const techIds = ["hiw-tech-1", "hiw-tech-2", "hiw-tech-3", "hiw-tech-4"];
-    const speeds = [0.08, -0.06, 0.1, -0.07];
-    const techEls = techIds.map((id) => document.getElementById(id));
 
     const onScroll = () => {
       if (rafIdRef.current) return;
@@ -83,16 +76,6 @@ export default function HowItWorks() {
           const scrolled = start - rect.top;
           const progress = Math.min(Math.max(scrolled / total, 0), 1);
           lineRef.current.style.height = `${progress * 100}%`;
-        }
-
-        // Parallax tech icons
-        if (sectionRef.current) {
-          const offset = sectionRef.current.getBoundingClientRect().top;
-          techEls.forEach((el, i) => {
-            if (!el) return;
-            const s = speeds[i];
-            el.style.transform = `translate3d(${offset * s * 0.5}px, ${offset * s}px, 0)`;
-          });
         }
       });
     };
@@ -138,31 +121,7 @@ export default function HowItWorks() {
       ref={sectionRef}
       className="py-32 px-4 md:px-8 relative z-10 overflow-hidden bg-white/80"
     >
-      {/* Parallax futuristic tech decorations */}
-      <div
-        id="hiw-tech-1"
-        className="pointer-events-none absolute top-20 left-8 text-emerald-400/15 will-change-transform"
-      >
-        <Cpu size={60} />
-      </div>
-      <div
-        id="hiw-tech-2"
-        className="pointer-events-none absolute top-1/3 right-10 text-emerald-500/10 will-change-transform"
-      >
-        <Wifi size={80} />
-      </div>
-      <div
-        id="hiw-tech-3"
-        className="pointer-events-none absolute bottom-32 left-16 text-emerald-400/10 will-change-transform"
-      >
-        <Zap size={50} />
-      </div>
-      <div
-        id="hiw-tech-4"
-        className="pointer-events-none absolute bottom-20 right-20 will-change-transform"
-      >
-        <Leaf size={70} className="text-emerald-400/10" fill="currentColor" />
-      </div>
+
 
       <div className="max-w-[1200px] mx-auto">
         {/* Header */}

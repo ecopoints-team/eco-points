@@ -9,7 +9,6 @@ import {
   ScanQrCode,
   MonitorCloud,
   Recycle,
-  Leaf,
   Cloud,
 } from "lucide-react";
 
@@ -41,10 +40,6 @@ export default function Features() {
       id="features"
       className="py-32 px-4 md:px-8 relative z-10 bg-[#f0fdf4]/80 overflow-hidden"
     >
-      {/* Subtle floating leaves */}
-      <Leaf className="pointer-events-none absolute left-6 top-12 h-8 w-8 text-emerald-400 opacity-20 rotate-12" />
-      <Leaf className="pointer-events-none absolute right-10 top-20 h-12 w-12 text-emerald-500 opacity-15 -rotate-12" />
-      <Leaf className="pointer-events-none absolute right-6 bottom-10 h-10 w-10 text-emerald-500 opacity-15 rotate-90" />
 
       <div className="max-w-[1200px] mx-auto relative z-10">
         {/* Header */}

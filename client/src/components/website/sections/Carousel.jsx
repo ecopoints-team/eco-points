@@ -4,7 +4,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ArrowUpRight, Zap, Leaf, Cloud, Sparkles } from "lucide-react";
+import { ArrowUpRight, Zap } from "lucide-react";
 import Link from "next/link";
 
 const fonts = {
@@ -134,10 +134,7 @@ export default function Carousel() {
       {/* Background glow blobs & floating elements */}
       <div className="pointer-events-none absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-3xl" />
       <div className="pointer-events-none absolute top-32 -right-32 w-[450px] h-[450px] rounded-full bg-[#34d399]/10 blur-3xl" />
-      <Leaf className="pointer-events-none absolute left-10 top-24 h-12 w-12 text-emerald-400 opacity-20 -rotate-45" />
-      <Leaf className="pointer-events-none absolute right-24 bottom-32 h-10 w-10 text-emerald-500 opacity-15 rotate-12" />
-      <Cloud className="pointer-events-none absolute right-1/4 top-16 h-16 w-16 text-emerald-400 opacity-10" />
-      <Sparkles className="pointer-events-none absolute left-1/4 bottom-1/4 h-8 w-8 text-teal-400 opacity-20" />
+
 
       <div className="relative w-full z-10">
 

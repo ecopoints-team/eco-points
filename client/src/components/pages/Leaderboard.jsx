@@ -258,11 +258,6 @@ export default function LeaderboardCTA({ onLoginClick }) {
           <path d="M0,100 C180,55 400,140 720,100 C1040,60 1280,120 1440,90 L1440,300 L0,300 Z" fill="rgba(5,150,105,0.11)" />
         </svg>
 
-        {/* Scattered leaf silhouettes */}
-        <Leaf size={180} className="pointer-events-none absolute -top-8 -right-12 text-emerald-500/[0.06] rotate-[15deg]" fill="currentColor" />
-        <Leaf size={70} className="pointer-events-none absolute top-1/3 left-[8%] text-emerald-500/[0.05] rotate-[60deg]" fill="currentColor" />
-        <Leaf size={55} className="pointer-events-none absolute bottom-1/4 right-[12%] text-emerald-500/[0.05] -rotate-[20deg]" fill="currentColor" />
-        <Leaf size={42} className="pointer-events-none absolute top-[12%] left-[40%] text-emerald-400/[0.04] rotate-[80deg]" fill="currentColor" />
 
         {/* Animated pulse rings */}
         <div className="pointer-events-none absolute top-[20%] right-[15%]">

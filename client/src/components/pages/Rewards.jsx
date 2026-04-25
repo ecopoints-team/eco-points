@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useDebounce } from "../../utils/useDebounce";
 import Link from "next/link";
 import {
   Search, Filter, ArrowRight, ArrowLeft, Sparkles, X, UserCircle,
   ShoppingBag, Zap, Cpu, Leaf, Droplet, Coffee, Tag, ChevronLeft, ChevronRight,
-  CheckCircle2, Lock, HelpCircle, Settings
+  CheckCircle2, Lock, HelpCircle, Settings, Loader2
 } from "lucide-react";
 
 // --- PRODUCT DATA (30 Products) ---
@@ -102,7 +103,7 @@ function HowItWorksModal({ onClose }) {
       <div className="absolute inset-0 bg-[#064e3b]/40 backdrop-blur-sm" />
 
       <div
-        className="relative bg-white/90 backdrop-blur-xl w-full max-w-4xl overflow-hidden rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] flex flex-col md:flex-row border border-white"
+        className="relative bg-white/90 backdrop-blur-xl w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] flex flex-col md:flex-row md:aspect-[16/10] border border-white"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
       >
@@ -134,7 +135,7 @@ function HowItWorksModal({ onClose }) {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-6 md:p-8">
+        <div className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-md mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-black text-[#064e3b] mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>How It Works</h1>
@@ -190,7 +191,9 @@ function HowItWorksModal({ onClose }) {
 // --- MAIN REWARDS COMPONENT ---
 export default function Rewards() {
   // --- STATE ---
-  const [searchQuery, setSearchQuery] = useState("");
+  const [rawSearch, setRawSearch] = useState("");
+  const searchQuery = useDebounce(rawSearch, 300);
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -200,7 +203,7 @@ export default function Rewards() {
 
   // Auth & Modals (demo toggle)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userPoints, setUserPoints] = useState(350);
+  const [userPoints, setUserPoints] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
@@ -246,6 +249,11 @@ export default function Rewards() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory]);
+
+  // Track typing/debouncing state
+  useEffect(() => {
+    setIsSearching(rawSearch !== searchQuery);
+  }, [rawSearch, searchQuery]);
 
   // Click-Outside Listener for Filter
   useEffect(() => {
@@ -382,20 +390,7 @@ export default function Rewards() {
       {/* REWARDS HEADER */}
       <RewardsHeader />
 
-      {/* DEV TOGGLE FOR TESTING AUTH STATE */}
-      <div className="fixed top-20 right-4 z-50 bg-white/90 backdrop-blur-xl shadow-md rounded-full px-4 py-2 border border-slate-200 flex items-center gap-3 text-sm font-bold hover:shadow-lg transition-all duration-300 font-body">
-        <span>Dev Mode:</span>
-        <button
-          onClick={() => setIsLoggedIn(!isLoggedIn)}
-          className={`px-3 py-1 rounded-full transition-colors ${
-            isLoggedIn
-              ? "bg-[#10b981] text-white"
-              : "bg-slate-200 text-slate-600"
-          }`}
-        >
-          {isLoggedIn ? "Logged In" : "Logged Out"}
-        </button>
-      </div>
+
 
       {/* FLOATING USER BALANCE (Only visible when logged in) */}
       {isLoggedIn && (
@@ -468,7 +463,7 @@ export default function Rewards() {
                       </p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
-                          2,450
+                          0
                         </span>
                         <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
                           EP
@@ -490,7 +485,7 @@ export default function Rewards() {
                       </p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
-                          500
+                          0
                         </span>
                         <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
                           EP
@@ -498,7 +493,7 @@ export default function Rewards() {
                       </div>
                       <div className="mt-3 flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          Across 3 rewards
+                          No redemptions yet
                         </span>
                       </div>
                     </div>
@@ -538,7 +533,7 @@ export default function Rewards() {
           style={{ animationDelay: "0.1s" }}
           ref={filterContainerRef}
         >
-          <div className="relative w-full max-w-3xl mx-auto px-2 sm:px-4 z-50">
+          <div className="relative w-full max-w-3xl mx-auto px-2 sm:px-4 z-50 overflow-hidden">
             {/* Animated "L" Shape Background */}
             <div
               className="absolute top-0 left-2 sm:left-4 right-2 sm:right-4 z-10 pointer-events-none"
@@ -559,7 +554,7 @@ export default function Rewards() {
               />
 
               <div
-                className="absolute left-0 bg-white/90 backdrop-blur-xl rounded-full overflow-hidden pointer-events-auto flex justify-start"
+                className="absolute left-0 bg-white/90 backdrop-blur-xl rounded-full overflow-hidden no-scrollbar pointer-events-auto flex justify-start"
                 style={{
                   top: isFilterOpen ? "var(--filter-bar-top)" : "0px",
                   width: isFilterOpen ? "100%" : "var(--filter-btn-size)",
@@ -568,16 +563,17 @@ export default function Rewards() {
                 }}
               >
                 <div
-                  className="flex items-center h-full w-full pr-3 sm:pr-4 overflow-x-auto no-scrollbar"
+                  className="flex items-center h-full w-full pr-3 sm:pr-4 overflow-x-auto no-scrollbar [-webkit-overflow-scrolling:touch]"
                   style={{
-                    paddingLeft: "16px",
+                    paddingLeft: isFilterOpen
+                      ? "calc(var(--filter-btn-size) - 8px)"
+                      : "16px",
                     opacity: isFilterOpen ? 1 : 0,
                     transform: isFilterOpen
                       ? "translateX(0)"
                       : "translateX(-16px)",
-                    transition: `all 400ms ${smoothEase} ${
-                      isFilterOpen ? "300ms" : "0ms"
-                    }`,
+                    transition: `all 400ms ${smoothEase} ${isFilterOpen ? "300ms" : "0ms"
+                      }`,
                   }}
                 >
                   <div className="flex gap-2 w-max">
@@ -587,33 +583,29 @@ export default function Rewards() {
                         <button
                           key={category}
                           onClick={() => setSelectedCategory(category)}
-                          className={`relative shrink-0 px-6 py-2.5 sm:py-3 rounded-[2rem] font-bold font-body text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden outline-none ${
-                            isActive
-                              ? "text-white shadow-[0_5px_15px_rgba(16,185,129,0.4)] scale-105"
-                              : "text-slate-500 hover:text-[#064e3b] bg-white/50 hover:bg-slate-100"
-                          }`}
+                          className={`relative shrink-0 px-6 py-2.5 sm:py-3 rounded-[2rem] font-bold font-body text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden outline-none ${isActive
+                            ? "text-white shadow-[0_5px_15px_rgba(16,185,129,0.4)] scale-105"
+                            : "text-slate-500 hover:text-[#064e3b] bg-white/50 hover:bg-slate-100"
+                            }`}
                         >
                           <div className="absolute inset-0 flex justify-center items-center z-0 pointer-events-none">
                             <div
-                              className={`absolute w-[150px] h-[150px] bg-[#34d399]/90 rounded-[43%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] wave-back ${
-                                isActive
-                                  ? "top-[-20px] opacity-100"
-                                  : "top-[80px] opacity-0"
-                              }`}
+                              className={`absolute w-[150px] h-[150px] bg-[#34d399]/90 rounded-[43%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] wave-back ${isActive
+                                ? "top-[-20px] opacity-100"
+                                : "top-[80px] opacity-0"
+                                }`}
                             />
                             <div
-                              className={`absolute w-[160px] h-[160px] bg-gradient-to-t from-[#064e3b] to-[#10b981] rounded-[40%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] delay-75 wave-front ${
-                                isActive
-                                  ? "top-[-10px] opacity-100"
-                                  : "top-[80px] opacity-0"
-                              }`}
+                              className={`absolute w-[160px] h-[160px] bg-gradient-to-t from-[#064e3b] to-[#10b981] rounded-[40%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] delay-75 wave-front ${isActive
+                                ? "top-[-10px] opacity-100"
+                                : "top-[80px] opacity-0"
+                                }`}
                             />
                           </div>
 
                           <div
-                            className={`absolute top-0 left-1/4 right-1/4 h-[2px] bg-white/60 rounded-b-full z-10 transition-opacity duration-500 delay-300 ${
-                              isActive ? "opacity-100" : "opacity-0"
-                            }`}
+                            className={`absolute top-0 left-1/4 right-1/4 h-[2px] bg-white/60 rounded-b-full z-10 transition-opacity duration-500 delay-300 ${isActive ? "opacity-100" : "opacity-0"
+                              }`}
                           />
                           <span className="relative z-10 tracking-wide">
                             {category}
@@ -633,20 +625,18 @@ export default function Rewards() {
                 aria-label={isFilterOpen ? "Close filters" : "Open filters"}
               >
                 <div
-                  className={`absolute transition-all duration-500 ease-in-out ${
-                    isFilterOpen
-                      ? "rotate-90 scale-0 opacity-0"
-                      : "rotate-0 scale-100 opacity-100"
-                  }`}
+                  className={`absolute transition-all duration-500 ease-in-out ${isFilterOpen
+                    ? "rotate-90 scale-0 opacity-0"
+                    : "rotate-0 scale-100 opacity-100"
+                    }`}
                 >
                   <Filter size={24} strokeWidth={2.5} />
                 </div>
                 <div
-                  className={`absolute transition-all duration-500 ease-in-out ${
-                    isFilterOpen
-                      ? "rotate-0 scale-100 opacity-100"
-                      : "-rotate-90 scale-0 opacity-0"
-                  }`}
+                  className={`absolute transition-all duration-500 ease-in-out ${isFilterOpen
+                    ? "rotate-0 scale-100 opacity-100"
+                    : "-rotate-90 scale-0 opacity-0"
+                    }`}
                 >
                   <X size={24} strokeWidth={2.5} />
                 </div>
@@ -656,21 +646,24 @@ export default function Rewards() {
               </button>
 
               <div className="relative group flex-grow h-full">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
-                <div className="relative h-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 flex items-center shadow-lg">
+                <div className="relative h-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 flex items-center shadow-sm overflow-hidden no-scrollbar">
                   <div className="pl-4 pr-2 text-emerald-500">
-                    <Search size={22} />
+                    {isSearching ? (
+                      <Loader2 size={22} className="animate-spin" />
+                    ) : (
+                      <Search size={22} />
+                    )}
                   </div>
                   <input
                     type="text"
                     placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={rawSearch}
+                    onChange={(e) => setRawSearch(e.target.value)}
                     className="w-full bg-transparent border-none outline-none text-[#064e3b] font-body text-base sm:text-lg placeholder-slate-400"
                   />
                   {searchQuery && (
                     <button
-                      onClick={() => setSearchQuery("")}
+                      onClick={() => setRawSearch("")}
                       className="p-2 text-slate-400 hover:text-emerald-500 transition-colors mr-2 hidden sm:block z-30"
                     >
                       <X size={20} />
@@ -750,11 +743,10 @@ export default function Rewards() {
                   key={product.id}
                   data-product-id={product.id}
                   onClick={(e) => handleCardClick(product, e.currentTarget)}
-                  className={`group relative bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] flex flex-col h-auto min-h-[420px] transition-all duration-300 ease-out cursor-pointer ${
-                    detailedProduct?.id === product.id
-                      ? "opacity-0 pointer-events-none"
-                      : "hover:shadow-[0_20px_60px_rgba(16,185,129,0.15)] hover:-translate-y-2 animate-scale-in"
-                  }`}
+                  className={`group relative bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] flex flex-col h-auto min-h-[420px] transition-all duration-300 ease-out cursor-pointer ${detailedProduct?.id === product.id
+                    ? "opacity-0 pointer-events-none"
+                    : "hover:shadow-[0_20px_60px_rgba(16,185,129,0.15)] hover:-translate-y-2 animate-scale-in"
+                    }`}
                   style={{
                     animationDelay:
                       detailedProduct?.id === product.id
@@ -768,11 +760,10 @@ export default function Rewards() {
                       {product.category}
                     </span>
                     <div
-                      className={`p-[2px] rounded-2xl shadow-sm transition-all duration-300 ${
-                        isLoggedIn && !isAffordable
-                          ? "bg-slate-200"
-                          : "bg-gradient-to-r from-[#10b981] to-[#34d399] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]"
-                      }`}
+                      className={`p-[2px] rounded-2xl shadow-sm transition-all duration-300 ${isLoggedIn && !isAffordable
+                        ? "bg-slate-200"
+                        : "bg-gradient-to-r from-[#10b981] to-[#34d399] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                        }`}
                     >
                       <div className="bg-white px-3 py-1.5 rounded-[14px] flex items-center gap-1.5">
                         {isLoggedIn && !isAffordable ? (
@@ -784,20 +775,18 @@ export default function Rewards() {
                           />
                         )}
                         <span
-                          className={`font-black font-data text-lg leading-none ${
-                            isLoggedIn && !isAffordable
-                              ? "text-slate-400"
-                              : "text-[#064e3b]"
-                          }`}
+                          className={`font-black font-data text-lg leading-none ${isLoggedIn && !isAffordable
+                            ? "text-slate-400"
+                            : "text-[#064e3b]"
+                            }`}
                         >
                           {product.points}
                         </span>
                         <span
-                          className={`font-bold text-xs leading-none font-body ${
-                            isLoggedIn && !isAffordable
-                              ? "text-slate-400"
-                              : "text-[#10b981]"
-                          }`}
+                          className={`font-bold text-xs leading-none font-body ${isLoggedIn && !isAffordable
+                            ? "text-slate-400"
+                            : "text-[#10b981]"
+                            }`}
                         >
                           EP
                         </span>
@@ -807,11 +796,10 @@ export default function Rewards() {
 
                   {/* Image Staging Area */}
                   <div
-                    className={`w-full h-44 rounded-[1.5rem] relative overflow-hidden mb-6 flex-shrink-0 group-hover:scale-[1.03] transition-transform duration-500 ${
-                      isLoggedIn && !isAffordable
-                        ? "bg-slate-100 grayscale-[50%]"
-                        : `bg-gradient-to-br ${product.color}`
-                    }`}
+                    className={`w-full h-44 rounded-[1.5rem] relative overflow-hidden mb-6 flex-shrink-0 group-hover:scale-[1.03] transition-transform duration-500 ${isLoggedIn && !isAffordable
+                      ? "bg-slate-100 grayscale-[50%]"
+                      : `bg-gradient-to-br ${product.color}`
+                      }`}
                   >
                     <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-40 transition-opacity duration-700 pointer-events-none">
                       <div className="w-32 h-32 bg-white rounded-full blur-3xl animate-glow"></div>
@@ -843,18 +831,17 @@ export default function Rewards() {
                     </p>
 
                     {/* Dynamic Action Button (Direct Redeem) */}
-                    <div className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] pb-1 pt-6 bg-gradient-to-t from-white/95 via-white/80 to-transparent">
+                    <div className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] pb-1">
                       <button
                         onClick={(e) => handleDirectRedeem(product, e)}
-                        className={`w-full py-3.5 rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${
-                          isShaking
-                            ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                            : !isLoggedIn
+                        className={`w-full py-3.5 rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${isShaking
+                          ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
+                          : !isLoggedIn
                             ? "bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white"
                             : isAffordable
-                            ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
-                            : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
-                        }`}
+                              ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
+                              : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
+                          }`}
                       >
                         {!isLoggedIn ? (
                           <>
@@ -898,11 +885,10 @@ export default function Rewards() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-12 h-12 rounded-full font-bold font-body text-sm transition-all shadow-sm ${
-                    currentPage === i + 1
-                      ? "bg-gradient-to-r from-[#10b981] to-[#34d399] text-white shadow-[0_5px_15px_rgba(16,185,129,0.3)] scale-110"
-                      : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600"
-                  }`}
+                  className={`w-12 h-12 rounded-full font-bold font-body text-sm transition-all shadow-sm ${currentPage === i + 1
+                    ? "bg-gradient-to-r from-[#10b981] to-[#34d399] text-white shadow-[0_5px_15px_rgba(16,185,129,0.3)] scale-110"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600"
+                    }`}
                 >
                   {i + 1}
                 </button>
@@ -929,9 +915,8 @@ export default function Rewards() {
         <div className="fixed inset-0 z-[120] pointer-events-none">
           {/* Blurred Background Overlay */}
           <div
-            className={`absolute inset-0 bg-[#064e3b]/30 backdrop-blur-sm pointer-events-auto transition-opacity duration-500 ease-in-out ${
-              detailedModalState === "open" ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-[#064e3b]/30 backdrop-blur-sm pointer-events-auto transition-opacity duration-500 ease-in-out ${detailedModalState === "open" ? "opacity-100" : "opacity-0"
+              }`}
             onClick={closeDetailedModal}
           />
 
@@ -965,34 +950,31 @@ export default function Rewards() {
           >
             <button
               onClick={closeDetailedModal}
-              className={`absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-all duration-500 z-20 bg-white/50 rounded-full p-1 backdrop-blur-sm ${
-                detailedModalState === "open"
-                  ? "opacity-100 scale-100"
-                  : "opacity-0 scale-50 pointer-events-none"
-              }`}
+              className={`absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-all duration-500 z-20 bg-white/50 rounded-full p-1 backdrop-blur-sm ${detailedModalState === "open"
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-50 pointer-events-none"
+                }`}
             >
               <X size={28} />
             </button>
 
             {/* Left: Enhanced Product Display */}
             <div
-              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                userPoints < detailedProduct.points
-                  ? "bg-slate-100 grayscale-[50%]"
-                  : `bg-gradient-to-br ${detailedProduct.color}`
-              } ${
-                detailedModalState === "open"
+              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${userPoints < detailedProduct.points
+                ? "bg-slate-100 grayscale-[50%]"
+                : `bg-gradient-to-br ${detailedProduct.color}`
+                } ${detailedModalState === "open"
                   ? "md:w-1/2"
                   : "md:w-full"
-              }`}
+                }`}
             >
               <div className="absolute inset-0 flex justify-center items-center opacity-60 pointer-events-none">
                 <div className="w-64 h-64 bg-white rounded-full blur-3xl animate-glow"></div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center p-8 animate-float">
                 {detailedProduct.image &&
-                (detailedProduct.image.includes(".jpg") ||
-                  detailedProduct.image.includes(".png")) ? (
+                  (detailedProduct.image.includes(".jpg") ||
+                    detailedProduct.image.includes(".png")) ? (
                   <img
                     src={encodeURI(detailedProduct.image)}
                     alt={detailedProduct.name}
@@ -1015,11 +997,10 @@ export default function Rewards() {
 
             {/* Right: Rich Details & CTA */}
             <div
-              className={`w-full md:w-1/2 flex-col justify-center py-4 md:py-8 pr-2 md:pr-6 transition-opacity duration-300 ${
-                detailedModalState === "open"
-                  ? "opacity-100 flex delay-200"
-                  : "opacity-0 hidden"
-              }`}
+              className={`w-full md:w-1/2 flex-col justify-center py-4 md:py-8 pr-2 md:pr-6 transition-opacity duration-300 ${detailedModalState === "open"
+                ? "opacity-100 flex delay-200"
+                : "opacity-0 hidden"
+                }`}
             >
               <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 font-bold tracking-widest uppercase text-xs rounded-full mb-4 w-max font-body">
                 {detailedProduct.category}
@@ -1046,11 +1027,10 @@ export default function Rewards() {
                     Required Points
                   </span>
                   <div
-                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${
-                      userPoints < detailedProduct.points
-                        ? "bg-slate-100 border-slate-200"
-                        : "bg-emerald-50 border-emerald-100"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${userPoints < detailedProduct.points
+                      ? "bg-slate-100 border-slate-200"
+                      : "bg-emerald-50 border-emerald-100"
+                      }`}
                   >
                     {userPoints >= detailedProduct.points ? (
                       <Zap
@@ -1061,20 +1041,18 @@ export default function Rewards() {
                       <Lock className="text-slate-400" size={24} />
                     )}
                     <span
-                      className={`text-3xl font-black font-data ${
-                        userPoints < detailedProduct.points
-                          ? "text-slate-400"
-                          : "text-[#064e3b]"
-                      }`}
+                      className={`text-3xl font-black font-data ${userPoints < detailedProduct.points
+                        ? "text-slate-400"
+                        : "text-[#064e3b]"
+                        }`}
                     >
                       {detailedProduct.points}
                     </span>
                     <span
-                      className={`text-lg font-bold font-body ${
-                        userPoints < detailedProduct.points
-                          ? "text-slate-400"
-                          : "text-[#10b981]"
-                      }`}
+                      className={`text-lg font-bold font-body ${userPoints < detailedProduct.points
+                        ? "text-slate-400"
+                        : "text-[#10b981]"
+                        }`}
                     >
                       EP
                     </span>
@@ -1083,14 +1061,13 @@ export default function Rewards() {
 
                 <button
                   onClick={handleDetailedRedeem}
-                  className={`w-full py-4 rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${
-                    insufficientAnimId ===
+                  className={`w-full py-4 rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${insufficientAnimId ===
                     "detailed-" + detailedProduct.id
-                      ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                      : userPoints >= detailedProduct.points
+                    ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
+                    : userPoints >= detailedProduct.points
                       ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)]"
                       : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200"
-                  }`}
+                    }`}
                 >
                   {userPoints >= detailedProduct.points ? (
                     <>

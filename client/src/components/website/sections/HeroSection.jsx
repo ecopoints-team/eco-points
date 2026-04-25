@@ -12,7 +12,7 @@ export default function HeroSection() {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-    card.style.transform = `perspective(1000px) rotateX(${y / 20}deg) rotateY(${-x / 20}deg) scale(1.02)`;
+    card.style.transform = `perspective(1000px) rotateX(${y / 35}deg) rotateY(${-x / 35}deg) scale(1.01)`;
   };
 
   const handleCardLeave = (e) => {
@@ -132,7 +132,7 @@ export default function HeroSection() {
               </div>
             </div>
             <div
-              className="bg-white rounded-[30px] p-12 shadow-[0_20px_60px_rgba(0,0,0,0.1)] relative transition-transform duration-300 cursor-pointer"
+              className="bg-white rounded-[30px] p-12 shadow-[0_20px_60px_rgba(0,0,0,0.1)] relative transition-transform duration-500 ease-[cubic-bezier(0.03,0.98,0.52,0.99)] cursor-pointer"
               style={{ transformStyle: "preserve-3d" }}
               onMouseMove={handleCardMove}
               onMouseLeave={handleCardLeave}
@@ -143,19 +143,6 @@ export default function HeroSection() {
                   alt="EcoPoints Reverse Vending Machine"
                   className="w-full h-auto object-contain drop-shadow-[0_20px_30px_rgba(16,185,129,0.3)]"
                 />
-              </div>
-
-              {/* Floating +10 Points Badge */}
-              <div className="absolute top-[20px] -right-[20px] bg-white px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] font-bold text-[#10b981] animate-[heroFloat_3s_ease-in-out_infinite]">
-                +10 Points
-              </div>
-
-              {/* Floating Eco Friendly Badge */}
-              <div
-                className="absolute bottom-[30px] -left-[30px] bg-white px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] font-bold text-[#fbbf24] animate-[heroFloat_3s_ease-in-out_infinite]"
-                style={{ animationDelay: "1.5s" }}
-              >
-                Eco Friendly
               </div>
             </div>
           </div>

@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowLeft, User } from "lucide-react";
-import ProfileSection from "../../src/components/pages/ProfileSection";
+import ProfileSkeleton from "../../src/components/shared/skeletons/ProfileSkeleton";
+
+const ProfileSection = dynamic(
+  () => import("../../src/components/pages/ProfileSection"),
+  { loading: () => <ProfileSkeleton /> }
+);
 
 function ProfileHeader() {
   return (

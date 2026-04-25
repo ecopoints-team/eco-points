@@ -176,17 +176,17 @@
   @keyframes scaleIn {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.92) translateY(12px);
     }
 
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translateY(0);
     }
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   /* Shake Animation (Password Mismatch) */
@@ -221,12 +221,12 @@
   @keyframes scaleOut {
     from {
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translateY(0);
     }
 
     to {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.92) translateY(8px);
     }
   }
 
@@ -843,6 +843,17 @@
   }
   .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+  .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .skeleton-pulse {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 1rem;
+  }
 }

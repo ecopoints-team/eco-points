@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowLeft, Trophy, Leaf } from "lucide-react";
-import LeaderboardPodium from "../../src/components/pages/LeaderboardPodium";
+import LeaderboardSkeleton from "../../src/components/shared/skeletons/LeaderboardSkeleton";
+
+const LeaderboardPodium = dynamic(
+  () => import("../../src/components/pages/LeaderboardPodium"),
+  { loading: () => <div className="py-10"><LeaderboardSkeleton /></div> }
+);
 
 function LeaderboardHeader() {
   return (
@@ -136,16 +142,16 @@ export default function LeaderboardPage() {
 
         {/* 3. Scattered leaf silhouettes */}
         <Leaf size={180} className="pointer-events-none absolute -top-8 -right-12 text-emerald-500/[0.06] rotate-[15deg]" fill="currentColor" />
-        <Leaf size={70}  className="pointer-events-none absolute top-1/3 left-[8%] text-emerald-500/[0.05] rotate-[60deg]" fill="currentColor" />
-        <Leaf size={55}  className="pointer-events-none absolute bottom-1/4 right-[12%] text-emerald-500/[0.05] -rotate-[20deg]" fill="currentColor" />
-        <Leaf size={42}  className="pointer-events-none absolute top-[12%] left-[40%] text-emerald-400/[0.04] rotate-[80deg]" fill="currentColor" />
+        <Leaf size={70} className="pointer-events-none absolute top-1/3 left-[8%] text-emerald-500/[0.05] rotate-[60deg]" fill="currentColor" />
+        <Leaf size={55} className="pointer-events-none absolute bottom-1/4 right-[12%] text-emerald-500/[0.05] -rotate-[20deg]" fill="currentColor" />
+        <Leaf size={42} className="pointer-events-none absolute top-[12%] left-[40%] text-emerald-400/[0.04] rotate-[80deg]" fill="currentColor" />
         {/* Additional leaves — top-heavy distribution */}
         <Leaf size={120} className="pointer-events-none absolute top-[5%] left-[15%] text-emerald-500/[0.05] -rotate-[35deg]" fill="currentColor" />
-        <Leaf size={95}  className="pointer-events-none absolute top-[2%] right-[25%] text-emerald-400/[0.06] rotate-[45deg]" fill="currentColor" />
-        <Leaf size={50}  className="pointer-events-none absolute top-[18%] left-[55%] text-emerald-500/[0.04] rotate-[120deg]" fill="currentColor" />
-        <Leaf size={65}  className="pointer-events-none absolute top-[8%] left-[75%] text-emerald-600/[0.05] -rotate-[60deg]" fill="currentColor" />
-        <Leaf size={38}  className="pointer-events-none absolute top-[30%] right-[5%] text-emerald-400/[0.04] rotate-[150deg]" fill="currentColor" />
-        <Leaf size={85}  className="pointer-events-none absolute bottom-[10%] left-[25%] text-emerald-500/[0.04] rotate-[30deg]" fill="currentColor" />
+        <Leaf size={95} className="pointer-events-none absolute top-[2%] right-[25%] text-emerald-400/[0.06] rotate-[45deg]" fill="currentColor" />
+        <Leaf size={50} className="pointer-events-none absolute top-[18%] left-[55%] text-emerald-500/[0.04] rotate-[120deg]" fill="currentColor" />
+        <Leaf size={65} className="pointer-events-none absolute top-[8%] left-[75%] text-emerald-600/[0.05] -rotate-[60deg]" fill="currentColor" />
+        <Leaf size={38} className="pointer-events-none absolute top-[30%] right-[5%] text-emerald-400/[0.04] rotate-[150deg]" fill="currentColor" />
+        <Leaf size={85} className="pointer-events-none absolute bottom-[10%] left-[25%] text-emerald-500/[0.04] rotate-[30deg]" fill="currentColor" />
 
         {/* 4. Animated pulse rings */}
         <div className="pointer-events-none absolute top-[20%] right-[15%]">

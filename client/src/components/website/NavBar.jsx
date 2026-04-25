@@ -119,8 +119,8 @@ export default function NavBar({ onLoginClick }) {
   return (
     <nav
       className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1200px] transition-all duration-700 ease-out ${scrolled
-          ? "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-3 px-4 md:px-6"
-          : "bg-transparent py-3 px-4 md:px-6"
+        ? "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-3 px-4 md:px-6"
+        : "bg-transparent py-3 px-4 md:px-6"
         }`}
     >
       <div className="flex justify-between items-center">

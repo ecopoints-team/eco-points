@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Leaf, Wind, ArrowUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 export default function CTASection({ onLoginClick }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -55,16 +55,7 @@ export default function CTASection({ onLoginClick }) {
             style={{ animationDelay: "1s" }}
           ></div>
 
-          {/* Floating Decoration Icons */}
-          <div className="absolute top-10 left-10 opacity-10 animate-[ctaFloat_8s_ease-in-out_infinite]">
-            <Leaf size={80} className="text-white" />
-          </div>
-          <div
-            className="absolute bottom-10 right-10 opacity-10 animate-[ctaFloat_10s_ease-in-out_infinite]"
-            style={{ animationDelay: "2s" }}
-          >
-            <Wind size={100} className="text-white" />
-          </div>
+
 
           <div className="relative z-10 flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-emerald-300 text-sm font-bold uppercase tracking-widest mb-8 backdrop-blur-sm">
