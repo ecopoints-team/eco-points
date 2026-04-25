@@ -15,6 +15,9 @@ export default function NavBar({ onLoginClick }) {
 
   // Scroll-responsive background
   const scrolledRef = useRef(false);
+  const pendingNavigationRef = useRef(null);
+  const pendingNavigationTimeoutRef = useRef(null);
+
   useEffect(() => {
     const onScroll = () => {
       const val = window.scrollY > 50;
@@ -27,7 +30,15 @@ export default function NavBar({ onLoginClick }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Scroll spy — single observer tracking all sections, only the LAST one to enter wins
+  useEffect(() => {
+    return () => {
+      if (pendingNavigationTimeoutRef.current) {
+        clearTimeout(pendingNavigationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Scroll spy — lock active updates while smooth nav scroll is in-flight
   useEffect(() => {
     const ids = navItems.map((item) => item.toLowerCase().replace(/\s+/g, "-"));
     const sections = ids
@@ -38,7 +49,34 @@ export default function NavBar({ onLoginClick }) {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Find the entry that is intersecting and closest to the top of the detection zone
+        const pendingTarget = pendingNavigationRef.current;
+        if (pendingTarget) {
+          if (pendingTarget === "home") {
+            if (window.scrollY <= 8) {
+              pendingNavigationRef.current = null;
+              if (pendingNavigationTimeoutRef.current) {
+                clearTimeout(pendingNavigationTimeoutRef.current);
+                pendingNavigationTimeoutRef.current = null;
+              }
+            }
+            return;
+          }
+
+          const targetReached = entries.some(
+            (entry) => entry.target.id === pendingTarget && entry.isIntersecting
+          );
+
+          if (targetReached) {
+            setActiveSection(pendingTarget);
+            pendingNavigationRef.current = null;
+            if (pendingNavigationTimeoutRef.current) {
+              clearTimeout(pendingNavigationTimeoutRef.current);
+              pendingNavigationTimeoutRef.current = null;
+            }
+          }
+          return;
+        }
+
         const intersecting = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
@@ -55,6 +93,18 @@ export default function NavBar({ onLoginClick }) {
   }, []);
 
   const handleNavigate = (id) => {
+    setActiveSection(id);
+    pendingNavigationRef.current = id;
+
+    if (pendingNavigationTimeoutRef.current) {
+      clearTimeout(pendingNavigationTimeoutRef.current);
+    }
+
+    pendingNavigationTimeoutRef.current = window.setTimeout(() => {
+      pendingNavigationRef.current = null;
+      pendingNavigationTimeoutRef.current = null;
+    }, 2500);
+
     if (id === "home") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
@@ -91,7 +141,7 @@ export default function NavBar({ onLoginClick }) {
             ? "bg-white/50 backdrop-blur-md border-white/60"
             : "bg-white/50 backdrop-blur-sm border-slate-200/40"
             }`}
-          style={{ fontFamily: "'Quicksand', sans-serif" }}
+          style={{ fontFamily: "'Quicksand'" }}
         >
           {navItems.map((item) => {
             const id = item.toLowerCase().replace(/\s+/g, "-");
@@ -126,7 +176,7 @@ export default function NavBar({ onLoginClick }) {
             type="button"
             onClick={onLoginClick}
             className="px-8 py-3 bg-gradient-to-r from-[#10b981] to-[#34d399] border-none rounded-full text-white font-semibold cursor-pointer transition-all duration-300 shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:-translate-y-[2px] hover:shadow-[0_8px_25px_rgba(16,185,129,0.4)]"
-            style={{ fontFamily: "'Quicksand', sans-serif" }}
+            style={{ fontFamily: "'Quicksand'" }}
           >
             Login
           </button>

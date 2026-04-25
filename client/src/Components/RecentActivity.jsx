@@ -42,9 +42,9 @@ const MOCK_ACTIVITIES = [
 ];
 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
-  data: { fontFamily: "'Space Mono', monospace" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
+  data: { fontFamily: "'Space Mono'" },
 };
 
 function CustomSelect({ label, value, options, onChange }) {
@@ -67,7 +67,7 @@ function CustomSelect({ label, value, options, onChange }) {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 bg-stone-50 border border-emerald-100 rounded-full px-4 py-2 text-[11px] font-bold text-emerald-800 shadow-sm hover:border-emerald-300 transition-all min-w-[120px]"
+        className="flex items-center justify-between gap-2 bg-stone-50 border border-emerald-100 rounded-lg px-4 py-2 text-[11px] font-bold text-emerald-800 shadow-sm hover:border-emerald-300 transition-all min-w-[120px]"
         style={fonts.body}
       >
         <span className="truncate">{selectedOption?.label || label}</span>
@@ -75,13 +75,13 @@ function CustomSelect({ label, value, options, onChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 bg-white border border-emerald-100 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 min-w-[150px]">
+        <div className="absolute top-full mt-1 right-0 bg-white border border-emerald-100 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 min-w-[150px]">
           <div className="p-1">
             {options.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                className={`flex items-center justify-between w-full px-3 py-2 text-[11px] font-bold rounded-lg transition-colors ${value === opt.value
+                className={`flex items-center justify-between w-full px-3 py-2 text-[11px] font-bold rounded-md transition-colors ${value === opt.value
                   ? "bg-emerald-50 text-emerald-600"
                   : "text-stone-600 hover:bg-stone-50"
                   }`}

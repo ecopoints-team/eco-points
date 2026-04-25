@@ -241,6 +241,24 @@ git push origin dev        # push the updated dev to remote
 - You committed hotfixes or lead-only changes directly to `main`
 - You need `dev` to reflect the latest `main` before the team continues working
 
+
+# 🚀 Dev to Main Merge
+
+> Use this when `dev` is ready for production and needs to be merged into `main`.
+
+## 🔄 Merge `dev` into `main`
+
+```bash
+git checkout main
+git pull origin main       # sync local main with remote first
+git merge dev              # bring dev changes into main
+git push origin main       # push the updated main to remote
+```
+
+## ✅ When to use this
+- All features and fixes on `dev` have been tested and are ready for production
+- You need `main` to reflect the latest `dev` changes for deployment
+
 ## ⚠️ Reminders
 - Always run `git pull origin dev` first to avoid overwriting teammates' work
 - If there are merge conflicts, resolve them carefully before pushing

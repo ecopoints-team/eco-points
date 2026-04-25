@@ -16,8 +16,8 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
 };
 
 export default function Features() {
