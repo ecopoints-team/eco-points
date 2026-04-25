@@ -17,9 +17,9 @@ import {
 // Font styles (same as Leaderboard.jsx)
 // ─────────────────────────────────────────────
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
-  data: { fontFamily: "'Space Mono', monospace" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
+  data: { fontFamily: "'Space Mono'" },
 };
 
 // ─────────────────────────────────────────────

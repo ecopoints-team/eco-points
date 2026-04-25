@@ -5,7 +5,16 @@
   body {
     background-color: #d9ffed;
     color: #003628;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Quicksand';
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Fredoka';
   }
 }
 
@@ -259,7 +268,11 @@
 
   /* Fonts */
   .font-header {
-    font-family: fredoka, sans-serif;
+    font-family: 'Fredoka';
+  }
+
+  .font-ledger {
+    font-family: 'Space Mono';
   }
 
   /* Custom Scrollar */

@@ -74,7 +74,7 @@ export default function CTASection({ onLoginClick }) {
 
             <h2
               className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight leading-tight"
-              style={{ fontFamily: "'Fredoka', sans-serif" }}
+              style={{ fontFamily: "'Fredoka'" }}
             >
               Don&apos;t Just Recycle. <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
@@ -84,7 +84,7 @@ export default function CTASection({ onLoginClick }) {
 
             <p
               className="text-emerald-100/80 text-lg md:text-xl font-medium mb-12 max-w-2xl mx-auto leading-relaxed"
-              style={{ fontFamily: "'Quicksand', sans-serif" }}
+              style={{ fontFamily: "'Quicksand'" }}
             >
               Every bottle counts. Turn your daily waste into exclusive rewards,
               cafeteria vouchers, and school supplies.
@@ -93,7 +93,7 @@ export default function CTASection({ onLoginClick }) {
             <button
               onClick={() => onLoginClick?.()}
               className="group relative px-12 py-6 bg-white text-[#064e3b] font-black text-xl rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.3)] hover:scale-105 transition-all duration-300 overflow-hidden cursor-pointer"
-              style={{ fontFamily: "'Fredoka', sans-serif" }}
+              style={{ fontFamily: "'Fredoka'" }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer-slide_1s_infinite]"></div>
               <span className="relative flex items-center gap-3">

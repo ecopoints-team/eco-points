@@ -8,8 +8,8 @@ import { ArrowUpRight, Zap, Leaf, Cloud, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
 };
 
 // Mock Data
@@ -154,13 +154,13 @@ export default function Carousel() {
               </div>
               <h2
                 className="text-[clamp(2rem,4vw,4.5rem)] font-black text-[#064e3b] mb-4 leading-tight tracking-tight"
-                style={{ fontFamily: "'Fredoka', sans-serif" }}
+                style={{ fontFamily: "'Fredoka'" }}
               >
                 Rewards <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">Catalog</span>
               </h2>
               <p
                 className="text-[#6b7280] font-medium text-lg md:text-xl max-w-xl"
-                style={{ fontFamily: "'Quicksand', sans-serif" }}
+                style={{ fontFamily: "'Quicksand'" }}
               >
                 Exchange your hard-earned points for eco-friendly products, school supplies, and exclusive merchandise.
               </p>
@@ -219,8 +219,8 @@ export default function Carousel() {
                     <div className="text-[10px] font-black text-[#10b981] tracking-widest uppercase mb-3 px-3 py-1 bg-emerald-50/80 inline-block rounded-full backdrop-blur-sm">
                       {product.category}
                     </div>
-                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>{product.name}</h3>
-                    <p className="text-sm text-[#6b7280] leading-relaxed" style={{ fontFamily: "'Quicksand', sans-serif" }}>{product.desc}</p>
+                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka'" }}>{product.name}</h3>
+                    <p className="text-sm text-[#6b7280] leading-relaxed" style={{ fontFamily: "'Quicksand'" }}>{product.desc}</p>
                   </div>
 
                   {/* Corresponding Points Needed */}

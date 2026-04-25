@@ -94,7 +94,7 @@ export default function HeroSection() {
           {/* Left Column — Text Content */}
           <div className="opacity-0 animate-[fadeInUp_1s_ease-out_0.3s_forwards] pt-10">
 
-            <h1 className="text-[clamp(3rem,7vw,6rem)] font-black leading-[1.1] mb-6 text-[#064e3b]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+            <h1 className="text-[clamp(3rem,7vw,6rem)] font-black leading-[1.1] mb-6 text-[#064e3b]" style={{ fontFamily: "'Fredoka'" }}>
               <div className="hero-text-reveal overflow-hidden pb-2">
                 <span style={{ animationDelay: "0.1s" }}>Smart</span>
               </div>
@@ -127,7 +127,7 @@ export default function HeroSection() {
           >
             {/* PUP Badge Pill — positioned above the card */}
             <div className="flex justify-center mb-4 animate-[fadeInUp_0.8s_ease-out_0.3s_backwards]">
-              <div className="inline-flex items-center gap-2 px-5 py-2 bg-[rgba(16,185,129,0.1)] rounded-full text-sm font-semibold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              <div className="inline-flex items-center gap-2 px-5 py-2 bg-[rgba(16,185,129,0.1)] rounded-full text-sm font-semibold text-[#10b981]" style={{ fontFamily: "'Quicksand'" }}>
                 🎓 PUP Institute of Technology Research Project
               </div>
             </div>
