@@ -67,9 +67,9 @@ const MOCK_PODIUM = [
 
 // Font styles 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
-  data: { fontFamily: "'Space Mono', monospace" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
+  data: { fontFamily: "'Space Mono'" },
 };
 
 // ─────────────────────────────────────────────

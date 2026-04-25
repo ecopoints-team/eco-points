@@ -1,0 +1,331 @@
+# ==============================================================================
+# ENVIRONMENT CONFIGURATION
+# ==============================================================================
+
+# DEVELOPMENT (Default)
+@hostname = localhost
+@port = 5000
+@adminUrl = http://{{hostname}}:{{port}}
+@rewardsUrl = http://{{hostname}}:{{port}}
+@rpiUrl = http://{{hostname}}:{{port}}
+
+# PRODUCTION (Uncomment to use)
+# @adminUrl = https://www.ecopoints.com
+# @rewardsUrl = https://rewards.ecopoints.com
+# @rpiUrl = https://api.ecopoints.com
+
+@contentType = application/json
+@token = {{login.response.body.token}}
+
+###
+# @name health_check_web
+GET {{adminUrl}}/api/web/health
+
+###
+# @name health_check_rpi
+GET {{rpiUrl}}/api/rpi/health
+
+### ============================================================================
+### AUTHENTICATION
+### ============================================================================
+
+# @name login
+POST {{adminUrl}}/api/web/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "admin@example.com",
+    "password": "adminpassword"
+}
+
+###
+# @name me
+GET {{adminUrl}}/api/web/auth/me
+Authorization: Bearer {{token}}
+
+###
+# @name logout
+POST {{adminUrl}}/api/web/auth/logout
+Authorization: Bearer {{token}}
+
+###
+# @name change_password
+POST {{adminUrl}}/api/web/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "currentPassword": "oldpassword",
+    "newPassword": "newpassword123"
+}
+
+### ============================================================================
+### DASHBOARD & STATS
+### ============================================================================
+
+# @name dashboard_stats
+GET {{adminUrl}}/api/web/dashboard/stats
+Authorization: Bearer {{token}}
+
+# @name get_cities
+GET {{adminUrl}}/api/web/cities
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### LOCATIONS (Organizations)
+### ============================================================================
+
+# @name get_locations
+GET {{adminUrl}}/api/web/locations
+Authorization: Bearer {{token}}
+
+###
+# @name create_location
+POST {{adminUrl}}/api/web/locations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "name": "New University",
+    "fullName": "New University - Main Campus",
+    "orgType": "University",
+    "streetAddress": "123 Main St",
+    "barangay": "Centro",
+    "cityId": 1,
+    "zipCode": "1000",
+    "contactPerson": "John Doe",
+    "contactEmail": "contact@univ.edu",
+    "contactPhone": "09123456789",
+    "status": "Active"
+}
+
+###
+# @name update_location
+PUT {{adminUrl}}/api/web/locations/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "contactPerson": "Jane Doe"
+}
+
+###
+# @name delete_location
+DELETE {{adminUrl}}/api/web/locations/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### USERS
+### ============================================================================
+
+# @name get_users
+GET {{adminUrl}}/api/web/users?role=user
+Authorization: Bearer {{token}}
+
+###
+# @name get_single_user
+GET {{adminUrl}}/api/web/users/1
+Authorization: Bearer {{token}}
+
+###
+# @name create_user
+POST {{adminUrl}}/api/web/users
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Student One",
+    "username": "student1",
+    "email": "student1@univ.edu",
+    "password": "password123",
+    "role": "user",
+    "userType": "student",
+    "yearLevel": "Grade 11",
+    "locationId": 1
+}
+
+###
+# @name update_user
+PUT {{adminUrl}}/api/web/users/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "phone": "09987654321"
+}
+
+###
+# @name delete_user
+DELETE {{adminUrl}}/api/web/users/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### MACHINES (RVMs)
+### ============================================================================
+
+# @name get_machines
+GET {{adminUrl}}/api/web/machines
+Authorization: Bearer {{token}}
+
+###
+# @name create_machine
+POST {{adminUrl}}/api/web/machines
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "locationId": 1,
+    "name": "Main Gate RVM 1",
+    "locationName": "Main Gate",
+    "maxCapacity": 200
+}
+
+###
+# @name update_machine
+PUT {{adminUrl}}/api/web/machines/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "isOnline": true
+}
+
+###
+# @name delete_machine
+DELETE {{adminUrl}}/api/web/machines/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### REWARDS
+### ============================================================================
+
+# @name get_rewards
+GET {{rewardsUrl}}/api/web/rewards
+Authorization: Bearer {{token}}
+
+###
+# @name create_reward
+POST {{rewardsUrl}}/api/web/rewards
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "locationId": 1,
+    "name": "Free Campus Wi-Fi (1 Hour)",
+    "description": "Get 1 hour of premium Wi-Fi access.",
+    "category": "Education",
+    "pointsRequired": 50,
+    "stockQuantity": 1000
+}
+
+###
+# @name update_reward
+PUT {{rewardsUrl}}/api/web/rewards/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "pointsRequired": 45
+}
+
+###
+# @name delete_reward
+DELETE {{rewardsUrl}}/api/web/rewards/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### LOGS & REPORTS
+### ============================================================================
+
+# @name get_bottle_logs
+GET {{adminUrl}}/api/web/logs/bottles
+Authorization: Bearer {{token}}
+
+###
+# @name get_machine_logs
+GET {{adminUrl}}/api/web/logs/machines
+Authorization: Bearer {{token}}
+
+###
+# @name get_access_logs
+GET {{adminUrl}}/api/web/logs/access
+Authorization: Bearer {{token}}
+
+###
+# @name get_reward_logs
+GET {{adminUrl}}/api/web/logs/rewards
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### LEADERBOARD & GROUPS
+### ============================================================================
+
+# @name get_leaderboard
+GET {{adminUrl}}/api/web/leaderboard
+Authorization: Bearer {{token}}
+
+###
+# @name get_groups
+GET {{adminUrl}}/api/web/groups
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### RPI HARDWARE INTERFACE
+### ============================================================================
+
+# @name rpi_status
+GET {{rpiUrl}}/api/rpi/status
+
+###
+# @name rpi_authenticate
+POST {{rpiUrl}}/api/rpi/authenticate
+Content-Type: {{contentType}}
+
+{
+    "qr_code": "USER-QR-UUID-123"
+}
+
+###
+# @name rpi_session_start
+POST {{rpiUrl}}/api/rpi/session/start
+Content-Type: {{contentType}}
+
+{
+    "machine_uuid": "MACHINE-UUID-XYZ",
+    "user_qr": "USER-QR-UUID-123"
+}
+
+###
+# @name rpi_item_deposit
+POST {{rpiUrl}}/api/rpi/item/deposit
+Content-Type: {{contentType}}
+
+{
+    "session_id": 1,
+    "item_type": "PET Bottle",
+    "points": 5,
+    "weight_grams": 15.5,
+    "brand": "Nature's Spring",
+    "volume_ml": 500,
+    "condition": "Good"
+}
+
+###
+# @name rpi_session_end
+POST {{rpiUrl}}/api/rpi/session/end
+Content-Type: {{contentType}}
+
+{
+    "session_id": 1,
+    "machine_uuid": "MACHINE-UUID-XYZ"
+}
+
+###
+# @name rpi_log
+POST {{rpiUrl}}/api/rpi/log
+Content-Type: {{contentType}}
+
+{
+    "event_type": "Bin Full",
+    "message": "Capacity reached 95%"
+}

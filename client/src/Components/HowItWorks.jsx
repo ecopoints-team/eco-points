@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
-  data: { fontFamily: "'Space Mono', monospace" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
+  data: { fontFamily: "'Space Mono'" },
 };
 
 export default function HowItWorks() {

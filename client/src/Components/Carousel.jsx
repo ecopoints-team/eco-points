@@ -8,17 +8,22 @@ import { ArrowUpRight, Zap, Leaf, Cloud, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const fonts = {
-  heading: { fontFamily: "'Fredoka', sans-serif" },
-  body: { fontFamily: "'Quicksand', sans-serif" },
+  heading: { fontFamily: "'Fredoka'" },
+  body: { fontFamily: "'Quicksand'" },
 };
 
 // Mock Data
 const SHOWCASE_PRODUCTS = [
-  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "✏️" },
-  { id: 2, category: "Notes", name: "Bamboo Notebook", desc: "Sustainable bamboo cover with recycled pages.", points: 150, image: "📓" },
-  { id: 3, category: "Carry", name: "Canvas Tote Bag", desc: "Durable, everyday tote for your groceries.", points: 300, image: "🛍️" },
-  { id: 4, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "🥤" },
-  { id: 5, category: "Tech", name: "Bamboo USB", desc: "Eco-friendly 16GB flash drive.", points: 800, image: "💾" },
+  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "/eco_pencil_new.png" },
+  { id: 2, category: "Lifestyle", name: "Eco-Friendly Tote Bag", desc: "Heavy-duty organic cotton tote designed for your daily campus essentials and grocery runs.", points: 200, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCdRIyelRvj7UQf66B2WW1yPfHo9iQgNBraqUvxP9otyaYR_1fIJpLZVSKB_ZNGQ5QnZxQbt7gUSqcwHA-1HrkSsjzlzgweiS9a014-AgQFf5MpXDWVXi7aWNRXw27wcOM06Ic0K3c7pKVHHEIOZ_0k5fFimASRzWfMiaJQIgiUBAJmLnK9PdEnFJZ7dkaNPlE2vDyhsKriHuUmhLOkUB-jrMBSvCg_YWrtfRVhMYcH_ZWV6MOB5Y1qq0XGeIQQ9I7P-38q5C3u6wkd" },
+  { id: 3, category: "Notes", name: "Bamboo Notebook", desc: "Sustainable bamboo cover with recycled pages.", points: 150, image: "/bamboo_notebook_new.png" },
+  { id: 4, category: "Lifestyle", name: "Bamboo Straw Set", desc: "Natural, biodegradable, and reusable straws with a travel pouch for zero-waste sipping.", points: 100, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD0ZqC6jlwFwCJcs0ylje_QL2PrMLldMwKNXbkRbae-ORGeEh6KjnTQz5DylUzNvyu3AQZMpI-6jiMvRMTjVgp-Cv9cCbhJ-L689sHHcs4o0Fi3EZf-KYZSzAyTO_9u1n0LAWT8QJFZ_0AAYO0cspEd_05ID21TNv4NNdrhNjrjDC5AEZgeN8hjAYR_EqctGGOkFb73qv3GElXAM0gdjTKc2TY0VU0cPSc_Fz_WuT3BreTaO710IVD4vRwRdzJYi9fMrrvlqztS-wkl" },
+  { id: 5, category: "Eco-Wear", name: "Sticker Pack", desc: "Express your sustainability values with this collection of recycled vinyl stickers.", points: 50, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzhy_bpix0ejS2xSUe3pjiSjsOd7NrmcG0UZLcPwA_SV7MZrIUJ6QwdHavFki1uLFeZ9NpXtFJSweES7l_XgkyF-FO0-p5RmEBOwSm24dp4mhTGJjwqh8pSEAV17a9VSD7IhtHv1qNu8n9_R6WmLR5sIyxixT5TFuA9YTKAQzH86gMRvLMUtv_Qi_L9phX0Svn-yw8BJxkavxoD7SnUiF6Jzs6enV6qJKFFda4_4gbQCz3zWX0F2hkt_xp14q-pmImxqd-mWm9gy4X" },
+  { id: 6, category: "Lifestyle", name: "Reusable Coffee Cup", desc: "Barista-standard glass and cork cup. Keep your coffee warm and the planet cool.", points: 250, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBRCRprsbEsVZ1koaWgdDhyUhBTXkJS8HMZPCpILR9Icy5rOSNWxQM3XLzBn7NWKCVEXdMTaWg6d0zcR9z12qEqjEhDeJHDXDNnecujL_qT23_l1kHLWu-5Qhj52ebbP_yvmizmZdUA2JUvrFX7Uo27QEIFC-G0rl-5eGlnvOa2epCCA3afRxf5Ed1bNByNnx6qb75nobdwG8giYAnqpSCqstP6FmPZ5acBO_A9sRWtAmKibxPH3EqzwFTh4ANJhdD2UIeVsIIj_B_W" },
+  { id: 7, category: "Lifestyle", name: "Hemp Backpack", desc: "Sustainable hemp fibers make this the most durable and carbon-neutral bag on campus.", points: 500, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAb3TLf6_Gl0Okbd2b1pOIbUQsAwe9GJxAEoARg78ylCmr2dlr2I4LSW3p6cugXZla27cHv6F4avJ_pIvr83gsRILPtsvtemVCQ3KwXLURkIIOnv6q3LYtpzBZQxljnyuf8suY8eXOGT4NvCs17GkDrGXDCNMeWv2P7R-bDr1mTe8ugwMALaSLJdti8IW95fwocSiWwxryYgKsHzymKdfPyopPcu0N6F1n-8MymuyRWDdfTtfpSug1vhYdwpvrzjQ9bctLff6O4F_cZ" },
+  { id: 8, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "/steel_water_tumbler_logo.png" },
+  { id: 9, category: "Tech", name: "Biodegradable Phone Case", desc: "Made from flax straw waste. Protect your phone and the earth at the same time.", points: 350, image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAFhLV4YnUIdu6zNIxFQ1RlLhMYN0k9_dRnaoEjqhQ8MCt1AjwNEQk5NA2-w-NrXFQCvHxREZLFFeP24rO5vOa4s1VrfbbZoFtDbdA1HvdQOXUh5iPa_uEDIILCRQZARujeXvid5LbHaBegzhMoxxxC28CyBHsLKPMwg968YN3KMA79i7uYQLopVYFMOU2bVYNIDbdzSyJgsLdveOATXK1sVHxMmPiMaM-2gG30fd_P_y9Wz4F0eaXO5YusesUEPp7Jkl1ayclRGrTp" },
+  { id: 10, category: "Tech", name: "Bamboo USB", desc: "Eco-friendly 16GB flash drive.", points: 800, image: "/bamboo_usb_new.png" },
 ];
 
 export default function Carousel() {
@@ -149,13 +154,13 @@ export default function Carousel() {
               </div>
               <h2
                 className="text-[clamp(2rem,4vw,4.5rem)] font-black text-[#064e3b] mb-4 leading-tight tracking-tight"
-                style={{ fontFamily: "'Fredoka', sans-serif" }}
+                style={{ fontFamily: "'Fredoka'" }}
               >
                 Rewards <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">Catalog</span>
               </h2>
               <p
                 className="text-[#6b7280] font-medium text-lg md:text-xl max-w-xl"
-                style={{ fontFamily: "'Quicksand', sans-serif" }}
+                style={{ fontFamily: "'Quicksand'" }}
               >
                 Exchange your hard-earned points for eco-friendly products, school supplies, and exclusive merchandise.
               </p>
@@ -176,7 +181,7 @@ export default function Carousel() {
         <div className="w-full relative px-0">
           <div
             ref={carouselRef}
-            className="flex overflow-x-auto hide-scrollbar pt-20 pb-8 w-full"
+            className="flex overflow-x-auto hide-scrollbar pt-32 pb-12 w-full"
             style={{ cursor: isDraggingUI ? 'grabbing' : 'grab', scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'auto' }}
             onMouseEnter={handleMouseEnter}
             onMouseDown={handleMouseDown}
@@ -198,10 +203,14 @@ export default function Carousel() {
                   {/* Illusion Art Image Container */}
                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-28 h-28 flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/card:-translate-y-4 group-hover/card:scale-110 pointer-events-none z-20">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#10b981] to-[#34d399] rounded-full blur-xl opacity-30 group-hover/card:opacity-50 transition-opacity duration-700"></div>
-                    <div className="absolute inset-2 bg-gradient-to-br from-white to-emerald-50 rounded-full shadow-inner flex items-center justify-center border border-white/60">
-                      <span className="text-5xl drop-shadow-sm transition-all duration-700 group-hover/card:drop-shadow-[0_10px_15px_rgba(16,185,129,0.3)] group-hover/card:scale-110">
-                        {product.image}
-                      </span>
+                    <div className="absolute inset-2 bg-gradient-to-br from-white to-emerald-50 rounded-full shadow-inner flex items-center justify-center border border-white/60 overflow-hidden">
+                      {product.image.startsWith('http') || product.image.startsWith('/') ? (
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" />
+                      ) : (
+                        <span className="text-5xl drop-shadow-sm transition-all duration-700 group-hover/card:drop-shadow-[0_10px_15px_rgba(16,185,129,0.3)] group-hover/card:scale-110">
+                          {product.image}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -210,8 +219,8 @@ export default function Carousel() {
                     <div className="text-[10px] font-black text-[#10b981] tracking-widest uppercase mb-3 px-3 py-1 bg-emerald-50/80 inline-block rounded-full backdrop-blur-sm">
                       {product.category}
                     </div>
-                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>{product.name}</h3>
-                    <p className="text-sm text-[#6b7280] leading-relaxed" style={{ fontFamily: "'Quicksand', sans-serif" }}>{product.desc}</p>
+                    <h3 className="font-extrabold text-[1.4rem] text-[#064e3b] mb-2" style={{ fontFamily: "'Fredoka'" }}>{product.name}</h3>
+                    <p className="text-sm text-[#6b7280] leading-relaxed" style={{ fontFamily: "'Quicksand'" }}>{product.desc}</p>
                   </div>
 
                   {/* Corresponding Points Needed */}

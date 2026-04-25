@@ -75,7 +75,7 @@ export default function Footer() {
           </div>
           <p
             className="text-[rgba(255,255,255,0.8)] leading-relaxed"
-            style={{ fontFamily: "'Quicksand', sans-serif" }}
+            style={{ fontFamily: "'Quicksand'" }}
           >
             A smart recycling initiative powered by technology and
             sustainability.
@@ -86,7 +86,7 @@ export default function Footer() {
         <div>
           <h4
             className="mb-4 font-bold text-lg text-white"
-            style={{ fontFamily: "'Fredoka', sans-serif" }}
+            style={{ fontFamily: "'Fredoka'" }}
           >
             Quick Links
           </h4>
@@ -96,7 +96,7 @@ export default function Footer() {
                 <a
                   href={link.link}
                   className="text-[rgba(255,255,255,0.8)] no-underline hover:text-[#34d399] transition-colors duration-300"
-                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  style={{ fontFamily: "'Quicksand'" }}
                 >
                   {link.name}
                 </a>
@@ -109,7 +109,7 @@ export default function Footer() {
         <div>
           <h4
             className="mb-4 font-bold text-lg text-white"
-            style={{ fontFamily: "'Fredoka', sans-serif" }}
+            style={{ fontFamily: "'Fredoka'" }}
           >
             Resources
           </h4>
@@ -119,7 +119,7 @@ export default function Footer() {
                 <a
                   href={resource.link}
                   className="text-[rgba(255,255,255,0.8)] no-underline hover:text-[#34d399] transition-colors duration-300"
-                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  style={{ fontFamily: "'Quicksand'" }}
                 >
                   {resource.name}
                 </a>
@@ -132,7 +132,7 @@ export default function Footer() {
         <div>
           <h4
             className="mb-4 font-bold text-lg text-white"
-            style={{ fontFamily: "'Fredoka', sans-serif" }}
+            style={{ fontFamily: "'Fredoka'" }}
           >
             Contact Us
           </h4>
@@ -141,13 +141,13 @@ export default function Footer() {
               <li key={contact.name}>
                 <p
                   className="text-[#34d399] text-sm font-bold"
-                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                  style={{ fontFamily: "'Fredoka'" }}
                 >
                   {contact.name}
                 </p>
                 <p
                   className="text-[rgba(255,255,255,0.7)] text-xs"
-                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  style={{ fontFamily: "'Quicksand'" }}
                 >
                   {contact.position}
                 </p>
@@ -160,7 +160,7 @@ export default function Footer() {
       {/* Copyright */}
       <div
         className="max-w-[1400px] mx-auto pt-8 border-t border-[rgba(255,255,255,0.1)] text-center text-[rgba(255,255,255,0.7)]"
-        style={{ fontFamily: "'Quicksand', sans-serif" }}
+        style={{ fontFamily: "'Quicksand'" }}
       >
         &copy; {year} EcoPoints. A PUP Institute of Technology Research
         Project.

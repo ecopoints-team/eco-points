@@ -85,9 +85,11 @@ module.exports = {
         "full": "9999px"
       },
       fontFamily: {
-        "heading": ["Fredoka", "sans-serif"],
-        "body": ["Quicksand", "sans-serif"],
-        "mono": ["Space Mono", "monospace"]
+        "headline": ["Fredoka"],
+        "body": ["Quicksand"],
+        "label": ["Quicksand"],
+        "sans": ["Quicksand"],
+        "mono": ["Space Mono"]
       },
       boxShadow: {
         glow: "0 0 10px rgba(16, 185, 129, 0.5)",
