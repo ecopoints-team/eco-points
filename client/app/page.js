@@ -4,16 +4,16 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Gift, User, Trophy, Menu, X } from "lucide-react";
 
-import NavBar from "../src/Components/NavBar";
-import LogIn from "../src/Components/LogIn";
-import LeaderboardCTA from "../src/Components/Leaderboard";
-import Features from "../src/Components/Features";
-import HowItWorks from "../src/Components/HowItWorks";
-import Footer from "../src/Components/Footer";
-import Carousel from "../src/Components/Carousel";
-import HeroSection from "../src/Components/HeroSection";
-import CTASection from "../src/Components/CTASection";
-import ScrollToTop from "../src/Components/ScrollToTop";
+import NavBar from "../src/components/website/NavBar";
+import LogIn from "../src/components/pages/LogIn";
+import LeaderboardCTA from "../src/components/pages/Leaderboard";
+import Features from "../src/components/website/sections/Features";
+import HowItWorks from "../src/components/website/sections/HowItWorks";
+import Footer from "../src/components/website/Footer";
+import Carousel from "../src/components/website/sections/Carousel";
+import HeroSection from "../src/components/website/sections/HeroSection";
+import CTASection from "../src/components/website/sections/CTASection";
+import ScrollToTop from "../src/components/website/ScrollToTop";
 
 
 // Inner component that uses useSearchParams (requires Suspense boundary)

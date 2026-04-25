@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { locations as locationsApi, orgTypes as orgTypesApi, cities as citiesApi } from '../../../src/services/apiService';
 import {

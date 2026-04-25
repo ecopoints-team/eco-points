@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import SlotCounter from '../../src/Components/SlotCounter';
+import SlotCounter from '../../src/components/shared/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
 import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/apiService';
 import { formatDate } from '../../src/utils/formatDate';

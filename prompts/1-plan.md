@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: Frontend Refactoring & Hydration Fix Plan
+globs: **/*.jsx, **/*.tsx, **/*.css, client/src/**/*
 alwaysApply: false
 ---
 
@@ -19,3 +19,145 @@ This is the task that needs to be solved:
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task
+
+# Fix phase 1
+
+- Let's fix the hydration error:
+
+Unhandled Runtime Error
+Error: Text content does not match server-rendered HTML.
+See more info here: https://nextjs.org/docs/messages/react-hydration-error
+
+Text content did not match. Server: "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: &#x27;Fredoka&#x27;, sans-serif; }
+        .font-body { font-family: &#x27;Quicksand&#x27;, sans-serif; }
+        .font-data { font-family: &#x27;Space Mono&#x27;, monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      " Client: "
+        :root {
+          --filter-btn-size: 56px;
+          --filter-stem-open: 128px;
+          --filter-bar-top: 72px;
+        }
+
+        @media (min-width: 640px) {
+          :root {
+            --filter-btn-size: 72px;
+            --filter-stem-open: 160px;
+            --filter-bar-top: 88px;
+          }
+        }
+
+        .font-heading { font-family: 'Fredoka', sans-serif; }
+        .font-body { font-family: 'Quicksand', sans-serif; }
+        .font-data { font-family: 'Space Mono', monospace; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes spin-slow {
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+          100% { transform: rotate(-360deg); }
+        }
+        .wave-back { animation: spin-slow 4s linear infinite; }
+        .wave-front { animation: spin-reverse 5s linear infinite; }
+
+        @keyframes error-shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+        }
+        .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+### Phase 2: Architectural Restructuring (Admin vs. Website)
+**Context:** The current folder structure and file naming conventions are causing confusion between Admin-facing components and Public Website-facing components.
+**Task:** 1. Map out a proposed new directory tree (using ASCII format) that cleanly separates `admin` and `website` components, pages, and sections.
+2. Establish a clear file naming convention for pages vs. sections to avoid future confusion.
+3. List the exact routing and import path updates required across the codebase to support this new structure without triggering build errors.
+
+### Phase 3: Component Consolidation (Rewards Page)
+**Context:** The `UserSummary` card component is currently isolated but will only be used on the Rewards page moving forward.
+**Task:** Provide the exact steps to deprecate the standalone `UserSummary` file and cleanly integrate its JSX, state, and styles directly into the main `Rewards` page file.

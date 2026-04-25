@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/Components/AdminLayout';
-import CustomDropdown from '../../../../src/Components/CustomDropdown';
-import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
-import AddUserModal from '../../../../src/Components/AddUserModal';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/components/admin/AdminLayout';
+import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
+import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
+import AddUserModal from '../../../../src/components/admin/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ROLES } from '../../../../src/data/roleConfig';
 import { users as usersApi } from '../../../../src/services/apiService';

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, User } from "lucide-react";
-import ProfileSection from "../../src/Components/ProfileSection";
+import ProfileSection from "../../src/components/pages/ProfileSection";
 
 function ProfileHeader() {
   return (

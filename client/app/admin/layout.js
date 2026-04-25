@@ -1,5 +1,5 @@
 'use client';
-import AdminLayoutComponent from '../../src/Components/AdminLayout';
+import AdminLayoutComponent from '../../src/components/admin/AdminLayout';
 
 export default function AdminLayout({ children }) {
     return (

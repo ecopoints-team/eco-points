@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
-import PageSizeSelector from '../../../src/Components/PageSizeSelector';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
-import AddRegularUserModal from '../../../src/Components/AddRegularUserModal';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
+import AddRegularUserModal from '../../../src/components/admin/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 // getDepartmentName replaced — server returns groupName directly
 import { users as usersApi } from '../../../src/services/apiService';

@@ -186,7 +186,7 @@
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
+    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   /* Shake Animation (Password Mismatch) */
@@ -785,4 +785,64 @@
       opacity: 0;
     }
   }
+
+  /* ============================================================================
+     REWARDS PAGE — CSS Custom Properties & Animations
+     (Extracted from inline <style> to fix Next.js hydration mismatch)
+     ============================================================================ */
+
+  :root {
+    --filter-btn-size: 56px;
+    --filter-stem-open: 128px;
+    --filter-bar-top: 72px;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --filter-btn-size: 72px;
+      --filter-stem-open: 160px;
+      --filter-bar-top: 88px;
+    }
+  }
+
+  .font-heading { font-family: 'Fredoka', sans-serif; }
+  .font-body { font-family: 'Quicksand', sans-serif; }
+  .font-data { font-family: 'Space Mono', monospace; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float { animation: float 4s ease-in-out infinite; }
+
+  @keyframes glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
+  .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+  @keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slide-up { animation: slideUpFade 0.6s ease-out forwards; }
+
+  @keyframes spin-slow {
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes spin-reverse {
+    100% { transform: rotate(-360deg); }
+  }
+  .wave-back { animation: spin-slow 4s linear infinite; }
+  .wave-front { animation: spin-reverse 5s linear infinite; }
+
+  @keyframes error-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+  }
+  .animate-error-shake { animation: error-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }

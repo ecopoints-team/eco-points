@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Trophy, Leaf } from "lucide-react";
-import LeaderboardPodium from "../../src/Components/LeaderboardPodium";
+import LeaderboardPodium from "../../src/components/pages/LeaderboardPodium";
 
 function LeaderboardHeader() {
   return (

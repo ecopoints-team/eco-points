@@ -18,7 +18,7 @@ import {
   Leaf,
   ChevronRight,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // ─────────────────────────────────────────────
 // Mock top-3 data 
