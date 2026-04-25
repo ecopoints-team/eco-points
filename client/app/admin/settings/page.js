@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { settings as settingsApi } from '../../../src/services/apiService';
 import {

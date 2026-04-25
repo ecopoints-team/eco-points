@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import CustomDropdown from '../../../../src/Components/CustomDropdown';
-import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
+import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
+import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { logs as logsApi, machines as machinesApi } from '../../../../src/services/apiService';
 import { formatDate } from '../../../../src/utils/formatDate';

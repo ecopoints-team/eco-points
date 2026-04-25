@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../../../src/context/AuthContext';
 import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/apiService';
-import SlotCounter from '../../../src/Components/SlotCounter';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
+import SlotCounter from '../../../src/components/shared/SlotCounter';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import {
     BarChart3, TrendingUp, Users, Clock, Package, Trophy, MapPin,
     Recycle, Zap, PieChart as PieChartIcon, Activity, Loader2,

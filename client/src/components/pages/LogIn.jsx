@@ -88,8 +88,8 @@ import {
   AtSign,
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useAuth } from "../context/AuthContext";
-import { auth as authApi } from "../services/apiService";
+import { useAuth } from "../../context/AuthContext";
+import { auth as authApi } from "../../services/apiService";
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments

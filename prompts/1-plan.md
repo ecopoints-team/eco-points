@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: Frontend Refactoring & Hydration Fix Plan
+globs: **/*.jsx, **/*.tsx, **/*.css, client/src/**/*
 alwaysApply: false
 ---
 

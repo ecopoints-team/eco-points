@@ -6,8 +6,8 @@ import {
     LayoutDashboard, Users, Package, FileText, Activity,
     LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const SidebarItem = ({ icon: Icon, label, href, collapsed, active, hasChildren, expanded, onToggle, hidden, children: childrenItems }) => {
     // Don't render if hidden

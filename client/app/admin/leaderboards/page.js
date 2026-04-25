@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
-import PageSizeSelector from '../../../src/Components/PageSizeSelector';
+import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
+import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import {
     DEPARTMENTS,

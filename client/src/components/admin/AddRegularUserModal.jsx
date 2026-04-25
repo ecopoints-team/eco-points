@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
-import { useAuth } from '../context/AuthContext';
-import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../data/mockData';
-import { users as usersApi } from '../services/apiService';
+import { useAuth } from '../../context/AuthContext';
+import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../../data/mockData';
+import { users as usersApi } from '../../services/apiService';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label, error }) => {
     const [showPassword, setShowPassword] = useState(false);

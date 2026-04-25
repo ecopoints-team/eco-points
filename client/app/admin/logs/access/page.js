@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { logs as logsApi } from '../../../../src/services/apiService';
 import { formatDate } from '../../../../src/utils/formatDate';
-import CustomDropdown from '../../../../src/Components/CustomDropdown';
-import PageSizeSelector from '../../../../src/Components/PageSizeSelector';
+import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
+import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 

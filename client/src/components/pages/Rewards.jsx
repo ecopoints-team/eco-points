@@ -1,0 +1,1223 @@
+"use client";
+
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
+import {
+  Search, Filter, ArrowRight, ArrowLeft, Sparkles, X, UserCircle,
+  ShoppingBag, Zap, Cpu, Leaf, Droplet, Coffee, Tag, ChevronLeft, ChevronRight,
+  CheckCircle2, Lock, HelpCircle, Settings
+} from "lucide-react";
+
+// --- PRODUCT DATA (30 Products) ---
+// Images from /Rewards/ folder for 5 products; Lucide icons for the rest
+const CATEGORIES = ["All", "Writing", "Notes", "Carry", "Drink", "Accessories", "Tech", "Living", "Apparel"];
+
+const SHOWCASE_PRODUCTS = [
+  // Products with real images (from /Rewards/ folder)
+  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "/Rewards/Eco Pen.jpg", color: "from-amber-100 to-orange-50" },
+  { id: 2, category: "Notes", name: "Notebook", desc: "Sustainable bamboo cover with recycled pages.", points: 150, image: "/Rewards/Notebook.png", color: "from-emerald-100 to-teal-50" },
+  { id: 3, category: "Carry", name: "Canvas Tote Bag", desc: "Durable, everyday tote for your groceries.", points: 300, image: "/Rewards/Eco ToteBag.jpg", color: "from-blue-100 to-indigo-50" },
+  { id: 4, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "/Rewards/Eco Tumbler.jpg", color: "from-rose-100 to-pink-50" },
+  { id: 5, category: "Accessories", name: "EP Pins", desc: "Show off your green status with an exclusive enamel pin.", points: 100, image: "/Rewards/Eco Pin.jpg", color: "from-purple-100 to-fuchsia-50" },
+
+  // Products with icon placeholders
+  { id: 6, category: "Accessories", name: "Lanyard", desc: "Durable EcoPoints lanyard made from recycled PET bottles.", points: 200, image: null, icon: Tag, color: "from-cyan-100 to-blue-50" },
+  { id: 7, category: "Living", name: "Bamboo Toothbrush", desc: "100% biodegradable handle with charcoal bristles.", points: 80, image: null, icon: Leaf, color: "from-green-100 to-emerald-50" },
+  { id: 8, category: "Carry", name: "RPET Backpack", desc: "Water-resistant backpack made from 20 recycled bottles.", points: 800, image: null, icon: ShoppingBag, color: "from-slate-200 to-slate-100" },
+  { id: 9, category: "Tech", name: "Solar Power Bank", desc: "10,000mAh charger powered by the sun.", points: 1200, image: null, icon: Zap, color: "from-yellow-100 to-amber-50" },
+  { id: 10, category: "Notes", name: "Plantable Calendar", desc: "Plant each month's page to grow wildflowers.", points: 120, image: null, icon: Leaf, color: "from-rose-100 to-orange-50" },
+  { id: 11, category: "Apparel", name: "Organic Cotton Cap", desc: "Classic baseball cap made without synthetic dyes.", points: 250, image: null, icon: UserCircle, color: "from-indigo-100 to-purple-50" },
+  { id: 12, category: "Drink", name: "Reusable Straw Set", desc: "Steel and bamboo straws with a cleaning brush.", points: 150, image: null, icon: Droplet, color: "from-cyan-100 to-teal-50" },
+  { id: 13, category: "Living", name: "Beeswax Food Wrap", desc: "Sustainable alternative to plastic cling wrap.", points: 180, image: null, icon: Leaf, color: "from-yellow-100 to-green-50" },
+  { id: 14, category: "Tech", name: "Upcycled Mousepad", desc: "Premium mousepad crafted from recycled tires.", points: 220, image: null, icon: Cpu, color: "from-slate-300 to-slate-200" },
+  { id: 15, category: "Notes", name: "Wooden Desk Organizer", desc: "Keep your workspace tidy with reclaimed wood.", points: 350, image: null, icon: Leaf, color: "from-amber-200 to-yellow-100" },
+  { id: 16, category: "Apparel", name: "EcoPoints T-Shirt", desc: "Soft, breathable shirt made from recycled materials.", points: 600, image: null, icon: UserCircle, color: "from-emerald-200 to-teal-100" },
+  { id: 17, category: "Drink", name: "Reusable Coffee Cup", desc: "Collapsible silicone cup for your daily brew.", points: 400, image: null, icon: Coffee, color: "from-orange-100 to-rose-50" },
+  { id: 18, category: "Living", name: "Bamboo Cutlery Set", desc: "Travel-friendly fork, knife, and spoon.", points: 200, image: null, icon: Leaf, color: "from-stone-200 to-stone-100" },
+  { id: 19, category: "Notes", name: "Seed Sticky Notes", desc: "Jot down ideas and plant them later.", points: 90, image: null, icon: Leaf, color: "from-lime-100 to-green-50" },
+  { id: 20, category: "Living", name: "Recycled Glass Vase", desc: "Hand-blown glass vase from discarded bottles.", points: 450, image: null, icon: Droplet, color: "from-sky-100 to-cyan-50" },
+  { id: 21, category: "Tech", name: "Cork Wireless Charger", desc: "Fast charging pad wrapped in sustainable cork.", points: 900, image: null, icon: Zap, color: "from-orange-200 to-amber-100" },
+  { id: 22, category: "Tech", name: "Hemp Laptop Sleeve", desc: "Padded protection for 13-inch laptops.", points: 550, image: null, icon: Cpu, color: "from-emerald-100 to-stone-100" },
+  { id: 23, category: "Carry", name: "Eco Tote (Limited)", desc: "Special edition design by local artists.", points: 450, image: null, icon: ShoppingBag, color: "from-fuchsia-100 to-pink-50" },
+  { id: 24, category: "Tech", name: "Bio Phone Case", desc: "Compostable case available for major models.", points: 300, image: null, icon: Cpu, color: "from-green-200 to-emerald-100" },
+  { id: 25, category: "Carry", name: "RPET Gym Duffel", desc: "Spacious bag for workouts or weekends.", points: 750, image: null, icon: ShoppingBag, color: "from-blue-200 to-indigo-100" },
+  { id: 26, category: "Carry", name: "Denim Pouch", desc: "Upcycled pouch perfect for pens or cables.", points: 280, image: null, icon: Tag, color: "from-sky-200 to-blue-100" },
+  { id: 27, category: "Living", name: "Bamboo Floss", desc: "Biodegradable dental floss in a glass jar.", points: 70, image: null, icon: Sparkles, color: "from-teal-100 to-emerald-50" },
+  { id: 28, category: "Apparel", name: "EcoPoints Hoodie", desc: "Premium heavyweight organic cotton hoodie.", points: 1500, image: null, icon: UserCircle, color: "from-slate-200 to-emerald-50" },
+  { id: 29, category: "Living", name: "Steel Lunchbox", desc: "BPA-free container with bamboo lid.", points: 650, image: null, icon: Leaf, color: "from-zinc-200 to-stone-100" },
+  { id: 30, category: "Apparel", name: "Organic Socks", desc: "Comfortable, breathable everyday socks.", points: 180, image: null, icon: UserCircle, color: "from-rose-200 to-pink-100" },
+];
+
+const ITEMS_PER_PAGE = 20;
+
+// --- REWARDS HEADER ---
+function RewardsHeader() {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-[999] bg-white/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border-b border-[#10b981]/10">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center gap-4">
+
+        {/* Left: Back to Home */}
+        <div className="flex-1">
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
+          >
+            <ArrowLeft size={18} className="transition-transform duration-300 group-hover:-translate-x-1" />
+            <span className="text-xs font-bold tracking-widest uppercase hidden sm:inline" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              Back to Home
+            </span>
+          </Link>
+        </div>
+
+        {/* Center: Page Title */}
+        <div className="flex-1 flex items-center justify-center gap-2">
+          <Leaf size={16} className="text-[#10b981]" />
+          <h1 className="text-[#064e3b] text-lg sm:text-xl font-black tracking-widest uppercase" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+            Rewards
+          </h1>
+          <Leaf size={16} className="text-[#10b981] scale-x-[-1]" />
+        </div>
+
+        {/* Right: EcoPoints Logo */}
+        <div className="flex-1 flex justify-end">
+          <img
+            src="/EcoPoints Logo Mark with Name.png"
+            alt="EcoPoints"
+            className="h-7 w-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
+          />
+        </div>
+      </div>
+
+      {/* Accent line */}
+      <div className="h-[2px] bg-gradient-to-r from-transparent via-[#10b981]/40 to-transparent" />
+    </header>
+  );
+}
+
+// --- HOW IT WORKS MODAL (inlined from UserSummary) ---
+function HowItWorksModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-[#064e3b]/40 backdrop-blur-sm" />
+
+      <div
+        className="relative bg-white/90 backdrop-blur-xl w-full max-w-4xl overflow-hidden rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] flex flex-col md:flex-row border border-white"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: "scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 z-20 p-2 text-slate-400 hover:text-slate-800 transition-colors bg-white/50 rounded-full backdrop-blur-sm"
+        >
+          <X size={24} />
+        </button>
+
+        {/* Sidebar / Visual Hero */}
+        <div className="hidden md:flex w-1/3 bg-gradient-to-br from-[#10b981] to-[#064e3b] p-8 flex-col justify-between relative overflow-hidden">
+          <div className="z-10">
+            <div className="text-[#34d399] font-black tracking-widest text-sm uppercase mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              EcoPoints
+            </div>
+            <h2 className="text-4xl font-black text-white leading-tight" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+              Start Your Impact Today.
+            </h2>
+          </div>
+          <div className="relative z-10">
+            <p className="text-white/80 font-medium text-lg leading-relaxed" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              Join thousands of students turning waste into rewards.
+            </p>
+          </div>
+          {/* Decorative circle */}
+          <div className="absolute bottom-[-40%] right-[-40%] w-[80%] h-[80%] bg-white/10 rounded-full pointer-events-none" />
+          <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-white/5 rounded-full pointer-events-none" />
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 p-6 md:p-8">
+          <div className="max-w-md mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-black text-[#064e3b] mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>How It Works</h1>
+              <p className="text-slate-500 text-base" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                Follow these simple steps to start earning EcoPoints for every recycled container.
+              </p>
+            </div>
+
+            {/* Roadmap Steps */}
+            <div className="space-y-3">
+              {[
+                { num: 1, icon: "qr_code_scanner", title: "Scan QR", desc: "Find a kiosk and scan your personal ID on the mobile app to link your session." },
+                { num: 2, icon: "recycling", title: "Insert Bottle", desc: "Place your clean plastic bottles or cans into the intake slot." },
+                { num: 3, icon: "stars", title: "Earn Points", desc: "Watch your balance grow! Points are calculated instantly based on container type." },
+                { num: 4, icon: "redeem", title: "Redeem", desc: "Exchange points for campus rewards, coffee vouchers, or meal discounts." },
+              ].map((step) => (
+                <div key={step.num} className="group flex items-start gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-[#10b981]/5 transition-colors border border-transparent hover:border-[#10b981]/10">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center text-white font-black text-lg shadow-[0_4px_12px_rgba(16,185,129,0.3)]">
+                    {step.num}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="material-symbols-outlined text-[#10b981] text-xl">{step.icon}</span>
+                      <h3 className="font-bold text-[#064e3b] text-lg" style={{ fontFamily: "'Fredoka', sans-serif" }}>{step.title}</h3>
+                    </div>
+                    <p className="text-slate-500 text-sm" style={{ fontFamily: "'Quicksand', sans-serif" }}>{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer Action */}
+            <div className="mt-8">
+              <button
+                onClick={onClose}
+                className="w-full bg-[#064e3b] text-white font-bold text-base py-4 px-8 rounded-xl hover:bg-[#0a6c53] transition-all shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)] flex items-center justify-center gap-2"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                Continue
+                <ArrowRight size={18} />
+              </button>
+            </div>
+            <p className="mt-4 text-center text-xs text-slate-400 font-medium" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+              By continuing, you agree to our sustainability pledge.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN REWARDS COMPONENT ---
+export default function Rewards() {
+  // --- STATE ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Refs
+  const filterContainerRef = useRef(null);
+
+  // Auth & Modals (demo toggle)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userPoints, setUserPoints] = useState(350);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Card Pop-Out (FLIP) Animation
+  const [detailedProduct, setDetailedProduct] = useState(null);
+  const [detailedModalState, setDetailedModalState] = useState("closed");
+  const [cardRect, setCardRect] = useState(null);
+  const [insufficientAnimId, setInsufficientAnimId] = useState(null);
+
+  // --- L-SHAPE ANIMATION TIMINGS ---
+  const bounceEase = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+  const smoothEase = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+  const stemTransition = isFilterOpen
+    ? `height 400ms ${bounceEase} 0ms`
+    : `height 300ms ${smoothEase} 200ms`;
+
+  const barTransition = isFilterOpen
+    ? `top 400ms ${bounceEase} 0ms, width 600ms ${bounceEase} 150ms`
+    : `width 300ms ${smoothEase} 0ms, top 300ms ${smoothEase} 200ms`;
+
+  // --- FILTERING & PAGINATION ---
+  const filteredProducts = useMemo(() => {
+    return SHOWCASE_PRODUCTS.filter((product) => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.desc.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "All" || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  // Click-Outside Listener for Filter
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        filterContainerRef.current &&
+        !filterContainerRef.current.contains(event.target)
+      ) {
+        if (isFilterOpen) {
+          setIsFilterOpen(false);
+          setSelectedCategory("All");
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isFilterOpen]);
+
+  // Handle FLIP Animation opening frame delay
+  useEffect(() => {
+    if (detailedModalState === "opening") {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setDetailedModalState("open");
+        });
+      });
+    }
+  }, [detailedModalState]);
+
+  // --- HANDLERS ---
+  const toggleFilter = () => {
+    if (isFilterOpen) {
+      setSelectedCategory("All");
+    }
+    setIsFilterOpen(!isFilterOpen);
+  };
+
+  const handleCardClick = (product, element) => {
+    if (!isLoggedIn) {
+      setSelectedProduct(product);
+      setShowAuthModal(true);
+    } else {
+      const rect = element.getBoundingClientRect();
+      setCardRect({
+        top: rect.top + rect.height / 2,
+        left: rect.left + rect.width / 2,
+        width: rect.width,
+        height: rect.height,
+      });
+      setDetailedProduct(product);
+      setDetailedModalState("opening");
+    }
+  };
+
+  const handleDirectRedeem = (product, e) => {
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      setSelectedProduct(product);
+      setShowAuthModal(true);
+      return;
+    }
+    if (userPoints < product.points) {
+      setInsufficientAnimId(product.id);
+      setTimeout(() => setInsufficientAnimId(null), 500);
+      return;
+    }
+    setUserPoints((prev) => prev - product.points);
+    setSelectedProduct(product);
+    setShowSuccessModal(true);
+  };
+
+  const handleDetailedRedeem = () => {
+    if (userPoints < detailedProduct.points) {
+      setInsufficientAnimId("detailed-" + detailedProduct.id);
+      setTimeout(() => setInsufficientAnimId(null), 500);
+      return;
+    }
+    setUserPoints((prev) => prev - detailedProduct.points);
+    setSelectedProduct(detailedProduct);
+    closeDetailedModal();
+    setTimeout(() => setShowSuccessModal(true), 500);
+  };
+
+  const closeDetailedModal = () => {
+    setDetailedModalState("closing");
+    setTimeout(() => {
+      setDetailedProduct(null);
+      setDetailedModalState("closed");
+    }, 500);
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setIsLoggedIn(true);
+    setShowAuthModal(false);
+    if (selectedProduct) {
+      const cardElements = document.querySelectorAll(
+        `[data-product-id="${selectedProduct.id}"]`
+      );
+      if (cardElements.length > 0) {
+        handleCardClick(selectedProduct, cardElements[0]);
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#f0fdf4]/80 to-white/80 text-[#064e3b] selection:bg-[#34d399] selection:text-white relative pb-32 overflow-hidden">
+
+
+
+      {/* PARALLAX FLOATING SHAPES BACKGROUND (from landing page) */}
+      <div className="parallax-bg">
+        <div className="parallax-layer">
+          <div className="floating-shape shape-1">
+            <div className="shape-inner"></div>
+          </div>
+          <div className="floating-shape shape-2">
+            <div className="shape-inner"></div>
+          </div>
+          <div className="floating-shape shape-3">
+            <div className="shape-inner"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* DECORATIVE SVG CIRCLE (from landing page) */}
+      <div
+        className="absolute top-0 right-0 w-1/2 h-full bg-cover opacity-50 pointer-events-none z-0"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200'%3E%3Ccircle cx='600' cy='600' r='500' fill='%2310b981' opacity='0.05'/%3E%3Ccircle cx='700' cy='400' r='300' fill='%2334d399' opacity='0.05'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* REWARDS HEADER */}
+      <RewardsHeader />
+
+      {/* DEV TOGGLE FOR TESTING AUTH STATE */}
+      <div className="fixed top-20 right-4 z-50 bg-white/90 backdrop-blur-xl shadow-md rounded-full px-4 py-2 border border-slate-200 flex items-center gap-3 text-sm font-bold hover:shadow-lg transition-all duration-300 font-body">
+        <span>Dev Mode:</span>
+        <button
+          onClick={() => setIsLoggedIn(!isLoggedIn)}
+          className={`px-3 py-1 rounded-full transition-colors ${
+            isLoggedIn
+              ? "bg-[#10b981] text-white"
+              : "bg-slate-200 text-slate-600"
+          }`}
+        >
+          {isLoggedIn ? "Logged In" : "Logged Out"}
+        </button>
+      </div>
+
+      {/* FLOATING USER BALANCE (Only visible when logged in) */}
+      {isLoggedIn && (
+        <div className="fixed top-20 left-4 sm:left-8 z-40 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.15)] rounded-full px-4 py-2 border border-emerald-100 flex items-center gap-3 animate-slide-up pointer-events-auto">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-inner">
+            <Zap size={18} className="text-white fill-white" />
+          </div>
+          <div className="pr-2">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 font-body">
+              My Balance
+            </div>
+            <div className="text-xl font-black leading-none flex items-baseline gap-1 font-data text-[#064e3b]">
+              {userPoints}{" "}
+              <span className="text-xs text-emerald-500 font-bold font-body">EP</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN CONTENT */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-24 relative z-10">
+
+        {/* USER SUMMARY SECTION (inlined) */}
+        <div className="mt-4 animate-slide-up">
+          <section className="mb-12">
+            <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+
+                {/* Left: User Avatar & Info */}
+                <div className="lg:col-span-4 flex flex-col md:flex-row lg:flex-col items-center md:items-start gap-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-3xl border-4 border-white shadow-[0_8px_24px_rgba(16,185,129,0.25)]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                      AR
+                    </div>
+                    <button className="absolute bottom-0 right-0 p-2 rounded-full bg-white text-slate-400 hover:text-[#10b981] transition-colors shadow-md border border-slate-100">
+                      <Settings size={14} />
+                    </button>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h2 className="text-3xl font-black text-[#064e3b] tracking-tight mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                      Alex Rivers
+                    </h2>
+                    <p className="text-sm font-bold text-slate-400 mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                      @arivers
+                    </p>
+                    <div className="flex gap-2 justify-center md:justify-start flex-wrap">
+                      <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#10b981]/20">
+                        Active Member
+                      </span>
+                      <button
+                        onClick={() => setIsHowItWorksOpen(true)}
+                        className="flex items-center gap-1.5 text-[#10b981] font-bold text-xs hover:underline transition-colors"
+                        style={{ fontFamily: "'Quicksand', sans-serif" }}
+                      >
+                        <HelpCircle size={14} />
+                        How It Works
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Stats Cards */}
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Available Balance */}
+                    <div className="bg-gradient-to-br from-[#10b981]/5 to-[#34d399]/10 rounded-[1.5rem] p-6 border border-[#10b981]/10 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#10b981]/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#10b981] mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                        Available Balance
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          2,450
+                        </span>
+                        <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                          EP
+                        </span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <Zap size={14} className="text-[#10b981] fill-[#10b981]" />
+                        <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                          Ready to redeem
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Total Redeemed */}
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-[1.5rem] p-6 border border-amber-100/50 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/30 rounded-full -mr-6 -mt-6 pointer-events-none" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                        Total Redeemed
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
+                          500
+                        </span>
+                        <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                          EP
+                        </span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                          Across 3 rewards
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {isHowItWorksOpen && <HowItWorksModal onClose={() => setIsHowItWorksOpen(false)} />}
+          </section>
+        </div>
+
+        {/* HERO SECTION */}
+        <div className="text-center mb-12 animate-slide-up">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#10b981]/10 rounded-full mb-6 border border-[#10b981]/20">
+            <Sparkles className="w-4 h-4 text-[#10b981]" />
+            <span className="text-[#10b981] text-sm font-bold uppercase tracking-widest font-body">
+              Rewards Showcase
+            </span>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-black text-[#064e3b] mb-4 font-heading tracking-tight">
+            Exchange Impact for{" "}
+            <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">
+              Rewards
+            </span>
+          </h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto font-body">
+            Browse our curated collection of sustainable goods, tech
+            accessories, and everyday essentials. Redeem your EcoPoints today!
+          </p>
+        </div>
+
+        {/* SEARCH & L-SHAPE MECHANICAL FILTER */}
+        <div
+          className="mb-12 animate-slide-up relative z-50"
+          style={{ animationDelay: "0.1s" }}
+          ref={filterContainerRef}
+        >
+          <div className="relative w-full max-w-3xl mx-auto px-2 sm:px-4 z-50">
+            {/* Animated "L" Shape Background */}
+            <div
+              className="absolute top-0 left-2 sm:left-4 right-2 sm:right-4 z-10 pointer-events-none"
+              style={{
+                filter:
+                  "drop-shadow(0 12px 24px rgba(0,0,0,0.06)) drop-shadow(0 4px 8px rgba(16,185,129,0.1))",
+              }}
+            >
+              <div
+                className="absolute left-0 top-0 bg-white/90 backdrop-blur-xl rounded-full origin-top pointer-events-auto"
+                style={{
+                  width: "var(--filter-btn-size)",
+                  height: isFilterOpen
+                    ? "var(--filter-stem-open)"
+                    : "var(--filter-btn-size)",
+                  transition: stemTransition,
+                }}
+              />
+
+              <div
+                className="absolute left-0 bg-white/90 backdrop-blur-xl rounded-full overflow-hidden pointer-events-auto flex justify-start"
+                style={{
+                  top: isFilterOpen ? "var(--filter-bar-top)" : "0px",
+                  width: isFilterOpen ? "100%" : "var(--filter-btn-size)",
+                  height: "var(--filter-btn-size)",
+                  transition: barTransition,
+                }}
+              >
+                <div
+                  className="flex items-center h-full w-full pr-3 sm:pr-4 overflow-x-auto no-scrollbar"
+                  style={{
+                    paddingLeft: "16px",
+                    opacity: isFilterOpen ? 1 : 0,
+                    transform: isFilterOpen
+                      ? "translateX(0)"
+                      : "translateX(-16px)",
+                    transition: `all 400ms ${smoothEase} ${
+                      isFilterOpen ? "300ms" : "0ms"
+                    }`,
+                  }}
+                >
+                  <div className="flex gap-2 w-max">
+                    {CATEGORIES.map((category) => {
+                      const isActive = selectedCategory === category;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => setSelectedCategory(category)}
+                          className={`relative shrink-0 px-6 py-2.5 sm:py-3 rounded-[2rem] font-bold font-body text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden outline-none ${
+                            isActive
+                              ? "text-white shadow-[0_5px_15px_rgba(16,185,129,0.4)] scale-105"
+                              : "text-slate-500 hover:text-[#064e3b] bg-white/50 hover:bg-slate-100"
+                          }`}
+                        >
+                          <div className="absolute inset-0 flex justify-center items-center z-0 pointer-events-none">
+                            <div
+                              className={`absolute w-[150px] h-[150px] bg-[#34d399]/90 rounded-[43%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] wave-back ${
+                                isActive
+                                  ? "top-[-20px] opacity-100"
+                                  : "top-[80px] opacity-0"
+                              }`}
+                            />
+                            <div
+                              className={`absolute w-[160px] h-[160px] bg-gradient-to-t from-[#064e3b] to-[#10b981] rounded-[40%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] delay-75 wave-front ${
+                                isActive
+                                  ? "top-[-10px] opacity-100"
+                                  : "top-[80px] opacity-0"
+                              }`}
+                            />
+                          </div>
+
+                          <div
+                            className={`absolute top-0 left-1/4 right-1/4 h-[2px] bg-white/60 rounded-b-full z-10 transition-opacity duration-500 delay-300 ${
+                              isActive ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          <span className="relative z-10 tracking-wide">
+                            {category}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-20 flex gap-3 h-[var(--filter-btn-size)]">
+              <button
+                onClick={toggleFilter}
+                className="relative w-[var(--filter-btn-size)] h-[var(--filter-btn-size)] flex items-center justify-center shrink-0 rounded-full text-[#10b981] hover:text-[#064e3b] transition-colors focus:outline-none"
+                aria-label={isFilterOpen ? "Close filters" : "Open filters"}
+              >
+                <div
+                  className={`absolute transition-all duration-500 ease-in-out ${
+                    isFilterOpen
+                      ? "rotate-90 scale-0 opacity-0"
+                      : "rotate-0 scale-100 opacity-100"
+                  }`}
+                >
+                  <Filter size={24} strokeWidth={2.5} />
+                </div>
+                <div
+                  className={`absolute transition-all duration-500 ease-in-out ${
+                    isFilterOpen
+                      ? "rotate-0 scale-100 opacity-100"
+                      : "-rotate-90 scale-0 opacity-0"
+                  }`}
+                >
+                  <X size={24} strokeWidth={2.5} />
+                </div>
+                {selectedCategory !== "All" && !isFilterOpen && (
+                  <span className="absolute top-1 sm:top-2 right-1 sm:right-2 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white animate-scale-in z-20"></span>
+                )}
+              </button>
+
+              <div className="relative group flex-grow h-full">
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+                <div className="relative h-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 flex items-center shadow-lg">
+                  <div className="pl-4 pr-2 text-emerald-500">
+                    <Search size={22} />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-none outline-none text-[#064e3b] font-body text-base sm:text-lg placeholder-slate-400"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="p-2 text-slate-400 hover:text-emerald-500 transition-colors mr-2 hidden sm:block z-30"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                height: isFilterOpen
+                  ? "calc(var(--filter-stem-open) - var(--filter-btn-size) + 16px)"
+                  : "0px",
+                transition: stemTransition,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* RESULTS METADATA */}
+        <div
+          className="flex justify-between items-center mb-6 px-2 animate-slide-up relative z-10"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <div className="text-slate-500 font-body font-semibold">
+            Showing{" "}
+            <span className="text-[#064e3b]">{filteredProducts.length}</span>{" "}
+            items{" "}
+            {selectedCategory !== "All" && `in ${selectedCategory}`}
+          </div>
+          <div className="flex items-center gap-2 text-sm font-body font-bold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full transition-all duration-300">
+            <Filter size={14} />{" "}
+            {selectedCategory === "All"
+              ? "All Categories"
+              : `${selectedCategory} Only`}
+          </div>
+        </div>
+
+        {/* PRODUCT GRID */}
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-[2rem] p-16 text-center animate-scale-in relative z-10">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
+              <Search size={32} />
+            </div>
+            <h3 className="text-2xl font-black font-heading text-[#064e3b] mb-2">
+              No products found
+            </h3>
+            <p className="text-slate-500 font-body">
+              Try adjusting your search or category filters to find what
+              you&apos;re looking for.
+            </p>
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory("All");
+              }}
+              className="mt-6 text-[#10b981] font-bold font-body hover:underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 mb-20 relative z-10">
+            {currentProducts.map((product, index) => {
+              const isImageFile =
+                product.image &&
+                (product.image.includes(".jpg") ||
+                  product.image.includes(".png"));
+              const IconComp = product.icon || ShoppingBag;
+
+              const isAffordable = userPoints >= product.points;
+              const isShaking = insufficientAnimId === product.id;
+
+              return (
+                <div
+                  key={product.id}
+                  data-product-id={product.id}
+                  onClick={(e) => handleCardClick(product, e.currentTarget)}
+                  className={`group relative bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] flex flex-col h-auto min-h-[420px] transition-all duration-300 ease-out cursor-pointer ${
+                    detailedProduct?.id === product.id
+                      ? "opacity-0 pointer-events-none"
+                      : "hover:shadow-[0_20px_60px_rgba(16,185,129,0.15)] hover:-translate-y-2 animate-scale-in"
+                  }`}
+                  style={{
+                    animationDelay:
+                      detailedProduct?.id === product.id
+                        ? "0s"
+                        : `${index * 0.05}s`,
+                  }}
+                >
+                  {/* Card Top: Category & Cost */}
+                  <div className="flex justify-between items-start mb-4 relative z-20">
+                    <span className="bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full font-body">
+                      {product.category}
+                    </span>
+                    <div
+                      className={`p-[2px] rounded-2xl shadow-sm transition-all duration-300 ${
+                        isLoggedIn && !isAffordable
+                          ? "bg-slate-200"
+                          : "bg-gradient-to-r from-[#10b981] to-[#34d399] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                      }`}
+                    >
+                      <div className="bg-white px-3 py-1.5 rounded-[14px] flex items-center gap-1.5">
+                        {isLoggedIn && !isAffordable ? (
+                          <Lock size={14} className="text-slate-400" />
+                        ) : (
+                          <Zap
+                            size={14}
+                            className="text-[#10b981] fill-[#10b981]"
+                          />
+                        )}
+                        <span
+                          className={`font-black font-data text-lg leading-none ${
+                            isLoggedIn && !isAffordable
+                              ? "text-slate-400"
+                              : "text-[#064e3b]"
+                          }`}
+                        >
+                          {product.points}
+                        </span>
+                        <span
+                          className={`font-bold text-xs leading-none font-body ${
+                            isLoggedIn && !isAffordable
+                              ? "text-slate-400"
+                              : "text-[#10b981]"
+                          }`}
+                        >
+                          EP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Image Staging Area */}
+                  <div
+                    className={`w-full h-44 rounded-[1.5rem] relative overflow-hidden mb-6 flex-shrink-0 group-hover:scale-[1.03] transition-transform duration-500 ${
+                      isLoggedIn && !isAffordable
+                        ? "bg-slate-100 grayscale-[50%]"
+                        : `bg-gradient-to-br ${product.color}`
+                    }`}
+                  >
+                    <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-40 transition-opacity duration-700 pointer-events-none">
+                      <div className="w-32 h-32 bg-white rounded-full blur-3xl animate-glow"></div>
+                    </div>
+
+                    <div className="absolute inset-0 flex items-center justify-center p-6 animate-float">
+                      {isImageFile ? (
+                        <img
+                          src={encodeURI(product.image)}
+                          alt={product.name}
+                          className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="text-emerald-700/40 drop-shadow-md group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500">
+                          <IconComp size={80} strokeWidth={1.5} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex flex-col flex-grow relative overflow-hidden pb-1">
+                    <h3 className="text-2xl font-black text-[#064e3b] mb-2 font-heading truncate">
+                      {product.name}
+                    </h3>
+
+                    <p className="text-slate-500 text-sm font-body leading-relaxed line-clamp-2 group-hover:opacity-20 transition-opacity duration-300">
+                      {product.desc}
+                    </p>
+
+                    {/* Dynamic Action Button (Direct Redeem) */}
+                    <div className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] pb-1 pt-6 bg-gradient-to-t from-white/95 via-white/80 to-transparent">
+                      <button
+                        onClick={(e) => handleDirectRedeem(product, e)}
+                        className={`w-full py-3.5 rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${
+                          isShaking
+                            ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
+                            : !isLoggedIn
+                            ? "bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white"
+                            : isAffordable
+                            ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
+                            : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
+                        }`}
+                      >
+                        {!isLoggedIn ? (
+                          <>
+                            Sign In to Redeem <ArrowRight size={18} />
+                          </>
+                        ) : isAffordable ? (
+                          <>
+                            Redeem Now <ArrowRight size={18} />
+                          </>
+                        ) : isShaking ? (
+                          <>
+                            Insufficient Points <X size={18} />
+                          </>
+                        ) : (
+                          <>
+                            Not Enough EP <Lock size={18} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* PAGINATION */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 pb-20 animate-slide-up relative z-10">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-12 h-12 rounded-full font-bold font-body text-sm transition-all shadow-sm ${
+                    currentPage === i + 1
+                      ? "bg-gradient-to-r from-[#10b981] to-[#34d399] text-white shadow-[0_5px_15px_rgba(16,185,129,0.3)] scale-110"
+                      : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* --- MODALS --- */}
+
+      {/* 1. DETAILED PRODUCT MODAL (FLIP ANIMATION) */}
+      {detailedProduct && isLoggedIn && !showSuccessModal && (
+        <div className="fixed inset-0 z-[120] pointer-events-none">
+          {/* Blurred Background Overlay */}
+          <div
+            className={`absolute inset-0 bg-[#064e3b]/30 backdrop-blur-sm pointer-events-auto transition-opacity duration-500 ease-in-out ${
+              detailedModalState === "open" ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={closeDetailedModal}
+          />
+
+          {/* Floating / Morphing Card Container */}
+          <div
+            className="absolute bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.3)] flex flex-col md:flex-row overflow-hidden pointer-events-auto border border-white"
+            style={{
+              top:
+                detailedModalState === "open"
+                  ? "50%"
+                  : `${cardRect?.top}px`,
+              left:
+                detailedModalState === "open"
+                  ? "50%"
+                  : `${cardRect?.left}px`,
+              width:
+                detailedModalState === "open"
+                  ? "min(calc(100vw - 2rem), 56rem)"
+                  : `${cardRect?.width}px`,
+              height:
+                detailedModalState === "open"
+                  ? "min(calc(100vh - 2rem), 32rem)"
+                  : `${cardRect?.height}px`,
+              transform: "translate(-50%, -50%)",
+              transition:
+                "all 500ms cubic-bezier(0.34, 1.08, 0.64, 1)",
+              padding: "1.5rem",
+              gap:
+                detailedModalState === "open" ? "2.5rem" : "0rem",
+            }}
+          >
+            <button
+              onClick={closeDetailedModal}
+              className={`absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-all duration-500 z-20 bg-white/50 rounded-full p-1 backdrop-blur-sm ${
+                detailedModalState === "open"
+                  ? "opacity-100 scale-100"
+                  : "opacity-0 scale-50 pointer-events-none"
+              }`}
+            >
+              <X size={28} />
+            </button>
+
+            {/* Left: Enhanced Product Display */}
+            <div
+              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                userPoints < detailedProduct.points
+                  ? "bg-slate-100 grayscale-[50%]"
+                  : `bg-gradient-to-br ${detailedProduct.color}`
+              } ${
+                detailedModalState === "open"
+                  ? "md:w-1/2"
+                  : "md:w-full"
+              }`}
+            >
+              <div className="absolute inset-0 flex justify-center items-center opacity-60 pointer-events-none">
+                <div className="w-64 h-64 bg-white rounded-full blur-3xl animate-glow"></div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center p-8 animate-float">
+                {detailedProduct.image &&
+                (detailedProduct.image.includes(".jpg") ||
+                  detailedProduct.image.includes(".png")) ? (
+                  <img
+                    src={encodeURI(detailedProduct.image)}
+                    alt={detailedProduct.name}
+                    className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl hover:scale-110 transition-transform duration-700"
+                  />
+                ) : (
+                  <div className="text-emerald-700/40 drop-shadow-xl hover:scale-110 transition-transform duration-700">
+                    {React.createElement(
+                      detailedProduct.icon || ShoppingBag,
+                      {
+                        size:
+                          detailedModalState === "open" ? 140 : 80,
+                        strokeWidth: 1.5,
+                      }
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Rich Details & CTA */}
+            <div
+              className={`w-full md:w-1/2 flex-col justify-center py-4 md:py-8 pr-2 md:pr-6 transition-opacity duration-300 ${
+                detailedModalState === "open"
+                  ? "opacity-100 flex delay-200"
+                  : "opacity-0 hidden"
+              }`}
+            >
+              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 font-bold tracking-widest uppercase text-xs rounded-full mb-4 w-max font-body">
+                {detailedProduct.category}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black font-heading text-[#064e3b] mb-4 leading-tight">
+                {detailedProduct.name}
+              </h2>
+
+              <div className="flex-grow overflow-y-auto no-scrollbar">
+                <p className="text-slate-600 font-body text-lg leading-relaxed mb-6">
+                  {detailedProduct.desc}
+                  <br />
+                  <br />
+                  This premium eco-friendly reward is carefully sourced to
+                  ensure minimal environmental impact. Redeem it using your
+                  hard-earned EcoPoints and take another step towards a
+                  sustainable future!
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-6 mt-2">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-sm font-body">
+                    Required Points
+                  </span>
+                  <div
+                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${
+                      userPoints < detailedProduct.points
+                        ? "bg-slate-100 border-slate-200"
+                        : "bg-emerald-50 border-emerald-100"
+                    }`}
+                  >
+                    {userPoints >= detailedProduct.points ? (
+                      <Zap
+                        className="text-[#10b981] fill-[#10b981]"
+                        size={24}
+                      />
+                    ) : (
+                      <Lock className="text-slate-400" size={24} />
+                    )}
+                    <span
+                      className={`text-3xl font-black font-data ${
+                        userPoints < detailedProduct.points
+                          ? "text-slate-400"
+                          : "text-[#064e3b]"
+                      }`}
+                    >
+                      {detailedProduct.points}
+                    </span>
+                    <span
+                      className={`text-lg font-bold font-body ${
+                        userPoints < detailedProduct.points
+                          ? "text-slate-400"
+                          : "text-[#10b981]"
+                      }`}
+                    >
+                      EP
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleDetailedRedeem}
+                  className={`w-full py-4 rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${
+                    insufficientAnimId ===
+                    "detailed-" + detailedProduct.id
+                      ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
+                      : userPoints >= detailedProduct.points
+                      ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)]"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200"
+                  }`}
+                >
+                  {userPoints >= detailedProduct.points ? (
+                    <>
+                      Confirm Redemption{" "}
+                      <CheckCircle2 size={20} className="ml-1" />
+                    </>
+                  ) : insufficientAnimId ===
+                    "detailed-" + detailedProduct.id ? (
+                    <>
+                      Insufficient Points{" "}
+                      <X size={20} className="ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      Not Enough EP{" "}
+                      <Lock size={20} className="ml-1" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. AUTH MODAL */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#064e3b]/40 backdrop-blur-sm"
+            onClick={() => setShowAuthModal(false)}
+          />
+          <div className="relative bg-white w-full max-w-md rounded-[2.5rem] p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.2)] animate-scale-in overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-100 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors z-10"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-center relative z-10 mb-8">
+              <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                <UserCircle className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h2 className="text-3xl font-black font-heading text-[#064e3b] mb-2">
+                Sign In Required
+              </h2>
+              <p className="text-slate-500 font-body leading-relaxed">
+                Please sign in to your EcoPoints account to redeem the{" "}
+                <strong className="text-[#064e3b]">
+                  {selectedProduct?.name}
+                </strong>
+                .
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleLogin}
+              className="relative z-10 flex flex-col gap-4"
+            >
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-slate-600 font-body ml-1">
+                  Student ID / Email
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2020-12345-MN-0"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
+                  required
+                />
+              </div>
+              <div className="space-y-1 mb-2">
+                <label className="text-sm font-bold text-slate-600 font-body ml-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-[#10b981] to-[#34d399] text-white font-bold font-body text-lg py-4 rounded-xl shadow-[0_10px_20px_rgba(16,185,129,0.3)] hover:-translate-y-1 transition-transform"
+              >
+                Sign In to Continue
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. SUCCESS MODAL */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#064e3b]/60 backdrop-blur-md"
+            onClick={() => setShowSuccessModal(false)}
+          />
+          <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.4)] animate-scale-in text-center overflow-hidden">
+            <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-full h-40 bg-emerald-400 rounded-full blur-3xl opacity-20 pointer-events-none" />
+
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 shadow-inner">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+            </div>
+
+            <h2 className="text-3xl font-black font-heading text-[#064e3b] mb-3 relative z-10">
+              Redemption Successful!
+            </h2>
+            <p className="text-slate-600 font-body mb-8 relative z-10 leading-relaxed">
+              You have successfully claimed the{" "}
+              <strong>{selectedProduct?.name}</strong>. Please check your
+              email for pickup instructions!
+            </p>
+
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full bg-slate-900 text-white font-bold font-body py-4 rounded-xl hover:bg-slate-800 transition-colors relative z-10 shadow-lg"
+            >
+              Got it, thanks!
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

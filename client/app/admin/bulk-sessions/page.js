@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/Components/AdminLayout';
-import CustomDropdown from '../../../src/Components/CustomDropdown';
-import PageSizeSelector from '../../../src/Components/PageSizeSelector';
+import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import CustomDropdown from '../../../src/components/admin/CustomDropdown';
+import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/apiService';
 import { formatDate } from '../../../src/utils/formatDate';
