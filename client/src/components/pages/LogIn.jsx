@@ -704,11 +704,19 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setError("");
 
     try {
-      await login(loginCredential, loginPassword);
+      const data = await login(loginCredential, loginPassword);
       setFailedAttempts(0);
       setShowCaptcha(false);
       setShowCaptchaPopup(false);
-      router.push("/admin");
+
+      const role = data?.user?.role;
+      const adminRoles = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+      
+      if (adminRoles.includes(role)) {
+        router.push("/admin");
+      } else {
+        router.push("/profile");
+      }
     } catch (err) {
       setIsLoading(false);
       setFailedAttempts((prev) => prev + 1);

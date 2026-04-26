@@ -84,7 +84,7 @@ const ThemeToggle = ({ theme, setTheme }) => {
 };
 
 // Main layout component that uses AuthContext and ThemeContext
-const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
+const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician', 'user', 'dependent'];
 
 export default function AdminLayout({ children }) {
     // Theme State from Context

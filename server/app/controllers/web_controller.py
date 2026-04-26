@@ -324,6 +324,17 @@ def health_check():
 def dashboard_stats(current_user):
     """Aggregated dashboard statistics, scoped by location."""
     try:
+        if not current_user.is_admin:
+            return jsonify({
+                'success': True,
+                'stats': {
+                    'totalUsers': 0, 'activeUsers': 0, 'students': 0, 'faculty': 0, 'staff': 0,
+                    'totalMachines': 0, 'onlineMachines': 0, 'totalBottles': 0,
+                    'totalPointsAwarded': 0, 'totalRewards': 0, 'activeRewards': 0,
+                    'locationCount': 0,
+                }
+            }), 200
+
         loc_id = _scope_location_id(current_user)
 
         # --- User counts ---
@@ -665,6 +676,9 @@ def get_users(current_user):
         elif is_admin_filter == 'false':
             query = query.filter(User.role.in_(['user', 'dependent']))
 
+        if not current_user.is_admin:
+            query = query.filter(User.id == current_user.id)
+
         query = query.order_by(User.id.asc())
         users, pagination = _paginate(query)
         return jsonify({'success': True, 'users': [_serialize_user(u) for u in users], 'pagination': pagination}), 200
@@ -683,6 +697,8 @@ def get_user(current_user, user_id):
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
         if current_user.role != 'superadmin':
+            if not current_user.is_admin and current_user.id != user_id:
+                return jsonify({'success': False, 'error': 'Access denied'}), 403
             if get_user_org_id(user) != get_user_org_id(current_user):
                 return jsonify({'success': False, 'error': 'Access denied'}), 403
 
@@ -1221,6 +1237,10 @@ def get_bottle_logs(current_user):
         )
         if loc_id:
             query = query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
+            
+        if not current_user.is_admin:
+            query = query.filter(RecyclingSession.account_id == current_user.account_id)
+            
         items = query.order_by(RecyclingItem.deposited_at.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_bottle_log(i) for i in items]}), 200
     except Exception as e:
@@ -1237,6 +1257,10 @@ def get_machine_logs(current_user):
         query = MaintenanceLog.query.join(RVM)
         if loc_id:
             query = query.filter(RVM.organization_id == loc_id)
+            
+        if not current_user.is_admin:
+            return jsonify({'success': True, 'logs': []}), 200
+            
         logs = query.order_by(MaintenanceLog.timestamp.desc()).limit(500).all()
 
         # ── Notification hook: maintenance_unresolved ──
@@ -1325,6 +1349,10 @@ def get_access_logs(current_user):
             query = query.join(Account, User.account_id == Account.id)\
                          .join(CommunityGroup, Account.community_group_id == CommunityGroup.id)\
                          .filter(CommunityGroup.organization_id == loc_id)
+                         
+        if not current_user.is_admin:
+            return jsonify({'success': True, 'logs': []}), 200
+            
         logs = query.order_by(AdminLog.timestamp.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_admin_log(l) for l in logs]}), 200
     except Exception as e:
@@ -1346,6 +1374,10 @@ def get_reward_logs(current_user):
         )
         if loc_id:
             query = query.filter(Reward.organization_id == loc_id)
+            
+        if not current_user.is_admin:
+            query = query.filter(RewardRedemption.account_id == current_user.account_id)
+            
         logs = query.order_by(RewardRedemption.redeemed_at.desc()).limit(500).all()
         return jsonify({'success': True, 'logs': [_serialize_reward_log(r) for r in logs]}), 200
     except Exception as e:
@@ -1418,6 +1450,10 @@ def get_transaction_logs(current_user):
         )
         if loc_id:
             query = query.filter(Organization.id == loc_id)
+            
+        if not current_user.is_admin:
+            query = query.filter(Transaction.account_id == current_user.account_id)
+            
         rows = query.order_by(Transaction.created_at.desc()).limit(500).all()
         result = []
         for txn, acct, user in rows:

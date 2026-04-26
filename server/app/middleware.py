@@ -29,6 +29,7 @@ ROLE_PERMISSIONS = {
     'auditor':           {'read', 'logs', 'analytics', 'bulk_sessions'},
     'inventory_officer': {'read', 'rewards', 'logs'},
     'technician':        {'read', 'machines', 'logs'},
+    'user':              {'read', 'logs', 'analytics', 'locations', 'users', 'machines', 'rewards', 'groups'},
 }
 
 
@@ -82,7 +83,8 @@ def admin_required(f):
     @wraps(f)
     def decorated(current_user, *args, **kwargs):
         if not current_user.is_admin:
-            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+            if request.method != 'GET':
+                return jsonify({'success': False, 'error': 'Admin access required for this action'}), 403
         return f(current_user, *args, **kwargs)
 
     return decorated
@@ -111,7 +113,8 @@ def permission_required(*categories):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
             if not current_user.is_admin:
-                return jsonify({'success': False, 'error': 'Admin access required'}), 403
+                if request.method != 'GET':
+                    return jsonify({'success': False, 'error': 'Admin access required for this action'}), 403
             role_perms = ROLE_PERMISSIONS.get(current_user.role, set())
             for cat in categories:
                 if cat not in role_perms:
