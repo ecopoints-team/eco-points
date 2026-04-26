@@ -19,12 +19,3 @@ This is the task that needs to be solved:
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task
-
-
-Website fixes:
-
-- Navbar: Currently, when user scrolls, the navbar don't move at all. It is stuck to home section. Its supposed to move to what section where user scrolls.
-- Browse all rewards arrow transform location
-- Footer contact us missing dev names
-    - Rodge Steven Jude D.  Funtalba (Frontend Developer)
-    -  Jaydine C .Nuval (Frontend developer)
