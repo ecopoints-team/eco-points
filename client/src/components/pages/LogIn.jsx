@@ -799,7 +799,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       } else {
         router.push('/');
       }
-    }, 200);
+    }, 120);
   };
 
   // Full reset of all form fields
@@ -902,7 +902,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
       {/* ===== BLURRED BACKDROP OVERLAY ===== */}
       <div
-        className={`absolute inset-0 bg-[#064e3b]/40 backdrop-blur-md transition-opacity duration-500 ${isClosing ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-0 bg-[#064e3b]/40 transition-all duration-120 ${isClosing ? "opacity-0" : "opacity-100"}`}
         onClick={handleClose}
       />
 

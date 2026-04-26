@@ -38,58 +38,91 @@ export default function NavBar({ onLoginClick }) {
     };
   }, []);
 
-  // Scroll spy — lock active updates while smooth nav scroll is in-flight
+  // Scroll spy — derive active section from viewport focus line
   useEffect(() => {
     const ids = navItems.map((item) => item.toLowerCase().replace(/\s+/g, "-"));
-    const sections = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
 
-    if (sections.length === 0) return;
+    const clearPendingNavigation = () => {
+      pendingNavigationRef.current = null;
+      if (pendingNavigationTimeoutRef.current) {
+        clearTimeout(pendingNavigationTimeoutRef.current);
+        pendingNavigationTimeoutRef.current = null;
+      }
+    };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const pendingTarget = pendingNavigationRef.current;
-        if (pendingTarget) {
-          if (pendingTarget === "home") {
-            if (window.scrollY <= 8) {
-              pendingNavigationRef.current = null;
-              if (pendingNavigationTimeoutRef.current) {
-                clearTimeout(pendingNavigationTimeoutRef.current);
-                pendingNavigationTimeoutRef.current = null;
-              }
-            }
-            return;
-          }
+    const getSectionEntries = () =>
+      ids
+        .map((id) => ({ id, el: document.getElementById(id) }))
+        .filter((entry) => Boolean(entry.el));
 
-          const targetReached = entries.some(
-            (entry) => entry.target.id === pendingTarget && entry.isIntersecting
-          );
+    const syncActiveSection = () => {
+      const focusY = window.innerHeight * 0.35;
+      const sectionEntries = getSectionEntries();
 
-          if (targetReached) {
-            setActiveSection(pendingTarget);
-            pendingNavigationRef.current = null;
-            if (pendingNavigationTimeoutRef.current) {
-              clearTimeout(pendingNavigationTimeoutRef.current);
-              pendingNavigationTimeoutRef.current = null;
-            }
+      if (sectionEntries.length === 0) return;
+
+      const pendingTarget = pendingNavigationRef.current;
+      if (pendingTarget) {
+        if (pendingTarget === "home") {
+          if (window.scrollY <= 8) {
+            clearPendingNavigation();
           }
           return;
         }
 
-        const intersecting = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-        if (intersecting.length > 0) {
-          setActiveSection(intersecting[0].target.id);
+        const pendingEntry = sectionEntries.find((entry) => entry.id === pendingTarget);
+        if (!pendingEntry) {
+          clearPendingNavigation();
+          return;
         }
-      },
-      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
-    );
 
-    sections.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+        const pendingRect = pendingEntry.el.getBoundingClientRect();
+        if (pendingRect.top <= focusY && pendingRect.bottom >= focusY) {
+          setActiveSection(pendingTarget);
+          clearPendingNavigation();
+        }
+        return;
+      }
+
+      let nextActiveSection = sectionEntries[0].id;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      sectionEntries.forEach(({ id, el }) => {
+        const rect = el.getBoundingClientRect();
+
+        if (rect.top <= focusY && rect.bottom >= focusY) {
+          nextActiveSection = id;
+          nearestDistance = 0;
+          return;
+        }
+
+        const distance = Math.abs(rect.top - focusY);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nextActiveSection = id;
+        }
+      });
+
+      setActiveSection((prev) => (prev === nextActiveSection ? prev : nextActiveSection));
+    };
+
+    const onScroll = () => syncActiveSection();
+    const onResize = () => syncActiveSection();
+
+    const domObserver = new MutationObserver(() => {
+      syncActiveSection();
+    });
+
+    domObserver.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    syncActiveSection();
+
+    return () => {
+      domObserver.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   const handleNavigate = (id) => {

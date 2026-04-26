@@ -32,6 +32,21 @@ function HomeContent() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Warm up login modal chunk to avoid first-open delay.
+  useEffect(() => {
+    let timeoutId;
+
+    const warmLoginModal = () => {
+      import("../src/components/pages/LogIn");
+    };
+
+    timeoutId = window.setTimeout(warmLoginModal, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
   // Auto-open login modal when ?login=true is in URL (from logout / auth guard redirect)
   useEffect(() => {
     if (searchParams.get("login") === "true") {
@@ -60,7 +75,7 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-slate-50 text-[#064e3b] overflow-x-hidden">
       {/* Page content — blurred when modal is open */}
-      <div className={`transition-[filter,opacity] duration-300 ${isLoginOpen ? "blur-sm brightness-75 pointer-events-none select-none" : ""}`}>
+      <div className={`${isLoginOpen ? "pointer-events-none select-none" : ""}`}>
         <NavBar onLoginClick={openLogin} />
 
         <ScrollToTop />
@@ -129,7 +144,12 @@ function HomeContent() {
       </div>
 
       {/* Login Modal — overlays page with blurred backdrop */}
-      {isLoginOpen && <LogIn onClose={handleLoginClose} initialSignUp={loginSignUpMode} />}
+      {isLoginOpen && (
+        <LogIn
+          onClose={handleLoginClose}
+          initialSignUp={loginSignUpMode}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ArrowUpRight, Zap } from "lucide-react";
+import { ArrowUp, Zap } from "lucide-react";
 import Link from "next/link";
 
 const fonts = {
@@ -169,7 +169,7 @@ export default function Carousel() {
               className="px-8 py-5 bg-[#064e3b] border-none text-white font-bold text-lg rounded-full hover:-translate-y-1 shadow-[0_10px_20px_rgba(6,78,59,0.2)] hover:shadow-[0_15px_30px_rgba(6,78,59,0.3)] transition-all duration-500 inline-flex items-center gap-2 shrink-0 w-full md:w-auto justify-center group overflow-hidden relative"
             >
               <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-[#10b981] to-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <span className="relative z-10 flex items-center gap-2">Browse All Rewards <ArrowUpRight size={20} className="text-white group-hover:rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" /></span>
+              <span className="relative z-10 flex items-center gap-2">Browse All Rewards <ArrowUp size={20} className="text-white rotate-45 group-hover:rotate-90 transition-transform duration-300" /></span>
             </Link>
           </div>
         </div>

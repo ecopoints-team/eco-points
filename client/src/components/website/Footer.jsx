@@ -137,7 +137,7 @@ export default function Footer() {
             Contact Us
           </h4>
           <ul className="list-none space-y-4">
-            {footerContactDetails.slice(0, 3).map((contact) => (
+            {footerContactDetails.map((contact) => (
               <li key={contact.name}>
                 <p
                   className="text-[#34d399] text-sm font-bold"
