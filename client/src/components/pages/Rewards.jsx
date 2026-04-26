@@ -72,11 +72,9 @@ function RewardsHeader() {
 
         {/* Center: Page Title */}
         <div className="flex-1 flex items-center justify-center gap-2">
-          <Leaf size={16} className="text-[#10b981]" />
           <h1 className="text-[#064e3b] text-lg sm:text-xl font-black tracking-widest uppercase" style={{ fontFamily: "'Fredoka', sans-serif" }}>
             Rewards
           </h1>
-          <Leaf size={16} className="text-[#10b981] scale-x-[-1]" />
         </div>
 
         {/* Right: EcoPoints Logo */}
