@@ -212,9 +212,7 @@ def login():
             _log_attempt(identifier, ip, user.id, False, 'deactivated')
             return jsonify({'success': False, 'error': 'Account is deactivated'}), 403
 
-        if not user.is_admin:
-            _log_attempt(identifier, ip, user.id, False, 'not_admin')
-            return jsonify({'success': False, 'error': 'Admin access only'}), 403
+        # Removed admin check so normal users can log in to the Unified Portal
 
         # Check if 2FA is required (per-user or per-org)
         requires_2fa = user.otp_enabled
@@ -251,7 +249,8 @@ def login():
         session_hours = _get_session_timeout(user)
         token = _generate_token(user, session_hours)
 
-        log = AdminLog(admin_user_id=user.id, action='Admin Login',
+        action_name = 'Admin Login' if user.is_admin else 'User Login'
+        log = AdminLog(admin_user_id=user.id, action=action_name,
                        target=user.name, category='Auth', notes=f'Login from {ip}')
         db.session.add(log)
         db.session.commit()
@@ -309,7 +308,8 @@ def verify_otp_route():
         session_hours = _get_session_timeout(user)
         token = _generate_token(user, session_hours)
 
-        log = AdminLog(admin_user_id=user.id, action='Admin Login (2FA)',
+        action_name = 'Admin Login (2FA)' if user.is_admin else 'User Login (2FA)'
+        log = AdminLog(admin_user_id=user.id, action=action_name,
                        target=user.name, category='Auth', notes=f'Login from {ip} (2FA verified)')
         db.session.add(log)
         db.session.commit()
@@ -353,9 +353,10 @@ def logout(current_user):
             except jwt.InvalidTokenError:
                 pass
 
+        action_name = 'Admin Logout' if current_user.is_admin else 'User Logout'
         log = AdminLog(
             admin_user_id=current_user.id,
-            action='Admin Logout',
+            action=action_name,
             target=current_user.name,
             category='Auth',
         )
