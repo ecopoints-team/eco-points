@@ -12,13 +12,16 @@ import {
   UserIcon,
   XIcon,
   DownloadIcon,
+  HelpCircle,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import { useAuth } from "../../context/AuthContext";
+import HowItWorksModal from "../shared/HowItWorksModal";
 
 export default function ProfileSection() {
   const { currentUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
   // Mocking the user's tag ID from AccessCredential
   const userTagId = "12345-ABCDE";
@@ -294,6 +297,15 @@ export default function ProfileSection() {
               <QrCodeIcon size={24} className="text-emerald-900 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Show Personal QR</span>
             </button>
+
+            {/* HOW IT WORKS BUTTON */}
+            <button
+              onClick={() => setIsHowItWorksOpen(true)}
+              className="w-full p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm transform active:scale-95 group"
+            >
+              <HelpCircle size={24} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">How It Works</span>
+            </button>
           </div>
         </div>
 
@@ -362,6 +374,10 @@ export default function ProfileSection() {
             </button>
           </div>
         </div>
+      )}
+      {/* HOW IT WORKS MODAL */}
+      {isHowItWorksOpen && (
+        <HowItWorksModal onClose={() => setIsHowItWorksOpen(false)} />
       )}
     </section>
   );
