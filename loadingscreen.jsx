@@ -13,10 +13,10 @@ export default function App() {
           return 100;
         }
         // Randomize the loading step to feel like real data fetching
-        const step = Math.random() * 3 + 0.5;
+        const step = Math.random() * 4 + 1;
         return Math.min(prev + step, 100);
       });
-    }, 150);
+    }, 100);
 
     return () => clearInterval(interval);
   }, []);
