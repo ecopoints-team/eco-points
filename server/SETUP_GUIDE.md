@@ -106,15 +106,11 @@ Server will start on `http://127.0.0.1:5000`
    - `/api/rpi/status` - System status
    - `/api/rpi/log` - Event logging
 
-## Testing with REST Client
+## Testing the API
 
-### Option 1: VS Code REST Client Extension
+You can test the API endpoints using any REST client (e.g., Postman, Insomnia, or the VS Code REST Client) or via command-line tools like `cURL`.
 
-1. Install "REST Client" extension in VS Code
-2. Open `api-tests.http`
-3. Click "Send Request" above any endpoint
-
-### Option 2: cURL Commands
+### Option 1: cURL Commands
 
 ```bash
 # Test root endpoint
@@ -276,5 +272,5 @@ taskkill /PID <PID> /F
 
 For issues or questions:
 1. Check `API_DOCUMENTATION.md` for endpoint details
-2. Use `api-tests.http` for testing
+2. Use the provided test files (like `api-tests.http`) for reference
 3. Review Flask logs for error details

@@ -1,6 +1,6 @@
 ---
-description: React/Tailwind Frontend UI Refinement & Performance Optimization Plan
-globs: client/src/**/*.jsx, client/src/**/*.tsx, client/src/**/*.css
+description: 
+globs: 
 alwaysApply: false
 ---
 
