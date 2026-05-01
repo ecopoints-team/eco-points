@@ -21,32 +21,70 @@ server/
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### 1. Database Setup (PostgreSQL & pgAdmin)
+
+1.  **Install PostgreSQL**: Download and install [PostgreSQL](https://www.postgresql.org/download/) for Windows.
+2.  **Open pgAdmin 4**: This is the management tool installed with PostgreSQL.
+3.  **Create Database**:
+    - Right-click on **Databases** > **Create** > **Database...**
+    - Name it `ecopoints`.
+    - Click **Save**.
+4.  **Note your credentials**: You will need your PostgreSQL username (default is `postgres`) and the password you set during installation.
+
+### 2. Virtual Environment Setup
+
+Using a virtual environment (`venv`) keeps your project dependencies organized and prevents conflicts.
 
 ```bash
+# Navigate to the server directory
 cd server
+
+# Create the virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
+
+*(You should now see `(venv)` at the start of your terminal prompt)*
+
+### 3. Install Dependencies
+
+Ensure your virtual environment is active, then run:
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 4. Configure Environment
 
-Create `.env` file:
-```
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/ecopoints
-SECRET_KEY=your-secret-key-here
+Create a `.env` file in the `server/` directory:
+
+```env
+# Format: postgresql://<username>:<password>@localhost:5432/ecopoints
+DATABASE_URL=postgresql://postgres:your_password_here@localhost:5432/ecopoints
+SECRET_KEY=dev-secret-key-123
 FLASK_APP=run.py
-FLASK_ENV=development
+FLASK_DEBUG=1
 ```
 
-### 3. Initialize Database
+### 5. Initialize & Upgrade Database
+
+This will create the necessary tables in your PostgreSQL database.
 
 ```bash
+# If this is your first time:
 flask db init
 flask db migrate -m "Initial migration"
+
+# To apply the tables to PostgreSQL:
 flask db upgrade
 ```
 
-### 4. Run the Server
+### 6. Run the Server
 
 ```bash
 python run.py
@@ -223,9 +261,11 @@ taskkill /PID <PID> /F
 ```
 
 ### Database connection errors
-- Verify MySQL is running
-- Check DATABASE_URL in .env
-- Ensure database exists
+- **PostgreSQL Service**: Ensure PostgreSQL is running (check "Services" app on Windows).
+- **Credentials**: Double-check `DATABASE_URL` in `.env`.
+- **Database Name**: Ensure the database `ecopoints` exists in pgAdmin.
+- **Port**: Default is `5432`. Ensure no other app is blocking it.
+- **Password**: If you forgot your postgres password, you can reset it via `pg_hba.conf` (Advanced).
 
 ### CORS errors
 - Check frontend is running on port 3000
