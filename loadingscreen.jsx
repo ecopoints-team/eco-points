@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 export default function App() {
   const [progress, setProgress] = useState(0);
-  const logoUrl = encodeURI("Logo Elements.png");
+  const logoUrl = encodeURI("Logo Elements (Light).png");
 
   // Simulate a realistic, variable-speed loading progress
   useEffect(() => {
@@ -22,8 +22,8 @@ export default function App() {
   }, []);
 
   // Map 0-100 progress to the CSS "top" percentage of the wave shapes
-  // 100% means water starts at the very bottom. 0% means water fully covers it perfectly.
-  const waterLevel = 100 - (progress * 1.0);
+  // 120% means water starts at the very bottom. -10% means water fully covers the circle perfectly.
+  const waterLevel = 120 - (progress * 1.3);
 
   return (
     <div className="min-h-screen bg-[#FDF9F1] flex flex-col items-center justify-center font-sans relative overflow-hidden">
@@ -59,20 +59,21 @@ export default function App() {
 
             {/* THE WATER (Filling up inside the hole) */}
             <div
-              className="absolute left-0 w-full h-full transition-all duration-[800ms] ease-out z-10"
+              className="absolute left-0 w-full h-[600px] transition-all duration-[800ms] ease-out z-10"
               style={{ top: `${waterLevel}%` }}
             >
               {/* Back Wave */}
-              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] -mt-[550px] rounded-[43%] bg-[#7ec5b9]/70 animate-[spin-wave_7s_linear_infinite]" />
+              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] rounded-[43%] bg-[#7ec5b9]/70 animate-[spin-wave_7s_linear_infinite] origin-center" />
 
               {/* Middle Wave */}
-              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] -mt-[570px] rounded-[40%] bg-[#5fb0a2]/80 mix-blend-multiply animate-[spin-wave-reverse_5s_linear_infinite]" />
+              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] rounded-[40%] bg-[#5fb0a2]/80 mix-blend-multiply animate-[spin-wave-reverse_5s_linear_infinite] origin-center mt-[10px]" />
 
               {/* Front Wave (Fastest, Primary Color) */}
-              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] -mt-[580px] rounded-[45%] bg-gradient-to-t from-[#439c8e] to-[#60b6a8] animate-[spin-wave_3.5s_linear_infinite]" />
+              <div className="absolute left-1/2 w-[600px] h-[600px] -ml-[300px] rounded-[45%] bg-gradient-to-t from-[#439c8e] to-[#60b6a8] animate-[spin-wave_3.5s_linear_infinite] origin-center mt-[20px]" />
 
-              {/* Ambient glow inside water */}
-              <div className="absolute inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-black/10 to-transparent z-20" />
+              {/* Solid water body below the waves (in case the element goes too deep) */}
+              <div className="absolute left-0 w-full h-[600px] top-[500px] bg-[#439c8e]" />
+
             </div>
 
             {/* Inner Tank Glare */}
@@ -100,9 +101,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* FRONT RIM GLARE (to complete the 3D depth over the popout if needed, but keeping it behind logo is better so logo pops purely forward) */}
-          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3/4 h-[40%] bg-gradient-to-b from-white/30 to-transparent rounded-full blur-[2px] pointer-events-none z-40 block" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 via-transparent to-black/5 pointer-events-none z-40 mix-blend-overlay" />
+          {/* 3D Depth overlay (transparent but adds subtle depth curve) */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 via-transparent to-black/5 pointer-events-none z-40 mix-blend-overlay" />
         </div>
 
       </div>
