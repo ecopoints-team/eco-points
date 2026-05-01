@@ -2,6 +2,7 @@
 // Recent Activity
 // User Profile
 import { useState, useMemo, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -181,7 +182,7 @@ export default function RecentActivity() {
                 {activity.type === "earn" ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-emerald-900 text-sm sm:text-base truncate" style={fonts.heading}>{activity.description}</h3>
+                <h3 className="font-medium text-emerald-900 text-sm sm:text-base truncate" style={fonts.heading}>{activity.description}</h3>
                 <p className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5" style={fonts.body}>
                   {formatDate(activity.date)}
                 </p>
@@ -220,7 +221,7 @@ export default function RecentActivity() {
       </div>
 
       {/* RECEIPT MODAL */}
-      {selectedActivity && (
+      {selectedActivity && createPortal(
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedActivity(null)} />
 
@@ -302,7 +303,8 @@ export default function RecentActivity() {
               Close Receipt
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style jsx>{`
