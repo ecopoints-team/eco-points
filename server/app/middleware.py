@@ -134,7 +134,7 @@ def can_manage_role(actor_role, target_role):
 
 
 def get_user_org_id(user):
-    """Resolve the organization_id for a user via the Account → CommunityGroup → Organization chain."""
-    if user.account and user.account.community_group:
-        return user.account.community_group.organization_id
+    """Resolve the organization_id for a user via the CommunityGroup → Organization chain."""
+    if user.community_group:
+        return user.community_group.organization_id
     return None

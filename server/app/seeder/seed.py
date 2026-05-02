@@ -1,16 +1,7 @@
 """
 EcoPoints Unified Seeder
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Populates all 18 tables with realistic sample data for development and testing.
-
-Tables seeded (in dependency order):
-  1. org_types          2. cities              3. organizations
-  4. community_groups   5. accounts            6. users
-  7. access_credentials 8. rvms                9. recycling_sessions
-  10. recycling_items   11. transactions       12. rewards
-  13. reward_redemptions 14. maintenance_logs   15. admin_logs
-  16. notification_settings 17. notification_logs 18. bulk_sessions
-
+Populates all 19-table ERD with realistic sample data.
 Password for ALL seeded users: test123
 """
 
@@ -20,10 +11,10 @@ from datetime import datetime, timezone, timedelta, date
 
 from .. import db
 from ..models import (
-    OrgType, City, Organization, CommunityGroup, Account, User,
-    AccessCredential, RVM, RecyclingSession, RecyclingItem,
-    MaintenanceLog, Transaction, Reward, RewardRedemption, AdminLog,
-    NotificationSetting, NotificationLog,
+    OrgType, Organization, OrgAddress, OrgContact, CommunityGroup,
+    User, Wallet, UserSecurity, RVM, RecyclingSession, RecyclingItem,
+    MaintenanceLog, Transaction, Reward, RewardVariant, RewardRedemption,
+    AdminLog, NotificationSetting, NotificationLog,
 )
 
 
@@ -70,50 +61,48 @@ def _rand_date(start, end):
 
 PASSWORD = 'test123'
 
-CITIES_DATA = [
-    {'name': 'Pasig City', 'province': 'Metro Manila', 'region': 'NCR'},
-    {'name': 'Manila', 'province': 'Metro Manila', 'region': 'NCR'},
-    {'name': 'Quezon City', 'province': 'Metro Manila', 'region': 'NCR'},
-    {'name': 'Makati City', 'province': 'Metro Manila', 'region': 'NCR'},
-]
-
 ORG_TYPES_DATA = ['University', 'Corporation', 'HOA']
 
 LOCATIONS = [
     {
-        'id': 'LOC-001', 'name': 'Arellano University', 'type': 'University', 'cityIdx': 0,
+        'id': 'LOC-001', 'name': 'Arellano University', 'type': 'University',
         'fullName': 'Arellano University - Andres Bonifacio Pasig Campus',
-        'streetAddress': 'Pag-asa St, Caniogan', 'barangay': 'Caniogan', 'zipCode': '1600',
-        'contactPerson': 'Dr. Josephine Reyes', 'contactEmail': 'admin@arellano.edu.ph',
-        'contactPhone': '(02) 8643-8881', 'status': 'Active', 'joinDate': '2023-01-15',
+        'street': 'Pag-asa St, Caniogan', 'barangay': 'Caniogan',
+        'city': 'Pasig City', 'province': 'Metro Manila', 'region': 'NCR', 'zip': '1600',
+        'contactFirst': 'Josephine', 'contactLast': 'Reyes',
+        'contactEmail': 'admin@arellano.edu.ph', 'contactPhone': '(02) 8643-8881',
     },
     {
-        'id': 'LOC-002', 'name': 'Polytechnic University', 'type': 'University', 'cityIdx': 1,
+        'id': 'LOC-002', 'name': 'Polytechnic University', 'type': 'University',
         'fullName': 'Polytechnic University of the Philippines - Main Campus',
-        'streetAddress': 'Anonas St, Sta. Mesa', 'barangay': 'Sta. Mesa', 'zipCode': '1016',
-        'contactPerson': 'Engr. Manuel Bautista', 'contactEmail': 'admin@pup.edu.ph',
-        'contactPhone': '(02) 5335-1787', 'status': 'Active', 'joinDate': '2023-03-01',
+        'street': 'Anonas St, Sta. Mesa', 'barangay': 'Sta. Mesa',
+        'city': 'Manila', 'province': 'Metro Manila', 'region': 'NCR', 'zip': '1016',
+        'contactFirst': 'Manuel', 'contactLast': 'Bautista',
+        'contactEmail': 'admin@pup.edu.ph', 'contactPhone': '(02) 5335-1787',
     },
     {
-        'id': 'LOC-003', 'name': 'De La Salle University', 'type': 'University', 'cityIdx': 1,
+        'id': 'LOC-003', 'name': 'De La Salle University', 'type': 'University',
         'fullName': 'De La Salle University - Manila Campus',
-        'streetAddress': '2401 Taft Ave, Malate', 'barangay': 'Malate', 'zipCode': '1004',
-        'contactPerson': 'Dr. Raymond Tan', 'contactEmail': 'admin@dlsu.edu.ph',
-        'contactPhone': '(02) 8524-4611', 'status': 'Active', 'joinDate': '2023-06-10',
+        'street': '2401 Taft Ave, Malate', 'barangay': 'Malate',
+        'city': 'Manila', 'province': 'Metro Manila', 'region': 'NCR', 'zip': '1004',
+        'contactFirst': 'Raymond', 'contactLast': 'Tan',
+        'contactEmail': 'admin@dlsu.edu.ph', 'contactPhone': '(02) 8524-4611',
     },
     {
-        'id': 'LOC-004', 'name': 'Ayala Corp HQ', 'type': 'Corporation', 'cityIdx': 3,
+        'id': 'LOC-004', 'name': 'Ayala Corp HQ', 'type': 'Corporation',
         'fullName': 'Ayala Corporation - Makati Headquarters',
-        'streetAddress': 'Tower One, Ayala Triangle', 'barangay': 'Bel-Air', 'zipCode': '1226',
-        'contactPerson': 'Maria Isabel Cruz', 'contactEmail': 'sustainability@ayala.com.ph',
-        'contactPhone': '(02) 8908-3000', 'status': 'Active', 'joinDate': '2023-09-01',
+        'street': 'Tower One, Ayala Triangle', 'barangay': 'Bel-Air',
+        'city': 'Makati City', 'province': 'Metro Manila', 'region': 'NCR', 'zip': '1226',
+        'contactFirst': 'Maria Isabel', 'contactLast': 'Cruz',
+        'contactEmail': 'sustainability@ayala.com.ph', 'contactPhone': '(02) 8908-3000',
     },
     {
-        'id': 'LOC-005', 'name': 'Greenfield HOA', 'type': 'HOA', 'cityIdx': 2,
+        'id': 'LOC-005', 'name': 'Greenfield HOA', 'type': 'HOA',
         'fullName': 'Greenfield Residences Homeowners Association',
-        'streetAddress': '12 Greenfield Ave, Brgy. Holy Spirit', 'barangay': 'Holy Spirit', 'zipCode': '1127',
-        'contactPerson': 'Ricardo Mendoza', 'contactEmail': 'admin@greenfieldhoa.ph',
-        'contactPhone': '(02) 8929-5100', 'status': 'Active', 'joinDate': '2024-01-20',
+        'street': '12 Greenfield Ave, Brgy. Holy Spirit', 'barangay': 'Holy Spirit',
+        'city': 'Quezon City', 'province': 'Metro Manila', 'region': 'NCR', 'zip': '1127',
+        'contactFirst': 'Ricardo', 'contactLast': 'Mendoza',
+        'contactEmail': 'admin@greenfieldhoa.ph', 'contactPhone': '(02) 8929-5100',
     },
 ]
 
@@ -259,14 +248,9 @@ LAST_NAMES = [
     'Chua', 'Go', 'Sy', 'Ang', 'Co', 'Ong', 'Yu', 'Tiongson',
 ]
 
-YEAR_LEVELS = ['1st Year', '2nd Year', '3rd Year', '4th Year']
-
-BOTTLE_BRANDS = [
-    'Coca-Cola', 'Pepsi', 'Sprite', 'Royal', 'Mountain Dew', 'C2', 'Nestea',
-    'Gatorade', 'Pocari Sweat', 'Nature Spring', 'Summit', 'Wilkins', 'Absolute',
+DETECTED_CLASSES = [
+    'PET Bottle', 'Aluminum Can', 'Glass Bottle', 'Plastic Cup', 'Tetra Pak',
 ]
-BOTTLE_VOLUMES = [350, 500, 750, 1000]
-CONDITIONS = ['With Label', 'No Label', 'Rejected']
 
 ISSUES = [
     'Sensor Error', 'Bin Full', 'Network Offline', 'Printer Jam',
@@ -335,42 +319,36 @@ def run_seed(fresh=False):
         org_type_map[ot_name] = ot
     print(f'         -> {len(org_type_map)} org types')
 
-    # ── 2. Cities ──────────────────────────────────────────────────────
-    print('  [ 2/18] Cities...')
-    city_list = []
-    for c in CITIES_DATA:
-        city = City(name=c['name'], province=c['province'], region=c['region'])
-        db.session.add(city)
-        db.session.flush()
-        city_list.append(city)
-    print(f'         -> {len(city_list)} cities')
-
-    # ── 3. Organizations ───────────────────────────────────────────────
-    print('  [ 3/18] Organizations...')
+    # ── 2. Organizations + Address + Contact ──────────────────────────
+    print('  [ 2/16] Organizations...')
     org_map = {}  # 'LOC-001' -> Organization
     for loc in LOCATIONS:
         org = Organization(
             name=loc['name'],
             full_name=loc['fullName'],
-            org_type=loc['type'],
-            org_type_id=org_type_map[loc['type']].id,
-            street_address=loc['streetAddress'],
-            barangay=loc['barangay'],
-            city_id=city_list[loc['cityIdx']].id,
-            zip_code=loc['zipCode'],
-            contact_person=loc['contactPerson'],
-            contact_email=loc['contactEmail'],
-            contact_phone=loc['contactPhone'],
-            status=loc['status'],
-            join_date=date.fromisoformat(loc['joinDate']),
+            type_id=org_type_map[loc['type']].id,
+            status='Active',
         )
         db.session.add(org)
         db.session.flush()
+        addr = OrgAddress(
+            organization_id=org.id,
+            street_address=loc['street'], barangay=loc['barangay'],
+            city_municipality=loc['city'], province=loc['province'],
+            region=loc['region'], zip_code=loc['zip'],
+        )
+        db.session.add(addr)
+        contact = OrgContact(
+            organization_id=org.id,
+            first_name=loc['contactFirst'], last_name=loc['contactLast'],
+            email=loc['contactEmail'], phone=loc['contactPhone'],
+        )
+        db.session.add(contact)
         org_map[loc['id']] = org
-    print(f'         -> {len(org_map)} organizations')
+    print(f'         -> {len(org_map)} organizations + addresses + contacts')
 
-    # ── 4. Community Groups ────────────────────────────────────────────
-    print('  [ 4/18] Community Groups...')
+    # ── 3. Community Groups ────────────────────────────────────────────
+    print('  [ 3/16] Community Groups...')
     cg_map = {}       # 'LOC-001:BSIT' -> CommunityGroup
     staff_cg = {}     # 'LOC-001' -> campus-staff CommunityGroup
 
@@ -412,52 +390,38 @@ def run_seed(fresh=False):
     total_cg = len(cg_map) + len(staff_cg) + 1
     print(f'         -> {total_cg} community groups')
 
-    # ── 5-6. Admin Accounts + Users ────────────────────────────────────
-    print('  [ 5/18] Admin Accounts...')
-    print('  [ 6/18] Admin Users...')
+    # ── 4. Admin Users + Wallets ───────────────────────────────────────
+    print('  [ 4/16] Admin Users...')
     admin_user_list = []
     for adm in ADMIN_USERS_DATA:
         loc_id = adm['locId']
         cg = global_admin_cg if loc_id is None else staff_cg[loc_id]
-
-        acct = Account(
-            community_group_id=cg.id,
-            account_name=adm['name'],
-            points_balance=0,
-            streak=0,
-        )
-        db.session.add(acct)
-        db.session.flush()
-
         abbr = 'SYS' if loc_id is None else _org_abbr(org_map[loc_id])
+        parts = adm['name'].split()
 
         user = User(
-            account_id=acct.id,
-            name=adm['name'],
-            username=adm['username'],
-            email=adm['email'],
-            role=adm['role'],
-            is_active=True,
+            community_group_id=cg.id,
+            first_name=parts[0], last_name=parts[-1],
+            middle_name=' '.join(parts[1:-1]) if len(parts) > 2 else None,
+            username=adm['username'], email=adm['email'],
+            role=adm['role'], user_type='staff', is_active=True,
             last_login=datetime.fromisoformat(adm['lastLogin']).replace(tzinfo=timezone.utc),
         )
         user.set_password(PASSWORD)
         db.session.add(user)
         db.session.flush()
-
         user.display_id = User.generate_display_id(adm['role'], abbr)
 
-        cred = AccessCredential(
-            account_id=acct.id,
-            tag_id=str(uuid.uuid4()),
-            credential_type='qr_code',
-        )
-        db.session.add(cred)
+        wallet = Wallet(user_id=user.id, points_balance=0, lifetime_points=0, streak=0)
+        db.session.add(wallet)
+        sec = UserSecurity(user_id=user.id, two_fa_enabled=False)
+        db.session.add(sec)
         admin_user_list.append(user)
 
     print(f'         -> {len(admin_user_list)} admin users (pw: {PASSWORD})')
 
-    # ── 7. End-User Accounts + Users (~470) ────────────────────────────
-    print('  [ 7/18] End Users (~470)...')
+    # ── 5. End Users + Wallets (~470) ─────────────────────────────────
+    print('  [ 5/16] End Users (~470)...')
     end_user_list = []
     end_users_by_loc = {}  # 'LOC-001' -> [User, ...]
     used_emails = set()
@@ -469,7 +433,6 @@ def run_seed(fresh=False):
         for i in range(count):
             first = _pick(FIRST_NAMES)
             last = _pick(LAST_NAMES)
-            name = f'{first} {last}'
             base_email = f'{first.lower()}.{last.lower().replace(" ", "")}@{domain}'
             email = base_email
             suffix = 2
@@ -478,21 +441,16 @@ def run_seed(fresh=False):
                 suffix += 1
             used_emails.add(email)
 
-            # Role distribution: 80% Student, 12% Faculty, 8% Staff
             roll = _rand()
-            user_type = year_level = None
+            user_type = None
             group_key = None
 
             if roll < 0.80:
                 user_type = 'student'
                 if _rand() < 0.4:
-                    strand = _pick(SHS_STRANDS)['id']
-                    year_level = 'Grade 11' if _rand() < 0.5 else 'Grade 12'
-                    group_key = strand
+                    group_key = _pick(SHS_STRANDS)['id']
                 else:
-                    dept_id = _pick(COLLEGE_DEPTS)['id']
-                    year_level = _pick(YEAR_LEVELS)
-                    group_key = dept_id
+                    group_key = _pick(COLLEGE_DEPTS)['id']
             elif roll < 0.92:
                 user_type = 'faculty'
                 group_key = _pick(COLLEGE_DEPTS)['id']
@@ -503,43 +461,30 @@ def run_seed(fresh=False):
 
             pts = _rand_int(0, 5000)
             streak = _rand_int(0, 40)
-            # Stagger join dates: earlier locations join earlier
             loc_idx = [l[0] for l in USERS_PER_LOC].index(loc_id)
             loc_start = global_start + timedelta(days=loc_idx * 60)
             join = _rand_date(loc_start, global_end)
 
-            acct = Account(
-                community_group_id=cg.id,
-                account_name=name,
-                points_balance=pts,
-                streak=streak,
-                created_at=join,
-            )
-            db.session.add(acct)
-            db.session.flush()
-
             user = User(
-                account_id=acct.id,
-                name=name,
-                email=email,
-                role='user',
-                user_type=user_type,
-                year_level=year_level,
+                community_group_id=cg.id,
+                first_name=first, last_name=last,
+                email=email, role='user', user_type=user_type,
                 is_active=True,
                 last_login=_rand_date(join, global_end),
                 created_at=join,
             )
             db.session.add(user)
             db.session.flush()
-
             user.display_id = User.generate_display_id('user', _org_abbr(org_map[loc_id]))
 
-            cred = AccessCredential(
-                account_id=acct.id,
-                tag_id=str(uuid.uuid4()),
-                credential_type='qr_code',
+            wallet = Wallet(
+                user_id=user.id, points_balance=pts,
+                lifetime_points=pts + _rand_int(0, 2000),
+                streak=streak, updated_at=join,
             )
-            db.session.add(cred)
+            db.session.add(wallet)
+            sec = UserSecurity(user_id=user.id, two_fa_enabled=False)
+            db.session.add(sec)
             end_user_list.append(user)
             loc_users.append(user)
 
@@ -547,8 +492,8 @@ def run_seed(fresh=False):
 
     print(f'         -> {len(end_user_list)} end users')
 
-    # ── 8. RVMs ────────────────────────────────────────────────────────
-    print('  [ 8/18] RVMs...')
+    # ── 6. RVMs ────────────────────────────────────────────────────────
+    print('  [ 6/16] RVMs...')
     rvm_map = {}
     for m in MACHINES_DATA:
         rvm = RVM(
@@ -557,15 +502,14 @@ def run_seed(fresh=False):
             name=m['name'],
             location_name=m['area'],
             is_online=m['online'],
-            total_items_collected=m['bottles'],
         )
         db.session.add(rvm)
         db.session.flush()
         rvm_map[m['id']] = rvm
     print(f'         -> {len(rvm_map)} machines')
 
-    # ── 9. Rewards ─────────────────────────────────────────────────────
-    print('  [ 9/18] Rewards...')
+    # ── 7. Rewards + Variants ──────────────────────────────────────────
+    print('  [ 7/16] Rewards...')
     reward_list = []
     for r in REWARDS_DATA:
         reward = Reward(
@@ -574,21 +518,25 @@ def run_seed(fresh=False):
             description=r['desc'],
             category=r['cat'],
             points_required=r['pts'],
-            stock_quantity=r['stock'],
             is_active=True,
         )
         db.session.add(reward)
         db.session.flush()
+        # Default variant
+        variant = RewardVariant(
+            reward_id=reward.id, label='Default',
+            stock_quantity=r['stock'], is_default=True,
+        )
+        db.session.add(variant)
         reward_list.append(reward)
     print(f'         -> {len(reward_list)} rewards')
 
     db.session.commit()
     print('  -- Reference data committed --')
 
-    # ── 10-11. Recycling Sessions + Items (~3000 items) ────────────────
-    print('  [10/18] Recycling Sessions...')
-    print('  [11/18] Recycling Items (~3000)...')
-    # Spread data across entire timeline: 2023-01-15 -> 2026-03-14
+    # ── 8-9. Recycling Sessions + Items (~3000 items) ────────────────
+    print('  [ 8/16] Recycling Sessions...')
+    print('  [ 9/16] Recycling Items (~3000)...')
     log_start = datetime(2023, 1, 15, tzinfo=timezone.utc)
     log_end = datetime(2026, 3, 14, tzinfo=timezone.utc)
     rvm_ids_list = list(rvm_map.keys())
@@ -602,23 +550,26 @@ def run_seed(fresh=False):
         user = _pick(end_user_list)
         rvm_key = _pick(rvm_ids_list)
         rvm = rvm_map[rvm_key]
-        brand = _pick(BOTTLE_BRANDS)
-        volume = _pick(BOTTLE_VOLUMES)
-        condition = _pick(CONDITIONS)
+        det_class = _pick(DETECTED_CLASSES)
         log_dt = _rand_date(log_start, log_end)
 
-        is_rejected = (condition == 'Rejected') or (volume >= 1001)
-        has_label = (condition == 'With Label')
-        pts = 0 if is_rejected else _get_points(volume, has_label)
+        is_rejected = _rand() < 0.1
+        pts = 0 if is_rejected else _rand_int(3, 10)
+        status = 'Rejected' if is_rejected else 'Accepted'
+        conf = round(_rand() * 30 + 70, 2)  # 70-100%
 
-        # New session every ~5 items
+        # Get wallet for this user
+        wallet = Wallet.query.filter_by(user_id=user.id).first()
+        if not wallet:
+            continue
+
         if current_session is None or items_in_session >= 5 or _rand() < 0.3:
             if current_session is not None:
                 current_session.status = 'completed'
                 current_session.end_time = log_dt
             current_session = RecyclingSession(
                 rvm_id=rvm.id,
-                account_id=user.account_id,
+                wallet_id=wallet.id,
                 start_time=log_dt - timedelta(minutes=_rand_int(1, 10)),
                 status='active',
                 total_points_earned=0,
@@ -631,14 +582,11 @@ def run_seed(fresh=False):
 
         item = RecyclingItem(
             session_id=current_session.id,
-            item_type='PET Bottle',
-            material='Plastic',
-            brand=brand,
-            volume_ml=volume,
-            condition=condition,
-            weight_grams=round(_rand() * 30 + 10, 1),
+            detected_class=det_class,
+            confidence_score=conf,
             points_awarded=pts,
-            deposited_at=log_dt,
+            status=status,
+            scanned_at=log_dt,
         )
         db.session.add(item)
         current_session.item_count = (current_session.item_count or 0) + 1
@@ -653,148 +601,143 @@ def run_seed(fresh=False):
     db.session.commit()
     print(f'         -> {item_count} items in {session_count} sessions')
 
-    # ── 12. Transactions (earn from sessions + redeem placeholders) ────
-    print('  [12/18] Transactions...')
+    # ── 10. Transactions ───────────────────────────────────────────────
+    print('  [10/16] Transactions...')
     txn_count = 0
 
-    # Earn transactions from recycling sessions
     sessions = RecyclingSession.query.filter(RecyclingSession.total_points_earned > 0).all()
     for sess in sessions:
-        acct = Account.query.get(sess.account_id)
-        bal_before = acct.points_balance
+        wallet = db.session.get(Wallet, sess.wallet_id)
+        if not wallet:
+            continue
+        bal_before = wallet.points_balance
         earned = sess.total_points_earned
         bal_after = bal_before + earned
 
         txn = Transaction(
-            account_id=acct.id,
+            wallet_id=wallet.id,
             transaction_type='earn',
             amount=earned,
             balance_before=bal_before,
             balance_after=bal_after,
-            description=f'Recycling session #{sess.id}',
-            reference_id=f'SESSION-{sess.id}',
+            reference_type='recycling_session',
+            reference_id=sess.id,
             created_at=sess.end_time or sess.start_time,
         )
         db.session.add(txn)
-        acct.points_balance = bal_after
+        wallet.points_balance = bal_after
         txn_count += 1
 
-    # A few adjustment transactions
     for _ in range(25):
         user = _pick(end_user_list)
-        acct = Account.query.get(user.account_id)
+        wallet = Wallet.query.filter_by(user_id=user.id).first()
+        if not wallet:
+            continue
         adj = _rand_int(-50, 100)
-        bal_before = acct.points_balance
+        bal_before = wallet.points_balance
         bal_after = max(0, bal_before + adj)
         adj_actual = bal_after - bal_before
 
         txn = Transaction(
-            account_id=acct.id,
+            wallet_id=wallet.id,
             transaction_type='adjustment',
             amount=adj_actual,
             balance_before=bal_before,
             balance_after=bal_after,
-            description='Admin points adjustment',
-            reference_id=f'ADJ-{uuid.uuid4().hex[:8].upper()}',
+            reference_type='admin_adjustment',
+            reference_id=None,
             created_at=_rand_date(log_start, log_end),
         )
         db.session.add(txn)
-        acct.points_balance = bal_after
+        wallet.points_balance = bal_after
         txn_count += 1
 
     db.session.commit()
     print(f'         -> {txn_count} transactions')
 
-    # ── 13. Reward Redemptions (200) ───────────────────────────────────
-    print('  [13/18] Reward Redemptions (200)...')
-    statuses = ['claimed', 'pending', 'expired', 'used']
-    status_weights = [0.5, 0.2, 0.1, 0.2]
+    # ── 11. Reward Redemptions (200) ──────────────────────────────────
+    print('  [11/16] Reward Redemptions (200)...')
+    statuses = ['claimed', 'pending']
     redeem_txn_count = 0
 
     for _ in range(200):
         user = _pick(end_user_list)
         reward = _pick(reward_list)
+        # Get default variant
+        variant = RewardVariant.query.filter_by(reward_id=reward.id, is_default=True).first()
+        if not variant:
+            continue
+        wallet = Wallet.query.filter_by(user_id=user.id).first()
+        if not wallet:
+            continue
 
-        r = _rand()
-        cumul = 0
-        chosen_status = statuses[0]
-        for s, w in zip(statuses, status_weights):
-            cumul += w
-            if r < cumul:
-                chosen_status = s
-                break
-
+        chosen_status = _pick(statuses)
         red_dt = _rand_date(log_start + timedelta(days=30), log_end)
         code = f'RDM-{uuid.uuid4().hex[:8].upper()}'
 
         rr = RewardRedemption(
-            account_id=user.account_id,
-            reward_id=reward.id,
+            wallet_id=wallet.id,
+            variant_id=variant.id,
             points_spent=reward.points_required,
             status=chosen_status,
             redemption_code=code,
             redeemed_at=red_dt,
-            used_at=red_dt if chosen_status in ('claimed', 'used') else None,
+            claimed_at=red_dt if chosen_status == 'claimed' else None,
         )
         db.session.add(rr)
         db.session.flush()
 
-        # Create matching redeem transaction
-        acct = Account.query.get(user.account_id)
-        bal_before = acct.points_balance
+        bal_before = wallet.points_balance
         spent = reward.points_required
         bal_after = max(0, bal_before - spent)
 
         txn = Transaction(
-            account_id=acct.id,
+            wallet_id=wallet.id,
             transaction_type='redeem',
             amount=-spent,
             balance_before=bal_before,
             balance_after=bal_after,
-            description=f'Redeemed: {reward.name}',
-            reference_id=f'REDEEM-{rr.id}',
+            reference_type='redemption',
+            reference_id=rr.id,
             created_at=red_dt,
         )
         db.session.add(txn)
-        acct.points_balance = bal_after
+        wallet.points_balance = bal_after
         redeem_txn_count += 1
 
     db.session.commit()
     print(f'         -> 200 redemptions + {redeem_txn_count} redeem transactions')
 
-    # ── 14. Maintenance Logs (150) ─────────────────────────────────────
-    print('  [14/18] Maintenance Logs (150)...')
+    # ── 12. Maintenance Logs (150) ─────────────────────────────────────
+    print('  [12/16] Maintenance Logs (150)...')
     techs = [u for u in admin_user_list if u.role in ('technician', 'head_admin')]
-    maint_start = log_start
 
     for _ in range(150):
         rvm = rvm_map[_pick(rvm_ids_list)]
         tech = _pick(techs)
         issue = _pick(ISSUES)
-        log_dt = _rand_date(maint_start, log_end)
-        resolved = _rand_bool(0.8)
+        log_dt = _rand_date(log_start, log_end)
+        is_resolved = _rand_bool(0.8)
 
         ml = MaintenanceLog(
             rvm_id=rvm.id,
             performed_by_id=tech.id,
             action_type=issue,
-            resolved=resolved,
-            notes='Issue fixed successfully' if resolved else 'Awaiting parts/review',
-            timestamp=log_dt,
-            transaction_id=None,
+            status='Resolved' if is_resolved else 'Pending',
+            notes='Issue fixed successfully' if is_resolved else 'Awaiting parts/review',
+            created_at=log_dt,
         )
         db.session.add(ml)
     db.session.commit()
     print('         -> 150 maintenance logs')
 
-    # ── 15. Admin Logs (250) ───────────────────────────────────────────
-    print('  [15/18] Admin Logs (250)...')
-    admin_log_start = log_start
+    # ── 13. Admin Logs (250) ───────────────────────────────────────────
+    print('  [13/16] Admin Logs (250)...')
 
     for _ in range(250):
         admin = _pick(admin_user_list)
         action_text, category = _pick(ADMIN_ACTIONS)
-        log_dt = _rand_date(admin_log_start, log_end)
+        log_dt = _rand_date(log_start, log_end)
 
         if category == 'Users':
             target = f'USR-{_rand_int(20240000, 20240199):08d}'
@@ -811,14 +754,14 @@ def run_seed(fresh=False):
             target=target,
             category=category,
             notes=f'{action_text} performed successfully',
-            timestamp=log_dt,
+            created_at=log_dt,
         )
         db.session.add(al)
     db.session.commit()
     print('         -> 250 admin logs')
 
-    # ── 16. Notification Settings (defaults for each org) ──────────────
-    print('  [16/18] Notification Settings...')
+    # ── 14. Notification Settings (defaults for each org) ──────────────
+    print('  [14/16] Notification Settings...')
     from ..services.notification_service import ALERT_TYPES
     notif_count = 0
     for org in org_map.values():
@@ -834,7 +777,7 @@ def run_seed(fresh=False):
             )
             db.session.add(ns)
             notif_count += 1
-        # Also seed points config row
+        # Also seed points config row (simulated via NotificationSetting threshold/json)
         pts = NotificationSetting(
             organization_id=org.id,
             alert_key='config_points',
@@ -849,8 +792,8 @@ def run_seed(fresh=False):
     db.session.commit()
     print(f'         -> {notif_count} notification settings')
 
-    # ── 17. Notification Logs (sample) ─────────────────────────────────
-    print('  [17/18] Notification Logs...')
+    # ── 15. Notification Logs (sample) ─────────────────────────────────
+    print('  [15/16] Notification Logs...')
     now = datetime.now(timezone.utc)
     sample_alerts = ['low_reward_stock', 'machine_offline', 'new_user_registered', 'new_redemption']
     nl_count = 0
@@ -872,68 +815,76 @@ def run_seed(fresh=False):
     db.session.commit()
     print(f'         -> {nl_count} notification logs')
 
-    # ── 18. Bulk Sessions (sample) ─────────────────────────────────────
-    print('  [18/18] Bulk Sessions...')
+    # ── 16. Bulk Deposits (sample) ─────────────────────────────────────
+    print('  [16/16] Bulk Deposits...')
+    from ..models import BulkDeposit
     bulk_count = 0
-    for org_key, org in list(org_map.items())[:3]:
-        rvms_for_org = [r for r in RVM.query.filter_by(organization_id=org.id).limit(1).all()]
-        accts_for_org = Account.query.join(CommunityGroup).filter(CommunityGroup.organization_id == org.id).limit(1).all()
-        if not rvms_for_org or not accts_for_org:
-            continue
-        rvm = rvms_for_org[0]
-        acct = accts_for_org[0]
-        for b in range(2):
-            s = RecyclingSession(
-                rvm_id=rvm.id,
-                account_id=acct.id,
-                start_time=now - timedelta(days=b + 1),
-                end_time=now - timedelta(days=b + 1, hours=-1),
-                total_points_earned=25 + b * 10,
-                item_count=5 + b * 2,
-                status='completed',
-                session_type='bulk',
-                notes=f'Bulk entry {b + 1} for {org.name}',
+    admins = [u for u in admin_user_list if u.role in ('head_admin', 'superadmin')]
+    for org_id, org in org_map.items():
+        users_in_org = [u for u in end_user_list if u.community_group.organization_id == org.id]
+        if not users_in_org: continue
+        
+        for _ in range(2):
+            user = _pick(users_in_org)
+            wallet = Wallet.query.filter_by(user_id=user.id).first()
+            admin = _pick(admins)
+            
+            pts = _rand_int(100, 500)
+            items = _rand_int(10, 50)
+            
+            bd = BulkDeposit(
+                admin_user_id=admin.id,
+                wallet_id=wallet.id,
+                total_points_awarded=pts,
+                item_count=items,
+                notes=f'User dropped off {items} items. Manual credit.',
+                created_at=now - timedelta(days=_rand_int(1, 30))
             )
-            db.session.add(s)
+            db.session.add(bd)
             db.session.flush()
-            for j in range(s.item_count):
-                ri = RecyclingItem(
-                    session_id=s.id,
-                    item_type='PET Bottle',
-                    material='Plastic',
-                    brand=_pick(['Coca-Cola', 'Pepsi', 'Nature Spring', 'Summit']),
-                    volume_ml=_pick([350, 500, 750, 1000]),
-                    condition=_pick(['With Label', 'No Label']),
-                    weight_grams=_rand_int(10, 40),
-                    points_awarded=5,
-                    deposited_at=s.start_time + timedelta(minutes=j),
-                )
-                db.session.add(ri)
+            
+            # Create transaction for bulk deposit
+            txn = Transaction(
+                wallet_id=wallet.id,
+                transaction_type='bulk_transaction',
+                amount=pts,
+                balance_before=wallet.points_balance,
+                balance_after=wallet.points_balance + pts,
+                reference_type='bulk_deposit',
+                reference_id=bd.id,
+                created_at=bd.created_at
+            )
+            db.session.add(txn)
+            wallet.points_balance += pts
             bulk_count += 1
+            
     db.session.commit()
-    print(f'         -> {bulk_count} bulk sessions')
+    print(f'         -> {bulk_count} bulk deposits')
 
     # ── Summary ────────────────────────────────────────────────────────
     print()
     print('=' * 55)
-    print('  SEED COMPLETE - All 18 tables populated')
+    print('  SEED COMPLETE - All 19 tables populated')
     print('=' * 55)
     counts = {
         'OrgTypes': OrgType.query.count(),
-        'Cities': City.query.count(),
         'Organizations': Organization.query.count(),
+        'OrgAddresses': OrgAddress.query.count(),
+        'OrgContacts': OrgContact.query.count(),
         'Community Groups': CommunityGroup.query.count(),
-        'Accounts': Account.query.count(),
         'Users': User.query.count(),
-        'Access Credentials': AccessCredential.query.count(),
+        'Wallets': Wallet.query.count(),
+        'User Security': UserSecurity.query.count(),
         'RVMs': RVM.query.count(),
         'Recycling Sessions': RecyclingSession.query.count(),
         'Recycling Items': RecyclingItem.query.count(),
         'Transactions': Transaction.query.count(),
         'Rewards': Reward.query.count(),
+        'Reward Variants': RewardVariant.query.count(),
         'Reward Redemptions': RewardRedemption.query.count(),
         'Maintenance Logs': MaintenanceLog.query.count(),
         'Admin Logs': AdminLog.query.count(),
+        'Bulk Deposits': BulkDeposit.query.count(),
         'Notification Settings': NotificationSetting.query.count(),
         'Notification Logs': NotificationLog.query.count(),
     }

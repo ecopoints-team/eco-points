@@ -1,79 +1,76 @@
 """
 OTP Service
 Generates and verifies time-limited OTP codes for two-factor authentication.
-Uses Python's secrets module — no external dependencies needed.
+Uses the OtpCode model for persistent storage — survives server restarts
+and works across multiple worker processes.
 """
 import secrets
 import hashlib
-import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
+from .. import db
+from ..models import OtpCode
 from ..services.notification_service import _send_email, _send_sms
 
 
-# ── In-memory OTP store (code_hash → expiry) ──
-_otp_store = {}
-
 OTP_LENGTH = 6
 OTP_TTL_SECONDS = 300  # 5 minutes
-
-
-def _cleanup_expired():
-    """Remove expired OTPs from the store."""
-    now = time.time()
-    expired = [k for k, v in _otp_store.items() if v['expires'] < now]
-    for k in expired:
-        del _otp_store[k]
+MAX_ATTEMPTS = 5
 
 
 def generate_otp(user_id):
     """Generate a 6-digit OTP code for a user. Returns plain-text code."""
-    _cleanup_expired()
+    # Revoke any existing pending OTPs
     revoke_otp(user_id)
 
     code = ''.join([str(secrets.randbelow(10)) for _ in range(OTP_LENGTH)])
+    code_hash = hashlib.sha256(code.encode()).hexdigest()
 
-    _otp_store[f'user_{user_id}'] = {
-        'code_hash': hashlib.sha256(code.encode()).hexdigest(),
-        'expires': time.time() + OTP_TTL_SECONDS,
-        'attempts': 0,
-    }
+    otp = OtpCode(
+        user_id=user_id,
+        code_hash=code_hash,
+        sent_to='',  # Will be updated by send_otp
+        channel='email',
+        is_used=False,
+        expires_at=datetime.now(timezone.utc) + timedelta(seconds=OTP_TTL_SECONDS),
+    )
+    db.session.add(otp)
+    db.session.commit()
 
     return code
 
 
 def verify_otp(user_id, code):
     """Verify an OTP code. Returns (success: bool, error: str|None)"""
-    _cleanup_expired()
+    now = datetime.now(timezone.utc)
 
-    key = f'user_{user_id}'
-    entry = _otp_store.get(key)
+    # Find the latest unused, unexpired OTP for this user
+    otp = OtpCode.query.filter(
+        OtpCode.user_id == user_id,
+        OtpCode.is_used == False,
+        OtpCode.expires_at > now,
+    ).order_by(OtpCode.created_at.desc()).first()
 
-    if not entry:
+    if not otp:
         return False, 'No OTP pending. Please request a new code.'
 
-    if entry['expires'] < time.time():
-        del _otp_store[key]
-        return False, 'OTP has expired. Please request a new code.'
-
-    entry['attempts'] += 1
-    if entry['attempts'] > 5:
-        del _otp_store[key]
-        return False, 'Too many attempts. Please request a new code.'
-
     code_hash = hashlib.sha256(code.encode()).hexdigest()
-    if code_hash != entry['code_hash']:
+    if code_hash != otp.code_hash:
         return False, 'Invalid OTP code.'
 
-    del _otp_store[key]
+    # Mark as used
+    otp.is_used = True
+    db.session.commit()
     return True, None
 
 
 def revoke_otp(user_id):
-    """Remove any pending OTP for a user."""
-    key = f'user_{user_id}'
-    if key in _otp_store:
-        del _otp_store[key]
+    """Mark all pending OTPs for a user as used."""
+    OtpCode.query.filter(
+        OtpCode.user_id == user_id,
+        OtpCode.is_used == False,
+    ).update({'is_used': True})
+    db.session.commit()
 
 
 def send_otp(user, method='email'):
@@ -81,6 +78,12 @@ def send_otp(user, method='email'):
     Returns (code, success, error)
     """
     code = generate_otp(user.id)
+
+    # Update the OTP record with the sent_to and channel info
+    otp = OtpCode.query.filter(
+        OtpCode.user_id == user.id,
+        OtpCode.is_used == False,
+    ).order_by(OtpCode.created_at.desc()).first()
 
     subject = 'EcoPoints — Your Login Verification Code'
     body = (
@@ -99,8 +102,16 @@ def send_otp(user, method='email'):
     if method == 'sms' and user.phone:
         sms_body = f'[EcoPoints] Your login code: {code}. Expires in 5 minutes.'
         success, error = _send_sms(user.phone, sms_body)
+        if otp:
+            otp.sent_to = user.phone
+            otp.channel = 'sms'
+            db.session.commit()
     elif user.email:
         success, error = _send_email(user.email, subject, body)
+        if otp:
+            otp.sent_to = user.email
+            otp.channel = 'email'
+            db.session.commit()
     else:
         return code, False, 'No contact method available for this user'
 
