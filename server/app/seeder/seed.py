@@ -269,14 +269,6 @@ ADMIN_ACTIONS = [
 # HELPERS
 # ══════════════════════════════════════════════════════════════════════════
 
-def _get_points(volume, has_label):
-    if 290 <= volume <= 350:
-        return 5 if has_label else 3
-    elif 351 <= volume <= 500:
-        return 8 if has_label else 5
-    elif 750 <= volume <= 1000:
-        return 10 if has_label else 7
-    return 0
 
 
 def _org_abbr(org):
@@ -414,7 +406,7 @@ def run_seed(fresh=False):
 
         wallet = Wallet(user_id=user.id, points_balance=0, lifetime_points=0, streak=0)
         db.session.add(wallet)
-        sec = UserSecurity(user_id=user.id, two_fa_enabled=False)
+        sec = UserSecurity(user_id=user.id, two_factor_enabled=False)
         db.session.add(sec)
         admin_user_list.append(user)
 
@@ -483,7 +475,7 @@ def run_seed(fresh=False):
                 streak=streak, updated_at=join,
             )
             db.session.add(wallet)
-            sec = UserSecurity(user_id=user.id, two_fa_enabled=False)
+            sec = UserSecurity(user_id=user.id, two_factor_enabled=False)
             db.session.add(sec)
             end_user_list.append(user)
             loc_users.append(user)
@@ -524,8 +516,8 @@ def run_seed(fresh=False):
         db.session.flush()
         # Default variant
         variant = RewardVariant(
-            reward_id=reward.id, label='Default',
-            stock_quantity=r['stock'], is_default=True,
+            reward_id=reward.id, variety_name='Default',
+            stock_quantity=r['stock'], is_active=True,
         )
         db.session.add(variant)
         reward_list.append(reward)
@@ -664,7 +656,7 @@ def run_seed(fresh=False):
         user = _pick(end_user_list)
         reward = _pick(reward_list)
         # Get default variant
-        variant = RewardVariant.query.filter_by(reward_id=reward.id, is_default=True).first()
+        variant = RewardVariant.query.filter_by(reward_id=reward.id, variety_name='Default').first()
         if not variant:
             continue
         wallet = Wallet.query.filter_by(user_id=user.id).first()

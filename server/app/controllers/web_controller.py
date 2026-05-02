@@ -13,7 +13,7 @@ from ..models import (
     OrgType, Organization, OrgAddress, OrgContact, CommunityGroup, User, Wallet,
     UserSecurity, RVM, RecyclingSession, RecyclingItem, MaintenanceLog,
     Transaction, Reward, RewardVariant, RewardRedemption, AdminLog,
-    NotificationSetting, NotificationLog,
+    NotificationSetting, NotificationLog, BulkDeposit,
 )
 from ..middleware import token_required, admin_required, superadmin_required, get_user_org_id
 from ..services.notification_service import trigger_alert
@@ -454,7 +454,7 @@ def delete_org_type(current_user, ot_id):
         if not ot:
             return jsonify({'success': False, 'error': 'Not found'}), 404
         # Prevent deletion if referenced by any organization
-        ref_count = Organization.query.filter_by(org_type_id=ot_id).count()
+        ref_count = Organization.query.filter_by(type_id=ot_id).count()
         if ref_count > 0:
             return jsonify({'success': False, 'error': f'Cannot delete: {ref_count} organization(s) reference this type'}), 409
         db.session.delete(ot)
@@ -771,14 +771,14 @@ def create_user(current_user):
         # Generate and assign display_id
         user.display_id = User.generate_display_id(role, org_abbr)
 
-        _log_action(current_user, 'User Created', name, 'Users', f'Role: {role}')
+        _log_action(current_user, 'User Created', user.name, 'Users', f'Role: {role}')
         db.session.commit()
 
         # ── Notification hook: new user registered ──
         try:
             trigger_alert(location_id, 'new_user_registered',
-                          f'New user registered: {name}',
-                          f'A new {role} "{name}" was created by {current_user.name}.')
+                          f'New user registered: {user.name}',
+                          f'A new {role} "{user.name}" was created by {current_user.name}.')
         except Exception:
             pass
 
@@ -1929,15 +1929,15 @@ def get_analytics(current_user):
             } for row in loc_comp]
 
         # ──────────────────────────────────────────────────────
-        # 10. BOTTLE CONDITION BREAKDOWN  (With Label / No Label / Rejected)
+        # 10. ITEM STATUS BREAKDOWN  (Accepted / Rejected)
         # ──────────────────────────────────────────────────────
         cond_base = db.session.query(
-            RecyclingItem.condition,
+            RecyclingItem.status,
             func.count(RecyclingItem.id).label('count'),
         ).join(RecyclingSession)
         if loc_id:
             cond_base = cond_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
-        condition_dist = cond_base.group_by(RecyclingItem.condition).all()
+        condition_dist = cond_base.group_by(RecyclingItem.status).all()
 
         # ──────────────────────────────────────────────────────
         # 11. SUMMARY TOTALS  (key metrics for stat cards)
@@ -1946,7 +1946,7 @@ def get_analytics(current_user):
         total_points_base = db.session.query(func.coalesce(func.sum(RecyclingItem.points_awarded), 0)).join(RecyclingSession)
         total_sessions_base = db.session.query(func.count(RecyclingSession.id))
         total_redemptions_base = db.session.query(func.count(RewardRedemption.id))
-        total_users_base = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
+        total_users_base = db.session.query(func.count(User.id)).join(CommunityGroup)
 
         if loc_id:
             total_items_base = total_items_base.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
@@ -2048,9 +2048,9 @@ def get_analytics(current_user):
                 # 9. Location comparison (superadmin only)
                 'locationComparison': location_comparison,
 
-                # 10. Bottle condition breakdown
+                # 10. Item status breakdown
                 'conditionDistribution': [{
-                    'condition': row.condition or 'Unknown',
+                    'condition': row.status or 'Unknown',
                     'count': row.count,
                 } for row in condition_dist],
 
@@ -2538,6 +2538,121 @@ def get_bulk_session_detail(current_user, session_id):
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# BULK DEPOSITS  (admin manual point credits — no RVM involved)
+# ══════════════════════════════════════════════════════════════════════════
+
+def _serialize_bulk_deposit(bd):
+    """BulkDeposit → frontend shape."""
+    admin = bd.admin if bd.admin else None
+    wallet = db.session.get(Wallet, bd.wallet_id) if bd.wallet_id else None
+    user = wallet.user if wallet else None
+    return {
+        'id': bd.id,
+        'adminUserId': bd.admin_user_id,
+        'adminName': admin.name if admin else 'Unknown',
+        'walletId': bd.wallet_id,
+        'userId': user.id if user else None,
+        'userName': user.name if user else 'Unknown',
+        'userEmail': user.email if user else None,
+        'totalPointsAwarded': bd.total_points_awarded,
+        'itemCount': bd.item_count,
+        'notes': bd.notes,
+        'createdAt': _dt(bd.created_at),
+    }
+
+
+@web_bp.route('/bulk-deposits', methods=['GET'])
+@token_required
+@admin_required
+def get_bulk_deposits(current_user):
+    """List all bulk deposits, scoped by organization."""
+    try:
+        loc_id = _scope_location_id(current_user)
+        query = BulkDeposit.query
+        if loc_id:
+            query = query.join(Wallet, BulkDeposit.wallet_id == Wallet.id)\
+                .join(User, Wallet.user_id == User.id)\
+                .join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
+                .filter(CommunityGroup.organization_id == loc_id)
+        deposits = query.order_by(BulkDeposit.created_at.desc()).limit(200).all()
+        return jsonify({'success': True, 'deposits': [_serialize_bulk_deposit(d) for d in deposits]}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/bulk-deposits', methods=['POST'])
+@token_required
+@admin_required
+def create_bulk_deposit(current_user):
+    """Create a manual bulk deposit — admin credits points directly to a user's wallet.
+
+    Body: { walletId, totalPointsAwarded, itemCount, notes? }
+    """
+    try:
+        data = request.get_json() or {}
+        wallet_id = data.get('walletId')
+        points = data.get('totalPointsAwarded')
+        item_count = data.get('itemCount')
+        notes = (data.get('notes') or '').strip()
+
+        if not wallet_id:
+            return jsonify({'success': False, 'error': 'walletId is required'}), 400
+        if not points or int(points) <= 0:
+            return jsonify({'success': False, 'error': 'totalPointsAwarded must be a positive integer'}), 400
+        if not item_count or int(item_count) <= 0:
+            return jsonify({'success': False, 'error': 'itemCount must be a positive integer'}), 400
+
+        points = int(points)
+        item_count = int(item_count)
+
+        wallet = db.session.get(Wallet, wallet_id)
+        if not wallet:
+            return jsonify({'success': False, 'error': 'Wallet not found'}), 404
+
+        # Org-scope check: wallet user must belong to admin's org
+        user = wallet.user
+        if current_user.role != 'superadmin' and user and user.community_group:
+            if user.community_group.organization_id != get_user_org_id(current_user):
+                return jsonify({'success': False, 'error': 'User does not belong to your organization'}), 403
+
+        bd = BulkDeposit(
+            admin_user_id=current_user.id,
+            wallet_id=wallet_id,
+            total_points_awarded=points,
+            item_count=item_count,
+            notes=notes or None,
+        )
+        db.session.add(bd)
+        db.session.flush()
+
+        # Credit wallet
+        balance_before = wallet.points_balance
+        wallet.points_balance += points
+        wallet.lifetime_points = (wallet.lifetime_points or 0) + points
+
+        txn = Transaction(
+            wallet_id=wallet_id,
+            transaction_type='bulk_transaction',
+            amount=points,
+            balance_before=balance_before,
+            balance_after=wallet.points_balance,
+            reference_type='bulk_deposit',
+            reference_id=bd.id,
+        )
+        db.session.add(txn)
+
+        _log_action(current_user, 'Bulk Deposit Created',
+                     f'{points} pts to wallet {wallet_id} ({item_count} items)',
+                     'Logs', notes)
+        db.session.commit()
+
+        return jsonify({'success': True, 'deposit': _serialize_bulk_deposit(bd)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # SETTINGS: EMAIL & SMS CHANNEL CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -2735,20 +2850,18 @@ def get_login_history(current_user):
         logs = AdminLog.query.join(
             User, AdminLog.admin_user_id == User.id
         ).join(
-            Account, User.account_id == Account.id
-        ).join(
-            CommunityGroup, Account.community_group_id == CommunityGroup.id
+            CommunityGroup, User.community_group_id == CommunityGroup.id
         ).filter(
             CommunityGroup.organization_id == loc_id,
             AdminLog.category == 'Auth',
-        ).order_by(AdminLog.timestamp.desc()).limit(100).all()
+        ).order_by(AdminLog.created_at.desc()).limit(100).all()
 
         result = [{
             'id': l.id, 'action': l.action,
             'adminName': l.admin.name if l.admin else 'Unknown',
             'adminRole': l.admin.role if l.admin else None,
             'ipAddress': l.notes or '',
-            'timestamp': _dt(l.timestamp),
+            'timestamp': _dt(l.created_at),
         } for l in logs]
 
         return jsonify({'success': True, 'history': result}), 200

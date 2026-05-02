@@ -1,12 +1,14 @@
-﻿"""
+"""
 EcoPoints - Database Seed Script
 =================================
-Populates all 16 tables with realistic test data.
+Populates all 19-table ERD with realistic sample data.
 
 Usage:
     cd server
-    python seed.py          # wipes and re-seeds
+    python seed.py          # wipes and re-seeds (fresh=True)
     python seed.py --keep   # only seeds if tables are empty
+
+Alternative: flask seed --fresh
 
 All passwords: test123
 """
