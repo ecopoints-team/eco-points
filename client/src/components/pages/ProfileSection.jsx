@@ -14,8 +14,10 @@ import {
   DownloadIcon,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProfileSection() {
+  const { currentUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Mocking the user's tag ID from AccessCredential
@@ -62,11 +64,11 @@ export default function ProfileSection() {
             {/* USER DETAILS */}
             <div className="justify-items-center">
               <div className="my-2 justify-items-center text-center">
-                <div className="text-xl lg:text-3xl font-black text-slate-800">
-                  JAY MAR
+                <div className="text-xl lg:text-3xl font-black text-slate-800 uppercase">
+                  {currentUser?.name || "Loading..."}
                 </div>
                 <div className="text-xs lg:text-sm text-stone-500 font-bold uppercase tracking-wider">
-                  @jaydi_dev
+                  {currentUser?.username ? `@${currentUser.username}` : ""}
                 </div>
               </div>
             </div>
