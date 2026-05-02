@@ -19,6 +19,7 @@ import {
   UserCircleIcon,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
+import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
 
@@ -322,14 +323,8 @@ export default function ProfileSection() {
 
         {/*  RECENT ACTIVITY  */}
         <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-[580px]">
-          {/* SUMMARY SECTION */}
-          <div className="bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl h-[180px] flex items-center justify-center relative overflow-hidden shadow-xl shadow-black/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/30 to-transparent" />
-            <p className="font-black uppercase tracking-[0.3em] text-[10px] relative z-10 transition-colors group-hover:text-emerald-900/50"
-              style={{ ...fonts.body, color: "rgba(6,78,59,0.3)" }}>
-              Summary Insights
-            </p>
-          </div>
+          {/* RECYCLING HEATMAP */}
+          <ProfileHeatmap />
 
           {/* RECENT ACTIVITY  */}
           <div className="flex-1 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl shadow-black/5 border border-stone-200 overflow-hidden">

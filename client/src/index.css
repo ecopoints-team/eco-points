@@ -899,4 +899,17 @@
     from { opacity: 1; }
     to { opacity: 0; }
   }
+
+  /* ============================================================================
+     HEATMAP — Tooltip Popup
+     ============================================================================ */
+
+  @keyframes heatmap-popup {
+    0% { opacity: 0; transform: translate(-50%, calc(-100% + 8px)) scale(0.95); }
+    100% { opacity: 1; transform: translate(-50%, calc(-100% - 6px)) scale(1); }
+  }
+
+  .animate-heatmap-popup {
+    animation: heatmap-popup 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
 }

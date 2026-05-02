@@ -157,25 +157,12 @@ export default function ProfileHeatmap() {
     const dateObj = new Date(dateStr);
     const niceDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-    const cheers = [
-      { title: "High Five! 🌍", sub: "Earth just gave you a massive high five." },
-      { title: "Crushing It! 💥", sub: "Literally. That plastic didn't stand a chance." },
-      { title: "Turtle-y Awesome! 🐢", sub: "The ocean sends its warmest regards." },
-      { title: "5-Star Review! ⭐", sub: "Mother Nature highly recommends your work." },
-      { title: "Legendary! ⚡", sub: "That is some serious eco-energy right there." },
-      { title: "Not On Your Watch! 🛑", sub: "Keeping plastic out of landfills like a pro." },
-      { title: "Eco-Hero! 🦸‍♂️", sub: "Saving the planet, one bottle at a time." },
-      { title: "Flawless! ✨", sub: "Greener than a freshly tossed vegan salad." }
-    ];
-    const randomCheer = cheers[Math.floor(Math.random() * cheers.length)];
-
     setSelectedTile({
       dateStr, 
       date: niceDate,
       count, 
       rect,
-      hexColor: getHexColor(count),
-      cheer: randomCheer
+      hexColor: getHexColor(count)
     });
     setModalPhase('opening');
     setTooltip({ show: false, x: 0, y: 0, date: '', count: 0 }); // Hide tooltip
@@ -384,7 +371,7 @@ export default function ProfileHeatmap() {
               top: modalPhase === 'open' ? '50%' : `${selectedTile.rect.top}px`,
               left: modalPhase === 'open' ? '50%' : `${selectedTile.rect.left}px`,
               width: modalPhase === 'open' ? 'min(calc(100vw - 2rem), 400px)' : `${selectedTile.rect.width}px`,
-              height: modalPhase === 'open' ? '460px' : `${selectedTile.rect.height}px`,
+              height: modalPhase === 'open' ? '320px' : `${selectedTile.rect.height}px`,
               transform: modalPhase === 'open' ? 'translate(-50%, -50%)' : 'translate(0, 0)',
               borderRadius: modalPhase === 'open' ? '2.5rem' : '4px',
               backgroundColor: modalPhase === 'open' ? '#ffffff' : selectedTile.hexColor,
@@ -439,21 +426,6 @@ export default function ProfileHeatmap() {
                       <div className="flex items-center gap-2 text-3xl font-black bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent font-heading">
                         +{selectedTile.count * 10} <Zap className="text-[#34d399]" size={24} />
                       </div>
-                   </div>
-                </div>
-
-                {/* Clever Congratulatory Message */}
-                <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl flex items-center gap-4">
-                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
-                      <Sparkles className="text-emerald-500" size={24} />
-                   </div>
-                   <div className="flex flex-col">
-                      <span className="text-emerald-900 font-black text-lg leading-tight mb-1 font-heading">
-                        {selectedTile.cheer.title}
-                      </span>
-                      <span className="text-emerald-600 text-sm font-medium leading-snug">
-                        {selectedTile.cheer.sub}
-                      </span>
                    </div>
                 </div>
 
