@@ -9,6 +9,7 @@ import NavBar from "../src/components/website/NavBar";
 import HeroSection from "../src/components/website/sections/HeroSection";
 import Footer from "../src/components/website/Footer";
 import ScrollToTop from "../src/components/website/ScrollToTop";
+import EcoLoadingScreen from "../src/components/shared/EcoLoadingScreen";
 
 // Lazy-load below-fold sections for faster initial paint
 const LogIn = dynamic(() => import("../src/components/pages/LogIn"), { ssr: false });
@@ -26,6 +27,7 @@ function HomeContent() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginSignUpMode, setLoginSignUpMode] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Scroll to top on page load / refresh
   useEffect(() => {
@@ -73,84 +75,98 @@ function HomeContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#064e3b] overflow-x-hidden">
-      {/* Page content — blurred when modal is open */}
-      <div className={`${isLoginOpen ? "pointer-events-none select-none" : ""}`}>
-        <NavBar onLoginClick={openLogin} />
+    <>
+      {/* Loading screen — plays full animation, then reveals page */}
+      {isLoading && (
+        <EcoLoadingScreen onComplete={() => setIsLoading(false)} />
+      )}
 
-        <ScrollToTop />
-        <HeroSection />
-        <HowItWorks />
-        <div className="px-4 md:px-8">
-          <Features />
+      <div
+        className="min-h-screen bg-slate-50 text-[#064e3b] overflow-x-hidden"
+        style={{
+          opacity: isLoading ? 0 : 1,
+          transition: "opacity 500ms ease-in",
+          pointerEvents: isLoading ? "none" : "auto",
+        }}
+      >
+        {/* Page content — blurred when modal is open */}
+        <div className={`${isLoginOpen ? "pointer-events-none select-none" : ""}`}>
+          <NavBar onLoginClick={openLogin} />
+
+          <ScrollToTop />
+          <HeroSection />
+          <HowItWorks />
+          <div className="px-4 md:px-8">
+            <Features />
+          </div>
+          <div className="px-4 md:px-8">
+            <LeaderboardCTA onLoginClick={openSignUp} />
+          </div>
+          <Carousel />
+          <CTASection onLoginClick={openSignUp} />
+          <Footer />
         </div>
-        <div className="px-4 md:px-8">
-          <LeaderboardCTA onLoginClick={openSignUp} />
-        </div>
-        <Carousel />
-        <CTASection onLoginClick={openSignUp} />
-        <Footer />
-      </div>
 
-      {/* Expandable Test Navigation Pill — bottom-left */}
-      <div className="fixed bottom-6 left-6 z-[1000]">
-        {/* Pill Toggle Button */}
-        <button
-          onClick={() => setIsNavOpen(!isNavOpen)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-lime-950/90 backdrop-blur-md border border-white/20 rounded-full shadow-2xl text-white hover:bg-lime-900/90 transition-all duration-300 group"
-        >
-          {isNavOpen ? (
-            <X size={16} className="text-[#66C68E] transition-transform duration-300 group-hover:rotate-90" />
-          ) : (
-            <Menu size={16} className="text-[#66C68E] transition-transform duration-300" />
-          )}
-          <span className="text-xs font-semibold uppercase tracking-widest text-white/70">
-            Test Navigation
-          </span>
-        </button>
+        {/* Expandable Test Navigation Pill — bottom-left */}
+        <div className="fixed bottom-6 left-6 z-[1000]">
+          {/* Pill Toggle Button */}
+          <button
+            onClick={() => setIsNavOpen(!isNavOpen)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-lime-950/90 backdrop-blur-md border border-white/20 rounded-full shadow-2xl text-white hover:bg-lime-900/90 transition-all duration-300 group"
+          >
+            {isNavOpen ? (
+              <X size={16} className="text-[#66C68E] transition-transform duration-300 group-hover:rotate-90" />
+            ) : (
+              <Menu size={16} className="text-[#66C68E] transition-transform duration-300" />
+            )}
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/70">
+              Test Navigation
+            </span>
+          </button>
 
-        {/* Expandable Nav Links */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${isNavOpen ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-            }`}
-        >
-          <div className="flex flex-col gap-2 bg-lime-950/90 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl px-4 py-3">
-            <Link
-              href="/rewards"
-              id="home-rewards-btn"
-              className="flex items-center gap-2 px-4 py-2 bg-[#66C68E]/20 text-white font-bold rounded-lg shadow hover:bg-[#66C68E]/40 hover:scale-[1.02] transition-all duration-200 border border-[#66C68E]/30 text-sm"
-            >
-              <Gift size={15} className="text-[#66C68E]" />
-              Rewards
-            </Link>
-            <Link
-              href="/profile"
-              id="home-profile-btn"
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white font-bold rounded-lg shadow hover:bg-white/20 hover:scale-[1.02] transition-all duration-200 border border-white/20 backdrop-blur-sm text-sm"
-            >
-              <User size={15} className="text-white/70" />
-              Profile
-            </Link>
-            <Link
-              href="/leaderboard"
-              id="home-leaderboard-btn"
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-white font-bold rounded-lg shadow hover:bg-amber-500/40 hover:scale-[1.02] transition-all duration-200 border border-amber-500/30 text-sm"
-            >
-              <Trophy size={15} className="text-amber-400" />
-              Leaderboard
-            </Link>
+          {/* Expandable Nav Links */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${isNavOpen ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+              }`}
+          >
+            <div className="flex flex-col gap-2 bg-lime-950/90 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl px-4 py-3">
+              <Link
+                href="/rewards"
+                id="home-rewards-btn"
+                className="flex items-center gap-2 px-4 py-2 bg-[#66C68E]/20 text-white font-bold rounded-lg shadow hover:bg-[#66C68E]/40 hover:scale-[1.02] transition-all duration-200 border border-[#66C68E]/30 text-sm"
+              >
+                <Gift size={15} className="text-[#66C68E]" />
+                Rewards
+              </Link>
+              <Link
+                href="/profile"
+                id="home-profile-btn"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white font-bold rounded-lg shadow hover:bg-white/20 hover:scale-[1.02] transition-all duration-200 border border-white/20 backdrop-blur-sm text-sm"
+              >
+                <User size={15} className="text-white/70" />
+                Profile
+              </Link>
+              <Link
+                href="/leaderboard"
+                id="home-leaderboard-btn"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-white font-bold rounded-lg shadow hover:bg-amber-500/40 hover:scale-[1.02] transition-all duration-200 border border-amber-500/30 text-sm"
+              >
+                <Trophy size={15} className="text-amber-400" />
+                Leaderboard
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Login Modal — overlays page with blurred backdrop */}
-      {isLoginOpen && (
-        <LogIn
-          onClose={handleLoginClose}
-          initialSignUp={loginSignUpMode}
-        />
-      )}
-    </div>
+        {/* Login Modal — overlays page with blurred backdrop */}
+        {isLoginOpen && (
+          <LogIn
+            onClose={handleLoginClose}
+            initialSignUp={loginSignUpMode}
+          />
+        )}
+      </div>
+    </>
   );
 }
 
@@ -161,3 +177,4 @@ export default function Home() {
     </Suspense>
   );
 }
+
