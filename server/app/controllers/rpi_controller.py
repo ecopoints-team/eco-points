@@ -223,7 +223,6 @@ def deposit_item():
             brand=brand,
             volume_ml=volume_ml,
             condition=condition,
-            size_category=size_category,
             points_awarded=int(points),
             weight_grams=weight_grams,
         )
@@ -293,9 +292,7 @@ def end_session():
         )
 
         account.points_balance = balance_after
-        account.bottles_collected = (account.bottles_collected or 0) + (session.item_count or 0)
         machine.total_items_collected = (machine.total_items_collected or 0) + (session.item_count or 0)
-        machine.total_points_dispensed = (machine.total_points_dispensed or 0) + total_points
         machine.last_heartbeat = datetime.now(timezone.utc)
 
         db.session.add(transaction)

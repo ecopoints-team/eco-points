@@ -27,20 +27,7 @@ import {
 // ─────────────────────────────────────────────
 // Mock Data
 // ─────────────────────────────────────────────
-const MOCK_ACTIVITIES = [
-  { id: 1, type: "earn", amount: 15, description: "Recycled Bottles", date: "2026-04-10T14:30:00Z", reference: "RVM-MAIN-001", bottles: 3, location: "Institute of Technology", category: "PET Plastic" },
-  { id: 2, type: "redeem", amount: -150, description: "Stainless Bottle", date: "2026-04-09T10:15:00Z", reference: "RWD-042", bottles: 0, location: "PUP Admin Building", category: "Merchandise" },
-  { id: 3, type: "earn", amount: 10, description: "Recycled Bottles", date: "2026-04-08T16:45:00Z", reference: "RVM-GATE-002", bottles: 2, location: "Polytechnic University of the Philippines", category: "Aluminum" },
-  { id: 4, type: "earn", amount: 25, description: "Recycled Bottles", date: "2026-04-07T09:20:00Z", reference: "RVM-MAIN-001", bottles: 5, location: "Main Library Entrance", category: "PET Plastic" },
-  { id: 5, type: "redeem", amount: -50, description: "Eco Pencil", date: "2026-04-06T11:00:00Z", reference: "RWD-015", bottles: 0, location: "College of Communication", category: "Merchandise" },
-  { id: 6, type: "earn", amount: 20, description: "Recycled Bottles", date: "2026-04-05T15:10:00Z", reference: "RVM-MAIN-001", bottles: 4, location: "College of Architecture and Engineering", category: "PET Plastic" },
-  { id: 7, type: "earn", amount: 5, description: "Recycled Bottle", date: "2026-04-04T12:30:00Z", reference: "RVM-GATE-002", bottles: 1, location: "West building, Main Campus", category: "PET Plastic" },
-  { id: 8, type: "redeem", amount: -200, description: "Tote Bag", date: "2026-04-03T14:20:00Z", reference: "RWD-088", bottles: 0, location: "Institute of Technology", category: "Merchandise" },
-  { id: 9, type: "earn", amount: 30, description: "Recycled Bottles", date: "2026-04-02T10:00:00Z", reference: "BULK-001", bottles: 10, location: "Admin Building Dock", category: "Mixed Items" },
-  { id: 10, type: "earn", amount: 12, description: "Recycled Bottles", date: "2026-04-01T08:45:00Z", reference: "RVM-MAIN-001", bottles: 3, location: "Main Library Entrance", category: "PET Plastic" },
-  { id: 11, type: "earn", amount: 8, description: "Recycled Bottles", date: "2026-03-31T14:30:00Z", reference: "RVM-MAIN-001", bottles: 2, location: "Main Library Entrance", category: "PET Plastic" },
-  { id: 12, type: "redeem", amount: -25, description: "Eco-Sticker Pack", date: "2026-03-30T10:15:00Z", reference: "RWD-005", bottles: 0, location: "College of Communication", category: "Merchandise" },
-];
+import api from "../../services/apiService";
 
 const fonts = {
   heading: { fontFamily: "'Fredoka'" },
@@ -106,6 +93,35 @@ export default function RecentActivity() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const itemsPerPage = 5;
 
+  const [activities, setActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchActivities() {
+      try {
+        setIsLoading(true);
+        const data = await api.logs.getTransactions();
+        const mappedData = data.map(txn => ({
+          id: txn.id,
+          type: txn.transactionType, // 'earn', 'redeem', 'adjustment'
+          amount: txn.amount,
+          description: txn.description,
+          date: txn.timestamp,
+          reference: txn.referenceId || "N/A",
+          bottles: 0, // Transaction log doesn't store direct bottle count easily, let's default to 0
+          location: txn.locationName || "Unknown Location",
+          category: txn.transactionType === "earn" ? "Recycling" : "Reward",
+        }));
+        setActivities(mappedData);
+      } catch (err) {
+        console.error("Failed to load recent activity:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchActivities();
+  }, []);
+
   useEffect(() => {
     if (selectedActivity) {
       document.body.style.overflow = "hidden";
@@ -116,7 +132,7 @@ export default function RecentActivity() {
   }, [selectedActivity]);
 
   const filteredActivities = useMemo(() => {
-    let result = [...MOCK_ACTIVITIES];
+    let result = [...activities];
     if (filterType !== "all") result = result.filter(a => a.type === filterType);
     result.sort((a, b) => {
       if (sortBy === "newest") return new Date(b.date) - new Date(a.date);
@@ -126,7 +142,7 @@ export default function RecentActivity() {
       return 0;
     });
     return result;
-  }, [filterType, sortBy]);
+  }, [filterType, sortBy, activities]);
 
   const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
   const displayedActivities = filteredActivities.slice(
@@ -171,7 +187,12 @@ export default function RecentActivity() {
 
       {/* List */}
       <div className="flex-1 p-3 space-y-2.5 overflow-y-auto custom-scrollbar">
-        {displayedActivities.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p className="text-stone-400 font-bold text-xs" style={fonts.body}>Loading activities...</p>
+          </div>
+        ) : displayedActivities.length > 0 ? (
           displayedActivities.map((activity) => (
             <div
               key={activity.id}
@@ -188,7 +209,7 @@ export default function RecentActivity() {
                 </p>
               </div>
               <div className={`font-black text-sm sm:text-lg ${activity.type === "earn" ? "text-emerald-600" : "text-amber-600"}`} style={fonts.data}>
-                {activity.type === "earn" ? "+" : ""}{activity.amount}
+                {activity.amount > 0 ? "+" : ""}{activity.amount}
               </div>
             </div>
           ))

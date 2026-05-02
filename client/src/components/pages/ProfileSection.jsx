@@ -19,6 +19,8 @@ import {
   UserCircleIcon,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
+import { useAuth } from "../../context/AuthContext";
+import HowItWorksModal from "../shared/HowItWorksModal";
 
 // ─────────────────────────────────────────────
 // Font styles (consistent across all pages)
@@ -69,7 +71,9 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
 };
 
 export default function ProfileSection() {
+  const { currentUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
   // Mocking the user's tag ID from AccessCredential
   const userTagId = "12345-ABCDE";
@@ -587,6 +591,10 @@ export default function ProfileSection() {
             </button>
           </div>
         </div>
+      )}
+      {/* HOW IT WORKS MODAL */}
+      {isHowItWorksOpen && (
+        <HowItWorksModal onClose={() => setIsHowItWorksOpen(false)} />
       )}
     </section>
   );
