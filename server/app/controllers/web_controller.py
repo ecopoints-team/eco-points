@@ -1730,34 +1730,19 @@ def get_analytics(current_user):
         now = datetime.now(timezone.utc)
         current_year = now.year
 
-        # ── Database-agnostic date formatting ──
-        dialect = db.engine.dialect.name  # 'sqlite' or 'postgresql'
-        if dialect == 'sqlite':
-            def _fmt_ym(col):
-                return func.strftime('%Y-%m', col)
-            def _fmt_ymd(col):
-                return func.strftime('%Y-%m-%d', col)
-            def _fmt_dow(col):
-                return func.strftime('%w', col)
-            def _fmt_hour(col):
-                return func.strftime('%H', col)
-            def _fmt_year(col):
-                return func.strftime('%Y', col)
-            def _fmt_date(col):
-                return func.date(col)
-        else:
-            def _fmt_ym(col):
-                return func.to_char(col, 'YYYY-MM')
-            def _fmt_ymd(col):
-                return func.to_char(col, 'YYYY-MM-DD')
-            def _fmt_dow(col):
-                return func.extract('dow', col).cast(db.String)
-            def _fmt_hour(col):
-                return func.to_char(col, 'HH24')
-            def _fmt_year(col):
-                return func.to_char(col, 'YYYY')
-            def _fmt_date(col):
-                return func.cast(col, db.Date)
+        # ── Date formatting (PostgreSQL only) ──
+        def _fmt_ym(col):
+            return func.to_char(col, 'YYYY-MM')
+        def _fmt_ymd(col):
+            return func.to_char(col, 'YYYY-MM-DD')
+        def _fmt_dow(col):
+            return func.extract('dow', col).cast(db.String)
+        def _fmt_hour(col):
+            return func.to_char(col, 'HH24')
+        def _fmt_year(col):
+            return func.to_char(col, 'YYYY')
+        def _fmt_date(col):
+            return func.cast(col, db.Date)
 
         # ──────────────────────────────────────────────────────
         # 1. RECYCLING TRENDS  (monthly bottles for last 12 months)
