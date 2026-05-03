@@ -60,8 +60,8 @@ erDiagram
         int organization_id FK "Reference -> ORGANIZATIONS"
         string first_name "First Name of Person-in-Charge (PIC)"
         string last_name "Last Name of PIC"
-        string email UK "Email Address of PIC"
-        string phone_number UK "Phone Number of PIC"
+        string email "Email Address of PIC | Unique per org"
+        string phone_number "Phone Number of PIC | Unique per org"
         datetime created_at
     }
 
@@ -83,6 +83,7 @@ erDiagram
         int points_required "Points Needed for Redemption"
         string image_url "Image Storage"
         boolean is_active
+        datetime deactivated_at "Nullable - When reward was disabled"
         datetime created_at
     }
 
@@ -102,6 +103,7 @@ erDiagram
         int reward_id FK "Reference -> REWARDS"
         string variety_name "e.g. Red - Medium, Blue - Large"
         int stock_quantity "inventory for item"
+        string image_url "Nullable - Variant-specific product image"
         boolean is_active
         datetime created_at
     }
@@ -158,6 +160,8 @@ erDiagram
         string user_type "student, faculty, staff"
         boolean is_active
         datetime last_login "Log in Tracking"
+        datetime deactivated_at "Nullable - When account was disabled"
+        string avatar_url "Nullable - Profile avatar image"
         datetime updated_at "Edited Details"
         datetime terms_accepted_at "Data Privacy Act consent timestamp"
         datetime created_at
@@ -188,6 +192,7 @@ erDiagram
         string sent_to "Specific email or phone number"
         string channel "email, sms"
         boolean is_used "Default false"
+        int attempts "Default 0 - Wrong-code attempt counter"
         datetime expires_at "Current time + 5 minutes"
         datetime created_at
     }

@@ -82,13 +82,17 @@ class OrgContact(db.Model):
     One org can have multiple contacts (1:N).
     """
     __tablename__ = 'org_contact'
+    __table_args__ = (
+        db.UniqueConstraint('organization_id', 'email', name='uq_org_contact_email'),
+        db.UniqueConstraint('organization_id', 'phone_number', name='uq_org_contact_phone'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'),
                                 nullable=False, index=True)
     first_name = db.Column(db.String(200))
     last_name = db.Column(db.String(200))
-    email = db.Column(db.String(200), unique=True)
-    phone_number = db.Column(db.String(50), unique=True)
+    email = db.Column(db.String(200))
+    phone_number = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
@@ -148,6 +152,8 @@ class User(db.Model):
     # Status
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime, nullable=True)
+    deactivated_at = db.Column(db.DateTime, nullable=True)        # When account was disabled
+    avatar_url = db.Column(db.String(500), nullable=True)         # Profile avatar image
 
     # Consent
     terms_accepted_at = db.Column(db.DateTime, nullable=True)
@@ -285,6 +291,7 @@ class OtpCode(db.Model):
     sent_to = db.Column(db.String(200), nullable=False)           # Email or phone
     channel = db.Column(db.String(10), nullable=False)            # email, sms
     is_used = db.Column(db.Boolean, default=False)
+    attempts = db.Column(db.Integer, default=0)                   # Wrong-code attempt counter
     expires_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -418,6 +425,7 @@ class Reward(db.Model):
     points_required = db.Column(db.Integer, nullable=False)
     image_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True)
+    deactivated_at = db.Column(db.DateTime, nullable=True)        # When reward was disabled
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -438,6 +446,7 @@ class RewardVariant(db.Model):
     reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False, index=True)
     variety_name = db.Column(db.String(200), nullable=False)      # e.g. "Red - Medium"
     stock_quantity = db.Column(db.Integer, default=0)
+    image_url = db.Column(db.String(500), nullable=True)          # Variant-specific product image
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
