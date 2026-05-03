@@ -1,5 +1,5 @@
 ---
-description: Security Checking Plan
+description:
 globs: 
 alwaysApply: false
 ---
@@ -19,42 +19,3 @@ This is the task that needs to be solved:
 - Always make an implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task
-
-- Included in this chat, is our old completed security audit. After a while, we have ran some tests and fixed some security issues, routing issues, API issues, authentication and authorization/permission issues. Now, we need to do an audit again for the record. Here are the things that we need to check:
-    - Authentication
-        - User data privacy
-        - User token and session
-        - Password hashing
-        - Session management
-        - Rate limiting
-    - Authorization
-        - Role based access control
-        - Permission based access control
-    - API Security
-        - API authentication
-        - API authorization
-        - API rate limiting
-        - API parameter validation
-    - Input validation
-        - XSS prevention
-        - SQL injection prevention
-    - Database security
-        - Database authentication
-        - Database authorization
-        - Database connection pooling
-    - File upload security
-        - File upload authentication
-        - File upload authorization
-        - File upload parameter validation
-    - CORS security
-    - QR code security 
-    - API Routing Security
-    - Admin users permission/authorization
-        - Admin roles should have access in admin dashboard and sub-pages/endpoints under /admin (as of now, all are protected by admin_required). 
-
-## Found issue that we need to check
-
-- The old migration, we only have admin users and not an actual regular user. Meaning the routing/redirection of the login modal of ours is redirected to the admin dashboard. This is wha we need to fix:
-    - The regular users who logs in through the login modal (not the rpi) should be redirected to the user dashboard, which in this case, is the rewards page, not the admin dashboard.
-    - The regular users who logs in through rpi with their QR code should be also redirected to the rewards page, not the admin dashboard. 
-
