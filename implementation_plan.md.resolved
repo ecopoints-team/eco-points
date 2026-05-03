@@ -1,0 +1,80 @@
+# Implementation Plan — Backend Model/API Alignment
+
+> **Status: ✅ COMPLETE**
+> All phases executed. Backend fully aligned with the 19-table ERD.
+
+---
+
+## Final Status by File
+
+| File | Status | Notes |
+|---|---|---|
+| `models.py` | ✅ Complete | 21 tables, all ERD-aligned |
+| `middleware.py` | ✅ Complete | 2-hop org lookup (`User → CommunityGroup → Organization`), no legacy refs |
+| `auth_controller.py` | ✅ Complete | Atomic `User + Wallet + UserSecurity` on register; persistent `OtpCode` on 2FA |
+| `rpi_controller.py` | ✅ Complete | ML-native fields (`detected_class`, `confidence_score`), wallet-based sessions |
+| `otp_service.py` | ✅ Complete | Persistent DB-backed OTP via `OtpCode` model |
+| `notification_service.py` | ✅ Complete | Uses only `NotificationSetting`, `NotificationLog`, `Organization` |
+| `routes.py` | ✅ Complete | No model dependency, health endpoints only |
+| `seeder/__init__.py` | ✅ Complete | Flask CLI wrapper, no model logic |
+| `web_controller.py` | ✅ Complete | 5 runtime bugs fixed + `BulkDeposit` import + 2 new routes |
+| `seeder/seed.py` | ✅ Complete | 3 bugs fixed + dead `_get_points()` removed |
+| `seed.py` (root) | ✅ Complete | Docstring updated to "19-table ERD" |
+| `migrations/versions/*` | ✅ Complete | All 3 stale migration files deleted; fresh migration pending PostgreSQL setup |
+
+---
+
+## Completed Action Plan
+
+### Phase 1 — Cleanup
+- [x] Fix `seed.py` (root) docstring — updated from "16 tables" to "19-table ERD", added `flask seed --fresh` alternative
+- [x] Remove `_get_points(volume, has_label)` dead function from `seeder/seed.py` — used old `volume`/`has_label` legacy fields, never called
+- [x] Delete 3 stale migration files from `migrations/versions/` — all based on old 14-table SQLite schema
+
+### Phase 2 — Missing API Endpoint
+- [x] Add `BulkDeposit` to `web_controller.py` import block
+- [x] Add `GET /api/web/bulk-deposits` — lists all admin manual deposits scoped by org
+- [x] Add `POST /api/web/bulk-deposits` — creates `BulkDeposit` record, credits `Wallet`, logs `Transaction`
+
+### Phase 3 — Verification
+- [x] Grep scan: zero legacy model references (`Account`, `City`, `AccessCredential`, `condition`, `account_id`) remaining in any `.py` file
+- [x] All controller import blocks verified against current `models.py`
+
+---
+
+## Additional Decisions Documented
+
+### Two `seed.py` files — Keep Both
+
+| File | Role |
+|---|---|
+| `server/seed.py` | Thin CLI entry point — `python seed.py` |
+| `server/app/seeder/seed.py` | Full data generation logic (897 lines) |
+| `server/app/seeder/__init__.py` | Flask CLI adapter — `flask seed --fresh` |
+
+Both entry points call the same `run_seed()`. Keeping both for developer convenience.
+
+### Stale Migrations — Deleted
+
+All 3 files in `migrations/versions/` built against the old 14-table schema were deleted. A fresh migration will be generated with `flask db migrate -m "Initial 19-table schema"` when PostgreSQL setup is executed.
+
+### BulkDeposit vs `/sessions/bulk` — Clarified
+
+| | `POST /sessions/bulk` | `POST /bulk-deposits` |
+|---|---|---|
+| Creates | `RecyclingSession` + `RecyclingItem[]` | `BulkDeposit` (single record) |
+| Simulates | RVM machine session with ML items | Admin manually crediting points (no machine) |
+| Required fields | `rvmId`, `items[]` with `detectedClass` | `walletId`, `totalPointsAwarded`, `itemCount` |
+| Points flow | Wallet ← Session total | Wallet ← Bulk deposit total |
+| Transaction tag | `reference_type='recycling_session'` | `reference_type='bulk_deposit'` |
+
+Both credit the same `Wallet.points_balance`. The `BulkDeposit` table provides audit trail for who approved a manual credit, how many items, and why — separate from the machine-based transaction ledger.
+
+---
+
+## Next Steps (Deferred)
+
+- [ ] Run fresh PostgreSQL migration (`flask db migrate` + `flask db upgrade`)
+- [ ] Run seeder against PostgreSQL (`python seed.py`)
+- [ ] Verify all 21 tables in pgAdmin after migration
+- [ ] **Frontend alignment phase** — check website fields, admin views, and data visualization against the refined 19-table models

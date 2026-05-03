@@ -1,0 +1,156 @@
+# EcoPoints Backend — ERD/Model Alignment Session Report
+
+**Session Date:** 2026-05-02 to 2026-05-03
+**Scope:** Align all server-side Python files with the new 19-table ERD (`ERD.md`)
+
+---
+
+## 1. ERD Validation Result
+
+**21/21 ERD entities match `models.py` exactly.**
+
+| ERD Group | Tables | Result |
+|---|---|---|
+| Organization | `OrgType`, `Organization`, `OrgAddress`, `OrgContact` | ✅ |
+| Users | `CommunityGroup`, `User`, `Wallet`, `UserSecurity`, `OtpCode` | ✅ |
+| Machines | `RVM`, `RecyclingSession`, `RecyclingItem`, `MaintenanceLog` | ✅ |
+| Finance | `Transaction`, `BulkDeposit` | ✅ |
+| Rewards | `Reward`, `RewardVariant`, `RewardRedemption` | ✅ |
+| Admin | `AdminLog` | ✅ |
+| Notifications | `NotificationSetting`, `NotificationLog` | ✅ |
+| Security | `TokenBlacklist`, `LoginAttempt` | ✅ |
+
+---
+
+## 2. Bugs Fixed
+
+### `web_controller.py` — 5 Runtime Bugs
+
+| # | Line | Bug | Fix |
+|---|---|---|---|
+| 1 | 457 | `Organization.query.filter_by(org_type_id=...)` — column is `type_id` | Changed to `filter_by(type_id=ot_id)` |
+| 2 | 774, 780, 781 | `name` variable undefined in `create_user()` after user save | Changed all 3 references to `user.name` |
+| 3 | 1931–1940 | `RecyclingItem.condition` — column removed in new ERD | Changed to `RecyclingItem.status`; updated comment and response serializer |
+| 4 | 1949 | `db.session.query(...).join(Account).join(CommunityGroup)` — `Account` model removed | Changed to `.join(CommunityGroup, User.community_group_id == CommunityGroup.id)` |
+| 5 | 2735–2751 | `get_login_history()` joined `Account` and used `AdminLog.timestamp` — both removed/renamed | Removed `Account` join, replaced with direct `CommunityGroup` join; `timestamp` → `created_at` on both query and response |
+
+### `seeder/seed.py` — 3 Bugs
+
+| # | Line | Bug | Fix |
+|---|---|---|---|
+| 6 | 417, 486 | `UserSecurity(two_fa_enabled=False)` — field is `two_factor_enabled` | Changed both occurrences to `two_factor_enabled=False` |
+| 7 | 527–528 | `RewardVariant(label='Default', is_default=True)` — both fields don't exist | Changed to `variety_name='Default', is_active=True` |
+| 8 | 667 | `RewardVariant.query.filter_by(is_default=True)` — field doesn't exist | Changed to `filter_by(variety_name='Default')` |
+
+---
+
+## 3. New Features Added
+
+### `web_controller.py` — `BulkDeposit` API Endpoints
+
+`BulkDeposit` existed in `models.py` and was seeded, but had no API surface. Added:
+
+**`GET /api/web/bulk-deposits`**
+- Lists all admin manual deposits
+- Scoped by organization (`CommunityGroup → Organization` join)
+- Returns: `id`, `adminName`, `userName`, `userEmail`, `walletId`, `totalPointsAwarded`, `itemCount`, `notes`, `createdAt`
+- Auth: `@token_required` + `@admin_required`
+
+**`POST /api/web/bulk-deposits`**
+- Body: `{ walletId, totalPointsAwarded, itemCount, notes? }`
+- Creates `BulkDeposit` record
+- Credits `Wallet.points_balance` and `lifetime_points`
+- Logs `Transaction` with `transaction_type='bulk_transaction'`, `reference_type='bulk_deposit'`
+- Org-scope enforced: wallet user must belong to admin's organization
+- Auth: `@token_required` + `@admin_required`
+
+Also added `_serialize_bulk_deposit()` helper serializer.
+
+---
+
+## 4. Dead Code Removed
+
+| File | What | Why |
+|---|---|---|
+| `seeder/seed.py` | `_get_points(volume, has_label)` function (lines 272–279) | Used old schema fields (`volume`, `has_label`) from legacy schema; never called anywhere in the new seeder |
+
+---
+
+## 5. Stale Files Cleaned
+
+| File | Action | Reason |
+|---|---|---|
+| `seed.py` (root) | Updated docstring | Said "16 tables" — now correctly says "19-table ERD"; added `flask seed --fresh` alternative usage note |
+| `migrations/versions/edab494b5c67_14_table_approved_schema.py` | Deleted | Creates old `Account`, `City`, `AccessCredential` tables — all removed from ERD |
+| `migrations/versions/406e48d40e9e_add_token_blacklist_city_unique_.py` | Deleted | References `City` table — removed from ERD |
+| `migrations/versions/48dd370398d3_add_2fa_and_login_attempts.py` | Deleted | Built on old `Account` model — removed from ERD |
+
+---
+
+## 6. Verification Pass Results
+
+Grep scan across all `.py` files in `server/app/` for legacy references:
+
+| Pattern | Results |
+|---|---|
+| `\bAccount\b` (as model) | ✅ Zero — only safe strings like `"Account is deactivated"` (UI error message) |
+| `\.account_id` | ✅ Zero |
+| `\bCity\b` (as model) | ✅ Zero — only address strings like `'city': 'Pasig City'` (data values) |
+| `AccessCredential` | ✅ Zero |
+| `RecyclingItem.condition` | ✅ Zero |
+| `AdminLog.timestamp` | ✅ Zero |
+
+**Result: No legacy references remain in any active Python file.**
+
+---
+
+## 7. ERD Design Assessment
+
+### Strengths (15 justified design decisions)
+
+| Decision | Justification |
+|---|---|
+| `Wallet` separate from `User` | Single-responsibility; O(1) leaderboard reads via `lifetime_points` |
+| `UserSecurity` separate from `User` | 2FA settings rarely read; avoids bloating the most-queried table |
+| `OtpCode` as persistent DB table | Survives server restarts; works across multiple Gunicorn workers; auditable |
+| `OrgAddress` + `OrgContact` flat | Replaces legacy `City` FK lookup; flat strings = fewer joins |
+| ML-native `RecyclingItem` fields | `detected_class` + `confidence_score` directly maps YOLOv8 output |
+| `RewardVariant` per-SKU stock | Realistic inventory management at variant level |
+| `BulkDeposit` dedicated table | Separate audit trail for admin manual credits vs RVM sessions |
+| `Transaction` structured references | `reference_type` + `reference_id` enables programmatic joins back to source |
+| `RecyclingSession.wallet_id` direct FK | Old: `Session → Account → User → points`. New: `Session → Wallet`. One less join. |
+| `User.community_group_id` direct FK | Removed `Account` indirection layer |
+| `RVM.is_capacity_full` boolean | Maps directly to IR sensor HIGH/LOW output |
+| `MaintenanceLog.status` enum | Can express `Cancelled` — impossible with old boolean `resolved` |
+| `AdminLog.created_at` | Standardized timestamp naming across all tables |
+| `TokenBlacklist` with `expires_at` | JWT revocation with cron-cleanable expiry |
+| `LoginAttempt` table | Configurable lockout policies with per-attempt audit trail |
+
+### Improvement Opportunities (Non-Blockers)
+
+| Gap | Change | Status |
+|---|---|---|
+| `deactivated_at` on `User` and `Reward` | Added `DateTime nullable` to both models + ERD | ✅ Done |
+| `avatar_url` on `User` | Added `String(500) nullable` + ERD | ✅ Done |
+| `image_url` on `RewardVariant` | Added `String(500) nullable` + ERD | ✅ Done |
+| OTP attempt counter on `OtpCode` | Added `attempts Integer default 0` + ERD | ✅ Done |
+| `OrgContact` global unique scope | Changed to org-scoped `UniqueConstraint` for email and phone | ✅ Done |
+| `NotificationSetting` dual-purposed | Kept as-is — acceptable trade-off | ⏭️ Deferred |
+
+---
+
+## 8. Guides Created
+
+| File | Purpose |
+|---|---|
+| [`Guides/DATABASE_MIGRATION_GUIDE.md`](file:///c:/Users/pc/Documents/Github/Guides/DATABASE_MIGRATION_GUIDE.md) | Step-by-step PostgreSQL migration, seeding, and reset procedures |
+
+---
+
+## 9. What's Next
+
+| Priority | Task |
+|---|---|
+| 🔴 Before testing | Run `flask db migrate -m "Initial 19-table schema"` + `flask db upgrade` + `python seed.py` against PostgreSQL |
+| 🟡 Next session | Frontend alignment — check admin panel field names, data displays, and API calls against the new model structure |
+| 🟢 Deferred | Add `deactivated_at`, `avatar_url`, OTP attempt counter if needed |

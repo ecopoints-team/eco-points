@@ -1,0 +1,132 @@
+# Report vs Code — Alignment Audit
+
+## Verdict: **~90% aligned**, with **3 bugs** and **several stale references** remaining
+
+---
+
+## ✅ Confirmed Accurate
+
+| Report Claim | Code Verification |
+|---|---|
+| 19 models in `models.py` | ✅ All 19 present: OrgType, Organization, OrgAddress, OrgContact, CommunityGroup, User, Wallet, UserSecurity, OtpCode, RVM, RecyclingSession, RecyclingItem, MaintenanceLog, Transaction, Reward, RewardVariant, RewardRedemption, BulkDeposit, AdminLog + NotificationSetting, NotificationLog, TokenBlacklist, LoginAttempt (actually 23 total, 19 domain models) |
+| `City`, `Account`, `AccessCredential` removed | ✅ Not in `models.py` |
+| `OrgAddress`, `OrgContact`, `Wallet`, `UserSecurity`, `OtpCode`, `RewardVariant`, `BulkDeposit` added | ✅ All present in `models.py` |
+| `middleware.py` — `user.community_group.organization_id` (2 hops) | ✅ Line 138: `user.community_group.organization_id` |
+| `auth_controller.py` — Creates `User + Wallet + UserSecurity` atomically on register | ✅ Lines 539-561 |
+| `auth_controller.py` — Reads `Wallet.points_balance`, `UserSecurity.two_fa_enabled` on login | ✅ Lines 160-176 (`_serialize_auth_user`) |
+| `auth_controller.py` — `firstName`/`lastName` split fields | ✅ Lines 389-394 |
+| `auth_controller.py` — Queries `OtpCode` table for 2FA | ✅ via `otp_service.py` |
+| `rpi_controller.py` — Looks up user by `display_id` (QR) | ✅ Line 104 |
+| `rpi_controller.py` — Opens session with `wallet_id` | ✅ Line 158 |
+| `rpi_controller.py` — `detected_class`, `confidence_score`, `status`, `scanned_at` on items | ✅ Lines 212-218 |
+| `rpi_controller.py` — Credits `Wallet.points_balance` and `lifetime_points` atomically | ✅ Lines 272-273 |
+| `otp_service.py` — Uses `OtpCode` model (persistent DB) | ✅ Lines 29-38 |
+| `web_controller.py` — `_serialize_address()` replaces `_serialize_city()` | ✅ Lines 34-39 |
+| `web_controller.py` — `_serialize_user()` returns `firstName/middleName/lastName`, `walletId`, `lifetimePoints` | ✅ Lines 109-132 |
+| `web_controller.py` — `_serialize_rvm()` uses `isCapacityFull` | ✅ Lines 135-148 |
+| `web_controller.py` — `_serialize_reward()` aggregates stock across `RewardVariant`, returns `variants[]` | ✅ Lines 151-170 |
+| `web_controller.py` — `_serialize_bottle_log()` returns `detectedClass`, `confidenceScore`, `scannedAt` | ✅ Lines 173-197 |
+| `web_controller.py` — `_serialize_machine_log()` uses `log.status` and `log.created_at` | ✅ Lines 200-216 |
+| `web_controller.py` — `_serialize_admin_log()` uses `admin.community_group` (no Account) | ✅ Lines 219-241 |
+| `web_controller.py` — `_serialize_reward_log()` traverses `rd.wallet.user` via `variant.reward` | ✅ Lines 244-269 |
+| `web_controller.py` — City routes removed | ✅ Lines 468-471 (comment only) |
+| `web_controller.py` — Create location: `OrgAddress + OrgContact` | ✅ Lines 521-542 |
+| `web_controller.py` — Create user: `User + Wallet + UserSecurity` | ✅ Lines 747-769 |
+| `web_controller.py` — Adjust points operates on `Wallet` | ✅ Lines 896-908 |
+| `web_controller.py` — `isCapacityFull` boolean on machines | ✅ Lines 1021-1027 |
+| `web_controller.py` — Rewards: default `RewardVariant` on create | ✅ Lines 1126-1132 |
+| `web_controller.py` — Leaderboard: `Wallet.lifetime_points` sort | ✅ Line 1533 |
+| `web_controller.py` — Groups delete: `User.community_group_id` guard | ✅ Line 1718 |
+| `web_controller.py` — Bulk sessions: `wallet_id + detected_class/confidence_score` | ✅ Lines 2456-2466 |
+| Report says `BulkDeposit` model missing | ❌ **STALE** — `BulkDeposit` IS present in `models.py` (lines 470-486) |
+| Report says `RewardVariant` field name needs checking (`variety_name` vs `label`) | ✅ `models.py` uses `variety_name` (line 439). Report ERD is correct. |
+
+---
+
+## 🔴 Bugs Found (code doesn't match report OR is broken)
+
+### Bug 1: `web_controller.py` Line 1934 — `RecyclingItem.condition` doesn't exist
+
+```python
+# Line 1934-1940 (Section 10: Bottle Condition Breakdown)
+cond_base = db.session.query(
+    RecyclingItem.condition,          # ← DOES NOT EXIST
+    func.count(RecyclingItem.id).label('count'),
+).join(RecyclingSession)
+```
+
+> [!CAUTION]
+> `RecyclingItem` has no `condition` column. The old schema had `condition` (With Label / No Label). The new schema uses `status` (Accepted / Rejected) and `detected_class`. This analytics query will crash at runtime.
+
+**Fix:** Replace `RecyclingItem.condition` with `RecyclingItem.status` (or remove section entirely — it's now redundant with the Accepted/Rejected breakdown in section 1).
+
+---
+
+### Bug 2: `web_controller.py` Line 1949 — `Account` reference still present
+
+```python
+# Line 1949 (Section 11: Summary Totals)
+total_users_base = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
+```
+
+> [!CAUTION]
+> `Account` model was removed. This will crash with `NameError: name 'Account' is not defined` (it's not imported). Should be `User.query.join(CommunityGroup)`.
+
+---
+
+### Bug 3: `web_controller.py` Lines 2735-2751 — `get_login_history()` uses removed models/fields
+
+```python
+# Lines 2738-2744
+).join(
+    Account, User.account_id == Account.id        # ← Account removed
+).join(
+    CommunityGroup, Account.community_group_id == CommunityGroup.id  # ← Account removed
+).filter(
+    ...
+).order_by(AdminLog.timestamp.desc())             # ← field is created_at, not timestamp
+```
+
+And line 2751:
+```python
+'timestamp': _dt(l.timestamp),                    # ← field is created_at
+```
+
+> [!CAUTION]
+> Three issues in one route:
+> 1. `Account` model referenced (removed)
+> 2. `User.account_id` referenced (removed)  
+> 3. `AdminLog.timestamp` referenced (renamed to `created_at`)
+
+---
+
+## 🟡 Minor Discrepancies (non-breaking, report inaccuracies)
+
+| # | Report Says | Actual Code | Impact |
+|---|---|---|---|
+| 1 | Report line count: `models.py` — 591 lines | ✅ Matches (591 lines) | None |
+| 2 | Report line count: `web_controller.py` — ~2758 lines | Actual: 2757 lines | Negligible |
+| 3 | Report says `UserSecurity.two_fa_enabled` | Code uses `two_factor_enabled` (line 267) | Report field name wrong; code is correct |
+| 4 | Report § "Next Steps" says `BulkDeposit` model missing | `BulkDeposit` EXISTS at line 470 of `models.py` | Report is stale — this was already fixed |
+| 5 | Report § auth_controller row: `GET /me` returns `walletId` | `_serialize_auth_user()` does NOT return `walletId` — it returns `pointsBalance`, `lifetimePoints`, `streak` but no `walletId` key | Minor omission in auth serializer |
+| 6 | Report § auth_controller row: `POST /verify-2fa` | Route is actually `POST /verify-otp` (line 271) | Route name mismatch in report |
+| 7 | `web_controller.py` line 774: references `name` variable (undefined) | Should be `user.name` — will throw `NameError` at runtime | **Bug** (but in a rarely-hit path) |
+
+---
+
+## Summary
+
+| Category | Count |
+|---|---|
+| ✅ Accurate claims | ~35 |
+| 🔴 Runtime bugs in code | 3 (analytics condition, Account refs in 2 routes) |
+| 🟡 Report text inaccuracies | 7 |
+| 📌 Stale "Next Steps" items | 2 (BulkDeposit exists, RewardVariant field confirmed) |
+
+### Recommended fixes (priority order):
+
+1. **Line 1949** — Replace `Account` join with `CommunityGroup` join
+2. **Lines 2735-2751** — Rewrite `get_login_history()` to use `User.community_group_id → CommunityGroup` and `AdminLog.created_at`
+3. **Line 1934** — Replace `RecyclingItem.condition` with `RecyclingItem.status`
+4. **Line 774** — Change `name` to `user.name`
+5. Update report "Next Steps" to remove resolved items

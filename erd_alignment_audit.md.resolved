@@ -1,0 +1,235 @@
+# ERD ↔ Codebase Alignment Audit
+
+> **ERD Source:** `ERD.md` (19 domain tables + 2 security tables)
+> **Files checked:** `models.py`, `web_controller.py`, `auth_controller.py`, `rpi_controller.py`, `otp_service.py`, `middleware.py`, `seeder/seed.py`, `seed.py`, `__init__.py`
+
+---
+
+## Models vs ERD — Field-by-Field
+
+### ✅ Fully Aligned (15/21 entities)
+
+| ERD Entity | Model | Verdict |
+|---|---|---|
+| `ORG_TYPES` | `OrgType` | ✅ Exact match |
+| `ORGANIZATIONS` | `Organization` | ✅ Exact match |
+| `ORG_ADDRESS` | `OrgAddress` | ✅ Exact match |
+| `ORG_CONTACT` | `OrgContact` | ✅ Exact match |
+| `COMMUNITY_GROUPS` | `CommunityGroup` | ✅ Exact match |
+| `USERS` | `User` | ✅ Exact match |
+| `WALLET` | `Wallet` | ✅ Exact match |
+| `OTP_CODES` | `OtpCode` | ✅ Exact match |
+| `RVMS` | `RVM` | ✅ Exact match |
+| `RECYCLING_SESSIONS` | `RecyclingSession` | ✅ Exact match |
+| `RECYCLING_ITEMS` | `RecyclingItem` | ✅ Exact match |
+| `TRANSACTIONS` | `Transaction` | ✅ Exact match |
+| `REWARDS` | `Reward` | ✅ Exact match |
+| `REWARD_REDEMPTIONS` | `RewardRedemption` | ✅ Exact match |
+| `MAINTENANCE_LOGS` | `MaintenanceLog` | ✅ Exact match |
+| `ADMIN_LOGS` | `AdminLog` | ✅ Exact match |
+| `BULK_DEPOSITS` | `BulkDeposit` | ✅ Exact match |
+| `NOTIFICATION_SETTINGS` | `NotificationSetting` | ✅ Exact match |
+| `NOTIFICATION_LOGS` | `NotificationLog` | ✅ Exact match |
+| `TOKEN_BLACKLIST` | `TokenBlacklist` | ✅ Exact match |
+| `LOGIN_ATTEMPTS` | `LoginAttempt` | ✅ Exact match |
+
+### ⚠️ Mismatched (1 entity)
+
+| ERD Entity | ERD Field | Model Field | Issue |
+|---|---|---|---|
+| `USER_SECURITY` | `two_factor_enabled` | `two_factor_enabled` | ✅ Model correct |
+
+> The ERD and model agree. But `seed.py` uses `two_fa_enabled=False` (lines 417, 486) — a field that doesn't exist. This will silently be ignored by SQLAlchemy (keyword arg not matching column name), meaning **2FA is never properly set during seeding**.
+
+### ⚠️ `REWARD_VARIANTS` — 2 Field Mismatches in Seeder
+
+| ERD Field | Model Field | Seeder Field | Issue |
+|---|---|---|---|
+| `variety_name` | `variety_name` ✅ | `label` ❌ (line 527) | Seeder uses wrong field name. Will crash or silently ignore. |
+| *(not in ERD)* | *(not in model)* | `is_default=True` (lines 528, 667) | Field does not exist on `RewardVariant` model. Will crash on query (line 667). |
+
+---
+
+## 🔴 Runtime Bugs (will crash or produce wrong results)
+
+### Bug 1 — `web_controller.py:1934` — `RecyclingItem.condition` doesn't exist
+
+```python
+RecyclingItem.condition    # ← Column removed in new ERD
+```
+ERD says `status` (Accepted/Rejected). No `condition` field.
+
+> [!CAUTION]
+> Analytics endpoint `GET /api/web/analytics` will crash with `AttributeError`.
+
+**Fix:** Replace `.condition` with `.status` on lines 1934, 1935, 1940, and in the response serializer at lines 2052-2055.
+
+---
+
+### Bug 2 — `web_controller.py:1949` — `Account` model referenced
+
+```python
+total_users_base = db.session.query(func.count(User.id)).join(Account).join(CommunityGroup)
+```
+
+> [!CAUTION]
+> `Account` is not imported and doesn't exist. `NameError` crash on analytics endpoint.
+
+**Fix:** `db.session.query(func.count(User.id)).join(CommunityGroup)`
+
+---
+
+### Bug 3 — `web_controller.py:2735-2751` — `get_login_history()` uses removed `Account` model + old field names
+
+```python
+.join(Account, User.account_id == Account.id)                    # ← Account removed
+.join(CommunityGroup, Account.community_group_id == CommunityGroup.id)  # ← Account removed
+.order_by(AdminLog.timestamp.desc())                              # ← field is created_at
+...
+'timestamp': _dt(l.timestamp),                                    # ← field is created_at
+```
+
+> [!CAUTION]
+> `NameError: Account` + `AttributeError: timestamp`. Login history endpoint completely broken.
+
+**Fix:** Replace with `User.community_group_id → CommunityGroup` join, use `AdminLog.created_at`.
+
+---
+
+### Bug 4 — `web_controller.py:457` — `filter_by(org_type_id=ot_id)` wrong column name
+
+```python
+ref_count = Organization.query.filter_by(org_type_id=ot_id).count()
+```
+
+Model uses `type_id`, not `org_type_id`. SQLAlchemy `filter_by` with wrong field name will raise `InvalidRequestError`.
+
+> [!CAUTION]
+> Delete org-type endpoint crashes.
+
+**Fix:** `filter_by(type_id=ot_id)`
+
+---
+
+### Bug 5 — `web_controller.py:774,780,781` — Undefined `name` variable
+
+```python
+_log_action(current_user, 'User Created', name, 'Users', f'Role: {role}')   # name undefined
+trigger_alert(location_id, 'new_user_registered',
+              f'New user registered: {name}',                                  # name undefined
+              f'A new {role} "{name}" was created by {current_user.name}.')   # name undefined
+```
+
+> [!WARNING]
+> `NameError` when creating user via `POST /api/web/users`.
+
+**Fix:** Replace `name` with `user.name`
+
+---
+
+### Bug 6 — `seeder/seed.py:527-528` — Wrong `RewardVariant` field names
+
+```python
+variant = RewardVariant(
+    reward_id=reward.id, label='Default',         # ← model field is variety_name
+    stock_quantity=r['stock'], is_default=True,    # ← is_default doesn't exist
+)
+```
+
+> [!CAUTION]
+> Seeder will crash when creating reward variants.
+
+**Fix:** `label='Default'` → `variety_name='Default'`, remove `is_default=True`
+
+---
+
+### Bug 7 — `seeder/seed.py:667` — Queries non-existent `is_default` field
+
+```python
+variant = RewardVariant.query.filter_by(reward_id=reward.id, is_default=True).first()
+```
+
+> [!CAUTION]
+> Seeder crash during redemption seeding.
+
+**Fix:** `filter_by(reward_id=reward.id, variety_name='Default')`
+
+---
+
+### Bug 8 — `seeder/seed.py:417,486` — Wrong `UserSecurity` field name
+
+```python
+sec = UserSecurity(user_id=user.id, two_fa_enabled=False)
+```
+
+Model field: `two_factor_enabled`. `two_fa_enabled` silently ignored → no error, but 2FA state never explicitly set.
+
+> [!WARNING]
+> Not a crash (SQLAlchemy ignores unknown kwargs), but semantically wrong.
+
+**Fix:** `two_fa_enabled=False` → `two_factor_enabled=False`
+
+---
+
+## Summary
+
+| Category | Count | Details |
+|---|---|---|
+| ✅ ERD ↔ Model alignment | 21/21 | All ERD entities match `models.py` perfectly |
+| ✅ Fixed in `web_controller.py` | 5 | Lines 457, 774, 1934, 1949, 2735 |
+| ✅ Fixed in `seeder/seed.py` | 3 | Lines 417/486, 527-528, 667 |
+| 🟢 Total bugs fixed | **8** | All resolved |
+
+### Files fixed:
+
+| File | Fixed Lines | Change |
+|---|---|---|
+| [web_controller.py](file:///c:/Users/pc/Documents/Github/server/app/controllers/web_controller.py) | 457 | `org_type_id` → `type_id` |
+| | 774, 780, 781 | `name` → `user.name` |
+| | 1931-1940 | `RecyclingItem.condition` → `.status` |
+| | 1949 | Removed `Account` join, direct `CommunityGroup` join |
+| | 2735-2751 | Removed `Account` join, `timestamp` → `created_at` |
+| [seed.py](file:///c:/Users/pc/Documents/Github/server/app/seeder/seed.py) | 417, 486 | `two_fa_enabled` → `two_factor_enabled` |
+| | 527-528 | `label` → `variety_name`, `is_default` → `is_active` |
+| | 667 | `is_default=True` → `variety_name='Default'` |
+
+---
+
+## ERD / Model Design Justification
+
+### ✅ What the New ERD Does Well
+
+| Design Decision | Justification |
+|---|---|
+| **`Wallet` separated from `User`** | Single-responsibility. Point mutations don't lock the User row. `lifetime_points` enables O(1) leaderboard reads without aggregating transactions. `streak` lives where points live — coherent domain boundary. |
+| **`UserSecurity` separated from `User`** | 2FA settings change independently from profile. Avoids bloating the most-queried table with rarely-read columns. Clean extension point for future MFA methods. |
+| **`OtpCode` as persistent table** | Survives server restarts. Works across multiple Gunicorn workers. Auditable — you can answer "how many OTPs did user X burn through?" |
+| **`OrgAddress` + `OrgContact` (1:1 + 1:N)** | Replaces old `City` lookup table. Flat address strings avoid join overhead. 1:N contacts supports orgs with multiple PICs — realistic for universities. |
+| **`RecyclingItem` ML-native fields** | `detected_class` + `confidence_score` directly maps YOLOv8 output. No more legacy `brand`/`volume_ml`/`condition` fields that don't exist in an ML pipeline. `status` (Accepted/Rejected) is the only decision the system makes. |
+| **`RewardVariant` per-SKU stock** | Stock tracked at variant level (Red-Medium, Blue-Large) instead of a single number per reward. Matches real inventory management. `variety_name` is descriptive. |
+| **`BulkDeposit` dedicated table** | Admin manual deposits have their own audit trail separate from RVM sessions. `admin_user_id` tracks who approved it. |
+| **`Transaction` with structured references** | `reference_type` + `reference_id` (integer) replaces old string-based `description`/`reference_id`. Enables programmatic joins back to source records. `balance_before`/`balance_after` gives full audit trail. |
+| **`RecyclingSession.wallet_id`** | Direct FK to Wallet. Old schema went `Session → Account → User → points`. New schema: `Session → Wallet`. One less join, cleaner. |
+| **`MaintenanceLog.status` enum** | `Resolved/Pending/Cancelled` replaces boolean `resolved`. Can now express "we gave up on this repair" without deleting the record. |
+| **`AdminLog.created_at`** | Standardized timestamp naming across all tables. No more `timestamp` vs `created_at` inconsistency. |
+| **`RVM.is_capacity_full` boolean** | Maps directly to IR sensor output (HIGH/LOW). Old `current_capacity` integer was meaningless — the sensor doesn't report percentages. |
+| **`User.community_group_id` direct FK** | Removes the `Account` indirection layer. Old: `User → Account → CommunityGroup`. New: `User → CommunityGroup`. Every scoped query is 1 join cheaper. |
+| **`LoginAttempt` table** | Security monitoring with `ip_address`, `failure_reason`, `attempted_at`. Supports configurable lockout policies per org. |
+| **`TokenBlacklist`** | JWT revocation on logout. `expires_at` enables cleanup cron jobs. |
+
+### ✅ Improvements Implemented
+
+| Gap | Change | Status |
+|---|---|---|
+| **No `deactivated_at` on `User`/`Reward`** | Added `deactivated_at DateTime` to both `User` and `Reward` models + ERD | ✅ Done |
+| **No `avatar_url` on `User`** | Added `avatar_url String(500)` to `User` model + ERD | ✅ Done |
+| **No `image_url` on `RewardVariant`** | Added `image_url String(500)` to `RewardVariant` model + ERD | ✅ Done |
+| **No OTP attempt counter** | Added `attempts Integer default 0` to `OtpCode` model + ERD | ✅ Done |
+| **`OrgContact` global phone/email uniqueness** | Changed from global `UNIQUE` to org-scoped `UniqueConstraint('organization_id', 'email')` and `UniqueConstraint('organization_id', 'phone_number')` | ✅ Done |
+| **`NotificationSetting` dual-purposed** | Kept as-is — acceptable trade-off to avoid schema bloat. No code change needed. | ⏭️ Deferred |
+
+### ⏭️ Skipped (By Design)
+
+| Gap | Reason |
+|---|---|
+| **No session duration analytics** | Not needed — `end_time - start_time` can be computed at query time. Keep schema lean. |
