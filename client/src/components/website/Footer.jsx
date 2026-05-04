@@ -68,7 +68,7 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <img
-              src="/EcoPoints Primary Logo (Light version).png"
+              src="/ecopoints-primary-logo-light.png"
               alt="EcoPoints Logo"
               className="h-12 w-auto"
             />

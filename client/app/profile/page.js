@@ -41,7 +41,7 @@ function ProfileHeader() {
         {/* Right: EcoPoints Logo */}
         <div className="flex-1 flex justify-end">
           <img
-            src="/EcoPoints Logo Mark with Name.png"
+            src="/ecopoints-logo-mark.png"
             alt="EcoPoints"
             className="h-7 w-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
           />

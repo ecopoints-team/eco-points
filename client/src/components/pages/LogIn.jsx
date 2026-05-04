@@ -1554,8 +1554,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
               <img
                 src={
                   isMobile
-                    ? "/Logo Elements (Light).png"
-                    : "/EcoPoints Primary Logo (Light version).png"
+                    ? "/logo-elements-light.png"
+                    : "/ecopoints-primary-logo-light.png"
                 }
                 alt="EcoPoints Logo"
                 className="w-full h-auto object-contain drop-shadow-2xl animate-float-slow"

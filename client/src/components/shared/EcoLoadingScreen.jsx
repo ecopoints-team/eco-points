@@ -12,7 +12,7 @@ export default function EcoLoadingScreen({ onComplete }) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const logoUrl = encodeURI("/Logo Elements (Light).png");
+  const logoUrl = encodeURI("/logo-elements-light.png");
 
   // Single lifecycle: progress → hold → fade → done
   useEffect(() => {

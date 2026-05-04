@@ -162,7 +162,7 @@ export default function NavBar({ onLoginClick }) {
           onClick={() => handleNavigate("home")}
         >
           <img
-            src="/EcoPoints Logo Mark with Name.png"
+            src="/ecopoints-logo-mark.png"
             alt="EcoPoints Logo"
             className="h-10 md:h-12 w-auto transition-all duration-300 ease-in-out group-hover:scale-110"
           />
