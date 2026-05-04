@@ -5,6 +5,9 @@ export const metadata = {
   title: 'EcoPoints',
   description: 'EcoPoints Application',
   manifest: "/manifest.json",
+  icons: {
+    icon: '/logo-elements-light.png',
+  },
 }
 
 export const viewport = {
