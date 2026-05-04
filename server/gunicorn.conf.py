@@ -3,8 +3,9 @@ import multiprocessing
 import os
 
 # Server socket
-# Docker needs 0.0.0.0 to be accessible outside the container
-bind = "0.0.0.0:8000" 
+# Render provides the PORT environment variable dynamically
+port = os.environ.get("PORT", "8000")
+bind = f"0.0.0.0:{port}" 
 backlog = 2048
 
 # Worker processes
