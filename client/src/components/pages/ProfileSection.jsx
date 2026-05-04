@@ -119,7 +119,7 @@ export default function ProfileSection() {
 
     let logoEndY = cardY + 50;
     try {
-      const logo = await loadImage("/EcoPoints Logo Mark with Name.png");
+      const logo = await loadImage("/ecopoints-logo-mark.png");
       const maxLogoW = 200;
       const scale = maxLogoW / logo.width;
       const logoW = logo.width * scale;

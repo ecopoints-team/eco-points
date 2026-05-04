@@ -256,7 +256,7 @@ export default function RecentActivity() {
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-8 pb-10 flex flex-col items-center text-center">
               <div className="mb-6 w-full px-4">
                 <div className="w-40 h-16 mx-auto mb-4 relative flex items-center justify-center">
-                  <img src="/Logo Elements.png" alt="EcoPoints Logo" className="w-full h-full object-contain" />
+                  <img src="/logo-elements.png" alt="EcoPoints Logo" className="w-full h-full object-contain" />
                 </div>
                 <h1 className="text-xl font-bold text-stone-800 tracking-tighter" style={fonts.heading}>ECOPOINTS</h1>
                 <p className="text-[10px] font-mono text-stone-400 uppercase tracking-widest">Official Transaction</p>

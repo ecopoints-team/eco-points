@@ -16,11 +16,11 @@ const CATEGORIES = ["All", "Writing", "Notes", "Carry", "Drink", "Accessories", 
 
 const SHOWCASE_PRODUCTS = [
   // Products with real images (from /Rewards/ folder)
-  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "/Rewards/Eco Pen.jpg", color: "from-amber-100 to-orange-50" },
+  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "/Rewards/eco-pen.jpg", color: "from-amber-100 to-orange-50" },
   { id: 2, category: "Notes", name: "Notebook", desc: "Sustainable bamboo cover with recycled pages.", points: 150, image: "/Rewards/Notebook.png", color: "from-emerald-100 to-teal-50" },
-  { id: 3, category: "Carry", name: "Canvas Tote Bag", desc: "Durable, everyday tote for your groceries.", points: 300, image: "/Rewards/Eco ToteBag.jpg", color: "from-blue-100 to-indigo-50" },
-  { id: 4, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "/Rewards/Eco Tumbler.jpg", color: "from-rose-100 to-pink-50" },
-  { id: 5, category: "Accessories", name: "EP Pins", desc: "Show off your green status with an exclusive enamel pin.", points: 100, image: "/Rewards/Eco Pin.jpg", color: "from-purple-100 to-fuchsia-50" },
+  { id: 3, category: "Carry", name: "Canvas Tote Bag", desc: "Durable, everyday tote for your groceries.", points: 300, image: "/Rewards/eco-totebag.jpg", color: "from-blue-100 to-indigo-50" },
+  { id: 4, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "/Rewards/eco-tumbler.jpg", color: "from-rose-100 to-pink-50" },
+  { id: 5, category: "Accessories", name: "EP Pins", desc: "Show off your green status with an exclusive enamel pin.", points: 100, image: "/Rewards/eco-pin.jpg", color: "from-purple-100 to-fuchsia-50" },
 
   // Products with icon placeholders
   { id: 6, category: "Accessories", name: "Lanyard", desc: "Durable EcoPoints lanyard made from recycled PET bottles.", points: 200, image: null, icon: Tag, color: "from-cyan-100 to-blue-50" },
@@ -81,7 +81,7 @@ function RewardsHeader() {
         {/* Right: EcoPoints Logo */}
         <div className="flex-1 flex justify-end">
           <img
-            src="/EcoPoints Logo Mark with Name.png"
+            src="/ecopoints-logo-mark.png"
             alt="EcoPoints"
             className="h-7 w-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
           />
