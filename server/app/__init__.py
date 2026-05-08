@@ -51,7 +51,7 @@ def create_app():
         "http://127.0.0.1:3000",
         "https://ecopoints.org",
         "https://www.ecopoints.org",
-        "https://rewards.ecopoints.org",
+        "https://eco-points-client.pages.dev",
     ]
 
     # Add additional origins from environment variable if provided

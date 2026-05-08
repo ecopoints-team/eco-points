@@ -6,7 +6,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 3. Set environment variables
-set DATABASE_URL=postgresql+psycopg2://postgres:admin@127.0.0.1:5433/ecopoints
+set DATABASE_URL=postgresql+psycopg://postgres:admin@127.0.0.1:5433/ecopoints
 set SECRET_KEY=change-me
 set FLASK_APP=run.py
 

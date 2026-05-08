@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies (needed for psycopg2)
+# Install system dependencies (needed for psycopg)
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
