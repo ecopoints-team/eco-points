@@ -710,7 +710,7 @@ const MachineCard = ({ machine, onOpenMaintenance, onEdit, locationName, current
         <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Items Collected</p>
-                <p className="text-xl font-black text-slate-800 dark:text-white">{machine.totalItemsCollected.toLocaleString()}</p>
+                <p className="text-xl font-black text-slate-800 dark:text-white">{(machine.totalItemsCollected ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Bin Status</p>
@@ -799,7 +799,7 @@ export default function MachinesPage() {
 
     const onlineCount = machines.filter(m => m.isOnline).length;
     const offlineCount = machines.filter(m => !m.isOnline).length;
-    const totalItems = machines.reduce((sum, m) => sum + m.totalItemsCollected, 0);
+    const totalItems = machines.reduce((sum, m) => sum + (m.totalItemsCollected ?? 0), 0);
 
     const handleOpenMaintenance = (machine) => {
         setSelectedMachine(machine);
