@@ -22,25 +22,25 @@ export default function EcoLoadingScreen({ onComplete }) {
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100;
-        const step = Math.random() * 4 + 1;
+        const step = Math.random() * 8 + 4; // Faster progress
         return Math.min(prev + step, 100);
       });
     }, 100);
 
-    // Step 2: After ~4s (enough for progress to complete), start fade
+    // Step 2: After ~2s (enough for progress to complete), start fade
     const fadeStart = setTimeout(() => {
       if (cancelled) return;
       clearInterval(interval);
       setProgress(100);
       setFading(true);
-    }, 4000);
+    }, 2000);
 
     // Step 3: After fade animation (600ms), unmount
     const fadeEnd = setTimeout(() => {
       if (cancelled) return;
       setVisible(false);
       onCompleteRef.current?.();
-    }, 4700);
+    }, 2600);
 
     return () => {
       cancelled = true;
