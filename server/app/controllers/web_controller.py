@@ -6,6 +6,7 @@ Every route (except /health) requires JWT authentication via @token_required.
 Prefix: /api/web
 """
 from datetime import datetime, date, timezone, timedelta
+import secrets
 from flask import Blueprint, request, jsonify, current_app
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
@@ -1081,7 +1082,6 @@ def delete_machine(current_user, machine_id):
 
 @web_bp.route('/rewards', methods=['GET'])
 @token_required
-@admin_required
 def get_rewards(current_user):
     """List rewards, scoped by location."""
     try:
@@ -1218,6 +1218,106 @@ def delete_reward(current_user, reward_id):
         return jsonify({'success': True, 'message': f'{reward.name} deactivated'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/rewards/<int:reward_id>/redeem', methods=['POST'])
+@token_required
+def redeem_reward(current_user, reward_id):
+    """Redeem a reward for the current user."""
+    try:
+        data = request.get_json() or {}
+        variant_id = data.get('variantId')
+        quantity = data.get('quantity', 1)
+
+        reward = db.session.get(Reward, reward_id)
+        if not reward or not reward.is_active:
+            return jsonify({'success': False, 'error': 'Reward not found or inactive'}), 404
+
+        # Pick variant
+        if variant_id:
+            variant = db.session.get(RewardVariant, variant_id)
+            if not variant or variant.reward_id != reward_id:
+                return jsonify({'success': False, 'error': 'Invalid variant'}), 400
+        else:
+            # Pick first active variant with stock
+            variant = next((v for v in reward.variants if v.is_active and v.stock_quantity >= quantity), None)
+            if not variant:
+                return jsonify({'success': False, 'error': 'Reward is out of stock'}), 400
+
+        if variant.stock_quantity < quantity:
+            return jsonify({'success': False, 'error': 'Insufficient stock'}), 400
+
+        total_points_required = reward.points_required * quantity
+        wallet = current_user.wallet
+        if not wallet or wallet.points_balance < total_points_required:
+            return jsonify({'success': False, 'error': 'Insufficient points balance'}), 400
+
+        # Deduct points
+        balance_before = wallet.points_balance
+        wallet.points_balance -= total_points_required
+        balance_after = wallet.points_balance
+
+        # Create Transaction
+        txn = Transaction(
+            wallet_id=wallet.id,
+            transaction_type='redeem',
+            amount=-total_points_required,
+            balance_before=balance_before,
+            balance_after=balance_after,
+            reference_type='reward_redemption',
+        )
+        db.session.add(txn)
+        db.session.flush()
+
+        # Update stock
+        variant.stock_quantity -= quantity
+
+        # Create Redemption
+        redemption_code = secrets.token_hex(4).upper()
+        
+        redemption = RewardRedemption(
+            wallet_id=wallet.id,
+            variant_id=variant.id,
+            points_spent=total_points_required,
+            status='pending',
+            redemption_code=redemption_code,
+            redeemed_at=datetime.now(timezone.utc)
+        )
+        db.session.add(redemption)
+        db.session.flush()
+        
+        txn.reference_id = redemption.id
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Redemption successful',
+            'redemption': _serialize_reward_log(redemption)
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@web_bp.route('/rewards/my-redemptions', methods=['GET'])
+@token_required
+def get_my_redemptions(current_user):
+    """List redemptions for the current user."""
+    try:
+        wallet = current_user.wallet
+        if not wallet:
+            return jsonify({'success': True, 'redemptions': []}), 200
+            
+        redemptions = RewardRedemption.query.filter_by(wallet_id=wallet.id)\
+            .order_by(RewardRedemption.redeemed_at.desc()).all()
+            
+        return jsonify({
+            'success': True, 
+            'redemptions': [_serialize_reward_log(r) for r in redemptions]
+        }), 200
+    except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
@@ -1752,7 +1852,8 @@ def get_analytics(current_user):
         def _fmt_ymd(col):
             return func.to_char(col, 'YYYY-MM-DD')
         def _fmt_dow(col):
-            return func.extract('dow', col).cast(db.String)
+            # Extract returns numeric, cast to integer to avoid decimal strings like "0.0"
+            return func.extract('dow', col).cast(db.Integer)
         def _fmt_hour(col):
             return func.to_char(col, 'HH24')
         def _fmt_year(col):
@@ -1798,12 +1899,14 @@ def get_analytics(current_user):
                 else_=0
             )).label('rejected'),
         ).join(RecyclingSession).filter(
-            _fmt_date(RecyclingItem.scanned_at) >= week_start.isoformat(),
-            _fmt_date(RecyclingItem.scanned_at) <= today.isoformat(),
+            _fmt_date(RecyclingItem.scanned_at) >= week_start,
+            _fmt_date(RecyclingItem.scanned_at) <= today,
         )
         if loc_id:
             daily_items_query = daily_items_query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
-        daily_trends = daily_items_query.group_by('day').order_by('day').all()
+        
+        # PostgreSQL requires all non-aggregated columns in the SELECT to be in GROUP BY
+        daily_trends = daily_items_query.group_by('day', 'dow').order_by('day').all()
 
         # ──────────────────────────────────────────────────────
         # 2. USER GROWTH  (monthly new registrations, all years)
@@ -1854,7 +1957,9 @@ def get_analytics(current_user):
         ).outerjoin(RecyclingItem, RecyclingSession.id == RecyclingItem.session_id)
         if loc_id:
             machine_util_base = machine_util_base.filter(RVM.organization_id == loc_id)
-        machine_utilization = machine_util_base.group_by(RVM.id).all()
+        
+        # Grouping by RVM.id allows selecting RVM columns, but Organization columns must be listed
+        machine_utilization = machine_util_base.group_by(RVM.id, Organization.id).all()
 
         # ──────────────────────────────────────────────────────
         # 5. REWARD INSIGHTS  (top redeemed rewards)
@@ -1978,9 +2083,9 @@ def get_analytics(current_user):
                 'recyclingTrends': [{
                     'month': row.month,
                     'total': row.total,
-                    'accepted': row.accepted,
-                    'rejected': row.rejected,
-                    'points': row.points,
+                    'accepted': int(row.accepted or 0),
+                    'rejected': int(row.rejected or 0),
+                    'points': int(row.points or 0),
                 } for row in recycling_trends],
 
                 # 1b. Daily recycling trends (current week)
@@ -1988,8 +2093,8 @@ def get_analytics(current_user):
                     'day': row.day,
                     'dow': int(row.dow),
                     'total': row.total,
-                    'accepted': row.accepted,
-                    'rejected': row.rejected,
+                    'accepted': int(row.accepted or 0),
+                    'rejected': int(row.rejected or 0),
                 } for row in daily_trends],
 
                 # 2. User growth (monthly, current year)
@@ -2067,7 +2172,10 @@ def get_analytics(current_user):
             }
         }), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+        print(f"ANALYTICS ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'An internal error occurred: {str(e)}'}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════

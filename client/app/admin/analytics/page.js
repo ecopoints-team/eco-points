@@ -309,7 +309,11 @@ export default function AnalyticsPage() {
     // Available years for user growth
     const availableUserGrowthYears = useMemo(() => {
         if (!data?.userGrowth?.months) return [new Date().getFullYear()];
-        const years = [...new Set(data.userGrowth.months.map(m => parseInt(m.month.split('-')[0])))];
+        const years = [...new Set(
+            data.userGrowth.months
+                .filter(m => m.month && typeof m.month === 'string' && m.month.includes('-'))
+                .map(m => parseInt(m.month.split('-')[0]))
+        )];
         if (!years.includes(new Date().getFullYear())) years.push(new Date().getFullYear());
         return years.sort();
     }, [data]);
@@ -319,6 +323,7 @@ export default function AnalyticsPage() {
         if (userGrowthTimeRange === 'year') {
             const yearMap = {};
             data.userGrowth.months.forEach(m => {
+                if (!m.month) return;
                 const y = m.month.split('-')[0];
                 if (!yearMap[y]) yearMap[y] = { name: y, 'New Users': 0 };
                 yearMap[y]['New Users'] += m.count;

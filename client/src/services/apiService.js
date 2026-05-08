@@ -375,6 +375,19 @@ export const rewards = {
     delete: async (id) => {
         return await request(`${API_BASE}/rewards/${id}`, { method: 'DELETE' });
     },
+
+    redeem: async (rewardId, { variantId = null, quantity = 1 } = {}) => {
+        const data = await request(`${API_BASE}/rewards/${rewardId}/redeem`, {
+            method: 'POST',
+            body: { variantId, quantity },
+        });
+        return data.redemption;
+    },
+
+    getMyRedemptions: async () => {
+        const data = await request(`${API_BASE}/rewards/my-redemptions`);
+        return data.redemptions;
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
