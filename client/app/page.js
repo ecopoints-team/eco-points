@@ -29,6 +29,23 @@ function HomeContent() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if loading screen should be shown (only once per session)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasSeenLoading = sessionStorage.getItem("ecopoints_loaded");
+      if (hasSeenLoading) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("ecopoints_loaded", "true");
+    }
+  };
+
   // Scroll to top on page load / refresh
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -78,7 +95,7 @@ function HomeContent() {
     <>
       {/* Loading screen — plays full animation, then reveals page */}
       {isLoading && (
-        <EcoLoadingScreen onComplete={() => setIsLoading(false)} />
+        <EcoLoadingScreen onComplete={handleLoadingComplete} />
       )}
 
       <div
