@@ -7,48 +7,15 @@ import HowItWorksModal from "../shared/HowItWorksModal";
 import {
   Search, Filter, ArrowRight, ArrowLeft, Sparkles, X, UserCircle,
   ShoppingBag, Zap, Cpu, Leaf, Droplet, Coffee, Tag, ChevronLeft, ChevronRight,
-  CheckCircle2, Lock, HelpCircle, Settings, Loader2
+  CheckCircle2, Lock, HelpCircle, Settings, Loader2, Ticket
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../services/apiService";
 
 // --- PRODUCT DATA (30 Products) ---
 // Images from /Rewards/ folder for 5 products; Lucide icons for the rest
-const CATEGORIES = ["All", "Writing", "Notes", "Carry", "Drink", "Accessories", "Tech", "Living", "Apparel"];
-
-const SHOWCASE_PRODUCTS = [
-  // Products with real images (from /Rewards/ folder)
-  { id: 1, category: "Writing", name: "Eco Pencil", desc: "Made from 100% recycled newspaper. Plantable tip.", points: 50, image: "/Rewards/eco-pen.jpg", color: "from-amber-100 to-orange-50" },
-  { id: 2, category: "Notes", name: "Notebook", desc: "Sustainable bamboo cover with recycled pages.", points: 150, image: "/Rewards/Notebook.png", color: "from-emerald-100 to-teal-50" },
-  { id: 3, category: "Carry", name: "Canvas Tote Bag", desc: "Durable, everyday tote for your groceries.", points: 300, image: "/Rewards/eco-totebag.jpg", color: "from-blue-100 to-indigo-50" },
-  { id: 4, category: "Drink", name: "Steel Tumbler", desc: "Keep drinks hot or cold for up to 12 hours.", points: 500, image: "/Rewards/eco-tumbler.jpg", color: "from-rose-100 to-pink-50" },
-  { id: 5, category: "Accessories", name: "EP Pins", desc: "Show off your green status with an exclusive enamel pin.", points: 100, image: "/Rewards/eco-pin.jpg", color: "from-purple-100 to-fuchsia-50" },
-
-  // Products with icon placeholders
-  { id: 6, category: "Accessories", name: "Lanyard", desc: "Durable EcoPoints lanyard made from recycled PET bottles.", points: 200, image: null, icon: Tag, color: "from-cyan-100 to-blue-50" },
-  { id: 7, category: "Living", name: "Bamboo Toothbrush", desc: "100% biodegradable handle with charcoal bristles.", points: 80, image: null, icon: Leaf, color: "from-green-100 to-emerald-50" },
-  { id: 8, category: "Carry", name: "RPET Backpack", desc: "Water-resistant backpack made from 20 recycled bottles.", points: 800, image: null, icon: ShoppingBag, color: "from-slate-200 to-slate-100" },
-  { id: 9, category: "Tech", name: "Solar Power Bank", desc: "10,000mAh charger powered by the sun.", points: 1200, image: null, icon: Zap, color: "from-yellow-100 to-amber-50" },
-  { id: 10, category: "Notes", name: "Plantable Calendar", desc: "Plant each month's page to grow wildflowers.", points: 120, image: null, icon: Leaf, color: "from-rose-100 to-orange-50" },
-  { id: 11, category: "Apparel", name: "Organic Cotton Cap", desc: "Classic baseball cap made without synthetic dyes.", points: 250, image: null, icon: UserCircle, color: "from-indigo-100 to-purple-50" },
-  { id: 12, category: "Drink", name: "Reusable Straw Set", desc: "Steel and bamboo straws with a cleaning brush.", points: 150, image: null, icon: Droplet, color: "from-cyan-100 to-teal-50" },
-  { id: 13, category: "Living", name: "Beeswax Food Wrap", desc: "Sustainable alternative to plastic cling wrap.", points: 180, image: null, icon: Leaf, color: "from-yellow-100 to-green-50" },
-  { id: 14, category: "Tech", name: "Upcycled Mousepad", desc: "Premium mousepad crafted from recycled tires.", points: 220, image: null, icon: Cpu, color: "from-slate-300 to-slate-200" },
-  { id: 15, category: "Notes", name: "Wooden Desk Organizer", desc: "Keep your workspace tidy with reclaimed wood.", points: 350, image: null, icon: Leaf, color: "from-amber-200 to-yellow-100" },
-  { id: 16, category: "Apparel", name: "EcoPoints T-Shirt", desc: "Soft, breathable shirt made from recycled materials.", points: 600, image: null, icon: UserCircle, color: "from-emerald-200 to-teal-100" },
-  { id: 17, category: "Drink", name: "Reusable Coffee Cup", desc: "Collapsible silicone cup for your daily brew.", points: 400, image: null, icon: Coffee, color: "from-orange-100 to-rose-50" },
-  { id: 18, category: "Living", name: "Bamboo Cutlery Set", desc: "Travel-friendly fork, knife, and spoon.", points: 200, image: null, icon: Leaf, color: "from-stone-200 to-stone-100" },
-  { id: 19, category: "Notes", name: "Seed Sticky Notes", desc: "Jot down ideas and plant them later.", points: 90, image: null, icon: Leaf, color: "from-lime-100 to-green-50" },
-  { id: 20, category: "Living", name: "Recycled Glass Vase", desc: "Hand-blown glass vase from discarded bottles.", points: 450, image: null, icon: Droplet, color: "from-sky-100 to-cyan-50" },
-  { id: 21, category: "Tech", name: "Cork Wireless Charger", desc: "Fast charging pad wrapped in sustainable cork.", points: 900, image: null, icon: Zap, color: "from-orange-200 to-amber-100" },
-  { id: 22, category: "Tech", name: "Hemp Laptop Sleeve", desc: "Padded protection for 13-inch laptops.", points: 550, image: null, icon: Cpu, color: "from-emerald-100 to-stone-100" },
-  { id: 23, category: "Carry", name: "Eco Tote (Limited)", desc: "Special edition design by local artists.", points: 450, image: null, icon: ShoppingBag, color: "from-fuchsia-100 to-pink-50" },
-  { id: 24, category: "Tech", name: "Bio Phone Case", desc: "Compostable case available for major models.", points: 300, image: null, icon: Cpu, color: "from-green-200 to-emerald-100" },
-  { id: 25, category: "Carry", name: "RPET Gym Duffel", desc: "Spacious bag for workouts or weekends.", points: 750, image: null, icon: ShoppingBag, color: "from-blue-200 to-indigo-100" },
-  { id: 26, category: "Carry", name: "Denim Pouch", desc: "Upcycled pouch perfect for pens or cables.", points: 280, image: null, icon: Tag, color: "from-sky-200 to-blue-100" },
-  { id: 27, category: "Living", name: "Bamboo Floss", desc: "Biodegradable dental floss in a glass jar.", points: 70, image: null, icon: Sparkles, color: "from-teal-100 to-emerald-50" },
-  { id: 28, category: "Apparel", name: "EcoPoints Hoodie", desc: "Premium heavyweight organic cotton hoodie.", points: 1500, image: null, icon: UserCircle, color: "from-slate-200 to-emerald-50" },
-  { id: 29, category: "Living", name: "Steel Lunchbox", desc: "BPA-free container with bamboo lid.", points: 650, image: null, icon: Leaf, color: "from-zinc-200 to-stone-100" },
-  { id: 30, category: "Apparel", name: "Organic Socks", desc: "Comfortable, breathable everyday socks.", points: 180, image: null, icon: UserCircle, color: "from-rose-200 to-pink-100" },
-];
+// --- PRODUCT DATA ---
+// Mock data removed in favor of API fetching
 
 const ITEMS_PER_PAGE = 20;
 
@@ -79,7 +46,14 @@ function RewardsHeader() {
         </div>
 
         {/* Right: EcoPoints Logo */}
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end items-center gap-4 sm:gap-6">
+          <Link 
+            href="/my-rewards" 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[#064e3b] font-bold text-[10px] uppercase tracking-widest bg-[#10b981]/10 hover:bg-[#10b981]/20 transition-all"
+          >
+            <Ticket size={14} className="fill-[#064e3b]" />
+            <span className="hidden sm:inline">My Vouchers</span>
+          </Link>
           <img
             src="/ecopoints-logo-mark.png"
             alt="EcoPoints"
@@ -108,13 +82,17 @@ export default function Rewards() {
   // Refs
   const filterContainerRef = useRef(null);
 
-  // Auth & Modals (demo toggle)
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userPoints, setUserPoints] = useState(0);
+  const { currentUser, isLoading: isAuthLoading, refreshUser } = useAuth();
+  const isLoggedIn = !!currentUser;
+  const userPoints = currentUser?.pointsBalance ?? 0;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Rewards Data
+  const [products, setProducts] = useState([]);
+  const [isProductsLoading, setIsProductsLoading] = useState(true);
 
   // Card Pop-Out (FLIP) Animation
   const [detailedProduct, setDetailedProduct] = useState(null);
@@ -134,17 +112,58 @@ export default function Rewards() {
     ? `top 400ms ${bounceEase} 0ms, width 600ms ${bounceEase} 150ms`
     : `width 300ms ${smoothEase} 0ms, top 300ms ${smoothEase} 200ms`;
 
+  // Fetch rewards from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsProductsLoading(true);
+      try {
+        const fetched = await api.rewards.getAll();
+        // Assign colors/icons to API products based on their ID or category
+        const COLORS = [
+          "from-amber-100 to-orange-50",
+          "from-emerald-100 to-teal-50",
+          "from-blue-100 to-indigo-50",
+          "from-rose-100 to-pink-50",
+          "from-purple-100 to-fuchsia-50",
+          "from-cyan-100 to-blue-50",
+          "from-green-100 to-emerald-50"
+        ];
+        const ICONS = [Tag, Leaf, ShoppingBag, Zap, Cpu, Droplet, Coffee];
+        
+        const mapped = fetched.map((p, idx) => ({
+          ...p,
+          desc: p.description,
+          points: p.pointsRequired,
+          image: p.imageUrl,
+          color: COLORS[idx % COLORS.length],
+          icon: ICONS[idx % ICONS.length]
+        }));
+        setProducts(mapped);
+      } catch (err) {
+        console.error("Failed to fetch rewards:", err);
+      } finally {
+        setIsProductsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map(p => p.category))).filter(Boolean);
+    return ["All", ...unique];
+  }, [products]);
+
   // --- FILTERING & PAGINATION ---
   const filteredProducts = useMemo(() => {
-    return SHOWCASE_PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.desc.toLowerCase().includes(searchQuery.toLowerCase());
+        (product.desc || "").toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategory === "All" || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const currentProducts = filteredProducts.slice(
@@ -156,6 +175,13 @@ export default function Rewards() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory]);
+
+  // Refresh user balance on mount
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshUser();
+    }
+  }, [isLoggedIn, refreshUser]);
 
   // Track typing/debouncing state
   useEffect(() => {
@@ -227,9 +253,16 @@ export default function Rewards() {
       setTimeout(() => setInsufficientAnimId(null), 500);
       return;
     }
-    setUserPoints((prev) => prev - product.points);
-    setSelectedProduct(product);
-    setShowSuccessModal(true);
+
+    // Call real API
+    api.rewards.redeem(product.id).then(() => {
+      refreshUser();
+      setSelectedProduct(product);
+      setShowSuccessModal(true);
+    }).catch(err => {
+      console.error("Redemption failed:", err);
+      // Optional: show error toast
+    });
   };
 
   const handleDetailedRedeem = () => {
@@ -238,10 +271,16 @@ export default function Rewards() {
       setTimeout(() => setInsufficientAnimId(null), 500);
       return;
     }
-    setUserPoints((prev) => prev - detailedProduct.points);
-    setSelectedProduct(detailedProduct);
-    closeDetailedModal();
-    setTimeout(() => setShowSuccessModal(true), 500);
+    
+    // Call real API
+    api.rewards.redeem(detailedProduct.id).then(() => {
+      refreshUser();
+      setSelectedProduct(detailedProduct);
+      closeDetailedModal();
+      setTimeout(() => setShowSuccessModal(true), 500);
+    }).catch(err => {
+      console.error("Redemption failed:", err);
+    });
   };
 
   const closeDetailedModal = () => {
@@ -309,10 +348,14 @@ export default function Rewards() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 font-body">
               My Balance
             </div>
-            <div className="text-xl font-black leading-none flex items-baseline gap-1 font-data text-[#064e3b]">
-              {userPoints}{" "}
-              <span className="text-xs text-emerald-500 font-bold font-body">EP</span>
-            </div>
+            {isAuthLoading ? (
+              <div className="h-5 w-16 bg-slate-200 animate-pulse rounded-md" />
+            ) : (
+              <div className="text-xl font-black leading-none flex items-baseline gap-1 font-data text-[#064e3b]">
+                {userPoints.toLocaleString()}{" "}
+                <span className="text-xs text-emerald-500 font-bold font-body">EP</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -329,20 +372,33 @@ export default function Rewards() {
                 {/* Left: User Avatar & Info */}
                 <div className="lg:col-span-4 flex flex-col md:flex-row lg:flex-col items-center md:items-start gap-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-3xl border-4 border-white shadow-[0_8px_24px_rgba(16,185,129,0.25)]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-                      AR
-                    </div>
+                    {isAuthLoading ? (
+                      <div className="w-24 h-24 rounded-full bg-slate-200 animate-pulse border-4 border-white shadow-md" />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-3xl border-4 border-white shadow-[0_8px_24px_rgba(16,185,129,0.25)]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                        {currentUser?.name?.substring(0, 2).toUpperCase() || "EP"}
+                      </div>
+                    )}
                     <button className="absolute bottom-0 right-0 p-2 rounded-full bg-white text-slate-400 hover:text-[#10b981] transition-colors shadow-md border border-slate-100">
                       <Settings size={14} />
                     </button>
                   </div>
                   <div className="text-center md:text-left">
-                    <h2 className="text-3xl font-black text-[#064e3b] tracking-tight mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-                      Alex Rivers
-                    </h2>
-                    <p className="text-sm font-bold text-slate-400 mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                      @arivers
-                    </p>
+                    {isAuthLoading ? (
+                      <>
+                        <div className="h-8 w-48 bg-slate-200 animate-pulse rounded-lg mb-2" />
+                        <div className="h-4 w-32 bg-slate-100 animate-pulse rounded-md" />
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-3xl font-black text-[#064e3b] tracking-tight mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                          {currentUser?.name || "Guest User"}
+                        </h2>
+                        <p className="text-sm font-bold text-slate-400 mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                          @{currentUser?.username || "guest"}
+                        </p>
+                      </>
+                    )}
                     <div className="flex gap-2 justify-center md:justify-start flex-wrap">
                       <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#10b981]/20">
                         Active Member
@@ -369,12 +425,18 @@ export default function Rewards() {
                         Available Balance
                       </p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
-                          0
-                        </span>
-                        <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          EP
-                        </span>
+                        {isAuthLoading ? (
+                          <div className="h-12 w-24 bg-slate-200 animate-pulse rounded-xl" />
+                        ) : (
+                          <>
+                            <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
+                              {userPoints.toLocaleString()}
+                            </span>
+                            <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                              EP
+                            </span>
+                          </>
+                        )}
                       </div>
                       <div className="mt-3 flex items-center gap-1.5">
                         <Zap size={14} className="text-[#10b981] fill-[#10b981]" />
@@ -391,12 +453,18 @@ export default function Rewards() {
                         Total Redeemed
                       </p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
-                          0
-                        </span>
-                        <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          EP
-                        </span>
+                        {isAuthLoading ? (
+                          <div className="h-10 w-20 bg-amber-200/50 animate-pulse rounded-xl" />
+                        ) : (
+                          <>
+                            <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
+                              {((currentUser?.lifetimePoints ?? 0) - userPoints).toLocaleString()}
+                            </span>
+                            <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                              EP
+                            </span>
+                          </>
+                        )}
                       </div>
                       <div className="mt-3 flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
@@ -483,7 +551,7 @@ export default function Rewards() {
                   }}
                 >
                   <div className="flex gap-2 w-max">
-                    {CATEGORIES.map((category) => {
+                    {categories.map((category) => {
                       const isActive = selectedCategory === category;
                       return (
                         <button
@@ -609,8 +677,22 @@ export default function Rewards() {
           </div>
         </div>
 
-        {/* PRODUCT GRID */}
-        {filteredProducts.length === 0 ? (
+        {isProductsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 mb-20 relative z-10">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 h-[420px] animate-pulse border border-white">
+                <div className="flex justify-between mb-4">
+                  <div className="h-6 w-20 bg-slate-200 rounded-full" />
+                  <div className="h-8 w-16 bg-slate-200 rounded-xl" />
+                </div>
+                <div className="w-full h-44 bg-slate-100 rounded-[1.5rem] mb-6" />
+                <div className="h-8 w-3/4 bg-slate-200 rounded-lg mb-4" />
+                <div className="h-4 w-full bg-slate-100 rounded-md mb-2" />
+                <div className="h-4 w-2/3 bg-slate-100 rounded-md" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-[2rem] p-16 text-center animate-scale-in relative z-10">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
               <Search size={32} />
@@ -642,6 +724,7 @@ export default function Rewards() {
               const IconComp = product.icon || ShoppingBag;
 
               const isAffordable = userPoints >= product.points;
+              const isOutOfStock = product.stockQuantity <= 0;
               const isShaking = insufficientAnimId === product.id;
 
               return (
@@ -739,17 +822,24 @@ export default function Rewards() {
                     {/* Dynamic Action Button (Direct Redeem) */}
                     <div className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] pb-1">
                       <button
-                        onClick={(e) => handleDirectRedeem(product, e)}
+                        onClick={(e) => !isOutOfStock && handleDirectRedeem(product, e)}
+                        disabled={isOutOfStock}
                         className={`w-full py-3.5 rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${isShaking
                           ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                          : !isLoggedIn
-                            ? "bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white"
-                            : isAffordable
-                              ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
-                              : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
+                          : isOutOfStock
+                            ? "bg-slate-50 text-slate-400 border-2 border-slate-100 cursor-not-allowed"
+                            : !isLoggedIn
+                              ? "bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white"
+                              : isAffordable
+                                ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
                           }`}
                       >
-                        {!isLoggedIn ? (
+                        {isOutOfStock ? (
+                          <>
+                            Out of Stock <X size={18} />
+                          </>
+                        ) : !isLoggedIn ? (
                           <>
                             Sign In to Redeem <ArrowRight size={18} />
                           </>
@@ -866,7 +956,7 @@ export default function Rewards() {
 
             {/* Left: Enhanced Product Display */}
             <div
-              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${userPoints < detailedProduct.points
+              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${userPoints < detailedProduct.points || detailedProduct.stockQuantity <= 0
                 ? "bg-slate-100 grayscale-[50%]"
                 : `bg-gradient-to-br ${detailedProduct.color}`
                 } ${detailedModalState === "open"
@@ -933,12 +1023,12 @@ export default function Rewards() {
                     Required Points
                   </span>
                   <div
-                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${userPoints < detailedProduct.points
+                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${userPoints < detailedProduct.points || detailedProduct.stockQuantity <= 0
                       ? "bg-slate-100 border-slate-200"
                       : "bg-emerald-50 border-emerald-100"
                       }`}
                   >
-                    {userPoints >= detailedProduct.points ? (
+                    {userPoints >= detailedProduct.points && detailedProduct.stockQuantity > 0 ? (
                       <Zap
                         className="text-[#10b981] fill-[#10b981]"
                         size={24}
@@ -967,15 +1057,22 @@ export default function Rewards() {
 
                 <button
                   onClick={handleDetailedRedeem}
+                  disabled={detailedProduct.stockQuantity <= 0}
                   className={`w-full py-4 rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${insufficientAnimId ===
                     "detailed-" + detailedProduct.id
                     ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                    : userPoints >= detailedProduct.points
-                      ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)]"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200"
+                    : detailedProduct.stockQuantity <= 0
+                      ? "bg-slate-50 text-slate-400 border-2 border-slate-100 cursor-not-allowed"
+                      : userPoints >= detailedProduct.points
+                        ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)]"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200"
                     }`}
                 >
-                  {userPoints >= detailedProduct.points ? (
+                  {detailedProduct.stockQuantity <= 0 ? (
+                    <>
+                      Out of Stock <X size={20} className="ml-1" />
+                    </>
+                  ) : userPoints >= detailedProduct.points ? (
                     <>
                       Confirm Redemption{" "}
                       <CheckCircle2 size={20} className="ml-1" />
