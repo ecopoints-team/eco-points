@@ -333,7 +333,7 @@ def run_seed(fresh=False):
         contact = OrgContact(
             organization_id=org.id,
             first_name=loc['contactFirst'], last_name=loc['contactLast'],
-            email=loc['contactEmail'], phone=loc['contactPhone'],
+            email=loc['contactEmail'], phone_number=loc['contactPhone'],
         )
         db.session.add(contact)
         org_map[loc['id']] = org
@@ -465,6 +465,7 @@ def run_seed(fresh=False):
                 last_login=_rand_date(join, global_end),
                 created_at=join,
             )
+            user.set_password(PASSWORD)
             db.session.add(user)
             db.session.flush()
             user.display_id = User.generate_display_id('user', _org_abbr(org_map[loc_id]))
