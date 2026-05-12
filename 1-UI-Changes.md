@@ -1,5 +1,5 @@
  ---
-description:
+description: Landing Page UI Fixes
 globs: 
 alwaysApply: false
 ---
@@ -16,7 +16,7 @@ This is the task that needs to be solved:
 
 # Pre-task
 
-- Always make an implementation plan on an artifact first, so the developer can review the plan first.
+- Always make an comprehensive implementation plan on an artifact first, so the developer can review the plan first.
 
 # Main Task
 
@@ -73,4 +73,4 @@ This is the task that needs to be solved:
 - Remove the "Browse Rewards" redirection button on our hero page.
 - Remove the Browse redirection button on the rewards section as well. The users can only access the rewards page when they logged into our website. 
 - When the user navigates to one page to another, for instance, they go from landing page to rewards page after logging in, the loading screen should not activate anymore. 
-
+- Enhance the work flow readability of the "How The Leaderboard Works" section. Try to animate the workflow as the user scrolls down the page.

@@ -27,24 +27,11 @@ function HomeContent() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginSignUpMode, setLoginSignUpMode] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check if loading screen should be shown (only once per session)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasSeenLoading = sessionStorage.getItem("ecopoints_loaded");
-      if (hasSeenLoading) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const handleLoadingComplete = () => {
-    setIsLoading(false);
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("ecopoints_loaded", "true");
-    }
-  };
+  const [isLoading, setIsLoading] = useState(() => {
+    // window.__ecoLoadingDone survives SPA navigation but resets on full reload/refresh
+    if (typeof window === "undefined") return true;
+    return !window.__ecoLoadingDone;
+  });
 
   // Scroll to top on page load / refresh
   useEffect(() => {
@@ -95,7 +82,7 @@ function HomeContent() {
     <>
       {/* Loading screen — plays full animation, then reveals page */}
       {isLoading && (
-        <EcoLoadingScreen onComplete={handleLoadingComplete} />
+        <EcoLoadingScreen onComplete={() => { window.__ecoLoadingDone = true; setIsLoading(false); }} />
       )}
 
       <div
