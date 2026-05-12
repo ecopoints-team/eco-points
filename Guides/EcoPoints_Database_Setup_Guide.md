@@ -177,93 +177,36 @@ The app starts at **http://localhost:3000**
 
 ---
 
-# 🔄 Re-migrating the Database (Fresh Reset)
+# 💻 Local Development (SAFE)
 
-> Use this when the database schema has changed, or you need a completely clean slate.
-> **This wipes ALL data in Supabase** — coordinate with the team before doing this.
+> [!TIP]
+> **Use this for daily development.** 
+> This uses the Supabase CLI to run a database locally on your machine. It does **NOT** affect the production database.
 
----
-
-## Step 1 — Drop all tables in Supabase
-
-Go to **Supabase Dashboard** → your project → **SQL Editor** → run this query:
-
-```sql
--- Drop all tables in the correct order (respects foreign keys)
-DROP TABLE IF EXISTS
-  token_blacklist,
-  login_attempts,
-  notification_logs,
-  notification_settings,
-  admin_logs,
-  bulk_deposits,
-  reward_redemptions,
-  reward_variants,
-  rewards,
-  transactions,
-  maintenance_logs,
-  recycling_items,
-  recycling_sessions,
-  rvms,
-  otp_codes,
-  user_security,
-  wallet,
-  users,
-  community_groups,
-  org_contact,
-  org_address,
-  organizations,
-  org_types,
-  alembic_version
-CASCADE;
+### 1. Start Local Supabase
+```bash
+# From the root directory
+npx supabase init
+npx supabase start
 ```
 
-Click **Run** (▶).
+### 2. Get Connection String
+Run `npx supabase status`. Copy the **DB URL**. 
 
----
+> [!IMPORTANT]
+> You must add `+psycopg` to the URL so Flask can use the correct driver. 
+> It should look like this in your `.env`:
+> `DATABASE_URL=postgresql+psycopg://postgres:postgres@127.0.0.1:54322/postgres`
 
-## Step 2 — Reset the Alembic migration state locally
+### 3. Update Server `.env`
+Set `DATABASE_URL` to the URL above. (Note: The port `54322` is the default, but double-check your `supabase status` output in case it changed).
 
+### 4. Initialize Local DB
 ```bash
 cd server
-```
-
-```bash
-# Windows
-rmdir /s /q migrations\versions\__pycache__
-```
-
-> This forces Alembic to treat the next `flask db upgrade` as a fresh migration.
-
----
-
-## Step 3 — Re-run migrations
-
-```bash
 flask db upgrade
+python seed.py --keep
 ```
-
-This recreates all tables in Supabase from the current model definitions.
-
----
-
-## Step 4 — Re-seed the database
-
-```bash
-python seed.py
-```
-
-> 🔑 All seeded accounts use the password: **`test123`**
-
----
-
-## ✅ Re-migration checklist
-
-- [ ] Communicated with the team (data wipe affects everyone)
-- [ ] Dropped all tables in Supabase SQL Editor
-- [ ] Ran `flask db upgrade` — no errors
-- [ ] Ran `python seed.py` — completed successfully
-- [ ] Verified login works at `http://localhost:3000`
 
 ---
 
@@ -292,11 +235,11 @@ python seed.py
 | `No module named 'flask'` | Dependencies not installed | Run `pip install -r requirements.txt` |
 | `'next' is not recognized` | Node modules not installed | Run `npm install` |
 | `could not connect to server` | Wrong `DATABASE_URL` | Check `server/.env` — confirm Supabase connection string is correct |
-| `relation "users" already exists` | Tables already exist in Supabase | Drop all tables (see Re-migration section) then re-run `flask db upgrade` |
+| `relation "users" already exists` | Tables already exist in DB | Run `flask db upgrade` on a clean DB |
 | `SSL connection required` | Missing `?sslmode=require` in URL | Add `?sslmode=require` to the end of `DATABASE_URL` |
 | Long path error during `pip install` | Windows 260-char path limit | Enable long paths or use a virtual environment |
 | `'flask' is not recognized` | Flask not on system PATH | Use `python -m flask` instead of `flask` |
-| `seed.py fails / duplicate key` | Database already seeded | Drop all tables and re-run (see Re-migration section) |
+| `seed.py fails / duplicate key` | Database already seeded | Only run seed script on an empty database |
 
 ---
 
