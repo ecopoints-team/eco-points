@@ -1,5 +1,5 @@
 ---
-description: Admin alignment to Models Checking / Sign up Updates
+description:
 globs: 
 alwaysApply: false
 ---
@@ -20,18 +20,10 @@ This is the task that needs to be solved:
 
 # Main Task
 
-## Phase 1 - Models Alignment
+- Make me a phased plan on this matter. What should I do first in correct order:
 
-- Thouroughly scan the admin side of the dashboard and check if its aligned with our models.py
-- Check if the fields there are aligned with the refined models.py
-- Thoroughly check every field modals in each menu's if they're aligned with the latest models.py
-- After checking the admin alignment on the new models.py:
-    - Plan for refactoring the admin fields that align with the models
-    - Plan for api calls, routing, and ebsite reflections of data (This is for adding rewards, user profiles and other related things)
-
-## Phase 2 - Sign up Normalization
-
-- Check the sign up part of our website's modal and make a plan on making the name and other normilized data on the models of ours. 
-- List all the fields that is needs to be updated for normalization.
-- Make a sectioned plan for this implementation.
-
+    - Align the new models to the admin's fields
+    - Fix the permission and admin views RBAC updates
+    - Manage properly api routing 
+    - Security enhancements
+    - Re-create a seed based on the new models with normal users that will redirect to their account and admin users that will redirect to the admin dashboard
