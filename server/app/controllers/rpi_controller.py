@@ -133,22 +133,36 @@ def start_session():
     """Start a new recycling session.
 
     Body: { "machineUuid": "RVM-AU-01", "walletId": 1 }
+    OR Edge Client Body: { "user_qr": "USER-123", "machine_uuid": "RVM-001" }
     """
     try:
         data = request.get_json() or {}
-        machine_uuid = data.get('machineUuid')
+        machine_uuid = data.get('machineUuid') or data.get('machine_uuid')
         wallet_id = data.get('walletId')
+        user_qr = data.get('user_qr')
 
-        if not machine_uuid or not wallet_id:
-            return jsonify({'success': False, 'error': 'machineUuid and walletId are required'}), 400
+        if not machine_uuid:
+            return jsonify({'success': False, 'error': 'machineUuid is required'}), 400
 
         rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not registered'}), 404
 
-        wallet = db.session.get(Wallet, wallet_id)
-        if not wallet:
-            return jsonify({'success': False, 'error': 'Wallet not found'}), 404
+        user = None
+        if user_qr:
+            user = User.query.filter_by(display_id=user_qr, is_active=True).first()
+            if not user:
+                return jsonify({'success': False, 'error': 'Invalid QR code or user not found'}), 404
+            wallet = user.wallet
+            if not wallet:
+                return jsonify({'success': False, 'error': 'User has no wallet'}), 404
+            wallet_id = wallet.id
+        else:
+            if not wallet_id:
+                return jsonify({'success': False, 'error': 'walletId or user_qr is required'}), 400
+            wallet = db.session.get(Wallet, wallet_id)
+            if not wallet:
+                return jsonify({'success': False, 'error': 'Wallet not found'}), 404
 
         if rvm.is_capacity_full:
             return jsonify({'success': False, 'error': 'Machine is full — cannot accept items'}), 400
@@ -163,16 +177,21 @@ def start_session():
         db.session.add(session)
         db.session.commit()
 
-        return jsonify({
+        response_data = {
             'success': True,
             'session': {
                 'id': session.id,
+                'session_id': session.id,
                 'rvmId': rvm.id,
                 'walletId': wallet_id,
                 'status': session.status,
                 'startTime': session.start_time.isoformat() if session.start_time else None,
             }
-        }), 201
+        }
+        if user:
+            response_data['account'] = {'name': user.name}
+
+        return jsonify(response_data), 201
     except Exception:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -241,6 +260,63 @@ def deposit_item(session_id):
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
+@rpi_bp.route('/item/deposit', methods=['POST'])
+def edge_deposit_item():
+    """Deposit an item (Edge Client compatibility endpoint).
+    
+    Body: {
+        "session_id": 1,
+        "item_type": "PET Plastic",
+        "points": 10,
+        "weight_grams": 50,
+        "brand": "Unknown",
+        "condition": "Good",
+        "size_category": "Medium"
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'success': False, 'error': 'session_id is required'}), 400
+            
+        session = db.session.get(RecyclingSession, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        if session.status != 'active':
+            return jsonify({'success': False, 'error': 'Session is not active'}), 400
+
+        detected_class = data.get('item_type', 'Unknown')
+        points = int(data.get('points', 0))
+        
+        item = RecyclingItem(
+            session_id=session_id,
+            detected_class=detected_class,
+            confidence_score=100.0,
+            points_awarded=points,
+            status='Accepted',
+        )
+        db.session.add(item)
+
+        session.item_count = (session.item_count or 0) + 1
+        session.total_points_earned = (session.total_points_earned or 0) + points
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'item': {
+                'id': item.id,
+                'detectedClass': item.detected_class,
+                'pointsAwarded': item.points_awarded,
+                'status': item.status,
+            }
+        }), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
 @rpi_bp.route('/session/<int:session_id>/end', methods=['POST'])
 def end_session(session_id):
     """End an active session and credit points to the wallet.
@@ -294,6 +370,65 @@ def end_session(session_id):
                 'totalPointsEarned': session.total_points_earned,
                 'startTime': session.start_time.isoformat() if session.start_time else None,
                 'endTime': session.end_time.isoformat() if session.end_time else None,
+            }
+        }), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@rpi_bp.route('/session/end', methods=['POST'])
+def edge_end_session():
+    """End a session (Edge Client compatibility endpoint).
+    
+    Body: { "session_id": 123, "machine_uuid": "..." }
+    """
+    try:
+        data = request.get_json() or {}
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'success': False, 'error': 'session_id is required'}), 400
+            
+        session = db.session.get(RecyclingSession, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        if session.status != 'active':
+            return jsonify({'success': False, 'error': 'Session is not active'}), 400
+
+        session.status = 'completed'
+        session.end_time = datetime.now(timezone.utc)
+
+        total_points = session.total_points_earned or 0
+
+        # Credit wallet
+        if total_points > 0:
+            wallet = db.session.get(Wallet, session.wallet_id)
+            if wallet:
+                balance_before = wallet.points_balance
+                wallet.points_balance += total_points
+                wallet.lifetime_points = (wallet.lifetime_points or 0) + total_points
+
+                txn = Transaction(
+                    wallet_id=wallet.id,
+                    transaction_type='earn',
+                    amount=total_points,
+                    balance_before=balance_before,
+                    balance_after=wallet.points_balance,
+                    reference_type='session',
+                    reference_id=session.id,
+                )
+                db.session.add(txn)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'session': {
+                'id': session.id,
+                'status': session.status,
+                'itemCount': session.item_count,
+                'totalPointsEarned': session.total_points_earned
             }
         }), 200
     except Exception:
