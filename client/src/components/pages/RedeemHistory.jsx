@@ -79,9 +79,11 @@ export default function RedeemHistory() {
             <h1 className="text-xl font-black text-[#064e3b] uppercase tracking-tighter" style={{ fontFamily: "'Fredoka', sans-serif" }}>Redeem History</h1>
           </div>
           
-          <div className="relative hidden sm:block">
-             <div className="bg-emerald-100/50 px-3 py-1 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-200">
-                {redemptions.length} Total
+          <div className="flex items-center gap-3">
+             <div className="relative hidden sm:block">
+                <div className="bg-emerald-100/50 px-3 py-1 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-200">
+                   {redemptions.length} Total
+                </div>
              </div>
           </div>
         </div>
