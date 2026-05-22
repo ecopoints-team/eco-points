@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
   const heroVisualRef = useRef(null);
@@ -116,13 +114,6 @@ export default function HeroSection() {
 
 
             <div className="flex flex-col sm:flex-row gap-4 mb-12 animate-[fadeInUp_1s_ease-out_0.9s_backwards]">
-              <Link 
-                href="/rewards"
-                className="px-10 py-5 bg-[#10b981] text-white rounded-full font-bold text-lg cursor-pointer transition-all duration-400 hover:bg-[#059669] hover:-translate-y-[3px] hover:shadow-[0_10px_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 group"
-              >
-                Browse Rewards
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
               <button className="px-10 py-5 bg-white border-2 border-[#10b981] rounded-full text-[#10b981] font-bold text-lg cursor-pointer transition-all duration-400 hover:bg-[#10b981] hover:text-white hover:-translate-y-[3px] hover:shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
                 Watch Demo ▶
               </button>
