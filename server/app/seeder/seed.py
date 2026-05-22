@@ -165,13 +165,13 @@ ADMIN_USERS_DATA = [
     {'name': 'Julia Rivera', 'username': 'jrivera', 'email': 'tech@greenfieldhoa.ph', 'role': 'technician', 'locId': 'LOC-005', 'lastLogin': '2026-03-10T14:00:00'},
 ]
 
-# Users per location: LOC-001=150, LOC-002=120, LOC-003=100, LOC-004=50, LOC-005=50   Total=470
+# Users per location: LOC-001=30, LOC-002=25, LOC-003=20, LOC-004=15, LOC-005=10   Total=100
 USERS_PER_LOC = [
-    ('LOC-001', 150, 'arellano.edu.ph'),
-    ('LOC-002', 120, 'pup.edu.ph'),
-    ('LOC-003', 100, 'dlsu.edu.ph'),
-    ('LOC-004', 50,  'ayala.com.ph'),
-    ('LOC-005', 50,  'greenfieldhoa.ph'),
+    ('LOC-001', 30,  'arellano.edu.ph'),
+    ('LOC-002', 25,  'pup.edu.ph'),
+    ('LOC-003', 20,  'dlsu.edu.ph'),
+    ('LOC-004', 15,  'ayala.com.ph'),
+    ('LOC-005', 10,  'greenfieldhoa.ph'),
 ]
 
 MACHINES_DATA = [
@@ -412,8 +412,8 @@ def run_seed(fresh=False):
 
     print(f'         -> {len(admin_user_list)} admin users (pw: {PASSWORD})')
 
-    # ── 5. End Users + Wallets (~470) ─────────────────────────────────
-    print('  [ 5/16] End Users (~470)...')
+    # ── 5. End Users + Wallets (~100) ─────────────────────────────────
+    print('  [ 5/16] End Users (~100)...')
     end_user_list = []
     end_users_by_loc = {}  # 'LOC-001' -> [User, ...]
     used_emails = set()

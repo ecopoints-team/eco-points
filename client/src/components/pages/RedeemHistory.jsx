@@ -5,13 +5,15 @@ import Link from "next/link";
 import { ArrowLeft, Ticket, Calendar, Eye, EyeOff, QrCode, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/apiService";
+import { QRCodeCanvas } from "qrcode.react";
 
-export default function MyRewards() {
+export default function RedeemHistory() {
   const { currentUser, isLoading: isAuthLoading } = useAuth();
   const [redemptions, setRedemptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [revealCodeId, setRevealCodeId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeQrRedemption, setActiveQrRedemption] = useState(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -44,7 +46,7 @@ export default function MyRewards() {
       <div className="min-h-screen flex items-center justify-center bg-[#f0fdf4]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-[#10b981]" />
-          <span className="text-emerald-700 font-bold animate-pulse">Retrieving your vouchers...</span>
+          <span className="text-emerald-700 font-bold animate-pulse">Retrieving your redeem history...</span>
         </div>
       </div>
     );
@@ -57,7 +59,7 @@ export default function MyRewards() {
           <Ticket size={40} className="text-slate-300" />
         </div>
         <h2 className="text-3xl font-black text-[#064e3b] mb-4">Sign in required</h2>
-        <p className="text-slate-600 mb-8 max-w-md">You need to be logged in to access your redeemed vouchers and rewards.</p>
+        <p className="text-slate-600 mb-8 max-w-md">You need to be logged in to access your redeem history.</p>
         <Link href="/login" className="bg-[#10b981] text-white px-10 py-4 rounded-[2rem] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform">
           Sign In Now
         </Link>
@@ -74,7 +76,7 @@ export default function MyRewards() {
             <Link href="/rewards" className="p-2 hover:bg-emerald-50 rounded-full text-slate-500 transition-all hover:-translate-x-1">
               <ArrowLeft size={20} />
             </Link>
-            <h1 className="text-xl font-black text-[#064e3b] uppercase tracking-tighter" style={{ fontFamily: "'Fredoka', sans-serif" }}>My Vouchers</h1>
+            <h1 className="text-xl font-black text-[#064e3b] uppercase tracking-tighter" style={{ fontFamily: "'Fredoka', sans-serif" }}>Redeem History</h1>
           </div>
           
           <div className="relative hidden sm:block">
@@ -93,7 +95,7 @@ export default function MyRewards() {
           </div>
           <input 
             type="text" 
-            placeholder="Search vouchers or codes..."
+            placeholder="Search rewards or codes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white border border-emerald-100 rounded-[2rem] py-5 pl-14 pr-6 text-[#064e3b] shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all text-lg"
@@ -113,8 +115,8 @@ export default function MyRewards() {
             <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-8 text-emerald-400">
               <Ticket size={40} />
             </div>
-            <h3 className="text-3xl font-black text-[#064e3b] mb-4" style={{ fontFamily: "'Fredoka', sans-serif" }}>No vouchers yet</h3>
-            <p className="text-slate-500 mb-10 max-w-sm mx-auto text-lg">Your redeemed rewards will appear here. Start recycling to earn more points!</p>
+            <h3 className="text-3xl font-black text-[#064e3b] mb-4" style={{ fontFamily: "'Fredoka', sans-serif" }}>No redemptions yet</h3>
+            <p className="text-slate-500 mb-10 max-w-sm mx-auto text-lg">Your redeem history will appear here. Start recycling to earn more points!</p>
             <Link href="/rewards" className="bg-[#10b981] text-white px-10 py-4 rounded-[2rem] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-[#059669] transition-all inline-block">
               Browse Rewards
             </Link>
@@ -122,7 +124,7 @@ export default function MyRewards() {
         ) : filteredRedemptions.length === 0 ? (
            <div className="py-20 text-center text-slate-400">
              <Search size={48} className="mx-auto mb-4 opacity-20" />
-             <p className="text-xl font-bold">No vouchers match your search</p>
+             <p className="text-xl font-bold">No redemptions match your search</p>
            </div>
         ) : (
           <div className="grid gap-6">
@@ -154,7 +156,7 @@ export default function MyRewards() {
                 <div className="flex flex-col items-center md:items-end gap-4 flex-shrink-0">
                   <div className={`w-full md:w-auto flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-700 border ${revealCodeId === rd.id ? 'bg-emerald-50 border-emerald-200 scale-105 shadow-inner' : 'bg-slate-50 border-slate-100 hover:bg-slate-100/50'}`}>
                     <div className="flex flex-col flex-grow md:flex-grow-0 min-w-[140px]">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Voucher Code</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Redemption Code</span>
                       <span className={`font-mono font-black text-2xl tracking-[0.2em] transition-all duration-700 ${revealCodeId === rd.id ? 'text-emerald-700' : 'text-slate-300 blur-md select-none'}`}>
                         {rd.redemptionCode}
                       </span>
@@ -169,7 +171,10 @@ export default function MyRewards() {
                   </div>
                   
                   {revealCodeId === rd.id && (
-                    <button className="flex items-center gap-2 text-xs font-black text-emerald-600 hover:text-[#064e3b] transition-colors animate-fade-in uppercase tracking-widest">
+                    <button 
+                      onClick={() => setActiveQrRedemption(rd)}
+                      className="flex items-center gap-2 text-xs font-black text-emerald-600 hover:text-[#064e3b] transition-colors animate-fade-in uppercase tracking-widest hover:underline"
+                    >
                       <QrCode size={16} />
                       Generate Redemption QR
                     </button>
@@ -180,6 +185,77 @@ export default function MyRewards() {
           </div>
         )}
       </main>
+
+      {/* REDEMPTION QR CODE MODAL */}
+      {activeQrRedemption && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in"
+            onClick={() => setActiveQrRedemption(null)}
+          />
+
+          <div 
+            className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative flex flex-col items-center z-10 border border-emerald-100/50"
+            style={{ animation: "scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards" }}
+          >
+            <button
+              onClick={() => setActiveQrRedemption(null)}
+              className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors animate-fade-in"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="mb-4 bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+              <QrCode className="text-emerald-600 w-8 h-8" />
+            </div>
+
+            <h3 
+              className="text-2xl font-black mb-1 tracking-tight text-center text-[#064e3b]" 
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              Redemption QR
+            </h3>
+            
+            <p 
+              className="text-xs mb-6 text-center font-medium text-slate-500 max-w-[240px]" 
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Present this QR code to an officer or scan at the claims counter to redeem your reward.
+            </p>
+
+            <div className="bg-white p-6 rounded-3xl shadow-inner border border-emerald-50 mb-6 flex justify-center items-center">
+              <QRCodeCanvas
+                value={`REDEEM:${activeQrRedemption.redemptionCode}`}
+                size={200}
+                bgColor={"#ffffff"}
+                fgColor={"#064e3b"}
+                level={"H"}
+                includeMargin={false}
+              />
+            </div>
+
+            <div className="text-center w-full">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                Reward
+              </span>
+              <span 
+                className="text-lg font-black text-[#064e3b] leading-tight block mb-3"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                {activeQrRedemption.rewardName}
+              </span>
+              <div className="bg-slate-50 border border-slate-100 px-4 py-2.5 rounded-2xl">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1">
+                  Redemption Code
+                </span>
+                <span className="font-mono font-black text-xl text-emerald-700 tracking-[0.25em]">
+                  {activeQrRedemption.redemptionCode}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

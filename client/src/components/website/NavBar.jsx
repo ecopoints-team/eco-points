@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard, Trophy, Gift } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -30,6 +30,15 @@ export default function NavBar({ onLoginClick }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Prefetch profile, rewards, and leaderboard for instant transitions
+  useEffect(() => {
+    if (router) {
+      router.prefetch("/profile");
+      router.prefetch("/rewards");
+      router.prefetch("/leaderboard");
+    }
+  }, [router]);
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prev) => !prev);
@@ -179,6 +188,14 @@ export default function NavBar({ onLoginClick }) {
 
   const handleNavigate = (id) => {
     setActiveSection(id);
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      router.push(`/#${id}`);
+      return;
+    }
+
     pendingNavigationRef.current = id;
 
     if (pendingNavigationTimeoutRef.current) {
@@ -196,9 +213,10 @@ export default function NavBar({ onLoginClick }) {
       const el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
+      } else {
+        router.push(`/#${id}`);
       }
     }
-    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -282,13 +300,51 @@ export default function NavBar({ onLoginClick }) {
                     </p>
                   </div>
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
+                  {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) && (
+                    <button
+                      onClick={handleDashboardClick}
+                      className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                      style={{ fontFamily: "'Quicksand'" }}
+                    >
+                      <LayoutDashboard size={14} className="text-slate-400" />
+                      Go to Dashboard
+                    </button>
+                  )}
                   <button
-                    onClick={handleDashboardClick}
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsMobileMenuOpen(false);
+                      router.push("/profile");
+                    }}
                     className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
                     style={{ fontFamily: "'Quicksand'" }}
                   >
-                    <LayoutDashboard size={14} className="text-slate-400" />
-                    {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) ? 'Go to Dashboard' : 'My Profile'}
+                    <User size={14} className="text-slate-400" />
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsMobileMenuOpen(false);
+                      router.push("/rewards");
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <Gift size={14} className="text-slate-400" />
+                    Browse Rewards
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsMobileMenuOpen(false);
+                      router.push("/leaderboard");
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <Trophy size={14} className="text-slate-400" />
+                    Leaderboard
                   </button>
                   <button
                     onClick={handleLogout}
@@ -357,13 +413,51 @@ export default function NavBar({ onLoginClick }) {
                   </p>
                 </div>
               </div>
+              {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) && (
+                <button
+                  onClick={handleDashboardClick}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-sm border-none mb-1"
+                  style={{ fontFamily: "'Quicksand'" }}
+                >
+                  <LayoutDashboard size={16} />
+                  Go to Dashboard
+                </button>
+              )}
               <button
-                onClick={handleDashboardClick}
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsMobileMenuOpen(false);
+                  router.push("/profile");
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-sm border-none mb-1"
+                style={{ fontFamily: "'Quicksand'" }}
+              >
+                <User size={16} />
+                My Profile
+              </button>
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsMobileMenuOpen(false);
+                  router.push("/rewards");
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-sm border-none mb-1"
+                style={{ fontFamily: "'Quicksand'" }}
+              >
+                <Gift size={16} />
+                Browse Rewards
+              </button>
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsMobileMenuOpen(false);
+                  router.push("/leaderboard");
+                }}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-sm border-none"
                 style={{ fontFamily: "'Quicksand'" }}
               >
-                <LayoutDashboard size={16} />
-                {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) ? 'Go to Dashboard' : 'My Profile'}
+                <Trophy size={16} />
+                Leaderboard
               </button>
               <button
                 onClick={handleLogout}

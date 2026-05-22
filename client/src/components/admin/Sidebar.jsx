@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers,
+    Home
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -383,6 +384,35 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                     ? 'border-[rgba(123,160,91,0.2)] bg-[#0F1B11]'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]'
                     }`}>
+                    <button
+                        onClick={() => router.push('/')}
+                        className={`
+                            relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group w-full mb-1
+                            ${theme === 'system'
+                                ? 'text-[#E1E4E1]/60 hover:bg-emerald-900/20 hover:text-[#7BA05B]'
+                                : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400'}
+                            ${!isOpen ? 'justify-center' : 'justify-start'}
+                        `}
+                    >
+                        <Home
+                            size={20}
+                            className={`shrink-0 transition-all duration-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 system:group-hover:text-[#7BA05B]`}
+                        />
+
+                        {isOpen && (
+                            <span className="ml-3 font-medium text-sm whitespace-nowrap">
+                                Go to Website
+                            </span>
+                        )}
+
+                        {!isOpen && (
+                            <div className={`absolute left-full ml-3 px-3 py-2 text-white text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 ${theme === 'system' ? 'bg-[#1A2E1F]' : 'bg-slate-800'}`}>
+                                Go to Website
+                                <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${theme === 'system' ? 'bg-[#1A2E1F]' : 'bg-slate-800'}`}></div>
+                            </div>
+                        )}
+                    </button>
+
                     <button
                         onClick={() => { logout(); router.push('/?login=true'); }}
                         className={`

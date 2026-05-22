@@ -17,11 +17,18 @@ import {
   DownloadIcon,
   MailIcon,
   UserCircleIcon,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  Ticket,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
+import { auth as authApi } from "../../services/apiService";
+import Link from "next/link";
 
 // ─────────────────────────────────────────────
 // Font styles (consistent across all pages)
@@ -72,7 +79,7 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
 };
 
 export default function ProfileSection() {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
@@ -227,6 +234,129 @@ export default function ProfileSection() {
   const [isRoleOpen, setIsRoleOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
 
+  // Form input states
+  const [editName, setEditName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Error/Success state
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOpenEditModal = () => {
+    setEditName(currentUser?.name || "");
+    setEditUsername(currentUser?.username || "");
+    setEditEmail(currentUser?.email || "");
+    setEditPhone(currentUser?.phone || "");
+    setSelectedGender(currentUser?.gender || "Male");
+    setSelectedRole(currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : "Student");
+    
+    // Reset change password state
+    setIsChangingPassword(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+    setErrorMsg("");
+    setSuccessMsg("");
+    setIsSubmitting(false);
+
+    setIsEditing(true);
+  };
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+    setIsSubmitting(true);
+
+    try {
+      let profileUpdated = false;
+      let passwordChanged = false;
+
+      // 1. Profile fields updates
+      const nameChanged = editName !== (currentUser?.name || "");
+      const emailChanged = editEmail !== (currentUser?.email || "");
+      const phoneChanged = editPhone !== (currentUser?.phone || "");
+
+      if (nameChanged || emailChanged || phoneChanged) {
+        await authApi.updateProfile({
+          name: editName,
+          email: editEmail,
+          phone: editPhone
+        });
+        profileUpdated = true;
+      }
+
+      // 2. Change password updates
+      if (isChangingPassword) {
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
+          throw new Error("Please fill in all password fields.");
+        }
+        if (newPassword !== confirmNewPassword) {
+          throw new Error("New password and confirm password do not match.");
+        }
+        if (newPassword.length < 8) {
+          throw new Error("New password must be at least 8 characters long.");
+        }
+        if (!/[A-Z]/.test(newPassword)) {
+          throw new Error("New password must contain at least one uppercase letter.");
+        }
+        if (!/[a-z]/.test(newPassword)) {
+          throw new Error("New password must contain at least one lowercase letter.");
+        }
+        if (!/[0-9]/.test(newPassword)) {
+          throw new Error("New password must contain at least one digit.");
+        }
+
+        await authApi.changePassword(currentPassword, newPassword);
+        passwordChanged = true;
+      }
+
+      // 3. Success feedback
+      if (profileUpdated || passwordChanged) {
+        await refreshUser(); // sync context
+        setSuccessMsg(
+          [
+            profileUpdated && "Profile updated successfully.",
+            passwordChanged && "Password changed successfully."
+          ]
+            .filter(Boolean)
+            .join(" ")
+        );
+        // Clear password fields
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setIsChangingPassword(false);
+
+        // Auto close modal after brief delay to let user see success state
+        setTimeout(() => {
+          setIsEditing(false);
+        }, 1500);
+      } else {
+        setIsEditing(false);
+      }
+    } catch (err) {
+      setErrorMsg(err.message || "An error occurred while saving.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section className="min-h-screen p-4 sm:p-6">
       {/* ROOT DIV */}
@@ -284,7 +414,7 @@ export default function ProfileSection() {
             {/* EDIT PROFILE & QR BUTTONS */}
             <div className="px-4 py-4 space-y-2">
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={handleOpenEditModal}
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-all duration-300 shadow-sm"
               >
                 <PencilIcon size={14} className="text-emerald-600" />
@@ -301,6 +431,15 @@ export default function ProfileSection() {
                   Show Personal QR
                 </span>
               </button>
+              <Link
+                href="/redeem-history"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
+              >
+                <Ticket size={14} className="text-stone-500" />
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
+                  Redeem History
+                </span>
+              </Link>
             </div>
           </div>
 
@@ -378,169 +517,295 @@ export default function ProfileSection() {
                 </div>
               </div>
 
-              {/* FILE UPLOAD */}
-              <input
-                type="file"
-                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-2.5 cursor-pointer transition-all duration-300 hover:border-emerald-300"
-                style={fonts.body}
-              />
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* FULL NAME */}
-                <input
-                  onFocus={() => setIsFocused("name")}
-                  onBlur={() => setIsFocused(null)}
-                  type="text"
-                  placeholder="Full Name"
-                  className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400"
-                  style={fonts.body}
-                />
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Full Name</label>
+                  <input
+                    onFocus={() => setIsFocused("name")}
+                    onBlur={() => setIsFocused(null)}
+                    type="text"
+                    placeholder="Full Name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    style={fonts.body}
+                  />
+                </div>
 
                 {/* USERNAME */}
-                <input
-                  onFocus={() => setIsFocused("username")}
-                  onBlur={() => setIsFocused(null)}
-                  type="text"
-                  placeholder="Username"
-                  className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400"
-                  style={fonts.body}
-                />
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Username</label>
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={editUsername}
+                    disabled={true}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    style={fonts.body}
+                  />
+                </div>
 
                 {/* EMAIL */}
-                <input
-                  onFocus={() => setIsFocused("email")}
-                  onBlur={() => setIsFocused(null)}
-                  type="email"
-                  placeholder="juandelacruz@gmail.com"
-                  className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400"
-                  style={fonts.body}
-                />
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Email Address</label>
+                  <input
+                    onFocus={() => setIsFocused("email")}
+                    onBlur={() => setIsFocused(null)}
+                    type="email"
+                    placeholder="Email Address"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    style={fonts.body}
+                  />
+                </div>
+
+                {/* PHONE NUMBER */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Phone Number</label>
+                  <input
+                    onFocus={() => setIsFocused("phone")}
+                    onBlur={() => setIsFocused(null)}
+                    type="text"
+                    placeholder="Phone Number (e.g. +639123456789)"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    style={fonts.body}
+                  />
+                </div>
 
                 {/* INSTITUTION */}
-                <input
-                  onFocus={() => setIsFocused("institution")}
-                  onBlur={() => setIsFocused(null)}
-                  type="text"
-                  placeholder="Institution"
-                  className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400"
-                  style={fonts.body}
-                />
-
-                {/* AGE */}
-                <input
-                  onFocus={() => setIsFocused("age")}
-                  onBlur={() => setIsFocused(null)}
-                  type="text"
-                  placeholder="Age"
-                  className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400"
-                  style={fonts.body}
-                />
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Institution</label>
+                  <input
+                    type="text"
+                    placeholder="Institution"
+                    value={currentUser?.organization?.fullName || currentUser?.organization?.name || "Polytechnic University of the Philippines"}
+                    disabled={true}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    style={fonts.body}
+                  />
+                </div>
 
                 {/* GENDER */}
-                <div className="relative">
-                  <div
-                    onClick={() => {
-                      setIsOpen(!isOpen);
-                      setIsRoleOpen(false);
-                    }}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400"
-                    style={fonts.body}
-                  >
-                    <span className={selectedGender ? "text-slate-700" : "text-slate-400"}>
-                      {selectedGender || "Select Gender"}
-                    </span>
-                    <svg
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Gender</label>
+                  <div className="relative">
+                    <div
+                      onClick={() => {
+                        setIsOpen(!isOpen);
+                        setIsRoleOpen(false);
+                      }}
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  {isOpen && (
-                    <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
-                      <div className="p-1">
-                        {["Male", "Female", "Other"].map((option) => (
-                          <div
-                            key={option}
-                            onClick={() => {
-                              setSelectedGender(option);
-                              setIsOpen(false);
-                            }}
-                            className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                            style={fonts.body}
-                          >
-                            {option}
-                          </div>
-                        ))}
-                      </div>
+                      <span className={selectedGender ? "text-slate-700" : "text-slate-400"}>
+                        {selectedGender || "Select Gender"}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-                  )}
+                    {isOpen && (
+                      <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div className="p-1">
+                          {["Male", "Female", "Other"].map((option) => (
+                            <div
+                              key={option}
+                              onClick={() => {
+                                setSelectedGender(option);
+                                setIsOpen(false);
+                              }}
+                              className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium text-slate-600"
+                              style={fonts.body}
+                            >
+                              {option}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* ROLE */}
-                <div className="relative">
-                  <div
-                    onClick={() => {
-                      setIsRoleOpen(!isRoleOpen);
-                      setIsOpen(false);
-                    }}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400"
-                    style={fonts.body}
-                  >
-                    <span className={selectedRole ? "text-slate-700" : "text-slate-400"}>
-                      {selectedRole || "Select Role"}
-                    </span>
-                    <svg
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isRoleOpen ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Role</label>
+                  <div className="relative">
+                    <div
+                      onClick={() => {
+                        setIsRoleOpen(!isRoleOpen);
+                        setIsOpen(false);
+                      }}
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  {isRoleOpen && (
-                    <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
-                      <div className="p-1">
-                        {["Student", "Faculty", "Alumni", "Others"].map((option) => (
-                          <div
-                            key={option}
-                            onClick={() => {
-                              setSelectedRole(option);
-                              setIsRoleOpen(false);
-                            }}
-                            className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                            style={fonts.body}
-                          >
-                            {option}
-                          </div>
-                        ))}
-                      </div>
+                      <span className={selectedRole ? "text-slate-700" : "text-slate-400"}>
+                        {selectedRole || "Select Role"}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isRoleOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-                  )}
+                    {isRoleOpen && (
+                      <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div className="p-1">
+                          {["Student", "Faculty", "Alumni", "Others"].map((option) => (
+                            <div
+                              key={option}
+                              onClick={() => {
+                                setSelectedRole(option);
+                                setIsRoleOpen(false);
+                              }}
+                              className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium text-slate-600"
+                              style={fonts.body}
+                            >
+                              {option}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* CHANGE PASSWORD TOGGLE BUTTON */}
+              <div className="mt-6 border-t border-slate-100 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsChangingPassword(!isChangingPassword)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 text-slate-700 transition-all duration-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  style={fonts.body}
+                >
+                  <Lock size={14} className={isChangingPassword ? "text-emerald-500 animate-pulse" : "text-slate-500"} />
+                  {isChangingPassword ? "Hide Password Fields" : "Change Password"}
+                </button>
+              </div>
+
+              {/* CHANGE PASSWORD COLLAPSIBLE BOX */}
+              {isChangingPassword && (
+                <div 
+                  className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 transition-all duration-300"
+                  style={{ animation: "scaleIn 0.2s ease-out forwards" }}
+                >
+                  <h3 className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5" style={fonts.heading}>
+                    <Lock size={14} className="text-emerald-600" /> Secure Password Change
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* CURRENT PASSWORD */}
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        placeholder="Current Password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        style={fonts.body}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* NEW PASSWORD */}
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="New Password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        style={fonts.body}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* CONFIRM NEW PASSWORD */}
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm New Password"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        style={fonts.body}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-[10px] text-slate-500 font-semibold leading-relaxed" style={fonts.body}>
+                    💡 Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one digit.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ERROR & SUCCESS NOTIFICATIONS */}
+            <div className="mt-6 space-y-3">
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2 animate-bounce" style={fonts.body}>
+                  <span>⚠️ {errorMsg}</span>
+                </div>
+              )}
+              {successMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2" style={fonts.body}>
+                  <span>✅ {successMsg}</span>
+                </div>
+              )}
             </div>
 
             {/* ACTIONS */}
-            <div className="flex justify-end gap-3 mt-8">
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={fonts.body}
               >
                 Cancel
               </button>
 
               <button
-                className="px-5 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer"
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 style={fonts.body}
               >
-                Save
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                {isSubmitting ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
