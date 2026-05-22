@@ -77,12 +77,19 @@ export default function ProfileSection() {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
   // Mocking the user's tag ID from AccessCredential
-  const userTagId = "12345-ABCDE";
-  const qrPayload = `USER:${userTagId}`;
+  const userTagId = currentUser?.displayId || "12345-ABCDE";
+  const qrPayload = currentUser?.qrToken ? `USER:${currentUser.qrToken}` : `USER:${userTagId}`;
 
-  // User display info (would come from auth/context in production)
-  const userName = "JAY MAR";
-  const userHandle = "@jaydi_dev";
+
+  // User display info
+  const userName = currentUser?.name || "JAY MAR";
+  const userHandle = currentUser?.username ? `@${currentUser.username}` : "@jaydi_dev";
+  const initials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "JM";
 
   const downloadQR = async () => {
     const qrCanvas = document.getElementById("user-qr-code");
@@ -230,17 +237,17 @@ export default function ProfileSection() {
             {/* USERNAME & ICON*/}
             <div className="justify-self-center p-6 pb-2">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <span className="text-3xl font-black text-white select-none" style={fonts.data}>JM</span>
+                <span className="text-3xl font-black text-white select-none" style={fonts.data}>{initials}</span>
               </div>
             </div>
             {/* USER DETAILS */}
             <div className="text-center px-4 pb-3">
               <div className="my-1">
                 <div className="text-xl lg:text-2xl font-black" style={{ ...fonts.heading, color: "#064E3B" }}>
-                  JAY MAR
+                  {userName}
                 </div>
                 <div className="text-xs lg:text-sm font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
-                  @jaydi_dev
+                  {userHandle}
                 </div>
               </div>
             </div>
@@ -249,15 +256,21 @@ export default function ProfileSection() {
             <div className="px-5 pb-4 space-y-2">
               <div className="flex items-center gap-2.5">
                 <UserIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Student</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
+                  {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : "Student"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <UniversityIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Polytechnic University of the Philippines</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
+                  {currentUser?.organization?.fullName || currentUser?.organization?.name || "Polytechnic University of the Philippines"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <MailIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>juandelacruz@gmail.com</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
+                  {currentUser?.email || "juandelacruz@gmail.com"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <UserCircleIcon size={14} className="text-stone-400 flex-shrink-0" />
@@ -361,7 +374,7 @@ export default function ProfileSection() {
               {/* Profile Image Preview */}
               <div className="flex justify-center">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-black text-white" style={fonts.data}>JM</span>
+                  <span className="text-2xl font-black text-white" style={fonts.data}>{initials}</span>
                 </div>
               </div>
 

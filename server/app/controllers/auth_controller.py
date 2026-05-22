@@ -168,6 +168,8 @@ def _serialize_auth_user(u):
         'role': u.role, 'userType': u.user_type,
         'isActive': u.is_active, 'locationId': location_id,
         'organization': org,
+        'displayId': u.display_id,
+        'qrToken': u.qr_token,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,

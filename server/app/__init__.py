@@ -79,6 +79,32 @@ def create_app():
         # Import routes and models so they are registered
         from . import routes, models  # noqa: F401
 
+        # Ensure qr_token column exists in database (Auto-Migration)
+        try:
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            if 'users' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('users')]
+                if 'qr_token' not in columns:
+                    app.logger.info("Adding 'qr_token' column to 'users' table...")
+                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN qr_token VARCHAR(100) UNIQUE"))
+                    db.session.commit()
+                    app.logger.info("'qr_token' column added successfully.")
+
+                # Backfill existing users without qr_token
+                from .models import User
+                import secrets
+                users_to_backfill = User.query.filter(User.qr_token == None).all()
+                if users_to_backfill:
+                    app.logger.info(f"Backfilling {len(users_to_backfill)} users with secure QR tokens...")
+                    for u in users_to_backfill:
+                        u.qr_token = secrets.token_hex(16)
+                    db.session.commit()
+                    app.logger.info("Backfill completed successfully.")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error during qr_token migration/backfill startup hook: {e}")
+
         # Register blueprints
         from .controllers.auth_controller import auth_bp
         from .controllers.web_controller import web_bp

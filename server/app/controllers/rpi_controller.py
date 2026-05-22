@@ -91,6 +91,8 @@ def authenticate_user():
     try:
         data = request.get_json() or {}
         qr_payload = data.get('qrPayload')
+        if qr_payload and qr_payload.startswith("USER:"):
+            qr_payload = qr_payload[5:]
         machine_uuid = data.get('machineUuid')
 
         if not qr_payload or not machine_uuid:
@@ -100,8 +102,10 @@ def authenticate_user():
         if not rvm:
             return jsonify({'success': False, 'error': 'Machine not registered'}), 404
 
-        # Look up user by display_id
-        user = User.query.filter_by(display_id=qr_payload, is_active=True).first()
+        # Look up user by qr_token first, then fallback to display_id
+        user = User.query.filter_by(qr_token=qr_payload, is_active=True).first()
+        if not user:
+            user = User.query.filter_by(display_id=qr_payload, is_active=True).first()
         if not user:
             return jsonify({'success': False, 'error': 'Invalid QR code or user not found'}), 404
 
@@ -140,6 +144,8 @@ def start_session():
         machine_uuid = data.get('machineUuid') or data.get('machine_uuid')
         wallet_id = data.get('walletId')
         user_qr = data.get('user_qr')
+        if user_qr and user_qr.startswith("USER:"):
+            user_qr = user_qr[5:]
 
         if not machine_uuid:
             return jsonify({'success': False, 'error': 'machineUuid is required'}), 400
@@ -150,7 +156,9 @@ def start_session():
 
         user = None
         if user_qr:
-            user = User.query.filter_by(display_id=user_qr, is_active=True).first()
+            user = User.query.filter_by(qr_token=user_qr, is_active=True).first()
+            if not user:
+                user = User.query.filter_by(display_id=user_qr, is_active=True).first()
             if not user:
                 return jsonify({'success': False, 'error': 'Invalid QR code or user not found'}), 404
             wallet = user.wallet

@@ -110,6 +110,7 @@ def _serialize_user(u):
     return {
         'id': u.id,
         'displayId': u.display_id,
+        'qrToken': u.qr_token,
         'name': u.name,
         'firstName': u.first_name,
         'middleName': u.middle_name,
