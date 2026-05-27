@@ -49,7 +49,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     useEffect(() => {
         if (isOpen) {
             setCitiesList(CITIES);
-            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
+            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => { });
         }
     }, [isOpen]);
 
@@ -396,7 +396,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                     contactPhone: location.contactPhone || '',
                     status: location.status || 'Active'
                 });
-            }).catch(() => {});
+            }).catch(() => { });
         }
     }, [isOpen, location]);
 
