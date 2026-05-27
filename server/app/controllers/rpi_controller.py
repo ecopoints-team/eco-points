@@ -1,13 +1,27 @@
 """
-RPI Controller
+RPI Controller (Phase 4A — hardened)
 Handles all API endpoints for the Raspberry Pi (RVM hardware).
-Machines authenticate via machine_uuid, users authenticate via QR code (display_id).
+
+Phase 4A changes:
+  - Every route is guarded by ``@rpi_auth_required`` which validates the
+    ``X-API-Key`` header against the RVM's BCrypt-hashed API key.
+  - Every POST handler has ``@validate_request(Schema)`` for strict input.
+  - ``POST /api/rpi/authenticate`` validates the HMAC suffix on the QR
+    payload BEFORE any User.query call (Requirement 4A.5, 4A.6).
 """
+import hmac as _hmac
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
+
 from ..models import (
-    User, RVM, RecyclingSession, RecyclingItem, Transaction, Wallet,
-    AdminLog, NotificationSetting,
+    User, RecyclingSession, RecyclingItem, Transaction, Wallet,
+    NotificationSetting,
+)
+from ..middleware import rpi_auth_required, compute_qr_suffix, validate_request
+from ..schemas import (
+    RpiMachineIdentifySchema, RpiHeartbeatSchema, RpiAuthenticateSchema,
+    RpiSessionStartSchema, RpiDepositSchema, RpiSessionEndSchema,
+    RpiMachineStatusSchema,
 )
 from .. import db
 
@@ -19,22 +33,14 @@ rpi_bp = Blueprint('rpi', __name__, url_prefix='/api/rpi')
 # ══════════════════════════════════════════════════════════════════════════
 
 @rpi_bp.route('/machine/identify', methods=['POST'])
-def identify_machine():
+@rpi_auth_required
+@validate_request(RpiMachineIdentifySchema)
+def identify_machine(rvm, payload):
     """Identify and authenticate an RVM by its machine_uuid.
 
-    Body: { "machineUuid": "RVM-AU-01" }
+    The RVM is already resolved and authenticated by ``@rpi_auth_required``.
     """
     try:
-        data = request.get_json() or {}
-        machine_uuid = data.get('machineUuid')
-
-        if not machine_uuid:
-            return jsonify({'success': False, 'error': 'machineUuid is required'}), 400
-
-        rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
-        if not rvm:
-            return jsonify({'success': False, 'error': 'Machine not registered'}), 404
-
         return jsonify({
             'success': True,
             'machine': {
@@ -51,25 +57,14 @@ def identify_machine():
 
 
 @rpi_bp.route('/machine/heartbeat', methods=['POST'])
-def machine_heartbeat():
-    """Periodic heartbeat from an RVM to confirm it's alive.
-
-    Body: { "machineUuid": "RVM-AU-01", "isCapacityFull": false }
-    """
+@rpi_auth_required
+@validate_request(RpiHeartbeatSchema)
+def machine_heartbeat(rvm, payload):
+    """Periodic heartbeat from an RVM to confirm it's alive."""
     try:
-        data = request.get_json() or {}
-        machine_uuid = data.get('machineUuid')
-
-        if not machine_uuid:
-            return jsonify({'success': False, 'error': 'machineUuid is required'}), 400
-
-        rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
-        if not rvm:
-            return jsonify({'success': False, 'error': 'Machine not registered'}), 404
-
         rvm.is_online = True
-        if 'isCapacityFull' in data:
-            rvm.is_capacity_full = bool(data['isCapacityFull'])
+        if payload.isCapacityFull is not None:
+            rvm.is_capacity_full = payload.isCapacityFull
         db.session.commit()
 
         return jsonify({'success': True, 'message': 'Heartbeat received'}), 200
@@ -79,29 +74,74 @@ def machine_heartbeat():
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# USER AUTHENTICATION (QR Code)
+# USER AUTHENTICATION (QR Code + HMAC validation)
 # ══════════════════════════════════════════════════════════════════════════
 
 @rpi_bp.route('/authenticate', methods=['POST'])
-def authenticate_user():
-    """Authenticate a user via QR code payload (display_id).
+@rpi_auth_required
+@validate_request(RpiAuthenticateSchema)
+def authenticate_user(rvm, payload):
+    """Authenticate a user via HMAC-signed QR code payload.
 
-    Body: { "qrPayload": "USER-AU-001", "machineUuid": "RVM-AU-01" }
+    Phase 4A HMAC validation (Requirement 4A.5, 4A.6):
+      1. Split ``qrPayload`` on the rightmost ``.`` into
+         ``display_id`` and ``hmac_suffix``.
+      2. Compute ``HMAC-SHA256(per_org_secret, display_id)[:6]``.
+      3. Constant-time compare via ``hmac.compare_digest``.
+      4. On mismatch → 401 ``QR_HMAC_INVALID`` (NO user DB lookup).
+      5. On match → resolve user by ``display_id``.
     """
     try:
-        data = request.get_json() or {}
-        qr_payload = data.get('qrPayload')
-        machine_uuid = data.get('machineUuid')
+        qr_payload = payload.qrPayload
 
-        if not qr_payload or not machine_uuid:
-            return jsonify({'success': False, 'error': 'qrPayload and machineUuid are required'}), 400
+        # Split on rightmost '.' to extract HMAC suffix
+        if '.' not in qr_payload:
+            return jsonify({
+                'success': False,
+                'error': {
+                    'code': 'QR_HMAC_INVALID',
+                    'message': 'QR payload must contain HMAC suffix',
+                },
+            }), 401
 
-        rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
-        if not rvm:
-            return jsonify({'success': False, 'error': 'Machine not registered'}), 404
+        last_dot = qr_payload.rfind('.')
+        display_id = qr_payload[:last_dot]
+        hmac_suffix = qr_payload[last_dot + 1:]
 
-        # Look up user by display_id
-        user = User.query.filter_by(display_id=qr_payload, is_active=True).first()
+        if not display_id or not hmac_suffix:
+            return jsonify({
+                'success': False,
+                'error': {
+                    'code': 'QR_HMAC_INVALID',
+                    'message': 'Invalid QR payload format',
+                },
+            }), 401
+
+        # Get per-org HMAC secret
+        try:
+            org_secret = rvm.organization.get_qr_hmac_secret()
+        except (ValueError, AttributeError):
+            return jsonify({
+                'success': False,
+                'error': {
+                    'code': 'QR_HMAC_INVALID',
+                    'message': 'Organization HMAC secret not provisioned',
+                },
+            }), 401
+
+        # Constant-time HMAC comparison — BEFORE any User.query
+        expected_suffix = compute_qr_suffix(org_secret, display_id)
+        if not _hmac.compare_digest(hmac_suffix.lower(), expected_suffix.lower()):
+            return jsonify({
+                'success': False,
+                'error': {
+                    'code': 'QR_HMAC_INVALID',
+                    'message': 'QR code HMAC verification failed',
+                },
+            }), 401
+
+        # HMAC valid — now look up the user
+        user = User.query.filter_by(display_id=display_id, is_active=True).first()
         if not user:
             return jsonify({'success': False, 'error': 'Invalid QR code or user not found'}), 404
 
@@ -129,22 +169,12 @@ def authenticate_user():
 # ══════════════════════════════════════════════════════════════════════════
 
 @rpi_bp.route('/session/start', methods=['POST'])
-def start_session():
-    """Start a new recycling session.
-
-    Body: { "machineUuid": "RVM-AU-01", "walletId": 1 }
-    """
+@rpi_auth_required
+@validate_request(RpiSessionStartSchema)
+def start_session(rvm, payload):
+    """Start a new recycling session."""
     try:
-        data = request.get_json() or {}
-        machine_uuid = data.get('machineUuid')
-        wallet_id = data.get('walletId')
-
-        if not machine_uuid or not wallet_id:
-            return jsonify({'success': False, 'error': 'machineUuid and walletId are required'}), 400
-
-        rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
-        if not rvm:
-            return jsonify({'success': False, 'error': 'Machine not registered'}), 404
+        wallet_id = payload.walletId
 
         wallet = db.session.get(Wallet, wallet_id)
         if not wallet:
@@ -179,28 +209,21 @@ def start_session():
 
 
 @rpi_bp.route('/session/<int:session_id>/deposit', methods=['POST'])
-def deposit_item(session_id):
-    """Deposit a single item during an active session.
-
-    Body: {
-        "detectedClass": "PET Bottle - Small",
-        "confidenceScore": 95.50,
-        "pointsAwarded": 5,
-        "status": "Accepted"  // Accepted or Rejected
-    }
-    """
+@rpi_auth_required
+@validate_request(RpiDepositSchema)
+def deposit_item(rvm, session_id, payload):
+    """Deposit a single item during an active session."""
     try:
-        data = request.get_json() or {}
         session = db.session.get(RecyclingSession, session_id)
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
         if session.status != 'active':
             return jsonify({'success': False, 'error': 'Session is not active'}), 400
 
-        detected_class = data.get('detectedClass', 'Unknown')
-        confidence = data.get('confidenceScore')
-        points = int(data.get('pointsAwarded', 0))
-        status = data.get('status', 'Accepted')
+        detected_class = payload.detectedClass or 'Unknown'
+        confidence = payload.confidenceScore
+        points = int(payload.pointsAwarded or 0)
+        status = payload.status or 'Accepted'
 
         if status not in ('Accepted', 'Rejected'):
             return jsonify({'success': False, 'error': 'Status must be "Accepted" or "Rejected"'}), 400
@@ -242,20 +265,18 @@ def deposit_item(session_id):
 
 
 @rpi_bp.route('/session/<int:session_id>/end', methods=['POST'])
-def end_session(session_id):
-    """End an active session and credit points to the wallet.
-
-    Body: { "status": "completed" }  // completed, timed_out, error
-    """
+@rpi_auth_required
+@validate_request(RpiSessionEndSchema)
+def end_session(rvm, session_id, payload):
+    """End an active session and credit points to the wallet."""
     try:
-        data = request.get_json() or {}
         session = db.session.get(RecyclingSession, session_id)
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
         if session.status != 'active':
             return jsonify({'success': False, 'error': 'Session is not active'}), 400
 
-        final_status = data.get('status', 'completed')
+        final_status = payload.status or 'completed'
         if final_status not in ('completed', 'timed_out', 'error'):
             return jsonify({'success': False, 'error': 'Invalid status'}), 400
 
@@ -302,37 +323,26 @@ def end_session(session_id):
 
 
 @rpi_bp.route('/machine/status', methods=['POST'])
-def update_machine_status():
-    """Update machine operational status.
-
-    Body: { "machineUuid": "...", "isOnline": true, "isCapacityFull": false }
-    """
+@rpi_auth_required
+@validate_request(RpiMachineStatusSchema)
+def update_machine_status(rvm, payload):
+    """Update machine operational status."""
     try:
-        data = request.get_json() or {}
-        machine_uuid = data.get('machineUuid')
-
-        if not machine_uuid:
-            return jsonify({'success': False, 'error': 'machineUuid is required'}), 400
-
-        rvm = RVM.query.filter_by(machine_uuid=machine_uuid).first()
-        if not rvm:
-            return jsonify({'success': False, 'error': 'Machine not registered'}), 404
-
-        if 'isOnline' in data:
-            rvm.is_online = bool(data['isOnline'])
-        if 'isCapacityFull' in data:
-            rvm.is_capacity_full = bool(data['isCapacityFull'])
+        if payload.isOnline is not None:
+            rvm.is_online = payload.isOnline
+        if payload.isCapacityFull is not None:
+            rvm.is_capacity_full = payload.isCapacityFull
 
         db.session.commit()
 
         # ── Notification hooks ──
         try:
             from ..services.notification_service import trigger_alert
-            if 'isOnline' in data and not data['isOnline']:
+            if payload.isOnline is not None and not payload.isOnline:
                 trigger_alert(rvm.organization_id, 'machine_offline',
                               f'Machine offline: {rvm.name}',
                               f'The machine "{rvm.name}" has gone offline.')
-            if 'isCapacityFull' in data and data['isCapacityFull']:
+            if payload.isCapacityFull is not None and payload.isCapacityFull:
                 trigger_alert(rvm.organization_id, 'machine_capacity_high',
                               f'Machine full: {rvm.name}',
                               f'Machine "{rvm.name}" reports its bin is full.')
@@ -350,7 +360,8 @@ def update_machine_status():
 # ══════════════════════════════════════════════════════════════════════════
 
 @rpi_bp.route('/config/points/<int:org_id>', methods=['GET'])
-def get_points_config(org_id):
+@rpi_auth_required
+def get_points_config(rvm, org_id):
     """Get point-per-item configuration for a given organization."""
     try:
         import json as _json

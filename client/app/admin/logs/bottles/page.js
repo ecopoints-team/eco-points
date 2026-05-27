@@ -1,11 +1,14 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { formatDate } from '../../../../src/utils/formatDate';
-import { logs as logsApi } from '../../../../src/services/apiService';
+import { logs as logsApi } from '../../../../src/services/api';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { formatField } from '../../../../src/lib/formatField';
+import { bottleConditionLabel } from '../../../../src/lib/enumLabels';
 
 // Derive human-readable size from volume_ml (matches points config tiers)
 const getBottleSize = (volumeMl) => {
@@ -16,7 +19,7 @@ const getBottleSize = (volumeMl) => {
     return 'Unknown';
 };
 
-export default function BottleLogsPage() {
+function BottleLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
 
     // API-loaded data
@@ -298,19 +301,19 @@ export default function BottleLogsPage() {
                                         : 'hover:bg-slate-50 dark:hover:bg-emerald-900/10'
                                         }`}
                                 >
-                                    <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.userId}</span></td>
-                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.userName}</span></td>
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.userEmail || '-'}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{formatField(log.userId)}</span></td>
+                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(log.userName)}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.userEmail)}</span></td>
                                     {showMachine && (
-                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.machineName || '-'}</span></td>
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{formatField(log.machineName)}</span></td>
                                     )}
                                     {showLocation && (
-                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.locationName || 'Unknown'}</span></td>
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{formatField(log.locationName)}</span></td>
                                     )}
                                     {showSession && (
                                         <td className="px-3 py-3">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.sessionId || '-'}</span>
+                                                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{formatField(log.sessionId)}</span>
                                                 {log.sessionType === 'bulk' && (
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">BULK</span>
                                                 )}
@@ -322,7 +325,7 @@ export default function BottleLogsPage() {
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
                                             log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
                                                 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                                            }`}>{log.condition}</span>
+                                            }`}>{bottleConditionLabel(log.condition)}</span>
                                     </td>
                                     <td className="px-3 py-3"><span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}</span></td>
                                     <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
@@ -348,5 +351,15 @@ export default function BottleLogsPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function BottleLogsPage() {
+    return (
+        <RequirePermission category="logs">
+            <BottleLogsPageContent />
+        </RequirePermission>
     );
 }

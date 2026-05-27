@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Ticket, Calendar, Eye, EyeOff, QrCode, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/apiService";
+import api from "../../services/api";
 
 export default function MyRewards() {
   const { currentUser, isLoading: isAuthLoading } = useAuth();

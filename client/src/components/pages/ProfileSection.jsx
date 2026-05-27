@@ -16,7 +16,6 @@ import {
   XIcon,
   DownloadIcon,
   MailIcon,
-  UserCircleIcon,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
@@ -71,18 +70,26 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
   ctx.closePath();
 };
 
+// ─────────────────────────────────────────────
+// Empty-state placeholder (Requirement 3.4)
+// ─────────────────────────────────────────────
+const PLACEHOLDER = '—';
+const fmt = (v) => (v === null || v === undefined || v === '') ? PLACEHOLDER : v;
+
 export default function ProfileSection() {
   const { currentUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
-  // Mocking the user's tag ID from AccessCredential
-  const userTagId = "12345-ABCDE";
-  const qrPayload = `USER:${userTagId}`;
+  // Derive display values from server-supplied currentUser fields (Requirement 3.3).
+  // Fall back to placeholder when the field is absent (Requirement 3.4).
+  const userTagId = currentUser?.displayId ?? PLACEHOLDER;
+  // Phase 4A will supply a signed `qrPayload`; until then fall back to the
+  // unsigned `USER:<displayId>` format (alignment doc §15).
+  const qrPayload = currentUser?.qrPayload ?? (currentUser?.displayId ? `USER:${currentUser.displayId}` : 'USER:UNKNOWN');
 
-  // User display info (would come from auth/context in production)
-  const userName = "JAY MAR";
-  const userHandle = "@jaydi_dev";
+  const userName = fmt(currentUser?.name);
+  const userHandle = currentUser?.username ? `@${currentUser.username}` : PLACEHOLDER;
 
   const downloadQR = async () => {
     const qrCanvas = document.getElementById("user-qr-code");
@@ -230,17 +237,19 @@ export default function ProfileSection() {
             {/* USERNAME & ICON*/}
             <div className="justify-self-center p-6 pb-2">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <span className="text-3xl font-black text-white select-none" style={fonts.data}>JM</span>
+                <span className="text-3xl font-black text-white select-none" style={fonts.data}>
+                  {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
+                </span>
               </div>
             </div>
             {/* USER DETAILS */}
             <div className="text-center px-4 pb-3">
               <div className="my-1">
                 <div className="text-xl lg:text-2xl font-black" style={{ ...fonts.heading, color: "#064E3B" }}>
-                  JAY MAR
+                  {userName}
                 </div>
                 <div className="text-xs lg:text-sm font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
-                  @jaydi_dev
+                  {userHandle}
                 </div>
               </div>
             </div>
@@ -249,19 +258,15 @@ export default function ProfileSection() {
             <div className="px-5 pb-4 space-y-2">
               <div className="flex items-center gap-2.5">
                 <UserIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Student</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>{fmt(currentUser?.userType)}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <UniversityIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Polytechnic University of the Philippines</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>{fmt(currentUser?.locationName)}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <MailIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>juandelacruz@gmail.com</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <UserCircleIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Male</span>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>{fmt(currentUser?.email)}</span>
               </div>
             </div>
 
@@ -300,11 +305,15 @@ export default function ProfileSection() {
                 Campus Rank
               </p>
               <div className="flex items-baseline gap-1">
-                <p className="text-2xl font-black" style={fonts.data}>TOP #12</p>
-                <p className="text-[10px] font-black" style={fonts.data}>/ 10,000</p>
+                <p className="text-2xl font-black" style={fonts.data}>
+                  {currentUser?.campusRank != null ? `TOP #${currentUser.campusRank}` : PLACEHOLDER}
+                </p>
+                {currentUser?.organizationUserCount != null && (
+                  <p className="text-[10px] font-black" style={fonts.data}>/ {currentUser.organizationUserCount.toLocaleString()}</p>
+                )}
               </div>
               <p className="text-[9px] font-bold" style={{ ...fonts.body, color: "#34D399" }}>
-                Highest: TOP #12
+                {currentUser?.campusRank != null ? `Highest: TOP #${currentUser.campusRank}` : PLACEHOLDER}
               </p>
               <AwardIcon className="absolute text-amber-400/10 -right-3 -top-3 w-12 h-12 group-hover:scale-110 transition-transform" />
             </div>
@@ -315,7 +324,9 @@ export default function ProfileSection() {
               <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#34D399" }}>
                 All Time Streak
               </p>
-              <p className="text-2xl font-black" style={fonts.data}>15 Days</p>
+              <p className="text-2xl font-black" style={fonts.data}>
+                {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
+              </p>
               <FlameIcon className="absolute text-amber-500/10 -right-2 -top-4 w-12 h-12 group-hover:scale-110 transition-transform" />
             </div>
           </div>
@@ -361,7 +372,9 @@ export default function ProfileSection() {
               {/* Profile Image Preview */}
               <div className="flex justify-center">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-black text-white" style={fonts.data}>JM</span>
+                  <span className="text-2xl font-black text-white" style={fonts.data}>
+                    {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
+                  </span>
                 </div>
               </div>
 
@@ -573,7 +586,7 @@ export default function ProfileSection() {
             </div>
 
             <p className="text-xs bg-slate-100 px-3 py-1 rounded-md mb-6 tracking-widest" style={{ ...fonts.data, color: "#6B7280" }}>
-              ID: {userTagId}
+              ID: {userTagId !== PLACEHOLDER ? userTagId : '—'}
             </p>
 
             <button

@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { machines as machinesApi, logs } from '../../../src/services/apiService';
+import { machines as machinesApi, logs } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
+import { formatField } from '../../../src/lib/formatField';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     CheckCircle2, Clock, User, Calendar, Building2,
@@ -406,7 +408,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
         let cancelled = false;
         (async () => {
             try {
-                const { logs: logsApi, users: usersApi } = await import('../../../src/services/apiService');
+                const { logs: logsApi, users: usersApi } = await import('../../../src/services/api');
                 const [logData, userData] = await Promise.all([
                     logsApi.getMachines(machine.locationId),
                     usersApi.getAll({ locationId: machine.locationId, role: 'technician' }),
@@ -703,7 +705,7 @@ const MachineCard = ({ machine, onOpenMaintenance, onEdit, locationName, current
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-4">
             <MapPin size={14} className="text-slate-400" />
-            {machine.locationName || 'Unassigned'}
+            {formatField(machine.locationName)}
         </div>
 
         {/* Stats */}
@@ -749,7 +751,7 @@ const MachineCard = ({ machine, onOpenMaintenance, onEdit, locationName, current
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function MachinesPage() {
+function MachinesPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
 
     const [machines, setMachines] = useState([]);
@@ -1070,5 +1072,15 @@ export default function MachinesPage() {
                 />
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function MachinesPage() {
+    return (
+        <RequirePermission category="machines">
+            <MachinesPageContent />
+        </RequirePermission>
     );
 }

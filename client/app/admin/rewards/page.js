@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { rewards as rewardsApi } from '../../../src/services/apiService';
+import { rewards as rewardsApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
 import {
     Search, Filter, ChevronLeft, ChevronRight, Gift, Package, Plus, Edit2, Trash2, X,
     Upload, Image, AlertTriangle, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown
@@ -170,7 +172,7 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function RewardsInventoryPage() {
+function RewardsInventoryPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
 
     const [rewards, setRewards] = useState([]);
@@ -190,10 +192,10 @@ export default function RewardsInventoryPage() {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        points: '',
-        stock: '',
+        pointsRequired: '',
+        stockQuantity: '',
         category: 'Merchandise',
-        image: null
+        imageUrl: null
     });
     const fileInputRef = useRef(null);
 
@@ -207,10 +209,10 @@ export default function RewardsInventoryPage() {
                 if (!cancelled) setRewards((data || []).map(r => ({
                     ...r,
                     id: String(r.id),
-                    points: r.pointsRequired || r.points || 0,
-                    stock: r.stockQuantity ?? r.stock ?? 0,
+                    pointsRequired: r.pointsRequired ?? 0,
+                    stockQuantity: r.stockQuantity ?? 0,
                     dispensed: 0,
-                    image: r.imageUrl || null,
+                    imageUrl: r.imageUrl ?? null,
                 })));
             } catch (err) { console.error('Failed to load rewards:', err); }
             finally { if (!cancelled) setIsDataLoading(false); }
@@ -235,7 +237,7 @@ export default function RewardsInventoryPage() {
                 r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 r.category.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory = filterCategory === '' || r.category === filterCategory;
-            const status = getStatus(r.stock);
+            const status = getStatus(r.stockQuantity);
             const matchesStatus = filterStatus === '' || status === filterStatus;
             const matchesLocation = filterLocation === '' || r.locationId === filterLocation;
             return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
@@ -247,8 +249,8 @@ export default function RewardsInventoryPage() {
                 let valA, valB;
                 switch (sortColumn) {
                     case 'name': valA = a.name; valB = b.name; break;
-                    case 'points': valA = a.points; valB = b.points; break;
-                    case 'stock': valA = a.stock; valB = b.stock; break;
+                    case 'pointsRequired': valA = a.pointsRequired; valB = b.pointsRequired; break;
+                    case 'stockQuantity': valA = a.stockQuantity; valB = b.stockQuantity; break;
                     case 'category': valA = a.category; valB = b.category; break;
                     default: return 0;
                 }
@@ -285,9 +287,9 @@ export default function RewardsInventoryPage() {
     };
 
     // Stats
-    const totalStock = rewards.reduce((s, r) => s + r.stock, 0);
-    const lowStockCount = rewards.filter(r => r.stock > 0 && r.stock < LOW_STOCK_THRESHOLD).length;
-    const outOfStockCount = rewards.filter(r => r.stock === 0).length;
+    const totalStock = rewards.reduce((s, r) => s + r.stockQuantity, 0);
+    const lowStockCount = rewards.filter(r => r.stockQuantity > 0 && r.stockQuantity < LOW_STOCK_THRESHOLD).length;
+    const outOfStockCount = rewards.filter(r => r.stockQuantity === 0).length;
     const totalDispensed = rewards.reduce((s, r) => s + (r.dispensed || 0), 0);
 
     // Get location name
@@ -299,7 +301,7 @@ export default function RewardsInventoryPage() {
     // Modal handlers
     const openAddModal = () => {
         setEditingReward(null);
-        setFormData({ name: '', description: '', points: '', stock: '', category: 'Merchandise', image: null });
+        setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null });
         setShowModal(true);
     };
 
@@ -308,10 +310,10 @@ export default function RewardsInventoryPage() {
         setFormData({
             name: r.name,
             description: r.description || '',
-            points: r.points.toString(),
-            stock: r.stock.toString(),
+            pointsRequired: r.pointsRequired.toString(),
+            stockQuantity: r.stockQuantity.toString(),
             category: r.category,
-            image: r.image || null
+            imageUrl: r.imageUrl || null
         });
         setShowModal(true);
     };
@@ -320,46 +322,46 @@ export default function RewardsInventoryPage() {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => setFormData(p => ({ ...p, image: reader.result }));
+            reader.onloadend = () => setFormData(p => ({ ...p, imageUrl: reader.result }));
             reader.readAsDataURL(file);
         }
     };
 
     const handleSubmit = async () => {
-        if (!formData.name || !formData.points || !formData.stock || !formData.category) return;
-        const stock = parseInt(formData.stock);
+        if (!formData.name || !formData.pointsRequired || !formData.stockQuantity || !formData.category) return;
+        const stockQuantity = parseInt(formData.stockQuantity);
 
         try {
             if (editingReward) {
                 const updated = await rewardsApi.update(editingReward.id, {
                     name: formData.name,
                     description: formData.description,
-                    pointsRequired: parseInt(formData.points),
-                    stockQuantity: stock,
+                    pointsRequired: parseInt(formData.pointsRequired),
+                    stockQuantity,
                     category: formData.category,
-                    imageUrl: formData.image,
+                    imageUrl: formData.imageUrl,
                 });
                 setRewards(prev => prev.map(r => r.id === editingReward.id ? {
                     ...r,
                     ...formData,
-                    points: parseInt(formData.points),
-                    stock
+                    pointsRequired: parseInt(formData.pointsRequired),
+                    stockQuantity
                 } : r));
             } else {
                 const created = await rewardsApi.create({
                     name: formData.name,
                     description: formData.description,
-                    pointsRequired: parseInt(formData.points),
-                    stockQuantity: stock,
+                    pointsRequired: parseInt(formData.pointsRequired),
+                    stockQuantity,
                     category: formData.category,
-                    imageUrl: formData.image,
+                    imageUrl: formData.imageUrl,
                     locationId: effectiveLocationId,
                 });
                 setRewards(prev => [{
                     id: String(created.id),
                     ...formData,
-                    points: parseInt(formData.points),
-                    stock,
+                    pointsRequired: parseInt(formData.pointsRequired),
+                    stockQuantity,
                     dispensed: 0,
                     locationId: effectiveLocationId
                 }, ...prev]);
@@ -373,10 +375,10 @@ export default function RewardsInventoryPage() {
     // Dispense handler
     const handleDispense = (rewardId) => {
         setRewards(prev => prev.map(r => {
-            if (r.id === rewardId && r.stock > 0) {
+            if (r.id === rewardId && r.stockQuantity > 0) {
                 return {
                     ...r,
-                    stock: r.stock - 1,
+                    stockQuantity: r.stockQuantity - 1,
                     dispensed: r.dispensed + 1
                 };
             }
@@ -388,8 +390,8 @@ export default function RewardsInventoryPage() {
     const adjustStock = (rewardId, amount) => {
         setRewards(prev => prev.map(r => {
             if (r.id === rewardId) {
-                const newStock = Math.max(0, r.stock + amount);
-                return { ...r, stock: newStock };
+                const newStock = Math.max(0, r.stockQuantity + amount);
+                return { ...r, stockQuantity: newStock };
             }
             return r;
         }));
@@ -571,11 +573,11 @@ export default function RewardsInventoryPage() {
                                 <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">Category <SortIcon column="category" /></div>
                                 </th>
-                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('points')}>
-                                    <div className="flex items-center gap-1">Points <SortIcon column="points" /></div>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsRequired')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsRequired" /></div>
                                 </th>
-                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('stock')}>
-                                    <div className="flex items-center gap-1">Stock <SortIcon column="stock" /></div>
+                                <th className="px-6 py-4 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('stockQuantity')}>
+                                    <div className="flex items-center gap-1">Stock <SortIcon column="stockQuantity" /></div>
                                 </th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -583,8 +585,8 @@ export default function RewardsInventoryPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {currentRewards.map((r) => {
-                                const isLowStock = r.stock < LOW_STOCK_THRESHOLD;
-                                const isOutOfStock = r.stock === 0;
+                                const isLowStock = r.stockQuantity < LOW_STOCK_THRESHOLD;
+                                const isOutOfStock = r.stockQuantity === 0;
 
                                 return (
                                     <tr
@@ -598,18 +600,18 @@ export default function RewardsInventoryPage() {
                                     >
                                         <td className="px-6 py-4">
                                             <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden">
-                                                {r.image ? <img src={r.image} alt={r.name} className="w-full h-full object-cover" /> : <Image size={20} className="text-slate-400" />}
+                                                {r.imageUrl ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" /> : <Image size={20} className="text-slate-400" />}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="font-semibold text-slate-800 dark:text-white text-sm">{r.name}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">{r.description || ''}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">{formatField(r.description)}</p>
                                         </td>
                                         {isSuperAdmin && !effectiveLocationId && (
                                             <td className="px-6 py-4">
                                                 <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
                                                     <Building2 size={12} />
-                                                    {getLocationName(r.locationId)}
+                                                    {formatField(r.locationName ?? getLocationName(r.locationId))}
                                                 </span>
                                             </td>
                                         )}
@@ -617,14 +619,14 @@ export default function RewardsInventoryPage() {
                                             <CategoryBadge category={r.category} />
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{r.points} pts</span>
+                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{r.pointsRequired} pts</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <span className={`font-semibold ${isOutOfStock ? 'text-red-600 dark:text-red-400' : isLowStock ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    {r.stock}
+                                                    {r.stockQuantity}
                                                 </span>
-                                                <LowStockWarning stock={r.stock} />
+                                                <LowStockWarning stock={r.stockQuantity} />
                                             </div>
                                             <div className="flex items-center gap-1 mt-1">
                                                 <button
@@ -636,14 +638,14 @@ export default function RewardsInventoryPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <StockBadge stock={r.stock} />
+                                            <StockBadge stock={r.stockQuantity} />
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleDispense(r.id)}
-                                                    disabled={r.stock === 0}
-                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${r.stock === 0
+                                                    disabled={r.stockQuantity === 0}
+                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${r.stockQuantity === 0
                                                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
                                                         : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:hover:bg-purple-500/30'
                                                         }`}
@@ -730,7 +732,7 @@ export default function RewardsInventoryPage() {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Image</label>
                                 <div className="flex items-center gap-4">
                                     <div className="w-24 h-24 rounded-xl bg-slate-100 dark:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden">
-                                        {formData.image ? <img src={formData.image} className="w-full h-full object-cover" /> : <Image size={32} className="text-slate-400" />}
+                                        {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-cover" /> : <Image size={32} className="text-slate-400" />}
                                     </div>
                                     <div>
                                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -754,11 +756,11 @@ export default function RewardsInventoryPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Points Cost *</label>
-                                    <input type="number" value={formData.points} onChange={(e) => setFormData(p => ({ ...p, points: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                                    <input type="number" value={formData.pointsRequired} onChange={(e) => setFormData(p => ({ ...p, pointsRequired: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock *</label>
-                                    <input type="number" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                                    <input type="number" value={formData.stockQuantity} onChange={(e) => setFormData(p => ({ ...p, stockQuantity: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                                 </div>
                             </div>
                             <div>
@@ -815,5 +817,15 @@ export default function RewardsInventoryPage() {
                 </div>
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function RewardsInventoryPage() {
+    return (
+        <RequirePermission category="rewards">
+            <RewardsInventoryPageContent />
+        </RequirePermission>
     );
 }

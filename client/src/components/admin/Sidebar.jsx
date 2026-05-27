@@ -141,116 +141,163 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
     const router = useRouter();
 
     // Get auth context
+    //
+    // Phase 2 / Requirement 2.5 — sidebar links are filtered by the
+    // server-authoritative `permission_categories` list projected onto
+    // `currentUser` by `GET /api/web/auth/me` (see middleware.ROLE_PERMISSIONS
+    // and auth_controller._serialize_auth_user). Each nav entry below is
+    // tagged with a `category` matching that map; entries whose category is
+    // absent from `currentUser.permission_categories` are hidden. Entries
+    // without a `category` (e.g. the Sign Out footer button) remain visible
+    // to every authenticated admin.
     let currentUser = null;
-    let hasPermission = () => false;
-    let isSuperAdmin = false;
     let logout = () => { };
 
     try {
         const auth = useAuth();
         currentUser = auth.currentUser;
-        hasPermission = auth.hasPermission;
-        isSuperAdmin = auth.isSuperAdmin;
         logout = auth.logout;
     } catch (e) {
         // AuthContext not available yet, use defaults
     }
+
+    const permissionCategories = Array.isArray(currentUser?.permission_categories)
+        ? currentUser.permission_categories
+        : [];
+
+    const hasCategory = (category) => {
+        // No category = always visible (e.g. profile, logout). Otherwise the
+        // category must appear in the user's authoritative set.
+        if (!category) return true;
+        return permissionCategories.includes(category);
+    };
 
     // Accordion toggle: clicking an open menu closes it, clicking a closed menu opens it (and closes others)
     const toggleMenu = (key) => {
         setActiveMenuKey(prev => prev === key ? null : key);
     };
 
-    // Navigation structure with permission checks
+    // Navigation structure tagged with `category` per Phase 2 task 6.6:
+    //   dashboard          → 'dashboard'
+    //   analytics          → 'analytics'
+    //   bulk-sessions      → 'sessions'
+    //   leaderboards       → 'leaderboard'
+    //   locations          → 'locations'
+    //   logs (parent + all children) → 'logs'
+    //   machines           → 'machines'
+    //   rewards            → 'rewards'
+    //   settings           → 'settings'
+    //   users + users/permissions    → 'users'
+    //   groups (if linked) → 'groups'
+    //   profile            → no category (visible to all admin roles)
     const navStructure = [
         {
             type: 'item',
             label: 'Dashboard',
             icon: LayoutDashboard,
             href: '/admin',
-            hidden: false // Everyone can see dashboard
+            category: 'dashboard',
         },
         {
             type: 'item',
             label: 'Locations',
             icon: Building2,
             href: '/admin/locations',
-            hidden: !isSuperAdmin // Only Super Admin
+            category: 'locations',
         },
         {
             type: 'item',
             label: 'Machines (RVM)',
             icon: Package,
             href: '/admin/machines',
-            hidden: !hasPermission('machines', 'view')
+            category: 'machines',
         },
         {
             type: 'group',
             key: 'user-management',
             label: 'User Management',
             icon: Users,
-            hidden: !hasPermission('users', 'view'),
+            category: 'users',
             children: [
-                { label: 'Manage Users', href: '/admin/users' },
-                { label: 'Manage Admins', href: '/admin/users/permissions' },
-            ]
+                { label: 'Manage Users', href: '/admin/users', category: 'users' },
+                { label: 'Manage Admins', href: '/admin/users/permissions', category: 'users' },
+            ],
         },
         {
             type: 'item',
             label: 'Rewards Inventory',
             icon: FileText,
             href: '/admin/rewards',
-            hidden: !hasPermission('rewards', 'view')
+            category: 'rewards',
         },
         {
             type: 'item',
             label: 'Leaderboards',
             icon: Trophy,
             href: '/admin/leaderboards',
-            hidden: !hasPermission('leaderboards', 'view')
+            category: 'leaderboard',
         },
         {
             type: 'item',
             label: 'Analytics',
             icon: BarChart3,
             href: '/admin/analytics',
-            hidden: !hasPermission('analytics', 'view')
+            category: 'analytics',
         },
         {
             type: 'item',
             label: 'Bulk Sessions',
             icon: Layers,
             href: '/admin/bulk-sessions',
-            hidden: !hasPermission('bulk_sessions', 'view')
+            category: 'sessions',
         },
         {
             type: 'group',
             key: 'logs',
             label: 'System Logs',
             icon: Activity,
-            hidden: !hasPermission('logs', 'view'),
+            category: 'logs',
             children: [
-                { label: 'Bottle Logs', href: '/admin/logs/bottles' },
-                { label: 'Machine Logs', href: '/admin/logs/machines' },
-                { label: 'Rewards Logs', href: '/admin/logs/rewards' },
-                { label: 'Transactions', href: '/admin/logs/transactions' },
-                { label: 'Admin Logs', href: '/admin/logs/access', hidden: !isSuperAdmin && !hasPermission('logs', 'view') },
-            ]
+                { label: 'Bottle Logs', href: '/admin/logs/bottles', category: 'logs' },
+                { label: 'Machine Logs', href: '/admin/logs/machines', category: 'logs' },
+                { label: 'Rewards Logs', href: '/admin/logs/rewards', category: 'logs' },
+                { label: 'Transactions', href: '/admin/logs/transactions', category: 'logs' },
+                { label: 'Admin Logs', href: '/admin/logs/access', category: 'logs' },
+            ],
         },
         {
             type: 'item',
             label: 'Settings',
             icon: Settings,
             href: '/admin/settings',
-            hidden: !hasPermission('settings', 'view')
+            category: 'settings',
         },
-    ];
+    ]
+        // Filter out any link whose required category is absent from the
+        // user's `permission_categories`. Items without a `category` are
+        // kept (handled by hasCategory). For groups, also drop children
+        // whose individual category is missing; if no children survive, the
+        // group itself is hidden.
+        .map((item) => {
+            if (item.type === 'group' && Array.isArray(item.children)) {
+                const visibleChildren = item.children.filter((child) => hasCategory(child.category));
+                return { ...item, children: visibleChildren };
+            }
+            return item;
+        })
+        .filter((item) => {
+            if (!hasCategory(item.category)) return false;
+            if (item.type === 'group' && (!item.children || item.children.length === 0)) {
+                return false;
+            }
+            return true;
+        });
 
     // Keep dropdowns open when visiting a page within that group
     useEffect(() => {
         let foundGroup = false;
         navStructure.forEach(item => {
-            if (item.type === 'group' && item.children && !item.hidden) {
+            if (item.type === 'group' && item.children) {
                 const isActive = item.children.some(child => pathname === child.href);
                 if (isActive) {
                     setActiveMenuKey(item.key);
@@ -313,8 +360,6 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 {/* NAVIGATION LIST */}
                 <nav className={`px-3 py-6 space-y-1 h-[calc(100vh-160px)] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent ${isOpen ? 'overflow-y-auto' : 'overflow-visible'}`}>
                     {navStructure.map((item, idx) => {
-                        if (item.hidden) return null;
-
                         if (item.type === 'item') {
                             return (
                                 <SidebarItem

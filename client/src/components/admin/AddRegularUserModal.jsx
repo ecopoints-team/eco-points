@@ -4,7 +4,7 @@ import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, Graduation
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
 import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../../data/mockData';
-import { users as usersApi } from '../../services/apiService';
+import { users as usersApi } from '../../services/api';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label, error }) => {
     const [showPassword, setShowPassword] = useState(false);

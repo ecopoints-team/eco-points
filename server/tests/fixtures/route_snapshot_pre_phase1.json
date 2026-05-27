@@ -1,0 +1,80 @@
+[
+  {"method": "POST",   "rule": "/api/web/auth/change-password",                          "endpoint": "auth.change_password",                  "decorators": ["token_required"]},
+  {"method": "GET",    "rule": "/api/web/auth/groups",                                   "endpoint": "auth.public_groups",                    "decorators": []},
+  {"method": "GET",    "rule": "/api/web/auth/locations",                                "endpoint": "auth.public_locations",                 "decorators": []},
+  {"method": "POST",   "rule": "/api/web/auth/login",                                    "endpoint": "auth.login",                            "decorators": []},
+  {"method": "POST",   "rule": "/api/web/auth/logout",                                   "endpoint": "auth.logout",                           "decorators": ["token_required"]},
+  {"method": "GET",    "rule": "/api/web/auth/me",                                       "endpoint": "auth.get_current_user",                 "decorators": ["token_required"]},
+  {"method": "PUT",    "rule": "/api/web/auth/profile",                                  "endpoint": "auth.update_profile",                   "decorators": ["token_required"]},
+  {"method": "POST",   "rule": "/api/web/auth/register",                                 "endpoint": "auth.register",                         "decorators": []},
+  {"method": "POST",   "rule": "/api/web/auth/verify-otp",                               "endpoint": "auth.verify_otp_route",                 "decorators": []},
+
+  {"method": "GET",    "rule": "/api/web/analytics",                                     "endpoint": "web.analytics.get_analytics",           "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/bulk-deposits",                                 "endpoint": "web.sessions.get_bulk_deposits",        "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/bulk-deposits",                                 "endpoint": "web.sessions.create_bulk_deposit",      "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/dashboard/stats",                               "endpoint": "web.dashboard.dashboard_stats",         "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/groups",                                        "endpoint": "web.groups.get_groups",                 "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/groups",                                        "endpoint": "web.groups.create_group",               "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/groups/<int:group_id>",                         "endpoint": "web.groups.update_group",               "decorators": ["token_required", "permission_required"]},
+  {"method": "DELETE", "rule": "/api/web/groups/<int:group_id>",                         "endpoint": "web.groups.delete_group",               "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/health",                                        "endpoint": "web.health_check",                      "decorators": []},
+
+  {"method": "GET",    "rule": "/api/web/leaderboard",                                   "endpoint": "web.leaderboard.get_leaderboard",       "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/locations",                                     "endpoint": "web.locations.get_locations",           "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/locations",                                     "endpoint": "web.locations.create_location",         "decorators": ["token_required", "superadmin_required"]},
+  {"method": "PUT",    "rule": "/api/web/locations/<int:loc_id>",                        "endpoint": "web.locations.update_location",         "decorators": ["token_required", "permission_required"]},
+  {"method": "DELETE", "rule": "/api/web/locations/<int:loc_id>",                        "endpoint": "web.locations.delete_location",         "decorators": ["token_required", "superadmin_required"]},
+
+  {"method": "GET",    "rule": "/api/web/logs/access",                                   "endpoint": "web.logs.get_access_logs",              "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/logs/bottles",                                  "endpoint": "web.logs.get_bottle_logs",              "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/logs/machines",                                 "endpoint": "web.logs.get_machine_logs",             "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/logs/machines",                                 "endpoint": "web.logs.create_machine_log",           "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/logs/rewards",                                  "endpoint": "web.logs.get_reward_logs",              "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/logs/rewards/<int:redemption_id>",              "endpoint": "web.logs.update_reward_redemption",     "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/logs/transactions",                             "endpoint": "web.logs.get_transaction_logs",         "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/machines",                                      "endpoint": "web.machines.get_machines",             "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/machines",                                      "endpoint": "web.machines.create_machine",           "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/machines/<int:machine_id>",                    "endpoint": "web.machines.update_machine",           "decorators": ["token_required", "permission_required"]},
+  {"method": "DELETE", "rule": "/api/web/machines/<int:machine_id>",                    "endpoint": "web.machines.delete_machine",           "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/org-types",                                     "endpoint": "web.locations.get_org_types",           "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/org-types",                                     "endpoint": "web.locations.create_org_type",         "decorators": ["token_required", "superadmin_required"]},
+  {"method": "DELETE", "rule": "/api/web/org-types/<int:ot_id>",                         "endpoint": "web.locations.delete_org_type",         "decorators": ["token_required", "superadmin_required"]},
+
+  {"method": "GET",    "rule": "/api/web/rewards",                                       "endpoint": "web.rewards.get_rewards",               "decorators": ["token_required"]},
+  {"method": "POST",   "rule": "/api/web/rewards",                                       "endpoint": "web.rewards.create_reward",             "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/rewards/my-redemptions",                        "endpoint": "web.rewards.get_my_redemptions",        "decorators": ["token_required"]},
+  {"method": "PUT",    "rule": "/api/web/rewards/<int:reward_id>",                       "endpoint": "web.rewards.update_reward",             "decorators": ["token_required", "permission_required"]},
+  {"method": "DELETE", "rule": "/api/web/rewards/<int:reward_id>",                       "endpoint": "web.rewards.delete_reward",             "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/rewards/<int:reward_id>/redeem",                "endpoint": "web.rewards.redeem_reward",             "decorators": ["token_required"]},
+
+  {"method": "GET",    "rule": "/api/web/sessions/bulk",                                 "endpoint": "web.sessions.get_bulk_sessions",        "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/sessions/bulk",                                 "endpoint": "web.sessions.create_bulk_session",      "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/sessions/bulk/<int:session_id>",                "endpoint": "web.sessions.get_bulk_session_detail",  "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/settings/channels",                             "endpoint": "web.settings.get_channel_config",       "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/settings/channels",                             "endpoint": "web.settings.update_channel_config",    "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/settings/notifications",                        "endpoint": "web.settings.get_notification_settings","decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/settings/notifications",                        "endpoint": "web.settings.update_notification_settings","decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/settings/notifications/logs",                   "endpoint": "web.settings.get_notification_logs",    "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/settings/notifications/test",                   "endpoint": "web.settings.test_notification",        "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/settings/points",                               "endpoint": "web.settings.get_points_config",        "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/settings/points",                               "endpoint": "web.settings.update_points_config",     "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/settings/security",                             "endpoint": "web.settings.get_security_config",      "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/settings/security",                             "endpoint": "web.settings.update_security_config",   "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/settings/security/force-logout",                "endpoint": "web.settings.force_logout_all",         "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/settings/security/login-history",               "endpoint": "web.settings.get_login_history",        "decorators": ["token_required", "permission_required"]},
+
+  {"method": "GET",    "rule": "/api/web/users",                                         "endpoint": "web.users.get_users",                   "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/users",                                         "endpoint": "web.users.create_user",                 "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/users/<int:user_id>",                           "endpoint": "web.users.get_user",                    "decorators": ["token_required", "permission_required"]},
+  {"method": "PUT",    "rule": "/api/web/users/<int:user_id>",                           "endpoint": "web.users.update_user",                 "decorators": ["token_required", "permission_required"]},
+  {"method": "DELETE", "rule": "/api/web/users/<int:user_id>",                           "endpoint": "web.users.delete_user",                 "decorators": ["token_required", "permission_required"]},
+  {"method": "POST",   "rule": "/api/web/users/<int:user_id>/adjust-points",             "endpoint": "web.users.adjust_user_points",          "decorators": ["token_required", "permission_required"]}
+]

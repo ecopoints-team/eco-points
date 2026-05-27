@@ -1,6 +1,7 @@
 'use client';
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
-import { auth as authApi, locations as locationsApi } from '../services/apiService';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth as authApi, locations as locationsApi } from '../services/api';
 import { ROLES } from '../data/roleConfig';
 
 // ============================================================================
@@ -25,24 +26,39 @@ export function AuthProvider({ children }) {
     // "View as Location" mode for Super Admin
     const [viewAsLocationId, setViewAsLocationId] = useState(null);
 
-    // ── Bootstrap: validate token & load context data on mount ──────────
+    // Keep a live reference to the signed-in user so the unauthorized event
+    // handler (which is registered once on mount) can read the latest value
+    // without re-binding on every state change.
+    const currentUserRef = useRef(null);
+    useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+    // Next.js router for the post-401 redirect to the landing page. The
+    // hook MUST be called at the top level of the provider so it stays
+    // stable across renders.
+    const router = useRouter();
+
+    // ── Bootstrap: probe session via cookie + load context data on mount ──
+    //
+    // The JWT lives in an HttpOnly cookie (Phase 4B), so the Client cannot
+    // ask "am I logged in?" without a network round-trip. We unconditionally
+    // call `GET /auth/me`; the browser attaches the cookie automatically.
+    // A 401 (or any error) means there is no valid session and we stay
+    // logged out — no `localStorage` token to clear.
     useEffect(() => {
         let cancelled = false;
         const init = async () => {
-            if (authApi.isAuthenticated()) {
+            try {
+                const user = await authApi.me();
+                if (cancelled) return;
+                setCurrentUser(enrichUser(user));
                 try {
-                    const [user, locs] = await Promise.all([
-                        authApi.me(),
-                        locationsApi.getAll(),
-                    ]);
-                    if (!cancelled) {
-                        setCurrentUser(enrichUser(user));
-                        setAllLocations(locs);
-                    }
+                    const locs = await locationsApi.getAll();
+                    if (!cancelled) setAllLocations(locs);
                 } catch {
-                    // Token expired / invalid — clear it silently
-                    authApi.logout().catch(() => {});
+                    /* non-critical — locations may be reloaded later */
                 }
+            } catch {
+                /* not signed in (or expired session) — render logged out */
             }
             if (!cancelled) {
                 setIsInitialized(true);
@@ -52,6 +68,34 @@ export function AuthProvider({ children }) {
         init();
         return () => { cancelled = true; };
     }, []);
+
+    // ── 401 handler: clear in-memory state and redirect to landing ───────
+    //
+    // `client.js` dispatches `ecopoints:unauthorized` on every HTTP 401.
+    // We only react when a user is currently signed in — the boot probe's
+    // 401 (no session yet) is normal and MUST NOT trigger a redirect.
+    //
+    // Phase 4B — Requirements 4B.16, 7.6.
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const handler = () => {
+            if (!currentUserRef.current) return;
+            setCurrentUser(null);
+            setAllLocations([]);
+            setViewAsLocationId(null);
+            try {
+                router.replace('/');
+            } catch {
+                // Fallback if the router isn't ready (very early in the
+                // tree). Hard-navigate so the user lands on a clean page.
+                if (typeof window.location !== 'undefined') {
+                    window.location.assign('/');
+                }
+            }
+        };
+        window.addEventListener('ecopoints:unauthorized', handler);
+        return () => window.removeEventListener('ecopoints:unauthorized', handler);
+    }, [router]);
 
     // ── Derived: is this user a super admin? ────────────────────────────
     const isSuperAdminUser = currentUser?.role === 'superadmin';
@@ -70,11 +114,15 @@ export function AuthProvider({ children }) {
     // ── Actions ─────────────────────────────────────────────────────────
     const login = useCallback(async (identifier, password) => {
         const data = await authApi.login(identifier, password);
-        setCurrentUser(enrichUser(data.user));
-        try {
-            const locs = await locationsApi.getAll();
-            setAllLocations(locs);
-        } catch { /* non-critical */ }
+        // Skip the post-login load on 2FA challenges — the cookie is only
+        // issued after `verifyOtp`, so `/locations` would 401 here.
+        if (data && data.user) {
+            setCurrentUser(enrichUser(data.user));
+            try {
+                const locs = await locationsApi.getAll();
+                setAllLocations(locs);
+            } catch { /* non-critical */ }
+        }
         return data;
     }, []);
 

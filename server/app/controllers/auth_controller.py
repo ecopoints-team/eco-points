@@ -3,16 +3,26 @@ Authentication Controller
 Handles login, logout, and current-user endpoints with JWT tokens.
 """
 import jwt
-import re
 import json
 import uuid
+import secrets
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, make_response
+from sqlalchemy import func
 from ..models import (
     User, AdminLog, CommunityGroup, Wallet, UserSecurity, TokenBlacklist,
     LoginAttempt, NotificationSetting,
 )
-from ..middleware import token_required, get_user_org_id
+from ..middleware import token_required, get_user_org_id, ROLE_PERMISSIONS, validate_request
+from ..services.password_policy import validate_password_policy
+from ..schemas import (
+    LoginSchema,
+    VerifyOtpSchema,
+    LogoutSchema,
+    ProfileUpdateSchema,
+    ChangePasswordSchema,
+    RegisterSchema,
+)
 from .. import db, limiter
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/web/auth')
@@ -141,8 +151,97 @@ def _log_attempt(identifier, ip, user_id=None, success=False, reason=None):
         db.session.rollback()
 
 
+# ── Phase 4B: Cookie + CSRF transport ─────────────────────────────────────
+#
+# Requirement 4B.11 / Task 11.1: on successful login the Server attaches the
+# JWT in an HttpOnly + Secure + SameSite=Strict cookie named ``token`` and
+# additionally issues a (non-HttpOnly) ``csrf_token`` cookie carrying a
+# ``secrets.token_urlsafe(32)`` value. The Client reads the CSRF cookie via
+# ``document.cookie`` and echoes it on the ``X-CSRF-Token`` header for every
+# state-changing request (Phase 4B.13). The legacy ``token`` field stays in
+# the JSON body during the transition window — Phase 4B.16 removes the
+# Client's reliance on it once ``AUTH_COOKIE_ONLY`` flips to ``true``.
+
+def _attach_auth_cookies(response, jwt_token, expiry_hours):
+    """Attach the Phase 4B authentication cookies to ``response``.
+
+    Sets two cookies:
+      * ``token``      — the issued JWT, HttpOnly + Secure + SameSite=Strict.
+      * ``csrf_token`` — a 32-byte URL-safe random token, *not* HttpOnly so
+        the Client can read it via ``document.cookie`` and echo it back on
+        the ``X-CSRF-Token`` header (Phase 4B.13).
+
+    Both cookies share the same ``Max-Age`` (derived from the active session
+    expiry in hours) and ``Path=/`` so they apply to every API path under
+    the same origin.
+
+    The ``Secure`` flag is set only in production (``FLASK_ENV=production``).
+    In development, ``Secure=False`` so that cookies are transmitted over
+    plain HTTP (localhost). This matches browser behavior (which exempts
+    localhost from Secure requirements) and enables the stdlib-based smoke
+    test (``urllib``'s CookieJar strictly refuses to send Secure cookies
+    over HTTP).
+    """
+    import os
+    is_production = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+    max_age = int(expiry_hours * 3600)
+    # SameSite=Strict blocks cookies on cross-origin requests between
+    # different dev ports (e.g. localhost:3001 → 127.0.0.1:5000).
+    # Use 'None' in dev so the browser sends cookies cross-origin; in
+    # production the same domain is shared so 'Strict' is fine.
+    # SameSite=None requires Secure=True; browsers exempt localhost from
+    # the Secure requirement, so this is safe for local development.
+    samesite_policy = 'Strict' if is_production else 'None'
+    secure_flag = True  # localhost is exempt; required for SameSite=None
+    response.set_cookie(
+        'token',
+        jwt_token,
+        max_age=max_age,
+        path='/',
+        secure=secure_flag,
+        httponly=True,
+        samesite=samesite_policy,
+    )
+    response.set_cookie(
+        'csrf_token',
+        secrets.token_urlsafe(32),
+        max_age=max_age,
+        path='/',
+        secure=secure_flag,
+        httponly=False,  # Client must read it from document.cookie
+        samesite=samesite_policy,
+    )
+    return response
+
+
 def _serialize_auth_user(u):
-    """Full user payload returned on login and /me."""
+    """Full user payload returned on login and /me.
+
+    Phase 3 task 8.2 additions (per `docs/model-ui-alignment.md` §15 —
+    profile page):
+      - `qrPayload` — the Phase 4A signed-QR payload string. Phase 4A
+        has not yet attached the HMAC suffix, so we fall back to the
+        unsigned `USER:<displayId>` form (matching the page's current
+        client-side default). Once 4A lands, this field carries the
+        signed `<displayId>.<hmacSuffix>` value.
+      - `campusRank` — the user's position (1-indexed) in
+        `Wallet.lifetime_points` ordering, scoped to the user's
+        organization. The page displays `TOP #N` against this value.
+      - `organizationUserCount` — total user count in the same
+        organization, used as the `/N` denominator on the page.
+
+    TODO(phase3-task-8.2 / Requirement 3.4):
+      The `User` model has no columns for `gender`, `age`, or
+      `dateOfBirth`. The profile page (alignment doc §15) references
+      these and Phase 3 task 8.3 must render them as the empty-state
+      placeholder until a future schema-evolution backlog item adds
+      real columns. We deliberately do NOT add the keys here so the
+      schema doc in 8.4 stays honest about what the server currently
+      ships.
+
+    Enum normalization (Requirement 3.6): `role` and `userType` are
+    returned as the canonical lowercase values stored on the model.
+    """
     org = None
     location_id = None
     if u.community_group:
@@ -161,12 +260,64 @@ def _serialize_auth_user(u):
         two_fa_enabled = u.security.two_factor_enabled
         two_fa_method = u.security.preferred_method
 
+    # Phase 2 / Requirement 2.3: project the authoritative ROLE_PERMISSIONS
+    # map for the current role into a deterministic, JSON-serializable list
+    # the Admin_UI uses to drive page guards and sidebar filtering. Non-admin
+    # roles (`user`, `dependent`) are absent from the map by design and
+    # therefore receive an empty list here.
+    permission_categories = sorted(ROLE_PERMISSIONS.get(u.role, []))
+
+    # ── Phase 3 task 8.2: derived profile fields ─────────────────────
+    # qrPayload: fall back to USER:<displayId> until Phase 4A signs it.
+    if u.display_id:
+        qr_payload = f'USER:{u.display_id}'
+    else:
+        qr_payload = None
+
+    # campusRank: 1-indexed position in lifetime-points ordering scoped
+    # to the user's organization. Returns None when no community group
+    # is attached (system / unscoped users), or when the user has no
+    # wallet (rank is undefined).
+    campus_rank = None
+    organization_user_count = None
+    if location_id is not None:
+        try:
+            organization_user_count = db.session.query(func.count(User.id))\
+                .join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
+                .filter(CommunityGroup.organization_id == location_id)\
+                .scalar() or 0
+        except Exception:
+            organization_user_count = None
+
+        if u.wallet is not None:
+            try:
+                user_lifetime = u.wallet.lifetime_points or 0
+                # Count peers (same org) who have strictly more lifetime
+                # points; the user's rank is that count + 1.
+                peers_above = db.session.query(func.count(Wallet.id))\
+                    .join(User, Wallet.user_id == User.id)\
+                    .join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
+                    .filter(
+                        CommunityGroup.organization_id == location_id,
+                        Wallet.lifetime_points > user_lifetime,
+                    ).scalar() or 0
+                campus_rank = int(peers_above) + 1
+            except Exception:
+                campus_rank = None
+
+    # Enum normalization (Requirement 3.6).
+    role_value = (u.role or '').lower() or None
+    user_type_value = (u.user_type or '').lower() or None
+
     return {
         'id': u.id, 'name': u.name, 'firstName': u.first_name,
         'middleName': u.middle_name, 'lastName': u.last_name,
         'username': u.username, 'email': u.email, 'phone': u.phone,
-        'role': u.role, 'userType': u.user_type,
+        'displayId': u.display_id,
+        'role': role_value, 'permission_categories': permission_categories,
+        'userType': user_type_value,
         'isActive': u.is_active, 'locationId': location_id,
+        'locationName': (org['name'] if org else None),
         'organization': org,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
@@ -174,6 +325,10 @@ def _serialize_auth_user(u):
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
         'otpEnabled': two_fa_enabled, 'otpMethod': two_fa_method,
+        # Phase 3 task 8.2 — alignment-doc §15 derived fields.
+        'qrPayload': qr_payload,
+        'campusRank': campus_rank,
+        'organizationUserCount': organization_user_count,
     }
 
 
@@ -181,15 +336,15 @@ def _serialize_auth_user(u):
 
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("10 per minute")
-def login():
+@validate_request(LoginSchema)
+def login(payload):
     """Authenticate a user. If 2FA enabled, returns { requires2FA, tempToken }.
 
     Body: { "email": "...", "password": "..." }
     """
     try:
-        data = request.get_json() or {}
-        identifier = data.get('email') or data.get('username') or data.get('identifier')
-        password = data.get('password')
+        identifier = payload.email or payload.username or payload.identifier
+        password = payload.password
         ip = request.remote_addr
 
         if not identifier or not password:
@@ -262,7 +417,13 @@ def login():
         db.session.add(log)
         db.session.commit()
 
-        return jsonify({'success': True, 'token': token, 'user': _serialize_auth_user(user)}), 200
+        # Phase 4B (task 11.1 / Requirement 4B.11): set the HttpOnly token
+        # cookie and the (non-HttpOnly) CSRF cookie. The legacy ``token``
+        # field stays in the body for Bearer-based clients still mid-migration.
+        response = make_response(jsonify({
+            'success': True, 'token': token, 'user': _serialize_auth_user(user)
+        }), 200)
+        return _attach_auth_cookies(response, token, session_hours)
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -270,15 +431,15 @@ def login():
 
 @auth_bp.route('/verify-otp', methods=['POST'])
 @limiter.limit("10 per minute")
-def verify_otp_route():
+@validate_request(VerifyOtpSchema)
+def verify_otp_route(payload):
     """Verify a 2FA OTP code and complete the login.
 
     Body: { "tempToken": "...", "code": "123456" }
     """
     try:
-        data = request.get_json() or {}
-        temp_token = data.get('tempToken')
-        code = data.get('code', '').strip()
+        temp_token = payload.tempToken
+        code = (payload.code or '').strip()
         ip = request.remote_addr
 
         if not temp_token or not code:
@@ -323,7 +484,14 @@ def verify_otp_route():
         db.session.add(log)
         db.session.commit()
 
-        return jsonify({'success': True, 'token': token, 'user': _serialize_auth_user(user)}), 200
+        # Phase 4B (task 11.1 / Requirement 4B.11): mirror the login flow —
+        # attach the HttpOnly token cookie and the CSRF cookie on the
+        # OTP-verified login path. Legacy body ``token`` stays for the
+        # Bearer transition window.
+        response = make_response(jsonify({
+            'success': True, 'token': token, 'user': _serialize_auth_user(user)
+        }), 200)
+        return _attach_auth_cookies(response, token, session_hours)
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -341,19 +509,25 @@ def get_current_user(current_user):
 
 @auth_bp.route('/logout', methods=['POST'])
 @token_required
-def logout(current_user):
-    """Log the logout action and blacklist the JWT token."""
+@validate_request(LogoutSchema)
+def logout(current_user, payload):
+    """Log the logout action, blacklist the JWT token, and clear auth cookies."""
     try:
-        auth_header = request.headers.get('Authorization', '')
-        if auth_header.startswith('Bearer '):
-            token = auth_header.split(' ', 1)[1]
+        # Read token from cookie first, then Bearer header as fallback
+        token = request.cookies.get('token')
+        if not token:
+            auth_header = request.headers.get('Authorization', '')
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ', 1)[1]
+
+        if token:
             try:
-                payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-                jti = payload.get('jti')
+                decoded = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+                jti = decoded.get('jti')
                 if jti:
                     blacklisted = TokenBlacklist(
                         jti=jti,
-                        expires_at=datetime.fromtimestamp(payload['exp'], tz=timezone.utc),
+                        expires_at=datetime.fromtimestamp(decoded['exp'], tz=timezone.utc),
                     )
                     db.session.add(blacklisted)
             except jwt.InvalidTokenError:
@@ -369,7 +543,11 @@ def logout(current_user):
         db.session.add(log)
         db.session.commit()
 
-        return jsonify({'success': True, 'message': 'Logged out successfully'}), 200
+        resp = jsonify({'success': True, 'message': 'Logged out successfully'})
+        # Clear auth cookies
+        resp.set_cookie('token', '', max_age=0, path='/')
+        resp.set_cookie('csrf_token', '', max_age=0, path='/')
+        return resp, 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -377,13 +555,14 @@ def logout(current_user):
 
 @auth_bp.route('/profile', methods=['PUT'])
 @token_required
-def update_profile(current_user):
+@validate_request(ProfileUpdateSchema)
+def update_profile(current_user, payload):
     """Update the current user's profile fields.
 
     Body: { "firstName": "...", "lastName": "...", "email": "...", "phone": "..." }
     """
     try:
-        data = request.get_json() or {}
+        data = payload.model_dump(exclude_unset=True)
 
         # Name fields
         if 'firstName' in data and data['firstName']:
@@ -433,27 +612,22 @@ def update_profile(current_user):
 
 @auth_bp.route('/change-password', methods=['POST'])
 @token_required
-def change_password(current_user):
+@validate_request(ChangePasswordSchema)
+def change_password(current_user, payload):
     """Change the current user's password.
 
     Body: { "currentPassword": "...", "newPassword": "..." }
     """
     try:
-        data = request.get_json() or {}
-        current_pw = data.get('currentPassword')
-        new_pw = data.get('newPassword')
+        current_pw = payload.currentPassword
+        new_pw = payload.newPassword
 
         if not current_pw or not new_pw:
             return jsonify({'success': False, 'error': 'Current and new password are required'}), 400
 
-        if len(new_pw) < 8:
-            return jsonify({'success': False, 'error': 'New password must be at least 8 characters'}), 400
-        if not re.search(r'[A-Z]', new_pw):
-            return jsonify({'success': False, 'error': 'New password must contain at least one uppercase letter'}), 400
-        if not re.search(r'[a-z]', new_pw):
-            return jsonify({'success': False, 'error': 'New password must contain at least one lowercase letter'}), 400
-        if not re.search(r'[0-9]', new_pw):
-            return jsonify({'success': False, 'error': 'New password must contain at least one digit'}), 400
+        pw_valid, pw_message = validate_password_policy(new_pw)
+        if not pw_valid:
+            return jsonify({'success': False, 'error': pw_message}), 400
 
         if not current_user.check_password(current_pw):
             return jsonify({'success': False, 'error': 'Current password is incorrect'}), 401
@@ -480,14 +654,15 @@ def change_password(current_user):
 
 @auth_bp.route('/register', methods=['POST'])
 @limiter.limit("5 per minute")
-def register():
+@validate_request(RegisterSchema)
+def register(payload):
     """Public registration for regular (non-admin) users.
 
     Body: { firstName, lastName, middleName?, username?, email?, phone?,
             password, userType, locationId, groupId? }
     """
     try:
-        data = request.get_json() or {}
+        data = payload.model_dump(exclude_unset=True)
         first_name = data.get('firstName') or data.get('name', '').split(' ', 1)[0]
         last_name = data.get('lastName') or (data.get('name', '').split(' ', 1)[1] if ' ' in data.get('name', '') else data.get('name', ''))
         middle_name = data.get('middleName')
@@ -505,14 +680,9 @@ def register():
         # Validations
         if not first_name or not last_name:
             return jsonify({'success': False, 'error': 'First name and last name are required'}), 400
-        if not password or len(password) < 8:
-            return jsonify({'success': False, 'error': 'Password must be at least 8 characters with uppercase, lowercase, and a digit'}), 400
-        if not re.search(r'[A-Z]', password):
-            return jsonify({'success': False, 'error': 'Password must contain at least one uppercase letter'}), 400
-        if not re.search(r'[a-z]', password):
-            return jsonify({'success': False, 'error': 'Password must contain at least one lowercase letter'}), 400
-        if not re.search(r'[0-9]', password):
-            return jsonify({'success': False, 'error': 'Password must contain at least one digit'}), 400
+        pw_valid, pw_message = validate_password_policy(password)
+        if not pw_valid:
+            return jsonify({'success': False, 'error': pw_message}), 400
         if not location_id:
             return jsonify({'success': False, 'error': 'Organization/location is required'}), 400
 

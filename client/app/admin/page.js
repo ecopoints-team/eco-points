@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/components/shared/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/apiService';
+import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/api';
 import { formatDate } from '../../src/utils/formatDate';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';

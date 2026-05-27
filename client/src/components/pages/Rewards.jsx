@@ -10,7 +10,7 @@ import {
   CheckCircle2, Lock, HelpCircle, Settings, Loader2, Ticket
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/apiService";
+import api from "../../services/api";
 
 // --- PRODUCT DATA (30 Products) ---
 // Images from /Rewards/ folder for 5 products; Lucide icons for the rest

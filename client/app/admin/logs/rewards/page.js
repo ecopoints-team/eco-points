@@ -1,13 +1,16 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { formatDate } from '../../../../src/utils/formatDate';
-import { logs as logsApi } from '../../../../src/services/apiService';
+import { logs as logsApi } from '../../../../src/services/api';
+import { formatField } from '../../../../src/lib/formatField';
+import { redemptionStatusLabel } from '../../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
-export default function RewardsLogsPage() {
+function RewardsLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
 
     // API-loaded data
@@ -23,11 +26,12 @@ export default function RewardsLogsPage() {
                 if (!cancelled) setAllRewardsLogs((data || []).map(l => ({
                     ...l,
                     id: String(l.id),
-                    pointsCost: l.pointsSpent || 0,
-                    timestamp: l.redeemedAt || l.usedAt || '',
-                    timestampObj: new Date(l.redeemedAt || l.usedAt || Date.now()),
-                    userEmail: l.userEmail || '',
-                    locationName: l.locationName || '',
+                    // Phase 3 (8.3): bind directly to canonical server keys
+                    // (`pointsSpent`, server-supplied `timestamp`). Until task 8.2
+                    // ships the new `timestamp` derived field, fall back to
+                    // `claimedAt`/`redeemedAt` so the column still renders.
+                    timestamp: l.timestamp ?? l.claimedAt ?? l.redeemedAt ?? null,
+                    timestampObj: new Date(l.timestamp ?? l.claimedAt ?? l.redeemedAt ?? Date.now()),
                 })));
             } catch (err) { console.error('Failed to load rewards logs:', err); }
             finally { if (!cancelled) setIsDataLoading(false); }
@@ -129,7 +133,9 @@ export default function RewardsLogsPage() {
             const updated = await logsApi.updateRedemptionStatus(logId, newStatus);
             setAllRewardsLogs(prev => prev.map(l =>
                 l.id === String(logId) || l.id === logId
-                    ? { ...l, status: updated.status, usedAt: updated.usedAt }
+                    // The page now reads `claimedAt` directly from the response
+                    // (alignment doc §8 — drops the legacy `usedAt` alias).
+                    ? { ...l, status: updated.status, claimedAt: updated.claimedAt ?? updated.usedAt }
                     : l
             ));
         } catch (err) {
@@ -141,7 +147,7 @@ export default function RewardsLogsPage() {
         const headers = ['Date', 'Log ID', 'User', 'Email', 'Reward', 'Points', 'Redemption Code', 'Location', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.rewardName,
-            log.pointsCost, log.redemptionCode || '', log.locationName || '-', log.status
+            log.pointsSpent ?? 0, log.redemptionCode || '', log.locationName || '—', log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -255,8 +261,8 @@ export default function RewardsLogsPage() {
                                         <div className="flex items-center gap-1">Reward <SortIcon column="rewardName" /></div>
                                     </th>
                                 )}
-                                <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsCost')}>
-                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsCost" /></div>
+                                <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsSpent')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsSpent" /></div>
                                 </th>
                                 {showLocation && <th className="px-3 py-3 whitespace-nowrap">Location</th>}
                                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
@@ -271,30 +277,30 @@ export default function RewardsLogsPage() {
                                     {showUser && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{log.userName}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{log.userEmail}</span>
+                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(log.userName)}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.userEmail)}</span>
                                             </div>
                                         </td>
                                     )}
                                     {showReward && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{log.rewardName}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{log.redemptionCode || ''}</span>
+                                                <span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(log.rewardName)}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.redemptionCode)}</span>
                                             </div>
                                         </td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{log.pointsCost.toLocaleString()}</span>
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{(log.pointsSpent ?? 0).toLocaleString()}</span>
                                     </td>
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '-'}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.locationName)}</span>
                                         </td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(log.status)}`}>
-                                            {(log.status || 'pending').charAt(0).toUpperCase() + (log.status || 'pending').slice(1)}
+                                            {redemptionStatusLabel(log.status)}
                                         </span>
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap">
@@ -342,5 +348,15 @@ export default function RewardsLogsPage() {
                 )}
             </div>
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function RewardsLogsPage() {
+    return (
+        <RequirePermission category="logs">
+            <RewardsLogsPageContent />
+        </RequirePermission>
     );
 }

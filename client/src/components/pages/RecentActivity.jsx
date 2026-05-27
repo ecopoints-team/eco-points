@@ -27,7 +27,7 @@ import {
 // ─────────────────────────────────────────────
 // Mock Data
 // ─────────────────────────────────────────────
-import api from "../../services/apiService";
+import api from "../../services/api";
 
 const fonts = {
   heading: { fontFamily: "'Fredoka'" },

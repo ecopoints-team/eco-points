@@ -18,3 +18,11 @@ def seed_cmd(fresh):
     """Populate the database with sample data for dashboard testing."""
     from .seed import run_seed
     run_seed(fresh=fresh)
+
+
+@click.command('demo-seed')
+@with_appcontext
+def demo_seed_cmd():
+    """Create 50 users with realistic activity data for demo/testing."""
+    from .demo_seed import run_demo_seed
+    run_demo_seed()

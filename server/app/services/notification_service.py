@@ -2,6 +2,7 @@
 Notification Service
 Handles sending email and SMS alerts based on per-organization notification settings.
 """
+import html
 import json
 import os
 import smtplib
@@ -16,6 +17,17 @@ from ..models import NotificationSetting, NotificationLog, Organization
 
 # Path to the inline logo image
 _LOGO_PATH = os.path.join(os.path.dirname(__file__), 'logo.png')
+
+
+def _escape(s):
+    """Escape user-supplied values for safe insertion into HTML email templates.
+
+    Coerces None to an empty string and applies html.escape with quote=True so
+    that values are safe inside both element bodies and attribute contexts.
+    """
+    if s is None:
+        return ''
+    return html.escape(str(s), quote=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -110,7 +122,9 @@ def get_alert_types():
 def _build_email_html(subject, body, org_name=None):
     """Wrap notification content in a branded EcoPoints HTML email template."""
     year = datetime.now().year
-    org_line = f' — {org_name}' if org_name else ''
+    org_line = f' — {_escape(org_name)}' if org_name else ''
+    safe_subject = _escape(subject)
+    safe_body = _escape(body)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -132,7 +146,7 @@ def _build_email_html(subject, body, org_name=None):
           <td style="background-color:#dcfce7;padding:16px 40px;border-bottom:1px solid #bbf7d0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="font-size:13px;font-weight:600;color:#166534;">&#x1f514; {subject}</td>
+                <td style="font-size:13px;font-weight:600;color:#166534;">&#x1f514; {safe_subject}</td>
                 <td align="right" style="font-size:11px;color:#4ade80;">{datetime.now(timezone.utc).strftime('%b %d, %Y at %I:%M %p')} UTC</td>
               </tr>
             </table>
@@ -143,7 +157,7 @@ def _build_email_html(subject, body, org_name=None):
         <tr>
           <td style="padding:32px 40px;">
             <div style="font-size:15px;line-height:1.7;color:#374151;">
-              {body}
+              {safe_body}
             </div>
           </td>
         </tr>

@@ -1,13 +1,15 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { logs as logsApi, machines as machinesApi } from '../../../../src/services/apiService';
+import { logs as logsApi, machines as machinesApi } from '../../../../src/services/api';
 import { formatDate } from '../../../../src/utils/formatDate';
+import { formatField } from '../../../../src/lib/formatField';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Plus } from 'lucide-react';
 
-export default function MachineLogsPage() {
+function MachineLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
 
     // API-loaded data
@@ -20,7 +22,7 @@ export default function MachineLogsPage() {
             setIsDataLoading(true);
             try {
                 const data = await logsApi.getMachines(effectiveLocationId);
-                if (!cancelled) setAllMachineLogs((data || []).map(l => ({ ...l, id: String(l.id), technician: l.performedBy || 'Unknown', timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() })));
+                if (!cancelled) setAllMachineLogs((data || []).map(l => ({ ...l, id: String(l.id), timestampObj: l.timestamp ? new Date(l.timestamp) : new Date() })));
             } catch (err) { console.error('Failed to load machine logs:', err); }
             finally { if (!cancelled) setIsDataLoading(false); }
         };
@@ -67,7 +69,6 @@ export default function MachineLogsPage() {
             setAllMachineLogs(prev => [{
                 ...newLog,
                 id: String(newLog.id),
-                technician: newLog.performedBy || 'Unknown',
                 timestampObj: newLog.timestamp ? new Date(newLog.timestamp) : new Date(),
             }, ...prev]);
             setIsCreateModalOpen(false);
@@ -86,7 +87,7 @@ export default function MachineLogsPage() {
         return allMachineLogs.filter(log => {
             const matchesSearch = searchQuery === '' ||
                 (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (log.technician || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.performedBy || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.actionType || '').toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -146,8 +147,8 @@ export default function MachineLogsPage() {
     const exportToCSV = () => {
         const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Technician', 'Action Type', 'Status', 'Notes'];
         const rows = filteredLogs.map(log => [
-            log.timestamp, log.id, log.machineName, log.locationName || '-',
-            log.technician, log.actionType, log.resolved ? 'Resolved' : 'Pending', log.notes
+            log.timestamp, log.id, log.machineName, log.locationName || '—',
+            log.performedBy || '—', log.actionType, log.resolved ? 'Resolved' : 'Pending', log.notes || '—'
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -265,8 +266,8 @@ export default function MachineLogsPage() {
                                 )}
                                 {showLocation && <th className="px-3 py-3 whitespace-nowrap">Location</th>}
                                 {showTechnician && (
-                                    <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('technician')}>
-                                        <div className="flex items-center gap-1">Technician <SortIcon column="technician" /></div>
+                                    <th className="px-3 py-3 whitespace-nowrap cursor-pointer hover:text-emerald-600" onClick={() => handleSort('performedBy')}>
+                                        <div className="flex items-center gap-1">Technician <SortIcon column="performedBy" /></div>
                                     </th>
                                 )}
                                 <th className="px-3 py-3 whitespace-nowrap">Action Type</th>
@@ -284,11 +285,11 @@ export default function MachineLogsPage() {
                                     )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '-'}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.locationName)}</span>
                                         </td>
                                     )}
                                     {showTechnician && (
-                                        <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.technician}</span></td>
+                                        <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(log.performedBy)}</span></td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs text-slate-600 dark:text-slate-300">{log.actionType}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
@@ -416,5 +417,15 @@ export default function MachineLogsPage() {
                 </div>
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function MachineLogsPage() {
+    return (
+        <RequirePermission category="logs">
+            <MachineLogsPageContent />
+        </RequirePermission>
     );
 }

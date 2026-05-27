@@ -7,7 +7,7 @@ import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { ROLES } from '../../data/roleConfig';
-import { logs as logsApi } from '../../services/apiService';
+import { logs as logsApi } from '../../services/api';
 import { formatDate } from '../../utils/formatDate';
 
 // View-Only Banner for non-admin roles

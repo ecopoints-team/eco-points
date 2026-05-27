@@ -1,13 +1,16 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { logs as logsApi } from '../../../../src/services/apiService';
+import { logs as logsApi } from '../../../../src/services/api';
 import { formatDate } from '../../../../src/utils/formatDate';
+import { formatField } from '../../../../src/lib/formatField';
+import { userRoleLabel } from '../../../../src/lib/enumLabels';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
-export default function AdminAccessLogsPage() {
+function AdminAccessLogsPageContent() {
     const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
 
     // API-loaded data
@@ -280,26 +283,26 @@ export default function AdminAccessLogsPage() {
                                     key={log.id}
                                     className="transition-colors hover:bg-slate-50 dark:hover:bg-purple-900/10"
                                 >
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{log.adminUserId}</span></td>
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm font-medium text-slate-800 dark:text-white">{log.adminName}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">{formatField(log.adminUserId)}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(log.adminName)}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getDutyColor(log.adminRole)}`}>
-                                            {log.adminRole}
+                                            {userRoleLabel(log.adminRole)}
                                         </span>
                                     </td>
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{log.action}</span></td>
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="font-mono text-xs text-slate-500 dark:text-slate-400">{log.target}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{formatField(log.action)}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="font-mono text-xs text-slate-500 dark:text-slate-400">{formatField(log.target)}</span></td>
                                     {showCategory && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getCategoryColor(log.category)}`}>
-                                                {log.category || '-'}
+                                                {formatField(log.category)}
                                             </span>
                                         </td>
                                     )}
                                     {showLocation && (
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-xs text-slate-600 dark:text-slate-400">
-                                                {log.locationName || '-'}
+                                                {formatField(log.locationName)}
                                             </span>
                                         </td>
                                     )}
@@ -339,5 +342,15 @@ export default function AdminAccessLogsPage() {
                 </div>
             </div >
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function AdminAccessLogsPage() {
+    return (
+        <RequirePermission category="logs">
+            <AdminAccessLogsPageContent />
+        </RequirePermission>
     );
 }

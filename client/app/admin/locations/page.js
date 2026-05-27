@@ -1,9 +1,13 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { locations as locationsApi, orgTypes as orgTypesApi, cities as citiesApi } from '../../../src/services/apiService';
+import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
+import { CITIES } from '../../../src/data/mockData';
+import { formatField } from '../../../src/lib/formatField';
+import { formatDateShort } from '../../../src/utils/formatDate';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Plus, Search,
@@ -38,14 +42,14 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities from API
-    const [citiesList, setCitiesList] = useState([]);
+    // Cities — local lookup (Phase 1: drops the cities API endpoint).
+    const [citiesList, setCitiesList] = useState(CITIES);
 
-    // Load org types and cities from API
+    // Load org types from API
     useEffect(() => {
         if (isOpen) {
+            setCitiesList(CITIES);
             orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
-            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
         }
     }, [isOpen]);
 
@@ -124,7 +128,10 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                 ...formData,
                 orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
                 id: `LOC-${Date.now()}`,
-                joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                // The page now reads `createdAt` from the GET response (alignment
+                // doc §4); the local optimistic shape keeps the same key so the
+                // card renders without a flash of empty state.
+                createdAt: new Date().toISOString(),
                 machineCount: 0,
                 userCount: 0,
                 totalBottlesCollected: 0,
@@ -364,13 +371,13 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities from API
-    const [citiesList, setCitiesList] = useState([]);
+    // Cities — local lookup (Phase 1: drops the cities API endpoint).
+    const [citiesList, setCitiesList] = useState(CITIES);
 
-    // Load org types, cities, and populate form
+    // Load org types and populate form
     useEffect(() => {
         if (isOpen && location) {
-            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
+            setCitiesList(CITIES);
             orgTypesApi.getAll().then(data => {
                 const list = data || [];
                 setOrgTypesList(list);
@@ -622,7 +629,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
 // ============================================================================
 // LOCATIONS MANAGEMENT PAGE (Super Admin Only)
 // ============================================================================
-export default function LocationsPage() {
+function LocationsPageContent() {
     const { isSuperAdmin, setViewAsLocation, allLocations, refreshLocations } = useAuth();
     const [locations, setLocations] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -870,9 +877,9 @@ export default function LocationsPage() {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{location.name}</h3>
+                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{formatField(location.name)}</h3>
                                         </div>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{location.fullName}</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{formatField(location.fullName)}</p>
                                     </div>
                                 </div>
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${location.status === 'Active'
@@ -887,11 +894,11 @@ export default function LocationsPage() {
                             <div className="space-y-2 mb-4 text-sm">
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <MapPin size={14} className="text-slate-400 flex-shrink-0" />
-                                    <span className="truncate">{location.streetAddress}</span>
+                                    <span className="truncate">{formatField(location.streetAddress)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <Calendar size={14} className="text-slate-400" />
-                                    Joined: {location.joinDate}
+                                    Joined: {formatDateShort(location.createdAt)}
                                 </div>
                             </div>
 
@@ -992,5 +999,15 @@ export default function LocationsPage() {
                 isSuperAdmin={isSuperAdmin}
             />
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function LocationsPage() {
+    return (
+        <RequirePermission category="locations">
+            <LocationsPageContent />
+        </RequirePermission>
     );
 }

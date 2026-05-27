@@ -1,10 +1,13 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../src/context/AuthContext';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Camera, Save, Key, Eye, EyeOff } from 'lucide-react';
-import { auth as authApi } from '../../../src/services/apiService';
+import { auth as authApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
+import { userRoleLabel } from '../../../src/lib/enumLabels';
 
-export default function ProfilePage() {
+function ProfilePageContent() {
     const { currentUser, allLocations } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
@@ -29,7 +32,7 @@ export default function ProfilePage() {
                     }
                     return currentUser.locationName || '';
                 })(),
-                role: currentUser.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Admin',
+                role: userRoleLabel(currentUser.role),
                 joinDate: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
                 bio: `System administrator for EcoPoints. Role: ${currentUser.role || 'Admin'}.`,
             });
@@ -113,10 +116,10 @@ export default function ProfilePage() {
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-3">{profile.bio}</p>
                             </div>
                             <div className="mt-6 space-y-3">
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Mail size={16} className="text-slate-400" />{profile.email}</div>
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Phone size={16} className="text-slate-400" />{profile.phone}</div>
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><MapPin size={16} className="text-slate-400" />{profile.location}</div>
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Calendar size={16} className="text-slate-400" />Joined {profile.joinDate}</div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Mail size={16} className="text-slate-400" />{formatField(profile.email)}</div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Phone size={16} className="text-slate-400" />{formatField(profile.phone)}</div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><MapPin size={16} className="text-slate-400" />{formatField(profile.location)}</div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Calendar size={16} className="text-slate-400" />Joined {formatField(profile.joinDate)}</div>
                             </div>
                         </div>
                     </div>
@@ -175,5 +178,18 @@ export default function ProfilePage() {
                 </div>
             </div>
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+// Profile page is reachable by every admin role (auditor, technician,
+// inventory_officer included), so we guard it with the universal `dashboard`
+// category which is granted to every admin role in ROLE_PERMISSIONS.
+export default function ProfilePage() {
+    return (
+        <RequirePermission category="dashboard">
+            <ProfilePageContent />
+        </RequirePermission>
     );
 }
