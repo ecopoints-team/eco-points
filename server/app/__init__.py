@@ -32,12 +32,14 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"]
 #     misconfigured production deployment refuses to come up.
 # ──────────────────────────────────────────────────────────────────────
 
-# Canonical env-var names for the required production secrets. Kept in
-# sync with `server/app/services/notification_service.py` (`SMTP_PASS`,
-# `TWILIO_AUTH_TOKEN`) and the JWT/DB stack.
-REQUIRED_PRODUCTION_SECRETS = (
+# Secrets that MUST be present in production — app cannot function without them.
+CRITICAL_PRODUCTION_SECRETS = (
     'SECRET_KEY',
     'DATABASE_URL',
+)
+
+# Secrets for optional services — app starts but features degrade gracefully.
+OPTIONAL_PRODUCTION_SECRETS = (
     'SMTP_PASS',          # SMTP password used by notification_service._send_email
     'TWILIO_AUTH_TOKEN',  # SMS provider key used by notification_service._send_sms
 )
@@ -74,12 +76,10 @@ KNOWN_DEV_DEFAULTS = {
 
 
 def _check_required_secrets_in_production():
-    """Refuse to start in production when required secrets are missing
-    or set to a known development default.
+    """Check production secrets. Critical secrets block startup; optional
+    secrets only emit warnings (features degrade gracefully).
 
-    Logs only variable NAMES (never values) and exits with status 1 on
-    any violation. Returns silently in non-production environments.
-
+    Logs only variable NAMES (never values).
     Validates Requirement 7.5 (Task 21.1).
     """
     if os.environ.get('FLASK_ENV') != 'production':
@@ -87,37 +87,42 @@ def _check_required_secrets_in_production():
 
     logger = logging.getLogger(__name__)
 
-    missing = []
-    insecure = []
-    for name in REQUIRED_PRODUCTION_SECRETS:
+    # ── Critical secrets: missing or insecure → exit(1) ──
+    fatal = False
+    for name in CRITICAL_PRODUCTION_SECRETS:
         value = os.environ.get(name)
         if not value:
-            missing.append(name)
-            continue
-        if value in KNOWN_DEV_DEFAULTS.get(name, frozenset()):
-            insecure.append(name)
-
-    if not missing and not insecure:
-        return
-
-    if missing:
-        # Log each missing secret on its own line so log-aggregation
-        # filters (and the Property AA test) can match the variable name
-        # without scraping a comma-joined list.
-        for name in missing:
             logger.critical(
                 'Refusing to start in production: required secret %s is not set',
                 name,
             )
-    if insecure:
-        for name in insecure:
+            fatal = True
+        elif value in KNOWN_DEV_DEFAULTS.get(name, frozenset()):
             logger.critical(
                 'Refusing to start in production: required secret %s is set to a '
                 'known development default value',
                 name,
             )
+            fatal = True
 
-    sys.exit(1)
+    if fatal:
+        sys.exit(1)
+
+    # ── Optional secrets: missing → warn, app still starts ──
+    for name in OPTIONAL_PRODUCTION_SECRETS:
+        value = os.environ.get(name)
+        if not value:
+            logger.warning(
+                'Optional secret %s is not set — related features '
+                '(email/SMS notifications) will be unavailable',
+                name,
+            )
+        elif value in KNOWN_DEV_DEFAULTS.get(name, frozenset()):
+            logger.warning(
+                'Optional secret %s is set to a known development default — '
+                'related features may not work correctly',
+                name,
+            )
 
 
 class Config:
