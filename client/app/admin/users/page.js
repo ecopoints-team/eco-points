@@ -453,7 +453,7 @@ function ManageUsersPageContent() {
                                     }`}
                             >
                                 {showDepartment ? <Eye size={12} /> : <EyeOff size={12} />}
-                                Department
+                                Group
                             </button>
                             <button
                                 onClick={() => setShowStrand(!showStrand)}
@@ -511,7 +511,7 @@ function ManageUsersPageContent() {
                                     <div className="flex items-center gap-1">Username <SortIcon column="name" /></div>
                                 </th>
                                 <th className="px-3 py-3 whitespace-nowrap">Email</th>
-                                {showDepartment && <th className="px-3 py-3 whitespace-nowrap">Department</th>}
+                                {showDepartment && <th className="px-3 py-3 whitespace-nowrap">Group</th>}
                                 {showStrand && <th className="px-3 py-3 whitespace-nowrap">Strand</th>}
                                 <th className="px-3 py-3 whitespace-nowrap">Location</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Role</th>

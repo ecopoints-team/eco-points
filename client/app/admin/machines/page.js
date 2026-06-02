@@ -7,6 +7,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi, logs } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
+import { validateField, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
     CheckCircle2, Clock, User, Calendar, Building2,
@@ -61,7 +62,8 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Machine name is required';
+        const nameErr = validateField(VALIDATION_RULES.machine, 'name', formData.name);
+        if (nameErr) newErrors.name = nameErr;
         if (!formData.locationId) newErrors.locationId = 'Location is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -255,7 +257,8 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Machine name is required';
+        const nameErr = validateField(VALIDATION_RULES.machine, 'name', formData.name);
+        if (nameErr) newErrors.name = nameErr;
         if (!formData.locationId) newErrors.locationId = 'Location is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;

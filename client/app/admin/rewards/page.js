@@ -7,6 +7,7 @@ import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import { rewards as rewardsApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
+import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
     Search, Filter, ChevronLeft, ChevronRight, Gift, Package, Plus, Edit2, Trash2, X,
     Upload, Image, AlertTriangle, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown
@@ -328,7 +329,11 @@ function RewardsInventoryPageContent() {
     };
 
     const handleSubmit = async () => {
-        if (!formData.name || !formData.pointsRequired || !formData.stockQuantity || !formData.category) return;
+        const { errors: fieldErrors, isValid } = validateAll(VALIDATION_RULES.reward, formData);
+        if (!isValid) {
+            alert(Object.values(fieldErrors)[0]);
+            return;
+        }
         const stockQuantity = parseInt(formData.stockQuantity);
 
         try {

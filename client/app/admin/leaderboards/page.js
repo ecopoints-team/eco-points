@@ -5,10 +5,6 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import {
-    DEPARTMENTS,
-    getDepartmentName
-} from '../../../src/data/mockData';
 import { leaderboard as leaderboardApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { userTypeLabel } from '../../../src/lib/enumLabels';
@@ -63,10 +59,9 @@ const getUserInitials = (name) => {
     return name.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
 };
 
-// Get user's department display (works for ALL roles including Staff)
+// Get user's group display (works for ALL roles including Staff)
 const getUserDeptDisplay = (user) => {
-    if (user.department) return getDepartmentName(user.department);
-    return '—';
+    return user.department || '—';
 };
 
 // ============================================================================
@@ -338,13 +333,10 @@ function LeaderboardsPageContent() {
         }).slice(0, 5);
     };
 
-    // Available departments for current location
+    // Available groups for current location
     const availableDepartments = useMemo(() => {
         const depts = [...new Set(allUsers.filter(u => u.department).map(u => u.department))];
-        return depts.map(d => {
-            const dept = DEPARTMENTS.find(dep => dep.id === d);
-            return { value: d, label: dept?.abbreviation || d };
-        });
+        return depts.map(d => ({ value: d, label: d }));
     }, [allUsers]);
 
     // Available group types
@@ -384,7 +376,7 @@ function LeaderboardsPageContent() {
                 // Standard search: name, role, dept, strand
                 if (u.name?.toLowerCase().includes(q)) return true;
                 if (u.userType?.toLowerCase().includes(q)) return true;
-                if (getDepartmentName(u.department)?.toLowerCase().includes(q)) return true;
+                if ((u.department || '').toLowerCase().includes(q)) return true;
                 if (u.groupType?.toLowerCase().includes(q)) return true;
                 // Easter egg: initials search (e.g. "JJ" matches "Justine James")
                 const initials = getUserInitials(u.name);

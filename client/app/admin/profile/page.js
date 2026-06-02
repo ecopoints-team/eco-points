@@ -15,7 +15,7 @@ function ProfilePageContent() {
 
     const [profile, setProfile] = useState({
         name: '', email: '', phone: '',
-        location: '', role: '', joinDate: '',
+        location: '', role: '', memberSince: '',
         bio: '',
     });
 
@@ -33,7 +33,7 @@ function ProfilePageContent() {
                     return currentUser.locationName || '';
                 })(),
                 role: userRoleLabel(currentUser.role),
-                joinDate: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                memberSince: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
                 bio: `System administrator for EcoPoints. Role: ${currentUser.role || 'Admin'}.`,
             });
         }
@@ -119,7 +119,7 @@ function ProfilePageContent() {
                                 <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Mail size={16} className="text-slate-400" />{formatField(profile.email)}</div>
                                 <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Phone size={16} className="text-slate-400" />{formatField(profile.phone)}</div>
                                 <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><MapPin size={16} className="text-slate-400" />{formatField(profile.location)}</div>
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Calendar size={16} className="text-slate-400" />Joined {formatField(profile.joinDate)}</div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"><Calendar size={16} className="text-slate-400" />Joined {formatField(profile.memberSince)}</div>
                             </div>
                         </div>
                     </div>

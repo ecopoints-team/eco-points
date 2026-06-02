@@ -5,8 +5,8 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
-import { CITIES } from '../../../src/data/mockData';
 import { formatField } from '../../../src/lib/formatField';
+import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import { formatDateShort } from '../../../src/utils/formatDate';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
@@ -22,9 +22,11 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
         name: '',
         fullName: '',
         orgType: '',
-        cityId: '',
         streetAddress: '',
         barangay: '',
+        cityMunicipality: '',
+        province: '',
+        region: '',
         zipCode: '',
         contactPerson: '',
         contactEmail: '',
@@ -42,13 +44,11 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities — local lookup (Phase 1: drops the cities API endpoint).
-    const [citiesList, setCitiesList] = useState(CITIES);
+
 
     // Load org types from API
     useEffect(() => {
         if (isOpen) {
-            setCitiesList(CITIES);
             orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => { });
         }
     }, [isOpen]);
@@ -91,25 +91,9 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     };
 
     const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Short name is required';
-        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        if (!formData.orgType) newErrors.orgType = 'Type is required';
-        if (!formData.cityId) newErrors.cityId = 'City is required';
-        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
-        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
-        if (!formData.contactEmail.trim()) {
-            newErrors.contactEmail = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-            newErrors.contactEmail = 'Invalid email format';
-        }
-        if (!formData.contactPhone.trim()) {
-            newErrors.contactPhone = 'Phone is required';
-        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
-            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
-        }
+        const { errors: newErrors, isValid } = validateAll(VALIDATION_RULES.location, formData);
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return isValid;
     };
 
     const handlePhoneChange = (val) => {
@@ -137,7 +121,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                 totalBottlesCollected: 0,
                 totalPoints: 0,
             });
-            setFormData({ name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setFormData({ name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             onClose();
         }
     };
@@ -239,16 +223,16 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                            <CustomDropdown
-                                value={formData.cityId}
-                                onChange={(v) => setFormData({ ...formData, cityId: v })}
-                                options={citiesList.map(c => ({ value: String(c.id), label: c.name }))}
-                                placeholder="Select city..."
-                                searchable
-                                size="md"
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
+                            <input
+                                type="text"
+                                value={formData.cityMunicipality}
+                                onChange={(e) => setFormData({ ...formData, cityMunicipality: e.target.value })}
+                                placeholder="e.g., Pasig"
+                                maxLength={200}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.cityMunicipality ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
                             />
-                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                            {errors.cityMunicipality && <p className="text-red-500 text-xs mt-1">{errors.cityMunicipality}</p>}
                         </div>
                     </div>
                     <div>
@@ -270,6 +254,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 value={formData.barangay}
                                 onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
                                 placeholder="e.g., Caniogan"
+                                maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
@@ -280,6 +265,31 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 value={formData.zipCode}
                                 onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                                 placeholder="e.g., 1600"
+                                maxLength={10}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Province</label>
+                            <input
+                                type="text"
+                                value={formData.province}
+                                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                                placeholder="e.g., Metro Manila"
+                                maxLength={200}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Region</label>
+                            <input
+                                type="text"
+                                value={formData.region}
+                                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                                placeholder="e.g., NCR"
+                                maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
@@ -357,7 +367,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
 // ============================================================================
 function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }) {
     const [formData, setFormData] = useState({
-        name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '',
+        name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '',
         contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active'
     });
     const [errors, setErrors] = useState({});
@@ -371,13 +381,11 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities — local lookup (Phase 1: drops the cities API endpoint).
-    const [citiesList, setCitiesList] = useState(CITIES);
+
 
     // Load org types and populate form
     useEffect(() => {
         if (isOpen && location) {
-            setCitiesList(CITIES);
             orgTypesApi.getAll().then(data => {
                 const list = data || [];
                 setOrgTypesList(list);
@@ -387,9 +395,11 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                     name: location.name || '',
                     fullName: location.fullName || '',
                     orgType: matchedType ? String(matchedType.id) : '',
-                    cityId: location.cityId || '',
                     streetAddress: location.streetAddress || '',
                     barangay: location.barangay || '',
+                    cityMunicipality: location.cityName || location.cityMunicipality || '',
+                    province: location.province || '',
+                    region: location.region || '',
                     zipCode: location.zipCode || '',
                     contactPerson: location.contactPerson || '',
                     contactEmail: location.contactEmail || '',
@@ -444,25 +454,9 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     };
 
     const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Short name is required';
-        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        if (!formData.orgType) newErrors.orgType = 'Type is required';
-        if (!formData.cityId) newErrors.cityId = 'City is required';
-        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
-        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
-        if (!formData.contactEmail.trim()) {
-            newErrors.contactEmail = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-            newErrors.contactEmail = 'Invalid email format';
-        }
-        if (!formData.contactPhone.trim()) {
-            newErrors.contactPhone = 'Phone is required';
-        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
-            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
-        }
+        const { errors: newErrors, isValid } = validateAll(VALIDATION_RULES.location, formData);
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return isValid;
     };
 
     const handleSubmit = (e) => {
@@ -561,9 +555,10 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                            <CustomDropdown value={formData.cityId} onChange={(v) => setFormData({ ...formData, cityId: v })} options={citiesList.map(c => ({ value: String(c.id), label: c.name }))} placeholder="Select city..." searchable size="md" />
-                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
+                            <input type="text" value={formData.cityMunicipality} onChange={(e) => setFormData({ ...formData, cityMunicipality: e.target.value })} placeholder="e.g., Pasig" maxLength={200}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.cityMunicipality ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            {errors.cityMunicipality && <p className="text-red-500 text-xs mt-1">{errors.cityMunicipality}</p>}
                         </div>
                     </div>
                     <div>
@@ -575,12 +570,24 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Barangay</label>
-                            <input type="text" value={formData.barangay} onChange={(e) => setFormData({ ...formData, barangay: e.target.value })} placeholder="e.g., Caniogan"
+                            <input type="text" value={formData.barangay} onChange={(e) => setFormData({ ...formData, barangay: e.target.value })} placeholder="e.g., Caniogan" maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ZIP Code</label>
-                            <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} placeholder="e.g., 1600"
+                            <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} placeholder="e.g., 1600" maxLength={10}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Province</label>
+                            <input type="text" value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} placeholder="e.g., Metro Manila" maxLength={200}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Region</label>
+                            <input type="text" value={formData.region} onChange={(e) => setFormData({ ...formData, region: e.target.value })} placeholder="e.g., NCR" maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                     </div>
