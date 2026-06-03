@@ -101,7 +101,9 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         const nameErr = validateField(VALIDATION_RULES.user, 'name', name);
         const emailErr = validateField(VALIDATION_RULES.user, 'email', email);
         const pwErr = validateField(VALIDATION_RULES.user, 'password', password);
+        const usernameErr = validateField(VALIDATION_RULES.user, 'username', username);
         if (nameErr) fieldErrors.push(nameErr);
+        if (usernameErr) fieldErrors.push(usernameErr);
         if (emailErr) fieldErrors.push(emailErr);
         if (pwErr) fieldErrors.push(pwErr);
         if (fieldErrors.length > 0) {

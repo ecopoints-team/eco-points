@@ -24,6 +24,7 @@ from ..models import (
 from ..middleware import token_required, permission_required
 from .. import db
 from ._shared import _scope_location_id
+from ..cache import cached_endpoint
 
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
@@ -36,6 +37,7 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 @dashboard_bp.route('/stats', methods=['GET'])
 @token_required
 @permission_required('dashboard')
+@cached_endpoint('dashboard_stats', ttl=60)
 def dashboard_stats(current_user):
     """Aggregated dashboard statistics, scoped by location."""
     try:

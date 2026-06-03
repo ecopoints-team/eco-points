@@ -20,6 +20,7 @@ from ..models import (
 from ..middleware import token_required, permission_required
 from .. import db
 from ._shared import _scope_location_id
+from ..cache import cached_endpoint
 
 
 analytics_bp = Blueprint('analytics', __name__, url_prefix='/analytics')
@@ -28,6 +29,7 @@ analytics_bp = Blueprint('analytics', __name__, url_prefix='/analytics')
 @analytics_bp.route('', methods=['GET'])
 @token_required
 @permission_required('analytics')
+@cached_endpoint('analytics', ttl=120)
 def get_analytics(current_user):
     """
     Comprehensive analytics data for the Analytics page.

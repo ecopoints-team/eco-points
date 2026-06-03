@@ -7,17 +7,14 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi, logs } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
-import { validateField, VALIDATION_RULES } from '../../../src/lib/validateField';
+import { validateField, validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
-    Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X, Plus,
+    Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X,
     CheckCircle2, Clock, User, Calendar, Building2,
     ChevronLeft, ChevronRight, Search, Edit2, RefreshCw
 } from 'lucide-react';
 
-// Predefined area options (5 defaults, users can add custom)
-const DEFAULT_AREA_OPTIONS = [
-    'Main Lobby', 'Canteen', 'Library', 'Gymnasium', 'Admin Building'
-];
+
 
 // Add Machine Modal
 const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
@@ -28,45 +25,14 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
         isOnline: true
     });
     const [errors, setErrors] = useState({});
-    const [areaSearch, setAreaSearch] = useState('');
-    const [showAreaDropdown, setShowAreaDropdown] = useState(false);
-    const [showAddArea, setShowAddArea] = useState(false);
-    const [newAreaName, setNewAreaName] = useState('');
-    const [customAreas, setCustomAreas] = useState([]);
-    const areaRef = React.useRef(null);
 
-    // Close area dropdown on outside click
-    React.useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (areaRef.current && !areaRef.current.contains(e.target)) {
-                setShowAreaDropdown(false);
-                setShowAddArea(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
-    const allAreaOptions = [...new Set([...DEFAULT_AREA_OPTIONS, ...customAreas])];
-    const filteredAreas = allAreaOptions.filter(a => a.toLowerCase().includes((showAreaDropdown ? areaSearch : '').toLowerCase()));
-
-    const handleAddArea = () => {
-        const trimmed = newAreaName.trim();
-        if (!trimmed) return;
-        setCustomAreas(prev => [...new Set([...prev, trimmed])]);
-        setFormData({ ...formData, locationName: trimmed });
-        setNewAreaName('');
-        setShowAddArea(false);
-        setShowAreaDropdown(false);
-    };
 
     const validateForm = () => {
-        const newErrors = {};
-        const nameErr = validateField(VALIDATION_RULES.machine, 'name', formData.name);
-        if (nameErr) newErrors.name = nameErr;
-        if (!formData.locationId) newErrors.locationId = 'Location is required';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        const { errors: fieldErrors, isValid } = validateAll(VALIDATION_RULES.machine, formData);
+        if (!formData.locationId) fieldErrors.locationId = 'Location is required';
+        setErrors(fieldErrors);
+        return isValid && !fieldErrors.locationId;
     };
 
     const handleSubmit = (e) => {
@@ -127,56 +93,15 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
                         />
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
-                    <div ref={areaRef} className="relative">
+                    <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area Placement</label>
-                        <div className="flex gap-1">
-                            <div className="flex-1 relative">
-                                <input
-                                    type="text"
-                                    placeholder={formData.locationName || 'Search or type area...'}
-                                    value={showAreaDropdown ? areaSearch : formData.locationName}
-                                    onChange={(e) => {
-                                        setAreaSearch(e.target.value);
-                                        setFormData({ ...formData, locationName: e.target.value });
-                                        setShowAreaDropdown(true);
-                                    }}
-                                    onFocus={() => { setShowAreaDropdown(true); setAreaSearch(''); }}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                                />
-                                {showAreaDropdown && (
-                                    <div className="absolute z-50 bottom-full mb-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[185px] overflow-y-auto">
-                                        {filteredAreas.length > 0 ? filteredAreas.map(area => (
-                                            <button
-                                                key={area}
-                                                type="button"
-                                                onClick={() => { setFormData({ ...formData, locationName: area }); setShowAreaDropdown(false); setAreaSearch(''); }}
-                                                className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
-                                            >
-                                                {area}
-                                            </button>
-                                        )) : (
-                                            <div className="px-3 py-3 text-center text-xs text-slate-400">No matches — use + to add</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            <button type="button" onClick={() => { setShowAddArea(!showAddArea); setShowAreaDropdown(false); }}
-                                className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
-                                title="Add new area placement">
-                                <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
-                            </button>
-                        </div>
-                        {showAddArea && (
-                            <div className="mt-2 flex gap-2">
-                                <input type="text" value={newAreaName} onChange={(e) => setNewAreaName(e.target.value)} placeholder="New area name..."
-                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddArea())}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
-                                <button type="button" onClick={handleAddArea} disabled={!newAreaName.trim()}
-                                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
-                                    Add
-                                </button>
-                            </div>
-                        )}
+                        <input
+                            type="text"
+                            value={formData.locationName}
+                            onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                            placeholder="e.g., Main Lobby, Canteen, Library"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial Status</label>
@@ -213,12 +138,6 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
         isOnline: true
     });
     const [errors, setErrors] = useState({});
-    const [areaSearch, setAreaSearch] = useState('');
-    const [showAreaDropdown, setShowAreaDropdown] = useState(false);
-    const [showAddArea, setShowAddArea] = useState(false);
-    const [newAreaName, setNewAreaName] = useState('');
-    const [customAreas, setCustomAreas] = useState([]);
-    const areaRef = React.useRef(null);
 
     useEffect(() => {
         if (isOpen && machine) {
@@ -231,37 +150,13 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
         }
     }, [isOpen, machine]);
 
-    React.useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (areaRef.current && !areaRef.current.contains(e.target)) {
-                setShowAreaDropdown(false);
-                setShowAddArea(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
-    const allAreaOptions = [...new Set([...DEFAULT_AREA_OPTIONS, ...customAreas])];
-    const filteredAreas = allAreaOptions.filter(a => a.toLowerCase().includes((showAreaDropdown ? areaSearch : '').toLowerCase()));
-
-    const handleAddArea = () => {
-        const trimmed = newAreaName.trim();
-        if (!trimmed) return;
-        setCustomAreas(prev => [...new Set([...prev, trimmed])]);
-        setFormData({ ...formData, locationName: trimmed });
-        setNewAreaName('');
-        setShowAddArea(false);
-        setShowAreaDropdown(false);
-    };
 
     const validateForm = () => {
-        const newErrors = {};
-        const nameErr = validateField(VALIDATION_RULES.machine, 'name', formData.name);
-        if (nameErr) newErrors.name = nameErr;
-        if (!formData.locationId) newErrors.locationId = 'Location is required';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        const { errors: fieldErrors, isValid } = validateAll(VALIDATION_RULES.machine, formData);
+        if (!formData.locationId) fieldErrors.locationId = 'Location is required';
+        setErrors(fieldErrors);
+        return isValid && !fieldErrors.locationId;
     };
 
     const handleSubmit = (e) => {
@@ -304,45 +199,12 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
                         <CustomDropdown value={formData.locationId} onChange={(v) => setFormData({ ...formData, locationId: v })} options={locations.map(l => ({ value: l.id, label: l.name }))} placeholder="Select Location" searchable size="md" />
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
-                    <div ref={areaRef} className="relative">
+                    <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area Placement</label>
-                        <div className="flex gap-1">
-                            <div className="flex-1 relative">
-                                <input type="text" placeholder={formData.locationName || 'Search or type area...'}
-                                    value={showAreaDropdown ? areaSearch : formData.locationName}
-                                    onChange={(e) => { setAreaSearch(e.target.value); setFormData({ ...formData, locationName: e.target.value }); setShowAreaDropdown(true); }}
-                                    onFocus={() => { setShowAreaDropdown(true); setAreaSearch(''); }}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
-                                {showAreaDropdown && (
-                                    <div className="absolute z-50 bottom-full mb-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[185px] overflow-y-auto">
-                                        {filteredAreas.length > 0 ? filteredAreas.map(area => (
-                                            <button key={area} type="button" onClick={() => { setFormData({ ...formData, locationName: area }); setShowAreaDropdown(false); setAreaSearch(''); }}
-                                                className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">
-                                                {area}
-                                            </button>
-                                        )) : (
-                                            <div className="px-3 py-3 text-center text-xs text-slate-400">No matches — use + to add</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            <button type="button" onClick={() => { setShowAddArea(!showAddArea); setShowAreaDropdown(false); }}
-                                className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors"
-                                title="Add new area placement">
-                                <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
-                            </button>
-                        </div>
-                        {showAddArea && (
-                            <div className="mt-2 flex gap-2">
-                                <input type="text" value={newAreaName} onChange={(e) => setNewAreaName(e.target.value)} placeholder="New area name..."
-                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddArea())}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
-                                <button type="button" onClick={handleAddArea} disabled={!newAreaName.trim()}
-                                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
-                                    Add
-                                </button>
-                            </div>
-                        )}
+                        <input type="text" value={formData.locationName}
+                            onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                            placeholder="e.g., Main Lobby, Canteen, Library"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>

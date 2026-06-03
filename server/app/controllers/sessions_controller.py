@@ -32,6 +32,7 @@ from ..middleware import token_required, permission_required, get_user_org_id, v
 from ..schemas import BulkSessionCreateSchema, BulkDepositCreateSchema
 from ..services.notification_service import trigger_alert
 from .. import db
+from ..cache import cache_invalidate
 from ._shared import _dt, _log_action, _scope_location_id
 
 
@@ -202,6 +203,11 @@ def create_bulk_session(current_user, payload):
                      'Logs')
         db.session.commit()
 
+        # Bust caches — new session affects dashboard stats, leaderboard, analytics
+        cache_invalidate('dashboard_stats')
+        cache_invalidate('leaderboard')
+        cache_invalidate('analytics')
+
         # -- Notification hook: bulk session completed --
         try:
             trigger_alert(rvm.organization_id, 'bulk_session_completed',
@@ -357,6 +363,11 @@ def create_bulk_deposit(current_user, payload):
                      f'{points} pts to wallet {wallet_id} ({item_count} items)',
                      'Logs', notes)
         db.session.commit()
+
+        # Bust caches — deposit changes points, leaderboard, dashboard
+        cache_invalidate('dashboard_stats')
+        cache_invalidate('leaderboard')
+        cache_invalidate('analytics')
 
         return jsonify({'success': True, 'deposit': _serialize_bulk_deposit(bd)}), 201
     except Exception as e:

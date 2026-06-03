@@ -68,9 +68,12 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
     const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
 
+    const [orgTypeError, setOrgTypeError] = useState('');
+
     const handleAddOrgType = async () => {
         if (!newOrgTypeName.trim()) return;
         setIsAddingOrgType(true);
+        setOrgTypeError('');
         try {
             const created = await orgTypesApi.create(newOrgTypeName.trim());
             setOrgTypesList(prev => [...prev, created]);
@@ -78,16 +81,25 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
             setNewOrgTypeName('');
             setShowAddOrgType(false);
             setOrgTypeSearch('');
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            const msg = err?.message || err?.error || 'Failed to create organization type';
+            setOrgTypeError(msg);
+            console.error(err);
+        }
         finally { setIsAddingOrgType(false); }
     };
 
     const handleDeleteOrgType = async (id) => {
+        setOrgTypeError('');
         try {
             await orgTypesApi.delete(id);
             setOrgTypesList(prev => prev.filter(t => t.id !== id));
             if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            const msg = err?.message || err?.error || 'Failed to delete organization type';
+            setOrgTypeError(msg);
+            console.error(err);
+        }
     };
 
     const validateForm = () => {
@@ -221,6 +233,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 </div>
                             )}
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
+                            {orgTypeError && <p className="text-red-500 text-xs mt-1">{orgTypeError}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>

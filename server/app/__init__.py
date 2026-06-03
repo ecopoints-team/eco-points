@@ -208,6 +208,10 @@ def create_app():
     migrate.init_app(app, db)
     limiter.init_app(app)
 
+    # Initialize Redis cache (non-fatal — app degrades gracefully if unavailable)
+    from .cache import init_redis
+    init_redis(app)
+
     with app.app_context():
         # Import routes and models so they are registered
         from . import routes, models  # noqa: F401

@@ -17,8 +17,14 @@ export function validateField(rules, field, value) {
 
     const v = typeof value === 'string' ? value.trim() : value;
 
+    // Reject whitespace-only values for any required field
     if (rule.required && (v === '' || v === null || v === undefined)) {
         return rule.label ? `${rule.label} is required` : 'This field is required';
+    }
+
+    // Even for optional fields, reject pure whitespace if a value was typed
+    if (typeof value === 'string' && value.length > 0 && v === '') {
+        return `${rule.label || 'Field'} cannot be only whitespace`;
     }
 
     if (rule.maxLength && typeof v === 'string' && v.length > rule.maxLength) {
@@ -75,10 +81,10 @@ export function validateAll(rules, formData) {
 
 export const VALIDATION_RULES = {
     location: {
-        name:              { required: true, maxLength: 100, label: 'Short Name' },
-        fullName:          { required: true, maxLength: 200, label: 'Full Name' },
+        name:              { required: true, maxLength: 200, label: 'Short Name' },
+        fullName:          { required: true, maxLength: 500, label: 'Full Name' },
         orgType:           { required: true, label: 'Organization Type' },
-        streetAddress:     { required: true, maxLength: 200, label: 'Street Address' },
+        streetAddress:     { required: true, maxLength: 500, label: 'Street Address' },
         barangay:          { maxLength: 200, label: 'Barangay' },
         cityMunicipality:  { required: true, maxLength: 200, label: 'City/Municipality' },
         province:          { maxLength: 200, label: 'Province' },
@@ -93,7 +99,7 @@ export const VALIDATION_RULES = {
         name:       { required: true, maxLength: 200, label: 'Full Name' },
         email:      { required: true, maxLength: 200, type: 'email', label: 'Email' },
         password:   { required: true, minLength: 6, maxLength: 128, label: 'Password' },
-        username:   { maxLength: 100, label: 'Username' },
+        username:   { required: true, maxLength: 100, label: 'Username' },
         phone:      { type: 'phone', label: 'Phone' },
     },
 

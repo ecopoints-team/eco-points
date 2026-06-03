@@ -22,6 +22,7 @@ from ..models import (
 from ..middleware import token_required, permission_required
 from .. import db
 from ._shared import _scope_location_id
+from ..cache import cached_endpoint
 
 
 leaderboard_bp = Blueprint('leaderboard', __name__, url_prefix='/leaderboard')
@@ -34,6 +35,7 @@ leaderboard_bp = Blueprint('leaderboard', __name__, url_prefix='/leaderboard')
 @leaderboard_bp.route('', methods=['GET'])
 @token_required
 @permission_required('leaderboard')
+@cached_endpoint('leaderboard', ttl=300)
 def get_leaderboard(current_user):
     """Return leaderboard data: top users and top groups."""
     try:

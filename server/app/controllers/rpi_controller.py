@@ -24,6 +24,7 @@ from ..schemas import (
     RpiMachineStatusSchema,
 )
 from .. import db
+from ..cache import cache_invalidate
 
 rpi_bp = Blueprint('rpi', __name__, url_prefix='/api/rpi')
 
@@ -245,6 +246,9 @@ def deposit_item(rvm, session_id, payload):
         session.total_points_earned = (session.total_points_earned or 0) + points
         db.session.commit()
 
+        # Bust dashboard cache since bottle counts changed
+        cache_invalidate('dashboard_stats')
+
         return jsonify({
             'success': True,
             'item': {
@@ -305,6 +309,11 @@ def end_session(rvm, session_id, payload):
                 db.session.add(txn)
 
         db.session.commit()
+
+        # Bust all data caches — points, leaderboard, and stats all changed
+        cache_invalidate('dashboard_stats')
+        cache_invalidate('leaderboard')
+        cache_invalidate('analytics')
 
         return jsonify({
             'success': True,
