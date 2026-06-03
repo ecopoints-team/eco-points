@@ -27,7 +27,7 @@ import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
-import { auth as authApi } from "../../services/apiService";
+import { auth as authApi } from "../../services/api";
 import Link from "next/link";
 
 // ─────────────────────────────────────────────
@@ -78,17 +78,24 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
   ctx.closePath();
 };
 
+// ─────────────────────────────────────────────
+// Empty-state placeholder (Requirement 3.4)
+// ─────────────────────────────────────────────
+const PLACEHOLDER = '—';
+const fmt = (v) => (v === null || v === undefined || v === '') ? PLACEHOLDER : v;
+
 export default function ProfileSection() {
   const { currentUser, refreshUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
-  // Mocking the user's tag ID from AccessCredential
-  const userTagId = currentUser?.displayId || "12345-ABCDE";
-  const qrPayload = currentUser?.qrToken ? `USER:${currentUser.qrToken}` : `USER:${userTagId}`;
+  // Derive display values from server-supplied currentUser fields (Requirement 3.3).
+  // Fall back to placeholder when the field is absent (Requirement 3.4).
+  const userTagId = currentUser?.displayId ?? PLACEHOLDER;
+  // Phase 4A will supply a signed `qrPayload`; until then fall back to the
+  // unsigned `USER:<displayId>` format (alignment doc §15).
+  const qrPayload = currentUser?.qrPayload ?? (currentUser?.displayId ? `USER:${currentUser.displayId}` : 'USER:UNKNOWN');
 
-
-  // User display info
   const userName = currentUser?.name || "Eco User";
   const userHandle = currentUser?.username 
     ? `@${currentUser.username}` 
@@ -455,11 +462,15 @@ export default function ProfileSection() {
                 Campus Rank
               </p>
               <div className="flex items-baseline gap-1">
-                <p className="text-2xl font-black" style={fonts.data}>TOP #12</p>
-                <p className="text-[10px] font-black" style={fonts.data}>/ 10,000</p>
+                <p className="text-2xl font-black" style={fonts.data}>
+                  {currentUser?.campusRank != null ? `TOP #${currentUser.campusRank}` : PLACEHOLDER}
+                </p>
+                {currentUser?.organizationUserCount != null && (
+                  <p className="text-[10px] font-black" style={fonts.data}>/ {currentUser.organizationUserCount.toLocaleString()}</p>
+                )}
               </div>
               <p className="text-[9px] font-bold" style={{ ...fonts.body, color: "#34D399" }}>
-                Highest: TOP #12
+                {currentUser?.campusRank != null ? `Highest: TOP #${currentUser.campusRank}` : PLACEHOLDER}
               </p>
               <AwardIcon className="absolute text-amber-400/10 -right-3 -top-3 w-12 h-12 group-hover:scale-110 transition-transform" />
             </div>
@@ -470,7 +481,9 @@ export default function ProfileSection() {
               <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#34D399" }}>
                 All Time Streak
               </p>
-              <p className="text-2xl font-black" style={fonts.data}>15 Days</p>
+              <p className="text-2xl font-black" style={fonts.data}>
+                {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
+              </p>
               <FlameIcon className="absolute text-amber-500/10 -right-2 -top-4 w-12 h-12 group-hover:scale-110 transition-transform" />
             </div>
           </div>
@@ -773,7 +786,7 @@ export default function ProfileSection() {
             </div>
 
             <p className="text-xs bg-slate-100 px-3 py-1 rounded-md mb-6 tracking-widest" style={{ ...fonts.data, color: "#6B7280" }}>
-              ID: {userTagId}
+              ID: {userTagId !== PLACEHOLDER ? userTagId : '—'}
             </p>
 
             <button

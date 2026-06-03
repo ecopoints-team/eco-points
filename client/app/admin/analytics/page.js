@@ -1,7 +1,9 @@
 'use client';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../../../src/context/AuthContext';
-import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/apiService';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
 import SlotCounter from '../../../src/components/shared/SlotCounter';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import {
@@ -173,7 +175,7 @@ const YearPicker = ({ value, onChange, options, direction = 'down' }) => {
 // ANALYTICS PAGE
 // ═══════════════════════════════════════════════════════════════════════
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
     const { currentUser, isSuperAdmin, effectiveLocationId, allLocations } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -1199,7 +1201,7 @@ export default function AnalyticsPage() {
                                     {filteredLocationData.map((loc, i) => (
                                         <tr key={i} className="border-b border-slate-100 dark:border-slate-800 system:border-[rgba(123,160,91,0.1)] hover:bg-slate-50 dark:hover:bg-slate-800/30 system:hover:bg-[#0F1B11]/30 transition-colors">
                                             <td className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]/80">{loc.name}</td>
-                                            <td className="py-3 px-4 text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{loc.orgType || '—'}</td>
+                                            <td className="py-3 px-4 text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{formatField(loc.orgType)}</td>
                                             <td className="py-3 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]">{loc.bottles.toLocaleString()}</td>
                                             <td className="py-3 px-4 text-right font-bold text-amber-600 dark:text-amber-400 system:text-amber-400">{loc.points.toLocaleString()}</td>
                                             <td className="py-3 px-4 text-right font-bold text-blue-600 dark:text-cyan-400 system:text-cyan-400">{loc.users.toLocaleString()}</td>
@@ -1212,5 +1214,15 @@ export default function AnalyticsPage() {
                 </SectionCard>
             )}
         </div>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function AnalyticsPage() {
+    return (
+        <RequirePermission category="analytics">
+            <AnalyticsPageContent />
+        </RequirePermission>
     );
 }

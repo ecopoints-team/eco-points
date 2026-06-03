@@ -1,7 +1,34 @@
 from datetime import datetime, timezone
 import secrets
 from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt as _bcrypt
 from . import db
+
+
+# ── Phase 4A: Fernet helper for at-rest encryption of HMAC secrets ───
+# Derives a 32-byte key from SECRET_KEY via HKDF so we don't need a
+# separate env var.  Cached per SECRET_KEY value.
+_fernet_cache: dict = {}  # {secret_key_value: Fernet}
+
+
+def _fernet():
+    """Return a cached Fernet instance keyed by the app's SECRET_KEY."""
+    import base64
+    from flask import current_app
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.primitives import hashes
+
+    sk = current_app.config['SECRET_KEY']
+    if sk not in _fernet_cache:
+        derived = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b'ecopoints-qr-hmac-v1',
+            info=b'qr_hmac_secret_enc',
+        ).derive(sk.encode() if isinstance(sk, str) else sk)
+        _fernet_cache[sk] = Fernet(base64.urlsafe_b64encode(derived))
+    return _fernet_cache[sk]
 
 
 # ============================================================================
@@ -36,6 +63,8 @@ class Organization(db.Model):
     type_id = db.Column(db.Integer, db.ForeignKey('org_types.id'), nullable=True, index=True)
     status = db.Column(db.String(20), default='Active')           # Active, Inactive
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    force_logout_at = db.Column(db.DateTime(timezone=True), nullable=True)  # Phase 4C: force-logout timestamp
+    qr_hmac_secret_enc = db.Column(db.LargeBinary, nullable=True)  # Phase 4A: Fernet-encrypted HMAC secret
 
     # Relationships
     address = db.relationship('OrgAddress', backref='organization', uselist=False,
@@ -55,6 +84,17 @@ class Organization(db.Model):
 
     def __repr__(self):
         return f'<Organization {self.name}>'
+
+    def get_qr_hmac_secret(self) -> bytes:
+        """Decrypt and return the per-org HMAC secret (Phase 4A)."""
+        if not self.qr_hmac_secret_enc:
+            raise ValueError(f'Organization {self.id} has no QR HMAC secret provisioned')
+        return _fernet().decrypt(self.qr_hmac_secret_enc)
+
+    @staticmethod
+    def encrypt_qr_hmac_secret(plaintext: bytes) -> bytes:
+        """Encrypt a plaintext HMAC secret for storage (Phase 4A)."""
+        return _fernet().encrypt(plaintext)
 
 
 class OrgAddress(db.Model):
@@ -323,11 +363,24 @@ class RVM(db.Model):
     location_name = db.Column(db.String(200), nullable=True)      # Area placement
     is_capacity_full = db.Column(db.Boolean, default=False)       # Status from IR Sensor
     is_online = db.Column(db.Boolean, default=False)
+    api_key_hash = db.Column(db.String(255), nullable=True)       # Phase 4A: BCrypt hash of API key
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     sessions = db.relationship('RecyclingSession', backref='rvm', lazy=True)
     maintenance_logs = db.relationship('MaintenanceLog', backref='rvm', lazy=True)
+
+    def verify_api_key(self, plaintext: str) -> bool:
+        """Constant-time compare plaintext API key against stored BCrypt hash (Phase 4A)."""
+        if not self.api_key_hash:
+            return False
+        try:
+            return _bcrypt.checkpw(
+                plaintext.encode('utf-8'),
+                self.api_key_hash.encode('utf-8'),
+            )
+        except (ValueError, TypeError):
+            return False
 
     def __repr__(self):
         return f'<RVM {self.name} ({"Online" if self.is_online else "Offline"})>'
@@ -347,6 +400,9 @@ class RecyclingSession(db.Model):
     status = db.Column(db.String(20), default='active')           # active, completed, timed_out, error
     start_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     end_time = db.Column(db.DateTime, nullable=True)
+    # Phase 3 task 8.2: free-form notes attached to a session (mainly used
+    # by the bulk-deposit admin modal). Migration: phase3_session_notes.
+    notes = db.Column(db.Text, nullable=True)
 
     # Relationships
     items = db.relationship('RecyclingItem', backref='session', lazy=True,

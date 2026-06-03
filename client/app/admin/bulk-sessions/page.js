@@ -1,11 +1,14 @@
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/apiService';
+import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
+import { formatField } from '../../../src/lib/formatField';
+import { sessionStatusLabel } from '../../../src/lib/enumLabels';
 import {
     Layers, Plus, X, Search, ChevronLeft, ChevronRight, RefreshCw,
     Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2
@@ -24,7 +27,7 @@ const getAutoPoints = (condition, volumeMl, config) => {
     return parseInt(config[`${sizeKey}${condKey}`]) || 0;
 };
 
-export default function BulkSessionsPage() {
+function BulkSessionsPageContent() {
     const { currentUser, effectiveLocationId, isSuperAdmin } = useAuth();
 
     const [sessions, setSessions] = useState([]);
@@ -307,17 +310,17 @@ export default function BulkSessionsPage() {
                                     <td className="px-4 py-3"><span className="text-xs font-mono text-slate-500 dark:text-slate-400">#{s.id}</span></td>
                                     <td className="px-4 py-3">
                                         <div>
-                                            <span className="text-sm font-medium text-slate-800 dark:text-white">{s.userName}</span>
+                                            <span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(s.userName)}</span>
                                             {s.userEmail && <p className="text-xs text-slate-500 dark:text-slate-400">{s.userEmail}</p>}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{s.machineName}</span></td>
+                                    <td className="px-4 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{formatField(s.machineName)}</span></td>
                                     <td className="px-4 py-3"><span className="font-bold text-slate-700 dark:text-slate-200">{s.itemCount}</span></td>
                                     <td className="px-4 py-3"><span className="font-bold text-emerald-600 dark:text-emerald-400">+{s.totalPointsEarned}</span></td>
-                                    <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate block">{s.notes || '-'}</span></td>
+                                    <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate block">{formatField(s.notes)}</span></td>
                                     <td className="px-4 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(s.startTime)}</span></td>
                                     <td className="px-4 py-3">
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">{s.status}</span>
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">{sessionStatusLabel(s.status)}</span>
                                     </td>
                                 </tr>
                             ))}
@@ -441,5 +444,15 @@ export default function BulkSessionsPage() {
                 </div>
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function BulkSessionsPage() {
+    return (
+        <RequirePermission category="sessions">
+            <BulkSessionsPageContent />
+        </RequirePermission>
     );
 }

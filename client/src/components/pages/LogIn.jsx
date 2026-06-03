@@ -1,66 +1,94 @@
 // ============================================================================
-// ADMIN ACCOUNT CREDENTIALS (All passwords: test123)
-// Sign in with: username OR email + password
-// Total: 20 admin accounts across 2 organizations (multi-tenant)
+// ADMIN ACCOUNT CREDENTIALS (All passwords: SeedPass!23)
+// Sign in with: email + password
+// Total: 50 accounts across 2 organizations (multi-tenant)
 // ============================================================================
 //
-// ── MULTI-TENANT LOCATIONS ──────────────────────────────────────────────────
-//   LOC-001: Arellano University (Pasig City)
-//   LOC-002: Polytechnic University of the Philippines (Manila)
+// ── MULTI-TENANT ORGANIZATIONS ──────────────────────────────────────────────
+//   EPTU: EcoPoints Test University (Quezon City)
+//   GCS:  GreenCorp Solutions (Makati City)
 //
 // ── PERMISSION MATRIX (by role) ─────────────────────────────────────────────
 //   Role               | Scope    | Dashboard | Users | Machines | Rewards | Logs   | Settings
 //   ───────────────────|──────────|───────────|───────|──────────|─────────|────────|─────────
 //   superadmin         | Global   | Edit      | CRUD  | CRUD     | CRUD    | Export | Edit
-//   head_admin         | Location | Edit      | CRUD  | CRUD     | CRUD    | Export | Edit
-//   auditor            | Location | View      | View  | View     | View    | Export | View
-//   inventory_officer  | Location | View      | —     | —        | CRUD    | View   | View
-//   technician         | Location | View      | —     | CRUD     | —       | View   | View
+//   head_admin         | Org      | Edit      | CRUD  | CRUD     | CRUD    | Export | Edit
+//   auditor            | Org      | View      | View  | View     | View    | Export | View
+//   inventory_officer  | Org      | View      | —     | —        | CRUD    | View   | View
+//   technician         | Org      | View      | —     | CRUD     | —       | View   | View
 //
 // ── SIDEBAR VISIBILITY ─────────────────────────────────────────────────────
 //   Locations page: superadmin only
 //   Manage Admins:  users.view permission (superadmin, head_admin)
-//   Admin Logs:     superadmin only (others see only own-location logs)
+//   Admin Logs:     superadmin only (others see only own-org logs)
 //
-// ── ACCOUNTS ────────────────────────────────────────────────────────────────
+// ── ADMIN ACCOUNTS (EPTU — EcoPoints Test University) ───────────────────────
 //
-// SUPER ADMINS (scope: ALL locations):
-//   - System Administrator      | sysadmin     | superadmin@ecopoints.com
-//   - Chief Technology Officer   | cto          | cto@ecopoints.com
+//   Role                 | Username             | Email
+//   superadmin           | superadmin           | superadmin@ecopoints.local
+//   head_admin           | head_admin           | head_admin@ecopoints.local
+//   auditor              | auditor              | auditor@ecopoints.local
+//   technician           | technician           | technician@ecopoints.local
+//   inventory_officer    | inventory_officer    | inventory_officer@ecopoints.local
 //
-// HEAD ADMINS (LOC-001 — Arellano University):
-//   - Maria Santos               | msantos      | head@arellano.edu.ph
-//   - Roberto Garcia             | rgarcia      | rgarcia@arellano.edu.ph
-//   - Elena Cruz                 | ecruz        | ecruz@arellano.edu.ph
+// ── END-USER ACCOUNTS ───────────────────────────────────────────────────────
 //
-// HEAD ADMIN (LOC-002 — Polytechnic University):
-//   - Rosa Aquino                | raquino      | head@pup.edu.ph
+//   user                 | user                 | user@ecopoints.local
+//   dependent            | dependent            | dependent@ecopoints.local
 //
-// AUDITORS (LOC-001):
-//   - Juan Dela Cruz             | jdelacruz    | auditor@arellano.edu.ph
-//   - Angela Reyes               | areyes       | areyes@arellano.edu.ph
-//   - Mark Gonzales              | mgonzales    | mgonzales@arellano.edu.ph
+//   Username                  | Email                                      | Org
+//   maria.delacruz            | maria.delacruz@ecopoints.local             | EPTU
+//   christian.santos          | christian.santos@ecopoints.local           | EPTU
+//   tristan.reyes             | tristan.reyes@ecopoints.local              | EPTU
+//   enrique.cruz              | enrique.cruz@ecopoints.local               | EPTU
+//   miguel.bautista           | miguel.bautista@ecopoints.local            | EPTU
+//   adrian.rivera             | adrian.rivera@ecopoints.local              | EPTU
+//   alyssa.gonzales           | alyssa.gonzales@ecopoints.local            | EPTU
+//   angela.garcia             | angela.garcia@ecopoints.local              | EPTU
+//   antonio.fernandez         | antonio.fernandez@ecopoints.local          | EPTU
+//   beatrice.delacruz         | beatrice.delacruz@ecopoints.local          | EPTU
+//   bianca.dizon              | bianca.dizon@ecopoints.local               | EPTU
+//   camille.ramos             | camille.ramos@ecopoints.local              | EPTU
+//   carlos.lopez              | carlos.lopez@ecopoints.local               | EPTU
+//   celeste.garcia            | celeste.garcia@ecopoints.local             | EPTU
+//   daniela.santos            | daniela.santos@ecopoints.local             | EPTU
+//   darwin.navarro            | darwin.navarro@ecopoints.local             | EPTU
+//   diana.mercado             | diana.mercado@ecopoints.local              | EPTU
+//   elena.gonzales            | elena.gonzales@ecopoints.local             | EPTU
+//   elijah.estrella           | elijah.estrella@ecopoints.local            | EPTU
+//   francesca.villanueva      | francesca.villanueva@ecopoints.local       | EPTU
+//   gabriel.mendoza           | gabriel.mendoza@ecopoints.local            | EPTU
+//   gabriela.aquino           | gabriela.aquino@ecopoints.local            | EPTU
+//   hannah.martinez           | hannah.martinez@ecopoints.local            | EPTU
+//   isabela.valdez            | isabela.valdez@ecopoints.local             | EPTU
+//   jasmine.aguilar           | jasmine.aguilar@ecopoints.local            | EPTU
+//   jericho.bautista          | jericho.bautista@ecopoints.local           | EPTU
+//   juan.soriano              | juan.soriano@ecopoints.local               | EPTU
+//   katrina.mendoza           | katrina.mendoza@ecopoints.local            | EPTU
+//   kenneth.morales           | kenneth.morales@ecopoints.local            | EPTU
+//   kristine.manalo           | kristine.manalo@ecopoints.local            | EPTU
+//   luis.torres               | luis.torres@ecopoints.local                | EPTU
+//   mikhaela.santiago         | mikhaela.santiago@ecopoints.local          | EPTU
+//   nathaniel.villanueva      | nathaniel.villanueva@ecopoints.local       | EPTU
+//   nicole.rivera             | nicole.rivera@ecopoints.local              | EPTU
+//   paolo.castillo            | paolo.castillo@ecopoints.local             | EPTU
+//   patricia.reyes            | patricia.reyes@ecopoints.local             | EPTU
+//   rafael.torres             | rafael.torres@ecopoints.local              | EPTU
+//   ramon.fernandez           | ramon.fernandez@ecopoints.local            | EPTU
+//   regina.salvador           | regina.salvador@ecopoints.local            | EPTU
+//   renzo.pascual             | renzo.pascual@ecopoints.local              | EPTU
+//   samantha.flores           | samantha.flores@ecopoints.local            | EPTU
+//   sofia.ramos               | sofia.ramos@ecopoints.local                | EPTU
+//   victoria.cruz             | victoria.cruz@ecopoints.local              | EPTU
 //
-// AUDITOR (LOC-002):
-//   - Leo Bautista               | lbautista    | auditor@pup.edu.ph
+// ── DEMO DATA INCLUDED ──────────────────────────────────────────────────────
+//   ~200 recycling sessions, ~600 items, ~250 transactions
+//   ~30 reward redemptions, ~50 admin logs, ~10 maintenance logs
+//   ~100 login attempts, ~5 bulk deposits (30 days of activity)
 //
-// INVENTORY OFFICERS (LOC-001):
-//   - Ana Lim                    | alim         | inventory@arellano.edu.ph
-//   - Patricia Tan               | ptan         | ptan@arellano.edu.ph
-//   - Jose Mendoza               | jmendoza     | jmendoza@arellano.edu.ph
-//
-// INVENTORY OFFICER (LOC-002):
-//   - Carmen Diaz                | cdiaz        | inventory@pup.edu.ph
-//
-// TECHNICIANS (LOC-001):
-//   - Carlos Reyes               | creyes       | tech@arellano.edu.ph
-//   - Miguel Santos              | misantos     | msantos@arellano.edu.ph
-//   - Fernando Lopez             | flopez       | flopez@arellano.edu.ph
-//   - David Villanueva           | dvillanueva  | dvillanueva@arellano.edu.ph
-//
-// TECHNICIANS (LOC-002):
-//   - Rico Fernandez             | rfernandez   | tech@pup.edu.ph
-//   - Lorna Gutierrez            | lgutierrez   | tech2@pup.edu.ph
+// ── QUICK START ─────────────────────────────────────────────────────────────
+//   Admin login:  superadmin@ecopoints.local / SeedPass!23 → /admin
+//   User login:   user@ecopoints.local / SeedPass!23 → /rewards
 // ============================================================================
 "use client";
 import { useState, useEffect, useRef } from "react";
@@ -89,7 +117,21 @@ import {
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../context/AuthContext";
-import { auth as authApi } from "../../services/apiService";
+import { auth as authApi } from "../../services/api";
+
+// ============================================================================
+// AUTHORIZATION — Admin role set (mirrors server-side Admin_Role_Set)
+// Members of this set redirect to /admin after login. All other roles
+// (including `user` and `dependent`) redirect to /rewards. The /profile
+// route is intentionally never used as a post-login target.
+// ============================================================================
+const ADMIN_ROLES = new Set([
+  "superadmin",
+  "head_admin",
+  "auditor",
+  "technician",
+  "inventory_officer",
+]);
 
 // ============================================================================
 // EDUCATIONAL DATA - Strands & Departments
@@ -710,12 +752,11 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       setShowCaptchaPopup(false);
 
       const role = data?.user?.role;
-      const adminRoles = ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'];
-      
-      if (adminRoles.includes(role)) {
+
+      if (ADMIN_ROLES.has(role)) {
         router.push("/admin");
       } else {
-        router.push("/profile");
+        router.push("/rewards");
       }
     } catch (err) {
       setIsLoading(false);

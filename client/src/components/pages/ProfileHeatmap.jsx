@@ -3,7 +3,7 @@ import {
   Leaf, Calendar, ChevronDown, Info,
   X, Zap, Recycle
 } from 'lucide-react';
-import api from '../../services/apiService';
+import api from '../../services/api';
 
 // ─────────────────────────────────────────────
 // Font styles (consistent with ProfileSection)

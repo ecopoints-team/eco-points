@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import api from '../../../src/services/apiService';
+import api from '../../../src/services/api';
 import { QrCode, Loader2, X, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard } from 'lucide-react';
 
 export default function ClaimScannerPage() {

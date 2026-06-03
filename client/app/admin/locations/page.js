@@ -1,9 +1,13 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { locations as locationsApi, orgTypes as orgTypesApi, cities as citiesApi } from '../../../src/services/apiService';
+import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
+import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
+import { formatDateShort } from '../../../src/utils/formatDate';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Plus, Search,
@@ -18,9 +22,11 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
         name: '',
         fullName: '',
         orgType: '',
-        cityId: '',
         streetAddress: '',
         barangay: '',
+        cityMunicipality: '',
+        province: '',
+        region: '',
         zipCode: '',
         contactPerson: '',
         contactEmail: '',
@@ -38,14 +44,12 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities from API
-    const [citiesList, setCitiesList] = useState([]);
 
-    // Load org types and cities from API
+
+    // Load org types from API
     useEffect(() => {
         if (isOpen) {
-            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
-            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
+            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => { });
         }
     }, [isOpen]);
 
@@ -64,9 +68,12 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
     const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
 
+    const [orgTypeError, setOrgTypeError] = useState('');
+
     const handleAddOrgType = async () => {
         if (!newOrgTypeName.trim()) return;
         setIsAddingOrgType(true);
+        setOrgTypeError('');
         try {
             const created = await orgTypesApi.create(newOrgTypeName.trim());
             setOrgTypesList(prev => [...prev, created]);
@@ -74,38 +81,31 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
             setNewOrgTypeName('');
             setShowAddOrgType(false);
             setOrgTypeSearch('');
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            const msg = err?.message || err?.error || 'Failed to create organization type';
+            setOrgTypeError(msg);
+            console.error(err);
+        }
         finally { setIsAddingOrgType(false); }
     };
 
     const handleDeleteOrgType = async (id) => {
+        setOrgTypeError('');
         try {
             await orgTypesApi.delete(id);
             setOrgTypesList(prev => prev.filter(t => t.id !== id));
             if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            const msg = err?.message || err?.error || 'Failed to delete organization type';
+            setOrgTypeError(msg);
+            console.error(err);
+        }
     };
 
     const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Short name is required';
-        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        if (!formData.orgType) newErrors.orgType = 'Type is required';
-        if (!formData.cityId) newErrors.cityId = 'City is required';
-        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
-        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
-        if (!formData.contactEmail.trim()) {
-            newErrors.contactEmail = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-            newErrors.contactEmail = 'Invalid email format';
-        }
-        if (!formData.contactPhone.trim()) {
-            newErrors.contactPhone = 'Phone is required';
-        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
-            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
-        }
+        const { errors: newErrors, isValid } = validateAll(VALIDATION_RULES.location, formData);
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return isValid;
     };
 
     const handlePhoneChange = (val) => {
@@ -124,13 +124,16 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                 ...formData,
                 orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
                 id: `LOC-${Date.now()}`,
-                joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                // The page now reads `createdAt` from the GET response (alignment
+                // doc §4); the local optimistic shape keeps the same key so the
+                // card renders without a flash of empty state.
+                createdAt: new Date().toISOString(),
                 machineCount: 0,
                 userCount: 0,
                 totalBottlesCollected: 0,
                 totalPoints: 0,
             });
-            setFormData({ name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setFormData({ name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             onClose();
         }
     };
@@ -230,18 +233,19 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 </div>
                             )}
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
+                            {orgTypeError && <p className="text-red-500 text-xs mt-1">{orgTypeError}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                            <CustomDropdown
-                                value={formData.cityId}
-                                onChange={(v) => setFormData({ ...formData, cityId: v })}
-                                options={citiesList.map(c => ({ value: String(c.id), label: c.name }))}
-                                placeholder="Select city..."
-                                searchable
-                                size="md"
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
+                            <input
+                                type="text"
+                                value={formData.cityMunicipality}
+                                onChange={(e) => setFormData({ ...formData, cityMunicipality: e.target.value })}
+                                placeholder="e.g., Pasig"
+                                maxLength={200}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.cityMunicipality ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`}
                             />
-                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                            {errors.cityMunicipality && <p className="text-red-500 text-xs mt-1">{errors.cityMunicipality}</p>}
                         </div>
                     </div>
                     <div>
@@ -263,6 +267,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 value={formData.barangay}
                                 onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
                                 placeholder="e.g., Caniogan"
+                                maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
@@ -273,6 +278,31 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 value={formData.zipCode}
                                 onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                                 placeholder="e.g., 1600"
+                                maxLength={10}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Province</label>
+                            <input
+                                type="text"
+                                value={formData.province}
+                                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                                placeholder="e.g., Metro Manila"
+                                maxLength={200}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Region</label>
+                            <input
+                                type="text"
+                                value={formData.region}
+                                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                                placeholder="e.g., NCR"
+                                maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
@@ -350,7 +380,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
 // ============================================================================
 function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }) {
     const [formData, setFormData] = useState({
-        name: '', fullName: '', orgType: '', cityId: '', streetAddress: '', barangay: '', zipCode: '',
+        name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '',
         contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active'
     });
     const [errors, setErrors] = useState({});
@@ -364,13 +394,11 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
 
-    // Cities from API
-    const [citiesList, setCitiesList] = useState([]);
 
-    // Load org types, cities, and populate form
+
+    // Load org types and populate form
     useEffect(() => {
         if (isOpen && location) {
-            citiesApi.getAll().then(data => setCitiesList(data || [])).catch(() => {});
             orgTypesApi.getAll().then(data => {
                 const list = data || [];
                 setOrgTypesList(list);
@@ -380,16 +408,18 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                     name: location.name || '',
                     fullName: location.fullName || '',
                     orgType: matchedType ? String(matchedType.id) : '',
-                    cityId: location.cityId || '',
                     streetAddress: location.streetAddress || '',
                     barangay: location.barangay || '',
+                    cityMunicipality: location.cityName || location.cityMunicipality || '',
+                    province: location.province || '',
+                    region: location.region || '',
                     zipCode: location.zipCode || '',
                     contactPerson: location.contactPerson || '',
                     contactEmail: location.contactEmail || '',
                     contactPhone: location.contactPhone || '',
                     status: location.status || 'Active'
                 });
-            }).catch(() => {});
+            }).catch(() => { });
         }
     }, [isOpen, location]);
 
@@ -437,25 +467,9 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     };
 
     const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'Short name is required';
-        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        if (!formData.orgType) newErrors.orgType = 'Type is required';
-        if (!formData.cityId) newErrors.cityId = 'City is required';
-        if (!formData.streetAddress.trim()) newErrors.streetAddress = 'Street address is required';
-        if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
-        if (!formData.contactEmail.trim()) {
-            newErrors.contactEmail = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-            newErrors.contactEmail = 'Invalid email format';
-        }
-        if (!formData.contactPhone.trim()) {
-            newErrors.contactPhone = 'Phone is required';
-        } else if (formData.contactPhone.replace(/[\s\-]/g, '').length !== 10) {
-            newErrors.contactPhone = 'Must be 10 digits (9XX XXX XXXX)';
-        }
+        const { errors: newErrors, isValid } = validateAll(VALIDATION_RULES.location, formData);
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return isValid;
     };
 
     const handleSubmit = (e) => {
@@ -554,9 +568,10 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                             {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-                            <CustomDropdown value={formData.cityId} onChange={(v) => setFormData({ ...formData, cityId: v })} options={citiesList.map(c => ({ value: String(c.id), label: c.name }))} placeholder="Select city..." searchable size="md" />
-                            {errors.cityId && <p className="text-red-500 text-xs mt-1">{errors.cityId}</p>}
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
+                            <input type="text" value={formData.cityMunicipality} onChange={(e) => setFormData({ ...formData, cityMunicipality: e.target.value })} placeholder="e.g., Pasig" maxLength={200}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.cityMunicipality ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`} />
+                            {errors.cityMunicipality && <p className="text-red-500 text-xs mt-1">{errors.cityMunicipality}</p>}
                         </div>
                     </div>
                     <div>
@@ -568,12 +583,24 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Barangay</label>
-                            <input type="text" value={formData.barangay} onChange={(e) => setFormData({ ...formData, barangay: e.target.value })} placeholder="e.g., Caniogan"
+                            <input type="text" value={formData.barangay} onChange={(e) => setFormData({ ...formData, barangay: e.target.value })} placeholder="e.g., Caniogan" maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ZIP Code</label>
-                            <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} placeholder="e.g., 1600"
+                            <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} placeholder="e.g., 1600" maxLength={10}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Province</label>
+                            <input type="text" value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} placeholder="e.g., Metro Manila" maxLength={200}
+                                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Region</label>
+                            <input type="text" value={formData.region} onChange={(e) => setFormData({ ...formData, region: e.target.value })} placeholder="e.g., NCR" maxLength={200}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                     </div>
@@ -622,7 +649,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
 // ============================================================================
 // LOCATIONS MANAGEMENT PAGE (Super Admin Only)
 // ============================================================================
-export default function LocationsPage() {
+function LocationsPageContent() {
     const { isSuperAdmin, setViewAsLocation, allLocations, refreshLocations } = useAuth();
     const [locations, setLocations] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -870,9 +897,9 @@ export default function LocationsPage() {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{location.name}</h3>
+                                            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{formatField(location.name)}</h3>
                                         </div>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{location.fullName}</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{formatField(location.fullName)}</p>
                                     </div>
                                 </div>
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${location.status === 'Active'
@@ -887,11 +914,11 @@ export default function LocationsPage() {
                             <div className="space-y-2 mb-4 text-sm">
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <MapPin size={14} className="text-slate-400 flex-shrink-0" />
-                                    <span className="truncate">{location.streetAddress}</span>
+                                    <span className="truncate">{formatField(location.streetAddress)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <Calendar size={14} className="text-slate-400" />
-                                    Joined: {location.joinDate}
+                                    Joined: {formatDateShort(location.createdAt)}
                                 </div>
                             </div>
 
@@ -992,5 +1019,15 @@ export default function LocationsPage() {
                 isSuperAdmin={isSuperAdmin}
             />
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function LocationsPage() {
+    return (
+        <RequirePermission category="locations">
+            <LocationsPageContent />
+        </RequirePermission>
     );
 }

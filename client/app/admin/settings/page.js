@@ -1,9 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { settings as settingsApi } from '../../../src/services/apiService';
+import { settings as settingsApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
+import { notificationChannelLabel } from '../../../src/lib/enumLabels';
 import {
     Settings, Bell, Shield, Save, ToggleLeft, ToggleRight,
     Zap, Recycle, Palette, Plus, X, Send, Mail, Smartphone, Phone,
@@ -26,7 +29,7 @@ const ToggleSwitch = ({ enabled, onChange, label, description }) => (
     </div>
 );
 
-export default function SettingsPage() {
+function SettingsPageContent() {
     const { effectiveLocationId } = useAuth();
 
     // ── Tab state ──
@@ -589,17 +592,17 @@ export default function SettingsPage() {
                                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                             {notifLogs.map(log => (
                                                                 <tr key={log.id}>
-                                                                    <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{log.sentAt ? new Date(log.sentAt).toLocaleString() : '-'}</td>
-                                                                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{log.alertKey}</td>
+                                                                    <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{log.sentAt ? new Date(log.sentAt).toLocaleString() : '—'}</td>
+                                                                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{formatField(log.alertKey)}</td>
                                                                     <td className="px-3 py-2">
                                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${log.channel === 'email' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400'}`}>
-                                                                            {log.channel}
+                                                                            {notificationChannelLabel(log.channel)}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{log.recipient}</td>
+                                                                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{formatField(log.recipient)}</td>
                                                                     <td className="px-3 py-2">
                                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${log.status === 'sent' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'}`}>
-                                                                            {log.status}
+                                                                            {formatField(log.status)}
                                                                         </span>
                                                                     </td>
                                                                 </tr>
@@ -719,13 +722,13 @@ export default function SettingsPage() {
                                                         {loginHistory.slice(0, 50).map(h => (
                                                             <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                                                 <td className="px-3 py-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">{h.timestamp ? new Date(h.timestamp).toLocaleString() : '—'}</td>
-                                                                <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-200">{h.adminName}</td>
+                                                                <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-200">{formatField(h.adminName)}</td>
                                                                 <td className="px-3 py-2">
                                                                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${h.action?.includes('2FA') ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
-                                                                        {h.action}
+                                                                        {formatField(h.action)}
                                                                     </span>
                                                                 </td>
-                                                                <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{h.ipAddress}</td>
+                                                                <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{formatField(h.ipAddress)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -750,5 +753,15 @@ export default function SettingsPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function SettingsPage() {
+    return (
+        <RequirePermission category="settings">
+            <SettingsPageContent />
+        </RequirePermission>
     );
 }

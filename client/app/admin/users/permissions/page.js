@@ -1,12 +1,15 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import AddUserModal from '../../../../src/components/admin/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { ROLES } from '../../../../src/data/roleConfig';
-import { users as usersApi } from '../../../../src/services/apiService';
+import { users as usersApi } from '../../../../src/services/api';
+import { formatField } from '../../../../src/lib/formatField';
+import { userRoleLabel } from '../../../../src/lib/enumLabels';
 import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle, BarChart3, Layers } from 'lucide-react';
 
 // ============================================================================
@@ -195,49 +198,51 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
         technician: 'Technician',
     };
 
-    // Get location name from user's locationId
-    const getLocationName = (locationId) => {
-        const loc = allLocations.find(l => l.id === locationId);
-        return loc ? loc.name : 'All Locations';
-    };
+    // Get location name from user's locationId. Server already returns
+    // `locationName` directly (alignment doc §14); fall back to a lookup
+    // against `allLocations` for legacy rows that still lack the field.
+    const locationDisplay = user.locationName ?? (() => {
+        const loc = allLocations.find(l => l.id === user.locationId);
+        return loc ? loc.name : null;
+    })();
 
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
             <td className="px-3 py-3">
-                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.displayId || user.id}</span>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{formatField(user.displayId ?? user.id)}</span>
             </td>
             <td className="px-3 py-3">
-                <span className="text-sm font-medium text-slate-800 dark:text-white">{user.name}</span>
+                <span className="text-sm font-medium text-slate-800 dark:text-white">{formatField(user.name)}</span>
             </td>
             <td className="px-3 py-3">
-                <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(user.email)}</span>
             </td>
             <td className="px-3 py-3">
-                <span className="text-xs text-slate-600 dark:text-slate-300">{getLocationName(user.locationId)}</span>
+                <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(locationDisplay)}</span>
             </td>
             <td className="px-3 py-3">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${roleColors[user.role]}`}>
-                    {roleNames[user.role]}
+                    {roleNames[user.role] || userRoleLabel(user.role)}
                 </span>
             </td>
             <td className="px-3 py-3">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.status === 'Online'
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.isActive
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                     : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                     }`}>
-                    {user.status}
+                    {user.isActive ? 'Active' : 'Inactive'}
                 </span>
             </td>
             <td className="px-3 py-3">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.accountHealth === 'Active'
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${user.isActive
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                     : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                     }`}>
-                    {user.accountHealth}
+                    {user.isActive ? 'Active' : 'Inactive'}
                 </span>
             </td>
             <td className="px-3 py-3">
-                <span className="text-xs text-slate-500 dark:text-slate-400">{user.lastLogin}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(user.lastLogin)}</span>
             </td>
             <td className="px-3 py-3">
                 <div className="flex justify-end gap-1">
@@ -255,7 +260,7 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
 
 // ============================================================================
 
-export default function PermissionsPage() {
+function PermissionsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, allLocations } = useAuth();
     const [roles] = useState(ROLES_DATA);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -293,10 +298,12 @@ export default function PermissionsPage() {
                     .map(u => ({
                         ...u,
                         id: String(u.id),
-                        status: u.lastLogin ? 'Online' : 'Offline',
-                        accountHealth: u.isActive ? 'Active' : 'Inactive',
                         avatar: u.name ? u.name.charAt(0).toUpperCase() : '?',
-                        permissions: ROLES[u.role]?.permissions || {},
+                        // Phase 3 (8.3): consume the server-supplied `permissions`
+                        // object once it arrives (added by task 8.2). Until 8.2
+                        // ships, fall back to the local `ROLES[role].permissions`
+                        // map so the matrix still renders.
+                        permissions: u.permissions ?? ROLES[u.role]?.permissions ?? {},
                     }));
                 setAllUsers(mapped);
                 setAdminUsers(mapped);
@@ -319,8 +326,9 @@ export default function PermissionsPage() {
             name: user.name || '',
             email: user.email || '',
             role: user.role || '',
-            status: user.status || '',
-            accountHealth: user.accountHealth || '',
+            // The page now binds the form's "Account Status" directly to `isActive`
+            // rather than the legacy `accountHealth` synonym (alignment doc §14).
+            isActive: user.isActive !== false,
             locationId: user.locationId || ''
         });
         setIsEditModalOpen(true);
@@ -337,7 +345,7 @@ export default function PermissionsPage() {
                     name: editFormData.name,
                     email: editFormData.email,
                     role: editFormData.role,
-                    isActive: editFormData.accountHealth === 'Active',
+                    isActive: editFormData.isActive,
                 });
                 const roleChanged = editFormData.role !== selectedUser.role;
                 const newPermissions = roleChanged
@@ -391,17 +399,22 @@ export default function PermissionsPage() {
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             result = result.filter(u =>
-                u.id.toLowerCase().includes(q) ||
+                String(u.id).toLowerCase().includes(q) ||
                 (u.displayId || '').toLowerCase().includes(q) ||
-                u.name.toLowerCase().includes(q) ||
-                u.email.toLowerCase().includes(q)
+                (u.name || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q)
             );
         }
 
         // Dropdown filters
         if (filterLocation) result = result.filter(u => u.locationId === filterLocation);
         if (filterRole) result = result.filter(u => u.role === filterRole);
-        if (filterStatus) result = result.filter(u => u.status === filterStatus);
+        // Status filter binds directly to `isActive` (alignment doc §14:
+        // dropped the synthetic Online/Offline derivation).
+        if (filterStatus) {
+            const wantActive = filterStatus === 'Online' || filterStatus === 'Active';
+            result = result.filter(u => u.isActive === wantActive);
+        }
 
         // Sorting
         if (sortColumn) {
@@ -651,7 +664,7 @@ export default function PermissionsPage() {
                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap gap-3 items-center">
                         <CustomDropdown value={filterLocation} onChange={(v) => { setFilterLocation(v); setCurrentPage(1); }} options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))} placeholder="All Locations" />
                         <CustomDropdown value={filterRole} onChange={(v) => { setFilterRole(v); setCurrentPage(1); }} options={[{ value: 'head_admin', label: 'Head Admin' }, { value: 'auditor', label: 'Auditor' }, { value: 'inventory_officer', label: 'Inventory Officer' }, { value: 'technician', label: 'Technician' }]} placeholder="All Roles" />
-                        <CustomDropdown value={filterStatus} onChange={(v) => { setFilterStatus(v); setCurrentPage(1); }} options={['Online', 'Offline']} placeholder="All Status" />
+                        <CustomDropdown value={filterStatus} onChange={(v) => { setFilterStatus(v); setCurrentPage(1); }} options={['Active', 'Inactive']} placeholder="All Status" />
                         {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"><X size={14} /> Clear</button>}
                     </div>
                 )}
@@ -807,26 +820,17 @@ export default function PermissionsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status <span className="text-red-500">*</span></label>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Status <span className="text-red-500">*</span></label>
                                     <CustomDropdown
-                                        value={editFormData.status}
-                                        onChange={(v) => handleEditChange('status', v)}
-                                        options={['Online', 'Offline']}
+                                        value={editFormData.isActive ? 'Active' : 'Inactive'}
+                                        onChange={(v) => handleEditChange('isActive', v === 'Active')}
+                                        options={['Active', 'Inactive']}
                                         showPlaceholder={false}
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Health <span className="text-red-500">*</span></label>
-                                    <CustomDropdown
-                                        value={editFormData.accountHealth}
-                                        onChange={(v) => handleEditChange('accountHealth', v)}
-                                        options={['Active', 'Inactive']}
-                                        showPlaceholder={false}
-                                    />
-                                </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Location <span className="text-red-500">*</span></label>
                                     <CustomDropdown
@@ -908,5 +912,15 @@ export default function PermissionsPage() {
                 </div>
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function PermissionsPage() {
+    return (
+        <RequirePermission category="users">
+            <PermissionsPageContent />
+        </RequirePermission>
     );
 }

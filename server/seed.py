@@ -10,7 +10,7 @@ Usage:
 
 Alternative: flask seed --fresh
 
-All passwords: test123
+All passwords: SeedPass!23 (or $SEED_PASSWORD env var)
 """
 import sys
 from app import create_app

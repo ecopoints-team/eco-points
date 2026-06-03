@@ -41,6 +41,8 @@ erDiagram
         string full_name "Full Org Name"
         int type_id FK "Reference -> ORG_TYPES"
         enum status "Active, Inactive"
+        datetime force_logout_at "Nullable - Phase 4C force-logout cutoff"
+        binary qr_hmac_secret_enc "Nullable - Phase 4A Fernet-encrypted HMAC secret"
         datetime created_at
     }
 
@@ -114,6 +116,7 @@ erDiagram
         string machine_uuid UK "Hardware identifier"
         string name "Machine Display Name"
         string location_name "Area Placement | e.g. Cafeteria, Park"
+        string api_key_hash "Nullable - Phase 4A BCrypt hash of RVM API key"
         boolean is_capacity_full "Status from IR Sensor"
         boolean is_online
         datetime created_at
@@ -235,7 +238,8 @@ erDiagram
         int wallet_id FK "References -> WALLET"
         int total_points_earned "Sum of points - items"
         int item_count "Number of bottles deposited"
-        enum status "completed, timed_out, error"
+        enum status "active, completed, timed_out, error"
+        text notes "Nullable - Free-form notes (bulk-deposit admin modal)"
         datetime start_time
         datetime end_time
     }

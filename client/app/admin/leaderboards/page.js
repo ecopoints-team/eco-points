@@ -1,14 +1,13 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import AdminLayout, { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import {
-    DEPARTMENTS,
-    getDepartmentName
-} from '../../../src/data/mockData';
-import { leaderboard as leaderboardApi } from '../../../src/services/apiService';
+import { leaderboard as leaderboardApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
+import { userTypeLabel } from '../../../src/lib/enumLabels';
 import {
     Trophy, Medal, Award, Crown, Search, Filter, ChevronLeft, ChevronRight,
     Flame, Recycle, Star, Users as UsersIcon, GraduationCap,
@@ -60,10 +59,9 @@ const getUserInitials = (name) => {
     return name.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
 };
 
-// Get user's department display (works for ALL roles including Staff)
+// Get user's group display (works for ALL roles including Staff)
 const getUserDeptDisplay = (user) => {
-    if (user.department) return getDepartmentName(user.department);
-    return '—';
+    return user.department || '—';
 };
 
 // ============================================================================
@@ -138,7 +136,7 @@ const PodiumCard = ({ user, rank, sortBy }) => {
                     </span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${getRoleBadge(user.userType)}`}>
-                    {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}
+                    {userTypeLabel(user.userType)}
                 </span>
             </div>
 
@@ -220,7 +218,7 @@ const SchoolRankCard = ({ school, rank, sortBy }) => {
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-export default function LeaderboardsPage() {
+function LeaderboardsPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
 
     // Default tab based on role
@@ -335,13 +333,10 @@ export default function LeaderboardsPage() {
         }).slice(0, 5);
     };
 
-    // Available departments for current location
+    // Available groups for current location
     const availableDepartments = useMemo(() => {
         const depts = [...new Set(allUsers.filter(u => u.department).map(u => u.department))];
-        return depts.map(d => {
-            const dept = DEPARTMENTS.find(dep => dep.id === d);
-            return { value: d, label: dept?.abbreviation || d };
-        });
+        return depts.map(d => ({ value: d, label: d }));
     }, [allUsers]);
 
     // Available group types
@@ -381,7 +376,7 @@ export default function LeaderboardsPage() {
                 // Standard search: name, role, dept, strand
                 if (u.name?.toLowerCase().includes(q)) return true;
                 if (u.userType?.toLowerCase().includes(q)) return true;
-                if (getDepartmentName(u.department)?.toLowerCase().includes(q)) return true;
+                if ((u.department || '').toLowerCase().includes(q)) return true;
                 if (u.groupType?.toLowerCase().includes(q)) return true;
                 // Easter egg: initials search (e.g. "JJ" matches "Justine James")
                 const initials = getUserInitials(u.name);
@@ -486,478 +481,488 @@ export default function LeaderboardsPage() {
 
             {/* Stat Cards */}
             {!isLoading && !loadError && leaderboardUsers.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                            <UsersIcon size={20} className="text-blue-600 dark:text-blue-400" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-500/20">
+                                <UsersIcon size={20} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Participants</p>
+                                <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalParticipants}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Participants</p>
-                            <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalParticipants}</p>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-500/20">
+                                <Star size={20} className="text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Total Points</p>
+                                <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalPoints.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                                <Recycle size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Total Bottles</p>
+                                <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalBottles.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-orange-100 dark:bg-orange-500/20">
+                                <Flame size={20} className="text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Avg Streak</p>
+                                <p className="text-xl font-black text-slate-800 dark:text-white">{stats.avgStreak} days</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-500/20">
-                            <Star size={20} className="text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Total Points</p>
-                            <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalPoints.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <Recycle size={20} className="text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Total Bottles</p>
-                            <p className="text-xl font-black text-slate-800 dark:text-white">{stats.totalBottles.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 backdrop-blur-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-orange-100 dark:bg-orange-500/20">
-                            <Flame size={20} className="text-orange-600 dark:text-orange-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Avg Streak</p>
-                            <p className="text-xl font-black text-slate-800 dark:text-white">{stats.avgStreak} days</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
             )}
 
             {!isLoading && !loadError && leaderboardUsers.length > 0 && (
-            <>
-            {/* Context Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6 justify-center">
-                {visibleTabs.map(tab => {
-                    const Icon = tab.icon;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
-                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-500/20'
-                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-500/50'
-                                }`}
-                        >
-                            <Icon size={16} />
-                            {tab.label}
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Tab-specific sub-filter: department / strand / section */}
-            {activeTab === 'BY_DEPARTMENT' && (
-                <div className="mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Department:</span>
-                        <div className="flex flex-wrap gap-2">
-                            {availableDepartments.map(dept => (
-                                <button
-                                    key={dept.value}
-                                    onClick={() => setSelectedDepartment(selectedDepartment === dept.value ? '' : dept.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedDepartment === dept.value
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                                        }`}
-                                >
-                                    {dept.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'BY_GROUP_TYPE' && (
-                <div className="mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Group Type:</span>
-                        <div className="flex flex-wrap gap-2">
-                            {availableGroupTypes.map(gt => (
-                                <button
-                                    key={gt.value}
-                                    onClick={() => setSelectedGroupType(selectedGroupType === gt.value ? '' : gt.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedGroupType === gt.value
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                                        }`}
-                                >
-                                    {gt.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TOP SCHOOLS VIEW */}
-            {activeTab === 'TOP_SCHOOLS' ? (
-                <div className="space-y-6">
-                    {/* School Sort Filter */}
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Sort by:</span>
-                        {[{ value: 'POINTS', label: 'Most EcoPoints', icon: Star }, { value: 'BOTTLES', label: 'Most Bottles', icon: Recycle }].map(opt => {
-                            const Icon = opt.icon;
+                <>
+                    {/* Context Tabs */}
+                    <div className="flex flex-wrap gap-2 mb-6 justify-center">
+                        {visibleTabs.map(tab => {
+                            const Icon = tab.icon;
                             return (
-                                <button key={opt.value} onClick={() => setSchoolSortBy(opt.value)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${schoolSortBy === opt.value
-                                        ? 'bg-emerald-600 text-white shadow-md'
-                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'}`}>
-                                    <Icon size={14} /> {opt.label}
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-500/20'
+                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-500/50'
+                                        }`}
+                                >
+                                    <Icon size={16} />
+                                    {tab.label}
                                 </button>
                             );
                         })}
                     </div>
 
-                    {/* School Podium (2nd-1st-3rd) */}
-                    {schoolRankings.length >= 2 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-end max-w-5xl mx-auto">
-                            <div className="md:mb-0">
-                                <SchoolRankCard school={schoolRankings[1]} rank={2} sortBy={schoolSortBy} />
-                            </div>
-                            <div className="md:-mt-4 md:scale-[1.04] z-10">
-                                <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
-                            </div>
-                            {schoolRankings.length >= 3 ? (
-                                <div className="md:mb-0">
-                                    <SchoolRankCard school={schoolRankings[2]} rank={3} sortBy={schoolSortBy} />
-                                </div>
-                            ) : <div />}
-                        </div>
-                    ) : schoolRankings.length === 1 && (
-                        <div className="max-w-md mx-auto">
-                            <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
-                        </div>
-                    )}
-
-                    {/* Campus Rankings List */}
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl backdrop-blur-xl">
-                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                                <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
-                                Campus Rankings
-                            </h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 dark:text-slate-400">User Sort:</span>
-                                <CustomDropdown value={campusUserSort} onChange={(v) => setCampusUserSort(v || 'POINTS')}
-                                    options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                                    placeholder="Sort Users" showPlaceholder={false} />
-                                <CustomDropdown value={campusRoleFilter} onChange={(v) => setCampusRoleFilter(v)}
-                                    options={['Student', 'Faculty', 'Staff']} placeholder="All Roles" />
-                            </div>
-                        </div>
-                        <div className="p-5 space-y-3">
-                            {schoolRankings.map((school, idx) => {
-                                const isExpanded = expandedSchool === school.id;
-                                const topUsers = isExpanded ? getCampusTopUsers(school.id) : [];
-                                return (
-                                    <div key={school.id}>
-                                        <button onClick={() => setExpandedSchool(isExpanded ? null : school.id)}
-                                            className={`w-full text-left rounded-2xl border transition-all ${isExpanded
-                                                ? 'border-emerald-300 dark:border-emerald-500/50 ring-1 ring-emerald-200 dark:ring-emerald-500/20'
-                                                : 'border-slate-200 dark:border-slate-700/50 hover:border-emerald-200 dark:hover:border-emerald-500/30'}
-                                                bg-white dark:bg-[#1e293b]/60 p-4 backdrop-blur-xl shadow-md ${idx < 2 ? (idx === 0 ? 'ring-2 ring-amber-300/60 dark:ring-amber-500/40' : 'ring-2 ring-slate-300/60 dark:ring-slate-500/40') : ''}`}>
-                                            <div className="flex items-center gap-4">
-                                                <RankBadge rank={idx + 1} />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-slate-800 dark:text-white truncate">{school.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{school.userCount} users</p>
-                                                </div>
-                                                <div className="text-right mr-3">
-                                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-                                                        {schoolSortBy === 'BOTTLES' ? school.totalBottles?.toLocaleString() : school.totalPoints?.toLocaleString()}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                        {schoolSortBy === 'BOTTLES' ? 'Bottles' : 'EcoPoints'}
-                                                    </p>
-                                                </div>
-                                                <ChevronDown size={18} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                            </div>
+                    {/* Tab-specific sub-filter: department / strand / section */}
+                    {activeTab === 'BY_DEPARTMENT' && (
+                        <div className="mb-4">
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Department:</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {availableDepartments.map(dept => (
+                                        <button
+                                            key={dept.value}
+                                            onClick={() => setSelectedDepartment(selectedDepartment === dept.value ? '' : dept.value)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedDepartment === dept.value
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                                }`}
+                                        >
+                                            {dept.label}
                                         </button>
-                                        <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                            <div className="overflow-hidden">
-                                                <div className="mt-2 ml-12 mr-4 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden bg-slate-50 dark:bg-slate-800/50">
-                                                    <div className="px-4 py-2 bg-slate-100 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                                        <Trophy size={12} className="text-amber-500" /> Top 5 Users
-                                                    </div>
-                                                    {topUsers.length === 0 ? (
-                                                        <div className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">No users found</div>
-                                                    ) : (
-                                                        <table className="w-full text-left">
-                                                            <thead className="text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                                                                <tr>
-                                                                    <th className="px-4 py-2 w-10">#</th>
-                                                                    <th className="px-4 py-2">Name</th>
-                                                                    <th className="px-4 py-2">Role</th>
-                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Star size={10} className="text-amber-500" /> Points</div></th>
-                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Recycle size={10} className="text-emerald-500" /> Bottles</div></th>
-                                                                    <th className="px-4 py-2"><div className="flex items-center gap-1"><Flame size={10} className="text-orange-500" /> Streak</div></th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                                                {topUsers.map((u, uIdx) => (
-                                                                    <tr key={u.id} className="hover:bg-white dark:hover:bg-slate-700/30 transition-colors">
-                                                                        <td className="px-4 py-2"><RankBadge rank={uIdx + 1} /></td>
-                                                                        <td className="px-4 py-2 text-sm font-medium text-slate-800 dark:text-white">{u.name}</td>
-                                                                        <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(u.userType)}`}>{u.userType ? u.userType.charAt(0).toUpperCase() + u.userType.slice(1) : '—'}</span></td>
-                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'POINTS' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.points?.toLocaleString()}</td>
-                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'BOTTLES' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.bottlesCollected || 0}</td>
-                                                                        <td className={`px-4 py-2 text-sm ${campusUserSort === 'STREAK' ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.streak || 0}d</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    {/* TOP 3 PODIUM CARDS — Always visible, even during search */}
-                    {topThree.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-6 items-end max-w-5xl mx-auto">
-                            {topThree.length > 1 && (
-                                <div className="md:mb-0">
-                                    <PodiumCard user={topThree[1]} rank={2} sortBy={sortBy} />
+                                    ))}
                                 </div>
-                            )}
-                            {topThree.length > 0 && (
-                                <div className="md:-mt-4 md:scale-[1.04] z-10">
-                                    <PodiumCard user={topThree[0]} rank={1} sortBy={sortBy} />
-                                </div>
-                            )}
-                            {topThree.length > 2 && (
-                                <div className="md:mb-0">
-                                    <PodiumCard user={topThree[2]} rank={3} sortBy={sortBy} />
-                                </div>
-                            )}
+                            </div>
                         </div>
                     )}
 
-                    {/* LEADERBOARD TABLE */}
-                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
-                        {/* Table Header Bar */}
-                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                                <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
-                                Rankings
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
-                                    {leaderboardData.length} users
-                                </span>
-                            </h3>
-                            <div className="flex flex-wrap gap-3 w-full lg:w-auto items-center">
-                                {/* Sort */}
-                                <CustomDropdown
-                                    value={sortBy}
-                                    onChange={(v) => setSortBy(v || 'POINTS')}
-                                    options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                                    placeholder="Sort By"
-                                    showPlaceholder={false}
-                                />
+                    {activeTab === 'BY_GROUP_TYPE' && (
+                        <div className="mb-4">
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Select Group Type:</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {availableGroupTypes.map(gt => (
+                                        <button
+                                            key={gt.value}
+                                            onClick={() => setSelectedGroupType(selectedGroupType === gt.value ? '' : gt.value)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedGroupType === gt.value
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                                }`}
+                                        >
+                                            {gt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                {/* Role Filter */}
-                                <CustomDropdown
-                                    value={roleFilter}
-                                    onChange={(v) => setRoleFilter(v)}
-                                    options={['Student', 'Faculty', 'Staff']}
-                                    placeholder="All Roles"
-                                />
+                    {/* TOP SCHOOLS VIEW */}
+                    {activeTab === 'TOP_SCHOOLS' ? (
+                        <div className="space-y-6">
+                            {/* School Sort Filter */}
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Sort by:</span>
+                                {[{ value: 'POINTS', label: 'Most EcoPoints', icon: Star }, { value: 'BOTTLES', label: 'Most Bottles', icon: Recycle }].map(opt => {
+                                    const Icon = opt.icon;
+                                    return (
+                                        <button key={opt.value} onClick={() => setSchoolSortBy(opt.value)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${schoolSortBy === opt.value
+                                                ? 'bg-emerald-600 text-white shadow-md'
+                                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'}`}>
+                                            <Icon size={14} /> {opt.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
 
-                                {/* Search with easter egg hint */}
-                                <div className="relative group flex-1 lg:w-56">
-                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search name, dept..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full text-sm rounded-lg pl-10 pr-9 py-2 outline-none transition-all placeholder:text-slate-400
-                                            bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
-                                            dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                                    />
-                                    {/* Easter egg icon — hover to reveal hint */}
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-help"
-                                        onMouseEnter={() => setShowSearchHint(true)}
-                                        onMouseLeave={() => setShowSearchHint(false)}
-                                    >
-                                        <Sparkles size={14} className="text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-400 transition-colors" />
+                            {/* School Podium (2nd-1st-3rd) */}
+                            {schoolRankings.length >= 2 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-end max-w-5xl mx-auto">
+                                    <div className="md:mb-0">
+                                        <SchoolRankCard school={schoolRankings[1]} rank={2} sortBy={schoolSortBy} />
                                     </div>
-                                    {/* Hint tooltip */}
-                                    {showSearchHint && (
-                                        <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-2xl z-50 border border-slate-700">
-                                            <div className="flex items-center gap-2 mb-1.5">
-                                                <Sparkles size={12} className="text-amber-400" />
-                                                <span className="font-bold text-amber-400">Pro Tip!</span>
+                                    <div className="md:-mt-4 md:scale-[1.04] z-10">
+                                        <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
+                                    </div>
+                                    {schoolRankings.length >= 3 ? (
+                                        <div className="md:mb-0">
+                                            <SchoolRankCard school={schoolRankings[2]} rank={3} sortBy={schoolSortBy} />
+                                        </div>
+                                    ) : <div />}
+                                </div>
+                            ) : schoolRankings.length === 1 && (
+                                <div className="max-w-md mx-auto">
+                                    <SchoolRankCard school={schoolRankings[0]} rank={1} sortBy={schoolSortBy} />
+                                </div>
+                            )}
+
+                            {/* Campus Rankings List */}
+                            <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl backdrop-blur-xl">
+                                <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                                        <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
+                                        Campus Rankings
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">User Sort:</span>
+                                        <CustomDropdown value={campusUserSort} onChange={(v) => setCampusUserSort(v || 'POINTS')}
+                                            options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                                            placeholder="Sort Users" showPlaceholder={false} />
+                                        <CustomDropdown value={campusRoleFilter} onChange={(v) => setCampusRoleFilter(v)}
+                                            options={['Student', 'Faculty', 'Staff']} placeholder="All Roles" />
+                                    </div>
+                                </div>
+                                <div className="p-5 space-y-3">
+                                    {schoolRankings.map((school, idx) => {
+                                        const isExpanded = expandedSchool === school.id;
+                                        const topUsers = isExpanded ? getCampusTopUsers(school.id) : [];
+                                        return (
+                                            <div key={school.id}>
+                                                <button onClick={() => setExpandedSchool(isExpanded ? null : school.id)}
+                                                    className={`w-full text-left rounded-2xl border transition-all ${isExpanded
+                                                        ? 'border-emerald-300 dark:border-emerald-500/50 ring-1 ring-emerald-200 dark:ring-emerald-500/20'
+                                                        : 'border-slate-200 dark:border-slate-700/50 hover:border-emerald-200 dark:hover:border-emerald-500/30'}
+                                                bg-white dark:bg-[#1e293b]/60 p-4 backdrop-blur-xl shadow-md ${idx < 2 ? (idx === 0 ? 'ring-2 ring-amber-300/60 dark:ring-amber-500/40' : 'ring-2 ring-slate-300/60 dark:ring-slate-500/40') : ''}`}>
+                                                    <div className="flex items-center gap-4">
+                                                        <RankBadge rank={idx + 1} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-slate-800 dark:text-white truncate">{school.name}</p>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400">{school.userCount} users</p>
+                                                        </div>
+                                                        <div className="text-right mr-3">
+                                                            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                                                                {schoolSortBy === 'BOTTLES' ? school.totalBottles?.toLocaleString() : school.totalPoints?.toLocaleString()}
+                                                            </p>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                                {schoolSortBy === 'BOTTLES' ? 'Bottles' : 'EcoPoints'}
+                                                            </p>
+                                                        </div>
+                                                        <ChevronDown size={18} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                                    </div>
+                                                </button>
+                                                <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                                    <div className="overflow-hidden">
+                                                        <div className="mt-2 ml-12 mr-4 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-900/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                                                <Trophy size={12} className="text-amber-500" /> Top 5 Users
+                                                            </div>
+                                                            {topUsers.length === 0 ? (
+                                                                <div className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">No users found</div>
+                                                            ) : (
+                                                                <table className="w-full text-left">
+                                                                    <thead className="text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                                                        <tr>
+                                                                            <th className="px-4 py-2 w-10">#</th>
+                                                                            <th className="px-4 py-2">Name</th>
+                                                                            <th className="px-4 py-2">Role</th>
+                                                                            <th className="px-4 py-2"><div className="flex items-center gap-1"><Star size={10} className="text-amber-500" /> Points</div></th>
+                                                                            <th className="px-4 py-2"><div className="flex items-center gap-1"><Recycle size={10} className="text-emerald-500" /> Bottles</div></th>
+                                                                            <th className="px-4 py-2"><div className="flex items-center gap-1"><Flame size={10} className="text-orange-500" /> Streak</div></th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                                                        {topUsers.map((u, uIdx) => (
+                                                                            <tr key={u.id} className="hover:bg-white dark:hover:bg-slate-700/30 transition-colors">
+                                                                                <td className="px-4 py-2"><RankBadge rank={uIdx + 1} /></td>
+                                                                                <td className="px-4 py-2 text-sm font-medium text-slate-800 dark:text-white">{u.name}</td>
+                                                                                <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(u.userType)}`}>{userTypeLabel(u.userType)}</span></td>
+                                                                                <td className={`px-4 py-2 text-sm ${campusUserSort === 'POINTS' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.points?.toLocaleString()}</td>
+                                                                                <td className={`px-4 py-2 text-sm ${campusUserSort === 'BOTTLES' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.bottlesCollected || 0}</td>
+                                                                                <td className={`px-4 py-2 text-sm ${campusUserSort === 'STREAK' ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{u.streak || 0}d</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <p className="text-slate-300 leading-relaxed">
-                                                Try searching by <span className="font-bold text-white">initials</span>! Type <span className="bg-slate-700 px-1.5 py-0.5 rounded font-mono text-amber-300">MS</span> to find users like "Maria Santos".
-                                            </p>
-                                            <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 dark:bg-slate-900 rotate-45 border-l border-t border-slate-700"></div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* TOP 3 PODIUM CARDS — Always visible, even during search */}
+                            {topThree.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-6 items-end max-w-5xl mx-auto">
+                                    {topThree.length > 1 && (
+                                        <div className="md:mb-0">
+                                            <PodiumCard user={topThree[1]} rank={2} sortBy={sortBy} />
+                                        </div>
+                                    )}
+                                    {topThree.length > 0 && (
+                                        <div className="md:-mt-4 md:scale-[1.04] z-10">
+                                            <PodiumCard user={topThree[0]} rank={1} sortBy={sortBy} />
+                                        </div>
+                                    )}
+                                    {topThree.length > 2 && (
+                                        <div className="md:mb-0">
+                                            <PodiumCard user={topThree[2]} rank={3} sortBy={sortBy} />
                                         </div>
                                     )}
                                 </div>
+                            )}
 
-                                {/* Clear */}
-                                {hasActiveFilters && (
-                                    <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10">
-                                        <X size={14} /> Clear
-                                    </button>
+                            {/* LEADERBOARD TABLE */}
+                            <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
+                                {/* Table Header Bar */}
+                                <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                                        <span className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-sm dark:shadow-[0_0_10px_#10b981]"></span>
+                                        Rankings
+                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
+                                            {leaderboardData.length} users
+                                        </span>
+                                    </h3>
+                                    <div className="flex flex-wrap gap-3 w-full lg:w-auto items-center">
+                                        {/* Sort */}
+                                        <CustomDropdown
+                                            value={sortBy}
+                                            onChange={(v) => setSortBy(v || 'POINTS')}
+                                            options={SORT_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                                            placeholder="Sort By"
+                                            showPlaceholder={false}
+                                        />
+
+                                        {/* Role Filter */}
+                                        <CustomDropdown
+                                            value={roleFilter}
+                                            onChange={(v) => setRoleFilter(v)}
+                                            options={['Student', 'Faculty', 'Staff']}
+                                            placeholder="All Roles"
+                                        />
+
+                                        {/* Search with easter egg hint */}
+                                        <div className="relative group flex-1 lg:w-56">
+                                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search name, dept..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full text-sm rounded-lg pl-10 pr-9 py-2 outline-none transition-all placeholder:text-slate-400
+                                            bg-white border border-slate-200 text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
+                                            dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                                            />
+                                            {/* Easter egg icon — hover to reveal hint */}
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-help"
+                                                onMouseEnter={() => setShowSearchHint(true)}
+                                                onMouseLeave={() => setShowSearchHint(false)}
+                                            >
+                                                <Sparkles size={14} className="text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-400 transition-colors" />
+                                            </div>
+                                            {/* Hint tooltip */}
+                                            {showSearchHint && (
+                                                <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-xl shadow-2xl z-50 border border-slate-700">
+                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                        <Sparkles size={12} className="text-amber-400" />
+                                                        <span className="font-bold text-amber-400">Pro Tip!</span>
+                                                    </div>
+                                                    <p className="text-slate-300 leading-relaxed">
+                                                        Try searching by <span className="font-bold text-white">initials</span>! Type <span className="bg-slate-700 px-1.5 py-0.5 rounded font-mono text-amber-300">MS</span> to find users like "Maria Santos".
+                                                    </p>
+                                                    <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 dark:bg-slate-900 rotate-45 border-l border-t border-slate-700"></div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Clear */}
+                                        {hasActiveFilters && (
+                                            <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 font-medium dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10">
+                                                <X size={14} /> Clear
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Top Pagination */}
+                                {totalPages > 0 && (
+                                    <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
+                                        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length}</span>
+                                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
+                                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                                <ChevronLeft size={12} />
+                                            </button>
+                                            <span className="px-2 py-1 text-slate-600 dark:text-slate-300">Page {currentPage} of {totalPages}</span>
+                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}
+                                                className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                                                <ChevronRight size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Table — NO initials in rows, just name */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-max text-left">
+                                        <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
+                                            <tr>
+                                                <th className="px-4 py-3 whitespace-nowrap w-16">Rank</th>
+                                                <th className="px-4 py-3 whitespace-nowrap">User</th>
+                                                <th className="px-4 py-3 whitespace-nowrap">Role</th>
+                                                <th className="px-4 py-3 whitespace-nowrap">Dept / Strand</th>
+                                                <th className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1">
+                                                        <Flame size={12} className="text-orange-500" /> Streak
+                                                    </div>
+                                                </th>
+                                                <th className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1">
+                                                        <Recycle size={12} className="text-emerald-500" /> Bottles
+                                                    </div>
+                                                </th>
+                                                <th className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1">
+                                                        <Star size={12} className="text-amber-500" /> EcoPoints
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                            {currentItems.map((user, idx) => {
+                                                const rank = startIndex + idx + 1;
+                                                const isHighlightSort = (col) => {
+                                                    if (col === 'POINTS' && sortBy === 'POINTS') return true;
+                                                    if (col === 'BOTTLES' && sortBy === 'BOTTLES') return true;
+                                                    if (col === 'STREAK' && sortBy === 'STREAK') return true;
+                                                    return false;
+                                                };
+
+                                                return (
+                                                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <RankBadge rank={rank} />
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.userType)}`}>{userTypeLabel(user.userType)}</span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span className="text-xs text-slate-600 dark:text-slate-300">
+                                                                {getUserDeptDisplay(user)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className={`flex items-center gap-1.5 ${isHighlightSort('STREAK') ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                                <Flame size={14} className={isHighlightSort('STREAK') ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'} />
+                                                                <span className="text-sm">{user.streak || 0}d</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className={`flex items-center gap-1.5 ${isHighlightSort('BOTTLES') ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                                <Recycle size={14} className={isHighlightSort('BOTTLES') ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'} />
+                                                                <span className="text-sm">{user.bottlesCollected || 0}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span className={`text-sm ${isHighlightSort('POINTS') ? 'font-black text-emerald-600 dark:text-emerald-400' : 'font-bold text-slate-700 dark:text-slate-200'}`}>
+                                                                {user.points?.toLocaleString()}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Empty State */}
+                                {currentItems.length === 0 && (
+                                    <div className="p-12 text-center">
+                                        <Trophy size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                                        <p className="text-slate-500 dark:text-slate-400">No users found matching your filters.</p>
+                                    </div>
+                                )}
+
+                                {/* Bottom Pagination */}
+                                {totalPages > 0 && (
+                                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                                        <div className="flex items-center gap-4">
+                                            <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length} users</span>
+                                            <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
+                                                className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                                <ChevronLeft size={14} />
+                                            </button>
+                                            {getPageNumbers().map((page, idx) => (
+                                                <button key={idx} onClick={() => typeof page === 'number' && setCurrentPage(page)} disabled={page === '...'}
+                                                    className={`px-3 py-1.5 rounded-lg transition-all font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : page === '...' ? 'cursor-default text-slate-400 dark:text-slate-500' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
+                                                    {page}
+                                                </button>
+                                            ))}
+                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
+                                                className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+                                                <ChevronRight size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Top Pagination */}
-                        {totalPages > 0 && (
-                            <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center text-xs gap-3 bg-white dark:bg-slate-800/50">
-                                <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                                    <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length}</span>
-                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} label={null} direction="down" />
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
-                                        className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
-                                        <ChevronLeft size={12} />
-                                    </button>
-                                    <span className="px-2 py-1 text-slate-600 dark:text-slate-300">Page {currentPage} of {totalPages}</span>
-                                    <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}
-                                        className="p-1.5 rounded border disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
-                                        <ChevronRight size={12} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Table — NO initials in rows, just name */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-max text-left">
-                                <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300">
-                                    <tr>
-                                        <th className="px-4 py-3 whitespace-nowrap w-16">Rank</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">User</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">Role</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">Dept / Strand</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">
-                                            <div className="flex items-center gap-1">
-                                                <Flame size={12} className="text-orange-500" /> Streak
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-3 whitespace-nowrap">
-                                            <div className="flex items-center gap-1">
-                                                <Recycle size={12} className="text-emerald-500" /> Bottles
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-3 whitespace-nowrap">
-                                            <div className="flex items-center gap-1">
-                                                <Star size={12} className="text-amber-500" /> EcoPoints
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                    {currentItems.map((user, idx) => {
-                                        const rank = startIndex + idx + 1;
-                                        const isHighlightSort = (col) => {
-                                            if (col === 'POINTS' && sortBy === 'POINTS') return true;
-                                            if (col === 'BOTTLES' && sortBy === 'BOTTLES') return true;
-                                            if (col === 'STREAK' && sortBy === 'STREAK') return true;
-                                            return false;
-                                        };
-
-                                        return (
-                                            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <RankBadge rank={rank} />
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</span>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleBadge(user.userType)}`}>{user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}</span>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className="text-xs text-slate-600 dark:text-slate-300">
-                                                        {getUserDeptDisplay(user)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <div className={`flex items-center gap-1.5 ${isHighlightSort('STREAK') ? 'font-bold text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                                                        <Flame size={14} className={isHighlightSort('STREAK') ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'} />
-                                                        <span className="text-sm">{user.streak || 0}d</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <div className={`flex items-center gap-1.5 ${isHighlightSort('BOTTLES') ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                                                        <Recycle size={14} className={isHighlightSort('BOTTLES') ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'} />
-                                                        <span className="text-sm">{user.bottlesCollected || 0}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <span className={`text-sm ${isHighlightSort('POINTS') ? 'font-black text-emerald-600 dark:text-emerald-400' : 'font-bold text-slate-700 dark:text-slate-200'}`}>
-                                                        {user.points?.toLocaleString()}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Empty State */}
-                        {currentItems.length === 0 && (
-                            <div className="p-12 text-center">
-                                <Trophy size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-                                <p className="text-slate-500 dark:text-slate-400">No users found matching your filters.</p>
-                            </div>
-                        )}
-
-                        {/* Bottom Pagination */}
-                        {totalPages > 0 && (
-                            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
-                                <div className="flex items-center gap-4">
-                                    <span>Showing <strong className="text-emerald-600 dark:text-emerald-400">{leaderboardData.length === 0 ? 0 : startIndex + 1}</strong> to <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(startIndex + rowsPerPage, leaderboardData.length)}</strong> of {leaderboardData.length} users</span>
-                                    <PageSizeSelector value={rowsPerPage} onChange={(val) => { setRowsPerPage(val); setCurrentPage(1); }} />
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
-                                        className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
-                                        <ChevronLeft size={14} />
-                                    </button>
-                                    {getPageNumbers().map((page, idx) => (
-                                        <button key={idx} onClick={() => typeof page === 'number' && setCurrentPage(page)} disabled={page === '...'}
-                                            className={`px-3 py-1.5 rounded-lg transition-all font-medium ${currentPage === page ? 'bg-emerald-600 text-white shadow-md' : page === '...' ? 'cursor-default text-slate-400 dark:text-slate-500' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'}`}>
-                                            {page}
-                                        </button>
-                                    ))}
-                                    <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
-                                        className="p-2 rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
-                                        <ChevronRight size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        </>
+                    )}
                 </>
             )}
-            </>
-            )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function LeaderboardsPage() {
+    return (
+        <RequirePermission category="leaderboard">
+            <LeaderboardsPageContent />
+        </RequirePermission>
     );
 }

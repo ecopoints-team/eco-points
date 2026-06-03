@@ -3,9 +3,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/components/shared/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
-import { dashboard as dashboardApi, logs as logsApi } from '../../src/services/apiService';
+import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
-import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Derive human-readable size from volume_ml (matches points config tiers)
@@ -142,71 +142,20 @@ const PieTooltip = ({ active, payload }) => {
 
 export default function AdminDashboard() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
+    const { stats, bottleLogs, isLoading: isDataLoading, isRefreshing, fetchDashboard } = useDashboardCache();
     const [timeRange, setTimeRange] = useState('month');
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
-
-    // API-loaded state
-    const [stats, setStats] = useState({ totalBottles: 0, totalPoints: 0, onlineMachines: 0, totalMachines: 0, activeUsers: 0, totalUsers: 0, totalRewards: 0 });
-    const [bottleLogs, setBottleLogs] = useState([]);
-    const [isDataLoading, setIsDataLoading] = useState(true);
 
     // Prevent hydration mismatch - only render dynamic content after mount
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Load dashboard data from API whenever location changes
+    // Load dashboard data from cache (skips refetch if data is still fresh)
     useEffect(() => {
-        let cancelled = false;
-        const load = async () => {
-            setIsDataLoading(true);
-
-            // Load stats and bottle logs independently so one failure doesn't block the other
-            const statsPromise = dashboardApi.getStats(effectiveLocationId).catch(err => {
-                console.error('Dashboard stats failed:', err);
-                return null;
-            });
-            const logsPromise = logsApi.getBottles(effectiveLocationId).catch(err => {
-                console.error('Bottle logs failed:', err);
-                return null;
-            });
-
-            const [statsData, logsData] = await Promise.all([statsPromise, logsPromise]);
-
-            if (!cancelled) {
-                if (statsData) {
-                    setStats({
-                        totalBottles: statsData.totalBottles ?? 0,
-                        totalPoints: statsData.totalPointsAwarded ?? 0,
-                        onlineMachines: statsData.onlineMachines ?? 0,
-                        totalMachines: statsData.totalMachines ?? 0,
-                        activeUsers: statsData.activeUsers ?? 0,
-                        totalUsers: statsData.totalUsers ?? 0,
-                        totalRewards: statsData.totalRewards ?? 0,
-                    });
-                }
-                if (logsData) {
-                    setBottleLogs((logsData || []).map(log => {
-                        let ts = null;
-                        if (log.timestamp) {
-                            const parsed = new Date(log.timestamp);
-                            ts = isNaN(parsed.getTime()) ? new Date() : parsed;
-                        } else if (log.depositedAt) {
-                            const parsed = new Date(log.depositedAt);
-                            ts = isNaN(parsed.getTime()) ? new Date() : parsed;
-                        } else {
-                            ts = new Date();
-                        }
-                        return { ...log, timestampObj: ts };
-                    }));
-                }
-                setIsDataLoading(false);
-            }
-        };
-        load();
-        return () => { cancelled = true; };
-    }, [effectiveLocationId]);
+        fetchDashboard(effectiveLocationId);
+    }, [effectiveLocationId, fetchDashboard]);
 
     // Location-specific chart data with accepted/rejected
     const chartData = useMemo(() => {
@@ -415,6 +364,20 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* Refresh Button */}
+                        <button
+                            onClick={() => fetchDashboard(effectiveLocationId, { force: true, silent: true })}
+                            disabled={isRefreshing}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200
+                                bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200
+                                dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:border-slate-700
+                                system:bg-[#0F1B11] system:text-[#E1E4E1]/70 system:hover:bg-[#1A2E1F] system:border-[rgba(123,160,91,0.2)]
+                                disabled:opacity-50"
+                            title="Refresh data"
+                        >
+                            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                            <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                        </button>
                         {/* Chart Type Toggle with Sliding Indicator */}
                         <div className="relative flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800 system:bg-[#0F1B11]">
                             {/* Sliding Background */}

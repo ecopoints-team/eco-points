@@ -1,15 +1,18 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
+import RequirePermission from '../../../src/components/admin/RequirePermission';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import AddRegularUserModal from '../../../src/components/admin/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 // getDepartmentName replaced — server returns groupName directly
-import { users as usersApi } from '../../../src/services/apiService';
+import { users as usersApi } from '../../../src/services/api';
+import { formatField } from '../../../src/lib/formatField';
+import { userRoleLabel, userTypeLabel } from '../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle, Coins } from 'lucide-react';
 
-export default function ManageUsersPage() {
+function ManageUsersPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
 
     const [users, setUsers] = useState([]);
@@ -124,9 +127,9 @@ export default function ManageUsersPage() {
                 amount: parseInt(adjustAmount, 10),
                 reason: adjustReason || 'Manual adjustment',
             });
-            // Update local user points
+            // Update local user points (canonical key: pointsBalance)
             setUsers(prev => prev.map(u =>
-                u.id === selectedUser.id ? { ...u, points: result.balanceAfter } : u
+                u.id === selectedUser.id ? { ...u, pointsBalance: result.balanceAfter } : u
             ));
             setIsAdjustModalOpen(false);
             setSelectedUser(null);
@@ -170,12 +173,6 @@ export default function ManageUsersPage() {
                     setUsers(regularUsers.map(u => ({
                         ...u,
                         id: String(u.id),
-                        department: u.groupName || '',
-                        strand: '',
-                        joinDate: u.createdAt,
-                        status: u.isActive ? 'Active' : 'Inactive',
-                        accountHealth: u.isActive ? 'Active' : 'Inactive',
-                        points: u.pointsBalance || 0,
                     })));
                 }
             } catch (err) {
@@ -197,11 +194,16 @@ export default function ManageUsersPage() {
         let result = users.filter(user => {
             const matchesSearch = searchQuery === '' ||
                 (user.displayId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchQuery.toLowerCase());
+                (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (user.email || '').toLowerCase().includes(searchQuery.toLowerCase());
             const matchesRole = filterRole === '' || user.userType === filterRole;
-            const matchesStatus = filterStatus === '' || user.status === filterStatus;
-            const matchesAccountHealth = filterAccountHealth === '' || user.accountHealth === filterAccountHealth;
+            // `Status` and `Account Health` filters both bind directly to `isActive`
+            // (the client-side `status`/`accountHealth` derivations were dropped per
+            // alignment doc §13).
+            const matchesStatus = filterStatus === ''
+                || (filterStatus === 'Active' ? user.isActive === true : user.isActive === false);
+            const matchesAccountHealth = filterAccountHealth === ''
+                || (filterAccountHealth === 'Active' ? user.isActive === true : user.isActive === false);
             const matchesSchool = filterSchool === '' || user.locationId === filterSchool;
             return matchesSearch && matchesRole && matchesStatus && matchesAccountHealth && matchesSchool;
         });
@@ -217,6 +219,12 @@ export default function ManageUsersPage() {
                 } else if (sortColumn === 'id') {
                     aVal = parseInt(aVal) || 0;
                     bVal = parseInt(bVal) || 0;
+                } else if (sortColumn === 'pointsBalance') {
+                    aVal = aVal || 0;
+                    bVal = bVal || 0;
+                } else if (sortColumn === 'createdAt') {
+                    aVal = aVal ? new Date(aVal).getTime() : 0;
+                    bVal = bVal ? new Date(bVal).getTime() : 0;
                 } else {
                     if (typeof aVal === 'string') aVal = aVal.toLowerCase();
                     if (typeof bVal === 'string') bVal = bVal.toLowerCase();
@@ -250,9 +258,13 @@ export default function ManageUsersPage() {
     // Stats
     const stats = {
         totalUsers: users.length,
-        onlineUsers: users.filter(u => u.status === 'Online').length,
-        activeUsers: users.filter(u => u.accountHealth === 'Active').length,
-        totalPoints: users.reduce((sum, u) => sum + u.points, 0),
+        // Phase 3 (8.3): drop client-side `status: 'Online'/'Offline'` derivation;
+        // bind to the canonical server boolean directly. We no longer derive an
+        // "Online Now" count from a synthetic field, so this card now shows the
+        // count of users with a recorded last login.
+        onlineUsers: users.filter(u => !!u.lastLogin).length,
+        activeUsers: users.filter(u => u.isActive === true).length,
+        totalPoints: users.reduce((sum, u) => sum + (u.pointsBalance || 0), 0),
     };
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
@@ -265,20 +277,16 @@ export default function ManageUsersPage() {
         return loc ? loc.name : '';
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Online': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
-            case 'Offline': return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
-            default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
-        }
+    const getStatusColor = (isActive) => {
+        return isActive
+            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+            : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
     };
 
-    const getAccountHealthColor = (health) => {
-        switch (health) {
-            case 'Active': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400';
-            case 'Inactive': return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
-            default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
-        }
+    const getAccountHealthColor = (isActive) => {
+        return isActive
+            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+            : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
     };
 
     const getRoleColor = (role) => {
@@ -399,12 +407,6 @@ export default function ManageUsersPage() {
                                 setUsers(regularUsers.map(u => ({
                                     ...u,
                                     id: String(u.id),
-                                    department: u.groupName || '',
-                                    strand: '',
-                                    joinDate: u.createdAt,
-                                    status: u.isActive ? 'Active' : 'Inactive',
-                                    accountHealth: u.isActive ? 'Active' : 'Inactive',
-                                    points: u.pointsBalance || 0,
                                 })));
                             } catch (err) { console.error('Refresh failed:', err); }
                             finally { setIsDataLoading(false); }
@@ -451,7 +453,7 @@ export default function ManageUsersPage() {
                                     }`}
                             >
                                 {showDepartment ? <Eye size={12} /> : <EyeOff size={12} />}
-                                Department
+                                Group
                             </button>
                             <button
                                 onClick={() => setShowStrand(!showStrand)}
@@ -509,17 +511,17 @@ export default function ManageUsersPage() {
                                     <div className="flex items-center gap-1">Username <SortIcon column="name" /></div>
                                 </th>
                                 <th className="px-3 py-3 whitespace-nowrap">Email</th>
-                                {showDepartment && <th className="px-3 py-3 whitespace-nowrap">Department</th>}
+                                {showDepartment && <th className="px-3 py-3 whitespace-nowrap">Group</th>}
                                 {showStrand && <th className="px-3 py-3 whitespace-nowrap">Strand</th>}
                                 <th className="px-3 py-3 whitespace-nowrap">Location</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Role</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
                                 {showAccountHealth && <th className="px-3 py-3 whitespace-nowrap">Acct Health</th>}
-                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('points')}>
-                                    <div className="flex items-center gap-1">Points <SortIcon column="points" /></div>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('pointsBalance')}>
+                                    <div className="flex items-center gap-1">Points <SortIcon column="pointsBalance" /></div>
                                 </th>
-                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('joinDateObj')}>
-                                    <div className="flex items-center gap-1">Joined <SortIcon column="joinDateObj" /></div>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('createdAt')}>
+                                    <div className="flex items-center gap-1">Joined <SortIcon column="createdAt" /></div>
                                 </th>
                                 {(canEdit || canDelete) && <th className="px-3 py-3 text-right whitespace-nowrap">Actions</th>}
                             </tr>
@@ -528,40 +530,40 @@ export default function ManageUsersPage() {
                             {currentUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{user.displayId || user.id}</span>
+                                        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{formatField(user.displayId ?? user.id)}</span>
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</span>
+                                        <span className="font-medium text-slate-800 dark:text-white text-sm">{formatField(user.name)}</span>
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(user.email)}</span>
                                     </td>
                                     {showDepartment && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{user.department || '—'}</span>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.groupName)}</span>
                                         </td>
                                     )}
                                     {showStrand && (
                                         <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{user.strand || '—'}</span>
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.yearLevel)}</span>
                                         </td>
                                     )}
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="text-xs text-slate-600 dark:text-slate-300">{getLocationName(user.locationId) || 'Arellano University'}</span>
+                                        <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.locationName ?? getLocationName(user.locationId))}</span>
                                     </td>
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleColor(user.userType)}`}>{user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : '—'}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleColor(user.userType)}`}>{userTypeLabel(user.userType)}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${getStatusColor(user.status)}`}>
-                                            {user.status === 'Online' ? <Wifi size={10} /> : <WifiOff size={10} />}
-                                            {user.status}
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${getStatusColor(user.isActive)}`}>
+                                            {user.isActive ? <Wifi size={10} /> : <WifiOff size={10} />}
+                                            {user.isActive ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
                                     {showAccountHealth && (
-                                        <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getAccountHealthColor(user.accountHealth)}`}>{user.accountHealth}</span></td>
+                                        <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getAccountHealthColor(user.isActive)}`}>{user.isActive ? 'Active' : 'Inactive'}</span></td>
                                     )}
-                                    <td className="px-3 py-3 whitespace-nowrap"><span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{user.points.toLocaleString()}</span></td>
+                                    <td className="px-3 py-3 whitespace-nowrap"><span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{(user.pointsBalance ?? 0).toLocaleString()}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">{user.joinDate}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(user.createdAt)}</span>
                                     </td>
                                     {(canEdit || canDelete) && (
                                         <td className="px-3 py-3 whitespace-nowrap">
@@ -801,7 +803,7 @@ export default function ManageUsersPage() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Adjust Points</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">{selectedUser.name} — Current: <strong className="text-emerald-600 dark:text-emerald-400">{selectedUser.points}</strong> pts</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{selectedUser.name} — Current: <strong className="text-emerald-600 dark:text-emerald-400">{selectedUser.pointsBalance ?? 0}</strong> pts</p>
                             </div>
                             <button onClick={() => { setIsAdjustModalOpen(false); setSelectedUser(null); }} className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                                 <X size={18} />
@@ -852,5 +854,15 @@ export default function ManageUsersPage() {
                 </div>
             )}
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function ManageUsersPage() {
+    return (
+        <RequirePermission category="users">
+            <ManageUsersPageContent />
+        </RequirePermission>
     );
 }

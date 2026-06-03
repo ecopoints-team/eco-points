@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
-import { SHS_STRANDS, COLLEGE_DEPARTMENTS } from '../../data/mockData';
-import { users as usersApi } from '../../services/apiService';
+import { users as usersApi, groups as groupsApi } from '../../services/api';
+import { validateField, VALIDATION_RULES } from '../../lib/validateField';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label, error }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -50,14 +50,45 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('Student');
     const [locationId, setLocationId] = useState(currentLocation?.id || '');
+    const [communityGroupId, setCommunityGroupId] = useState('');
     const [educLevel, setEducLevel] = useState('');
-    const [strand, setStrand] = useState('');
-    const [department, setDepartment] = useState('');
     const [yearLevel, setYearLevel] = useState('');
     const [passwordShake, setPasswordShake] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Dynamic group loading from API
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [groupsLoading, setGroupsLoading] = useState(false);
+
+    // Effective location for fetching groups
+    const effectiveLocationId = isSuperAdmin ? locationId : currentLocation?.id;
+
+    // Fetch groups when modal opens or location changes
+    useEffect(() => {
+        if (isOpen && effectiveLocationId) {
+            setGroupsLoading(true);
+            groupsApi.getAll(effectiveLocationId)
+                .then(groups => setAvailableGroups(groups || []))
+                .catch(() => setAvailableGroups([]))
+                .finally(() => setGroupsLoading(false));
+        } else {
+            setAvailableGroups([]);
+        }
+    }, [isOpen, effectiveLocationId]);
+
+    // Filter groups by education level / role
+    const filteredGroups = useMemo(() => {
+        if (role === 'Student') {
+            if (educLevel === 'SHS') return availableGroups.filter(g => g.groupType === 'shs_strand');
+            if (educLevel === 'College') return availableGroups.filter(g => g.groupType === 'college');
+            return [];
+        }
+        if (role === 'Faculty') return availableGroups.filter(g => g.groupType === 'college');
+        if (role === 'Staff') return availableGroups.filter(g => g.groupType === 'staff' || !g.groupType);
+        return [];
+    }, [availableGroups, role, educLevel]);
 
     if (!isOpen) return null;
 
@@ -65,8 +96,18 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         e.preventDefault();
         setError('');
 
-        if (!name.trim() || !email.trim() || !password.trim()) {
-            setError('Please fill in all required fields.');
+        // Validate required fields using shared rules
+        const fieldErrors = [];
+        const nameErr = validateField(VALIDATION_RULES.user, 'name', name);
+        const emailErr = validateField(VALIDATION_RULES.user, 'email', email);
+        const pwErr = validateField(VALIDATION_RULES.user, 'password', password);
+        const usernameErr = validateField(VALIDATION_RULES.user, 'username', username);
+        if (nameErr) fieldErrors.push(nameErr);
+        if (usernameErr) fieldErrors.push(usernameErr);
+        if (emailErr) fieldErrors.push(emailErr);
+        if (pwErr) fieldErrors.push(pwErr);
+        if (fieldErrors.length > 0) {
+            setError(fieldErrors[0]);
             return;
         }
 
@@ -94,8 +135,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                 role: 'user',
                 userType: role.toLowerCase(),
                 yearLevel: yearLevel || undefined,
-                strand: strand || undefined,
-                department: department || undefined,
+                communityGroupId: communityGroupId || undefined,
                 locationId: locationId || currentLocation?.id,
             };
 
@@ -127,8 +167,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         setConfirmPassword('');
         setRole('Student');
         setEducLevel('');
-        setStrand('');
-        setDepartment('');
+        setCommunityGroupId('');
         setYearLevel('');
         setPasswordShake(false);
         setError('');
@@ -220,7 +259,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Educational Level</label>
                                     <CustomDropdown
                                         value={educLevel}
-                                        onChange={(v) => { setEducLevel(v); setStrand(''); setDepartment(''); setYearLevel(''); }}
+                                        onChange={(v) => { setEducLevel(v); setCommunityGroupId(''); setYearLevel(''); }}
                                         options={[
                                             { value: 'SHS', label: 'Senior High School' },
                                             { value: 'College', label: 'College' }
@@ -247,38 +286,80 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                 )}
                             </div>
 
-                            {/* SHS Strand */}
-                            {educLevel === 'SHS' && (
+                            {/* SHS Strand / College Department — dynamic from API */}
+                            {educLevel && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">SHS Strand</label>
-                                    <CustomDropdown
-                                        value={strand}
-                                        onChange={(v) => setStrand(v)}
-                                        options={SHS_STRANDS.map(s => ({ value: s.id, label: `${s.abbreviation} — ${s.name}` }))}
-                                        placeholder="Select strand..."
-                                        searchable
-                                        icon={BookOpen}
-                                        size="md"
-                                    />
-                                </div>
-                            )}
-
-                            {/* College Department */}
-                            {educLevel === 'College' && (
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">College Department</label>
-                                    <CustomDropdown
-                                        value={department}
-                                        onChange={(v) => setDepartment(v)}
-                                        options={COLLEGE_DEPARTMENTS.map(d => ({ value: d.id, label: `${d.abbreviation} — ${d.name}` }))}
-                                        placeholder="Search department..."
-                                        searchable
-                                        icon={BookOpen}
-                                        size="md"
-                                    />
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {educLevel === 'SHS' ? 'SHS Strand' : 'College Department'}
+                                    </label>
+                                    {groupsLoading ? (
+                                        <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                                            <Loader2 size={16} className="animate-spin" /> Loading groups...
+                                        </div>
+                                    ) : filteredGroups.length === 0 ? (
+                                        <p className="text-slate-400 text-sm py-2">No groups configured for this location</p>
+                                    ) : (
+                                        <CustomDropdown
+                                            value={communityGroupId}
+                                            onChange={(v) => setCommunityGroupId(v)}
+                                            options={filteredGroups.map(g => ({ value: String(g.id), label: g.abbreviation ? `${g.abbreviation} — ${g.name}` : g.name }))}
+                                            placeholder={educLevel === 'SHS' ? 'Select strand...' : 'Search department...'}
+                                            searchable
+                                            icon={BookOpen}
+                                            size="md"
+                                        />
+                                    )}
                                 </div>
                             )}
                         </>
+                    )}
+
+                    {/* Faculty — College Department */}
+                    {role === 'Faculty' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">College Department</label>
+                            {groupsLoading ? (
+                                <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                                    <Loader2 size={16} className="animate-spin" /> Loading groups...
+                                </div>
+                            ) : filteredGroups.length === 0 ? (
+                                <p className="text-slate-400 text-sm py-2">No groups configured for this location</p>
+                            ) : (
+                                <CustomDropdown
+                                    value={communityGroupId}
+                                    onChange={(v) => setCommunityGroupId(v)}
+                                    options={filteredGroups.map(g => ({ value: String(g.id), label: g.abbreviation ? `${g.abbreviation} — ${g.name}` : g.name }))}
+                                    placeholder="Search department..."
+                                    searchable
+                                    icon={BookOpen}
+                                    size="md"
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* Staff — Group */}
+                    {role === 'Staff' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Group</label>
+                            {groupsLoading ? (
+                                <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                                    <Loader2 size={16} className="animate-spin" /> Loading groups...
+                                </div>
+                            ) : filteredGroups.length === 0 ? (
+                                <p className="text-slate-400 text-sm py-2">No groups configured for this location</p>
+                            ) : (
+                                <CustomDropdown
+                                    value={communityGroupId}
+                                    onChange={(v) => setCommunityGroupId(v)}
+                                    options={filteredGroups.map(g => ({ value: String(g.id), label: g.abbreviation ? `${g.abbreviation} — ${g.name}` : g.name }))}
+                                    placeholder="Select group..."
+                                    searchable
+                                    icon={BookOpen}
+                                    size="md"
+                                />
+                            )}
+                        </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-4">

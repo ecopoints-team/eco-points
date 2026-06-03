@@ -8,11 +8,11 @@
     "autoprefixer": "^10.4.22",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.555.0",
-    "next": "^14.0.0",
+    "next": "^16.2.6",
     "postcss": "^8.5.6",
     "qrcode.react": "^4.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-google-recaptcha": "^3.1.0",
     "recharts": "^3.7.0",
     "tailwindcss": "^4.1.17"
@@ -21,7 +21,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "browserslist": {
     "production": [
@@ -34,5 +36,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "fast-check": "^4.8.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^2.1.9"
   }
 }

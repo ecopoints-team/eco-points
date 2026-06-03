@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Check, Shield, ChevronRight, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
-import { users as usersApi } from '../../services/apiService';
+import { users as usersApi } from '../../services/api';
+import { validateField, VALIDATION_RULES } from '../../lib/validateField';
 
 // Admin duty roles (not user types like Student/Faculty)
 const ADMIN_ROLES = [
@@ -228,9 +229,18 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         e.preventDefault();
         setError('');
 
-        // Basic validation
-        if (!name.trim() || !email.trim() || !password.trim()) {
-            setError('Please fill in all required fields in Information tab.');
+        // Validate using shared rules
+        const fieldErrors = [];
+        const nameErr = validateField(VALIDATION_RULES.user, 'name', name);
+        const usernameErr = validateField(VALIDATION_RULES.user, 'username', username);
+        const emailErr = validateField(VALIDATION_RULES.user, 'email', email);
+        const pwErr = validateField(VALIDATION_RULES.user, 'password', password);
+        if (nameErr) fieldErrors.push(nameErr);
+        if (usernameErr) fieldErrors.push(usernameErr);
+        if (emailErr) fieldErrors.push(emailErr);
+        if (pwErr) fieldErrors.push(pwErr);
+        if (fieldErrors.length > 0) {
+            setError(fieldErrors[0]);
             setActiveTab('information');
             return;
         }
@@ -389,7 +399,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                                         icon={AtSign}
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        label="Username"
+                                        label="Username *"
                                     />
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>

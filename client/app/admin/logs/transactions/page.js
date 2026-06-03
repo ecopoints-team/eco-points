@@ -1,13 +1,16 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { formatDate } from '../../../../src/utils/formatDate';
-import { logs as logsApi } from '../../../../src/services/apiService';
+import { logs as logsApi } from '../../../../src/services/api';
+import { formatField } from '../../../../src/lib/formatField';
+import { transactionTypeLabel } from '../../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
-export default function TransactionLogsPage() {
+function TransactionLogsPageContent() {
     const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
 
     const [allLogs, setAllLogs] = useState([]);
@@ -249,7 +252,7 @@ export default function TransactionLogsPage() {
                                     <td className="px-3 py-3">
                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${getTypeColor(log.transactionType)}`}>
                                             {getTypeIcon(log.transactionType)}
-                                            {log.transactionType}
+                                            {transactionTypeLabel(log.transactionType)}
                                         </span>
                                     </td>
                                     <td className="px-3 py-3">
@@ -264,9 +267,9 @@ export default function TransactionLogsPage() {
                                             </span>
                                         </td>
                                     )}
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{log.description || '—'}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{formatField(log.description)}</span></td>
                                     {showLocation && (
-                                        <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{log.locationName || '—'}</span></td>
+                                        <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.locationName)}</span></td>
                                     )}
                                 </tr>
                             ))}
@@ -292,5 +295,15 @@ export default function TransactionLogsPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+
+// ─── Phase 2: page guard wrapper ────────────────────────────────────
+export default function TransactionLogsPage() {
+    return (
+        <RequirePermission category="logs">
+            <TransactionLogsPageContent />
+        </RequirePermission>
     );
 }
