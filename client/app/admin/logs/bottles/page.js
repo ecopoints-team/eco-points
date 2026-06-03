@@ -8,16 +8,7 @@ import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/api';
 import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { formatField } from '../../../../src/lib/formatField';
-import { bottleConditionLabel } from '../../../../src/lib/enumLabels';
-
-// Derive human-readable size from volume_ml (matches points config tiers)
-const getBottleSize = (volumeMl) => {
-    if (!volumeMl) return 'Unknown';
-    if (volumeMl <= 350) return 'Small (290-350ml)';
-    if (volumeMl <= 500) return 'Medium (351-500ml)';
-    if (volumeMl <= 1000) return 'Large (750-1000ml)';
-    return 'Unknown';
-};
+import { detectedClassLabel } from '../../../../src/lib/enumLabels';
 
 function BottleLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
@@ -42,8 +33,7 @@ function BottleLogsPageContent() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
     const [filterMachine, setFilterMachine] = useState('');
-    const [filterBottleType, setFilterBottleType] = useState('');
-    const [filterCondition, setFilterCondition] = useState('');
+    const [filterDetectedClass, setFilterDetectedClass] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,7 +65,7 @@ function BottleLogsPageContent() {
     };
 
     const machines = [...new Set(allBottleLogs.map(log => log.machineName))];
-    const bottleSizes = [...new Set(allBottleLogs.map(log => getBottleSize(log.volumeMl)))].filter(s => s !== 'Unknown');
+    const detectedClasses = [...new Set(allBottleLogs.map(log => log.detectedClass).filter(Boolean))];
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
 
     // Stats computed from logs (already server-scoped by effectiveLocationId)
@@ -90,11 +80,10 @@ function BottleLogsPageContent() {
     const filteredLogs = useMemo(() => {
         // Data is already server-scoped by effectiveLocationId — no need to re-filter by location
         return allBottleLogs.filter(log => {
-            const matchesSearch = searchQuery === '' || (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userId || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.bottleType || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
+            const matchesSearch = searchQuery === '' || (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userId || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.machineName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.detectedClass || '').toLowerCase().includes(searchQuery.toLowerCase()) || (log.locationName && log.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
             return matchesSearch &&
                 (filterMachine === '' || log.machineName === filterMachine) &&
-                (filterBottleType === '' || getBottleSize(log.volumeMl) === filterBottleType) &&
-                (filterCondition === '' || log.condition === filterCondition) &&
+                (filterDetectedClass === '' || log.detectedClass === filterDetectedClass) &&
                 (filterStatus === '' || log.status === filterStatus) &&
                 (filterLocation === '' || log.locationId === filterLocation);
         }).sort((a, b) => {
@@ -105,15 +94,15 @@ function BottleLogsPageContent() {
             if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
             return aVal < bVal ? 1 : -1;
         });
-    }, [allBottleLogs, searchQuery, filterMachine, filterBottleType, filterCondition, filterStatus, filterLocation, sortColumn, sortDirection]);
+    }, [allBottleLogs, searchQuery, filterMachine, filterDetectedClass, filterStatus, filterLocation, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const currentLogs = filteredLogs.slice(startIndex, startIndex + rowsPerPage);
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterMachine(''); setFilterBottleType(''); setFilterCondition(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterMachine || filterBottleType || filterCondition || filterStatus || filterLocation || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
+    const clearFilters = () => { setFilterMachine(''); setFilterDetectedClass(''); setFilterStatus(''); setFilterLocation(''); setSortColumn('timestampObj'); setSortDirection('desc'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterMachine || filterDetectedClass || filterStatus || filterLocation || (sortColumn !== 'timestampObj' || sortDirection !== 'desc');
 
     const getStatusColor = (s) => {
         switch (s) {
@@ -133,11 +122,11 @@ function BottleLogsPageContent() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Brand', 'Volume', 'Size', 'Condition', 'Points', 'Status'];
+        const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Detected Class', 'Confidence %', 'Points', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.machineName,
-            log.locationName || log.locationId, log.brand, log.volumeMl, getBottleSize(log.volumeMl),
-            log.condition, log.pointsAwarded, log.status
+            log.locationName || log.locationId, detectedClassLabel(log.detectedClass),
+            log.confidenceScore != null ? log.confidenceScore : '', log.pointsAwarded, log.status
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -200,8 +189,7 @@ function BottleLogsPageContent() {
                         {/* Filter Row */}
                         <div className="flex flex-wrap gap-3 items-center mb-3">
                             <CustomDropdown value={filterMachine} onChange={(v) => handleFilterChange(setFilterMachine, v)} options={machines} placeholder="All Machines" />
-                            <CustomDropdown value={filterBottleType} onChange={(v) => handleFilterChange(setFilterBottleType, v)} options={bottleSizes} placeholder="All Sizes" />
-                            <CustomDropdown value={filterCondition} onChange={(v) => handleFilterChange(setFilterCondition, v)} options={['With Label', 'No Label', 'Rejected']} placeholder="All Conditions" />
+                            <CustomDropdown value={filterDetectedClass} onChange={(v) => handleFilterChange(setFilterDetectedClass, v)} options={detectedClasses.map(c => ({ value: c, label: detectedClassLabel(c) }))} placeholder="All Classes" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Statuses" />
 
                             {isSuperAdmin && !viewAsLocationId && (
@@ -281,8 +269,12 @@ function BottleLogsPageContent() {
                                 {showMachine && <th className="px-3 py-3">Machine</th>}
                                 {showLocation && <th className="px-3 py-3">Location</th>}
                                 {showSession && <th className="px-3 py-3">Session</th>}
-                                <th className="px-3 py-3">Size</th>
-                                <th className="px-3 py-3">Condition</th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('detectedClass')}>
+                                    <div className="flex items-center gap-1">Detected Class <SortIcon column="detectedClass" /></div>
+                                </th>
+                                <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('confidenceScore')}>
+                                    <div className="flex items-center gap-1">Confidence <SortIcon column="confidenceScore" /></div>
+                                </th>
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600" onClick={() => handleSort('pointsAwarded')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="pointsAwarded" /></div>
                                 </th>
@@ -320,13 +312,8 @@ function BottleLogsPageContent() {
                                             </div>
                                         </td>
                                     )}
-                                    <td className="px-3 py-3"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{getBottleSize(log.volumeMl)}</span></td>
-                                    <td className="px-3 py-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                            log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                                            }`}>{bottleConditionLabel(log.condition)}</span>
-                                    </td>
+                                    <td className="px-3 py-3"><span className="text-xs font-medium text-slate-700 dark:text-slate-300">{detectedClassLabel(log.detectedClass)}</span></td>
+                                    <td className="px-3 py-3"><span className="text-xs font-mono text-slate-600 dark:text-slate-400">{log.confidenceScore != null ? `${log.confidenceScore}%` : formatField(null)}</span></td>
                                     <td className="px-3 py-3"><span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}</span></td>
                                     <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(log.timestamp)}</span></td>
                                     <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>

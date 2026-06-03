@@ -5,17 +5,11 @@ import SlotCounter from '../../src/components/shared/SlotCounter';
 import { useAuth } from '../../src/context/AuthContext';
 import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
+import { detectedClassLabel } from '../../src/lib/enumLabels';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Derive human-readable size from volume_ml (matches points config tiers)
-const getBottleSize = (volumeMl) => {
-    if (!volumeMl) return 'Unknown';
-    if (volumeMl <= 350) return 'Small (290-350ml)';
-    if (volumeMl <= 500) return 'Medium (351-500ml)';
-    if (volumeMl <= 1000) return 'Large (750-1000ml)';
-    return 'Unknown';
-};
+
 
 // DUAL-THEME STAT CARD
 const StatCard = ({ title, value, subtext, color, icon: Icon }) => {
@@ -147,9 +141,13 @@ export default function AdminDashboard() {
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
 
-    // Prevent hydration mismatch - only render dynamic content after mount
+    // Delay chart rendering until browser has completed at least one full paint
+    // cycle — double-rAF ensures layout is stable before Recharts measures.
     useEffect(() => {
-        setMounted(true);
+        const raf = requestAnimationFrame(() => {
+            requestAnimationFrame(() => setMounted(true));
+        });
+        return () => cancelAnimationFrame(raf);
     }, []);
 
     // Load dashboard data from cache (skips refetch if data is still fresh)
@@ -448,9 +446,10 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Chart Container */}
-                <div className="w-full h-80 transition-all duration-300">
-                    <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%">
+                {/* Chart Container — only render after mount so Recharts can measure a real DOM size */}
+                {mounted ? (
+                    <div className="w-full h-80 transition-all duration-300">
+                        <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%">
                         {chartType === 'line' ? (
                             <LineChart data={currentData.labels.map((label, i) => ({
                                 name: label,
@@ -571,8 +570,13 @@ export default function AdminDashboard() {
                                 />
                             </PieChart>
                         )}
-                    </ResponsiveContainer>
-                </div>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="w-full h-80 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+                    </div>
+                )}
 
                 {/* Summary Statistics - Updated to show Accepted/Rejected + Peak Period */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]">
@@ -669,8 +673,8 @@ export default function AdminDashboard() {
                                 <th className="px-3 py-3">Username</th>
                                 <th className="px-3 py-3">Email</th>
                                 <th className="px-3 py-3">Location</th>
-                                <th className="px-3 py-3">Size</th>
-                                <th className="px-3 py-3">Condition</th>
+                                <th className="px-3 py-3">Detected Class</th>
+                                <th className="px-3 py-3">Confidence</th>
                                 <th className="px-3 py-3">Points</th>
                                 <th className="px-3 py-3">Timestamp</th>
                                 <th className="px-3 py-3">Status</th>
@@ -698,13 +702,10 @@ export default function AdminDashboard() {
                                         <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{getBottleSize(log.volumeMl)}</span>
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{detectedClassLabel(log.detectedClass)}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${log.condition === 'With Label' ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400' :
-                                            log.condition === 'No Label' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                                            }`}>{log.condition}</span>
+                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.confidenceScore != null ? `${(log.confidenceScore * 100).toFixed(1)}%` : '—'}</span>
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]' : 'text-red-500'}`}>

@@ -11,7 +11,7 @@ import { validateField, validateAll, VALIDATION_RULES } from '../../../src/lib/v
 import {
     Package, MapPin, Activity, Wifi, Settings, Eye, Wrench, X,
     CheckCircle2, Clock, User, Calendar, Building2,
-    ChevronLeft, ChevronRight, Search, Edit2, RefreshCw
+    ChevronLeft, ChevronRight, Search, Edit2, RefreshCw, Plus
 } from 'lucide-react';
 
 

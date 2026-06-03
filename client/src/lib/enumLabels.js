@@ -64,6 +64,26 @@ export function bottleConditionLabel(condition) {
     return BOTTLE_CONDITION_LABELS[condition] || condition;
 }
 
+// ─── YOLOv8 detected class (recycling_items.detected_class) ─────────
+const DETECTED_CLASS_LABELS = {
+    pet_with_label: 'PET (With Label)',
+    pet_no_label: 'PET (No Label)',
+    pet_crushed: 'PET (Crushed)',
+    hdpe: 'HDPE',
+    can_aluminum: 'Aluminum Can',
+    can_steel: 'Steel Can',
+    glass: 'Glass',
+    tetra_pak: 'Tetra Pak',
+    other_plastic: 'Other Plastic',
+    non_recyclable: 'Non-Recyclable',
+    unknown: 'Unknown',
+};
+
+export function detectedClassLabel(detectedClass) {
+    if (detectedClass === null || detectedClass === undefined || detectedClass === '') return EMPTY_FIELD_PLACEHOLDER;
+    return DETECTED_CLASS_LABELS[detectedClass] || detectedClass;
+}
+
 // ─── Wallet transaction type ─────────────────────────────────────────
 const TRANSACTION_TYPE_LABELS = {
     earn: 'Earn',
