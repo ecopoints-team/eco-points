@@ -36,7 +36,13 @@ def init_redis(app=None):
     Stores the client in module-level state for use by cache helpers.
     """
     global _redis_client, _redis_available
-    redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    redis_url = os.environ.get('REDIS_URL')
+
+    if not redis_url:
+        print('[CACHE] REDIS_URL not set — caching disabled, using DB fallback')
+        _redis_client = None
+        _redis_available = False
+        return False
 
     try:
         _redis_client = redis.from_url(
@@ -49,11 +55,12 @@ def init_redis(app=None):
         # Ping to verify connection
         _redis_client.ping()
         _redis_available = True
-        logger.info('Redis connected: %s', redis_url.split('@')[-1] if '@' in redis_url else redis_url)
+        safe_url = redis_url.split('@')[-1] if '@' in redis_url else redis_url
+        print(f'[CACHE] Redis connected: {safe_url}')
     except (redis.ConnectionError, redis.TimeoutError, Exception) as e:
         _redis_client = None
         _redis_available = False
-        logger.warning('Redis unavailable (%s) — caching disabled, DB fallback active', str(e))
+        print(f'[CACHE] Redis unavailable ({e}) — caching disabled, DB fallback active')
 
     return _redis_available
 
