@@ -3,6 +3,7 @@ import {
   Leaf, Calendar, ChevronDown, Info,
   X, Zap, Recycle
 } from 'lucide-react';
+import api from '../../services/apiService';
 
 // ─────────────────────────────────────────────
 // Font styles (consistent with ProfileSection)
@@ -28,6 +29,47 @@ export default function ProfileHeatmap({ activityData = {} }) {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
 
+  // Dynamic API loading state
+  const [heatmapData, setHeatmapData] = useState(activityData);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Stringify activityData to avoid infinite render loops due to default object reference changes on each render
+  const activityDataStr = JSON.stringify(activityData || {});
+
+  useEffect(() => {
+    // If activityData was passed as a non-empty prop, use it directly
+    if (activityData && Object.keys(activityData).length > 0) {
+      setHeatmapData(activityData);
+      return;
+    }
+
+    let active = true;
+    async function loadRecyclingActivity() {
+      try {
+        setIsLoading(true);
+        const logs = await api.logs.getBottles();
+        if (!active) return;
+
+        // Group bottles by date (YYYY-MM-DD)
+        const counts = {};
+        logs.forEach(item => {
+          if (item.scannedAt && item.status === 'Accepted') {
+            const dateStr = item.scannedAt.split('T')[0];
+            counts[dateStr] = (counts[dateStr] || 0) + 1;
+          }
+        });
+        setHeatmapData(counts);
+      } catch (err) {
+        console.error("Failed to fetch recycling activity for heatmap:", err);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadRecyclingActivity();
+    return () => { active = false; };
+  }, [activityDataStr]);
+
   // Tooltip State
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, date: '', count: 0 });
   const containerRef = useRef(null);
@@ -41,13 +83,13 @@ export default function ProfileHeatmap({ activityData = {} }) {
   // Calculate total deposits for the selected year
   const totalDeposits = useMemo(() => {
     let total = 0;
-    Object.keys(activityData).forEach(key => {
+    Object.keys(heatmapData).forEach(key => {
       if (key.startsWith(selectedYear.toString())) {
-        total += activityData[key];
+        total += heatmapData[key];
       }
     });
     return total;
-  }, [selectedYear, activityData]);
+  }, [selectedYear, heatmapData]);
 
   // --- HEATMAP GRID GENERATION ---
   const { weeks, monthLabels } = useMemo(() => {
@@ -76,7 +118,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
       currentWeek.push({
         dateStr,
         dateObj: new Date(d),
-        count: activityData[dateStr] || 0
+        count: heatmapData[dateStr] || 0
       });
 
       if (currentWeek.length === 7) {
@@ -91,7 +133,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
     }
 
     return { weeks: weeksArray, monthLabels: months };
-  }, [selectedYear, activityData]);
+  }, [selectedYear, heatmapData]);
 
   // --- COLOR SCALING ---
   const getColorClass = (count) => {
@@ -191,10 +233,13 @@ export default function ProfileHeatmap({ activityData = {} }) {
               <h2 className="text-lg font-black text-[#064e3b]" style={fonts.heading}>
                 Recycling Activity
               </h2>
+              {isLoading && (
+                <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin ml-2"></div>
+              )}
             </div>
             <div className="text-slate-500 text-sm flex items-center gap-2" style={fonts.body}>
               <span className="font-bold text-base text-[#10b981]" style={fonts.data}>{totalDeposits}</span>
-              bottles recycled in {selectedYear}
+              bottles recycled
             </div>
           </div>
 

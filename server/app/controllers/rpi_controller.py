@@ -325,6 +325,40 @@ def edge_deposit_item():
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
+@rpi_bp.route('/session/<int:session_id>', methods=['GET'])
+def get_session_details(session_id):
+    """Get the current details of a specific session (useful for reading active state)."""
+    try:
+        session = db.session.get(RecyclingSession, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+        items = [{
+            'id': i.id,
+            'detectedClass': i.detected_class,
+            'confidenceScore': float(i.confidence_score) if i.confidence_score else None,
+            'pointsAwarded': i.points_awarded,
+            'status': i.status,
+        } for i in session.items]
+
+        return jsonify({
+            'success': True,
+            'session': {
+                'id': session.id,
+                'rvmId': session.rvm_id,
+                'walletId': session.wallet_id,
+                'status': session.status,
+                'itemCount': session.item_count,
+                'totalPointsEarned': session.total_points_earned,
+                'startTime': session.start_time.isoformat() if session.start_time else None,
+                'endTime': session.end_time.isoformat() if session.end_time else None,
+                'items': items
+            }
+        }), 200
+    except Exception:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
 @rpi_bp.route('/session/<int:session_id>/end', methods=['POST'])
 def end_session(session_id):
     """End an active session and credit points to the wallet.
@@ -348,8 +382,8 @@ def end_session(session_id):
 
         total_points = session.total_points_earned or 0
 
-        # Credit wallet only on successful completion
-        if final_status == 'completed' and total_points > 0:
+        # Credit wallet on successful completion or session timeout
+        if final_status in ('completed', 'timed_out') and total_points > 0:
             wallet = db.session.get(Wallet, session.wallet_id)
             if wallet:
                 balance_before = wallet.points_balance

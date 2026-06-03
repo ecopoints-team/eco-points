@@ -101,17 +101,46 @@ export default function RecentActivity() {
       try {
         setIsLoading(true);
         const data = await api.logs.getTransactions();
-        const mappedData = data.map(txn => ({
-          id: txn.id,
-          type: txn.transactionType, // 'earn', 'redeem', 'adjustment'
-          amount: txn.amount,
-          description: txn.description,
-          date: txn.timestamp,
-          reference: txn.referenceId || "N/A",
-          bottles: 0, // Transaction log doesn't store direct bottle count easily, let's default to 0
-          location: txn.locationName || "Unknown Location",
-          category: txn.transactionType === "earn" ? "Recycling" : "Reward",
-        }));
+        const mappedData = data.map(txn => {
+          let description = txn.description;
+          if (!description) {
+            const type = txn.transactionType;
+            const refType = txn.referenceType;
+            if (type === "earn") {
+              if (refType === "session") {
+                description = "Recycled at RVM";
+              } else if (refType === "bulk_deposit") {
+                description = "Bulk Recycling Deposit";
+              } else {
+                description = "EcoPoints Earned";
+              }
+            } else if (type === "redeem") {
+              if (refType === "reward_redemption" || refType === "redemption") {
+                description = "Reward Redeemed";
+              } else {
+                description = "Points Redeemed";
+              }
+            } else if (type === "adjustment") {
+              description = "Points Adjusted by Admin";
+            } else {
+              description = type 
+                ? type.charAt(0).toUpperCase() + type.slice(1) 
+                : "Points Transaction";
+            }
+          }
+
+          return {
+            id: txn.id,
+            type: txn.transactionType, // 'earn', 'redeem', 'adjustment'
+            amount: txn.amount,
+            description: description,
+            date: txn.timestamp,
+            reference: txn.referenceId ? `TXN-${txn.referenceId}` : "N/A",
+            bottles: 0, // Transaction log doesn't store direct bottle count easily, let's default to 0
+            location: txn.locationName || "Unknown Location",
+            category: txn.transactionType === "earn" ? "Recycling" : "Reward",
+          };
+        });
         setActivities(mappedData);
       } catch (err) {
         console.error("Failed to load recent activity:", err);

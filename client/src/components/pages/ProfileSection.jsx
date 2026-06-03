@@ -16,12 +16,12 @@ import {
   XIcon,
   DownloadIcon,
   MailIcon,
-  UserCircleIcon,
   Lock,
   Eye,
   EyeOff,
   Loader2,
   Ticket,
+  Phone,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
@@ -89,14 +89,17 @@ export default function ProfileSection() {
 
 
   // User display info
-  const userName = currentUser?.name || "JAY MAR";
-  const userHandle = currentUser?.username ? `@${currentUser.username}` : "@jaydi_dev";
+  const userName = currentUser?.name || "Eco User";
+  const userHandle = currentUser?.username 
+    ? `@${currentUser.username}` 
+    : (currentUser?.email ? `@${currentUser.email.split("@")[0]}` : "@ecouser");
   const initials = userName
-    .split(" ")
+    .split(/\s+/)
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase() || "JM";
+    .toUpperCase() || "EU";
 
   const downloadQR = async () => {
     const qrCanvas = document.getElementById("user-qr-code");
@@ -226,12 +229,7 @@ export default function ProfileSection() {
   // FOCUS STATE (INPUT)
   const [isFocused, setIsFocused] = useState(null);
 
-  // DROPDOWN STATE (EDIT PROFILE)
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedGender, setSelectedGender] = useState("");
-
-  // ROLE DROPDOWN STATE
-  const [isRoleOpen, setIsRoleOpen] = useState(false);
+  // Role State
   const [selectedRole, setSelectedRole] = useState("");
 
   // Form input states
@@ -259,8 +257,9 @@ export default function ProfileSection() {
     setEditUsername(currentUser?.username || "");
     setEditEmail(currentUser?.email || "");
     setEditPhone(currentUser?.phone || "");
-    setSelectedGender(currentUser?.gender || "Male");
-    setSelectedRole(currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : "Student");
+    setSelectedRole(currentUser?.userType 
+      ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1) 
+      : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Student"));
     
     // Reset change password state
     setIsChangingPassword(false);
@@ -387,7 +386,9 @@ export default function ProfileSection() {
               <div className="flex items-center gap-2.5">
                 <UserIcon size={14} className="text-stone-400 flex-shrink-0" />
                 <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
-                  {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : "Student"}
+                  {currentUser?.userType 
+                    ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1) 
+                    : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Student")}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
@@ -403,8 +404,10 @@ export default function ProfileSection() {
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
-                <UserCircleIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>Male</span>
+                <Phone size={14} className="text-stone-400 flex-shrink-0" />
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
+                  {currentUser?.phone || "No Phone Number"}
+                </span>
               </div>
             </div>
 
@@ -589,98 +592,17 @@ export default function ProfileSection() {
                   />
                 </div>
 
-                {/* GENDER */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Gender</label>
-                  <div className="relative">
-                    <div
-                      onClick={() => {
-                        setIsOpen(!isOpen);
-                        setIsRoleOpen(false);
-                      }}
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 text-sm font-semibold text-slate-800"
-                      style={fonts.body}
-                    >
-                      <span className={selectedGender ? "text-slate-700" : "text-slate-400"}>
-                        {selectedGender || "Select Gender"}
-                      </span>
-                      <svg
-                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                    {isOpen && (
-                      <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
-                        <div className="p-1">
-                          {["Male", "Female", "Other"].map((option) => (
-                            <div
-                              key={option}
-                              onClick={() => {
-                                setSelectedGender(option);
-                                setIsOpen(false);
-                              }}
-                              className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium text-slate-600"
-                              style={fonts.body}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* ROLE */}
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Role</label>
-                  <div className="relative">
-                    <div
-                      onClick={() => {
-                        setIsRoleOpen(!isRoleOpen);
-                        setIsOpen(false);
-                      }}
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-center cursor-pointer transition-all duration-200 ease-out hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 text-sm font-semibold text-slate-800"
-                      style={fonts.body}
-                    >
-                      <span className={selectedRole ? "text-slate-700" : "text-slate-400"}>
-                        {selectedRole || "Select Role"}
-                      </span>
-                      <svg
-                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isRoleOpen ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                    {isRoleOpen && (
-                      <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
-                        <div className="p-1">
-                          {["Student", "Faculty", "Alumni", "Others"].map((option) => (
-                            <div
-                              key={option}
-                              onClick={() => {
-                                setSelectedRole(option);
-                                setIsRoleOpen(false);
-                              }}
-                              className="px-4 py-2.5 cursor-pointer text-sm rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium text-slate-600"
-                              style={fonts.body}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    placeholder="Role"
+                    value={selectedRole}
+                    disabled={true}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    style={fonts.body}
+                  />
                 </div>
               </div>
 
