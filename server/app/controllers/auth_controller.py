@@ -185,14 +185,17 @@ def _attach_auth_cookies(response, jwt_token, expiry_hours):
     import os
     is_production = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
     max_age = int(expiry_hours * 3600)
-    # SameSite=Strict blocks cookies on cross-origin requests between
-    # different dev ports (e.g. localhost:3001 → 127.0.0.1:5000).
-    # Use 'None' in dev so the browser sends cookies cross-origin; in
-    # production the same domain is shared so 'Strict' is fine.
-    # SameSite=None requires Secure=True; browsers exempt localhost from
-    # the Secure requirement, so this is safe for local development.
-    samesite_policy = 'Strict' if is_production else 'None'
-    secure_flag = True  # localhost is exempt; required for SameSite=None
+    # SameSite policy: when the Client (e.g. ecopoints.org on Cloudflare
+    # Pages) and the Server (e.g. onrender.com) are on DIFFERENT registrable
+    # domains, cookies MUST use SameSite=None so the browser stores and
+    # sends them cross-site.  SameSite=Strict only works when both share
+    # the exact same domain (e.g. api.ecopoints.org + www.ecopoints.org).
+    #
+    # Default: 'None' for both dev and prod (safe — Secure=True is set).
+    # Override via COOKIE_SAMESITE env var if the deployment moves to a
+    # same-site setup (e.g. custom domain on the API).
+    samesite_policy = os.environ.get('COOKIE_SAMESITE', 'None')
+    secure_flag = True  # required for SameSite=None; localhost is exempt
     response.set_cookie(
         'token',
         jwt_token,
@@ -544,9 +547,12 @@ def logout(current_user, payload):
         db.session.commit()
 
         resp = jsonify({'success': True, 'message': 'Logged out successfully'})
-        # Clear auth cookies
-        resp.set_cookie('token', '', max_age=0, path='/')
-        resp.set_cookie('csrf_token', '', max_age=0, path='/')
+        # Clear auth cookies — attributes must match the original Set-Cookie
+        # (SameSite, Secure, Path) for the browser to remove them.
+        import os as _os
+        _ss = _os.environ.get('COOKIE_SAMESITE', 'None')
+        resp.set_cookie('token', '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
+        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=True)
         return resp, 200
     except Exception as e:
         db.session.rollback()
