@@ -36,12 +36,50 @@
 //   user                 | user                 | user@ecopoints.local
 //   dependent            | dependent            | dependent@ecopoints.local
 //
-// ── DEMO USERS (43 additional — sample) ─────────────────────────────────────
-//
-//   juan.delacruz        | juan.delacruz@ecopoints.local     (user, EPTU)
-//   maria.santos         | maria.santos@ecopoints.local      (user, EPTU)
-//   angela.reyes         | angela.reyes@ecopoints.local      (user, EPTU)
-//   ... and 40 more regular users across EPTU and GCS orgs
+//   Username                  | Email                                      | Org
+//   maria.delacruz            | maria.delacruz@ecopoints.local             | EPTU
+//   christian.santos          | christian.santos@ecopoints.local           | EPTU
+//   tristan.reyes             | tristan.reyes@ecopoints.local              | EPTU
+//   enrique.cruz              | enrique.cruz@ecopoints.local               | EPTU
+//   miguel.bautista           | miguel.bautista@ecopoints.local            | EPTU
+//   adrian.rivera             | adrian.rivera@ecopoints.local              | EPTU
+//   alyssa.gonzales           | alyssa.gonzales@ecopoints.local            | EPTU
+//   angela.garcia             | angela.garcia@ecopoints.local              | EPTU
+//   antonio.fernandez         | antonio.fernandez@ecopoints.local          | EPTU
+//   beatrice.delacruz         | beatrice.delacruz@ecopoints.local          | EPTU
+//   bianca.dizon              | bianca.dizon@ecopoints.local               | EPTU
+//   camille.ramos             | camille.ramos@ecopoints.local              | EPTU
+//   carlos.lopez              | carlos.lopez@ecopoints.local               | EPTU
+//   celeste.garcia            | celeste.garcia@ecopoints.local             | EPTU
+//   daniela.santos            | daniela.santos@ecopoints.local             | EPTU
+//   darwin.navarro            | darwin.navarro@ecopoints.local             | EPTU
+//   diana.mercado             | diana.mercado@ecopoints.local              | EPTU
+//   elena.gonzales            | elena.gonzales@ecopoints.local             | EPTU
+//   elijah.estrella           | elijah.estrella@ecopoints.local            | EPTU
+//   francesca.villanueva      | francesca.villanueva@ecopoints.local       | EPTU
+//   gabriel.mendoza           | gabriel.mendoza@ecopoints.local            | EPTU
+//   gabriela.aquino           | gabriela.aquino@ecopoints.local            | EPTU
+//   hannah.martinez           | hannah.martinez@ecopoints.local            | EPTU
+//   isabela.valdez            | isabela.valdez@ecopoints.local             | EPTU
+//   jasmine.aguilar           | jasmine.aguilar@ecopoints.local            | EPTU
+//   jericho.bautista          | jericho.bautista@ecopoints.local           | EPTU
+//   juan.soriano              | juan.soriano@ecopoints.local               | EPTU
+//   katrina.mendoza           | katrina.mendoza@ecopoints.local            | EPTU
+//   kenneth.morales           | kenneth.morales@ecopoints.local            | EPTU
+//   kristine.manalo           | kristine.manalo@ecopoints.local            | EPTU
+//   luis.torres               | luis.torres@ecopoints.local                | EPTU
+//   mikhaela.santiago         | mikhaela.santiago@ecopoints.local          | EPTU
+//   nathaniel.villanueva      | nathaniel.villanueva@ecopoints.local       | EPTU
+//   nicole.rivera             | nicole.rivera@ecopoints.local              | EPTU
+//   paolo.castillo            | paolo.castillo@ecopoints.local             | EPTU
+//   patricia.reyes            | patricia.reyes@ecopoints.local             | EPTU
+//   rafael.torres             | rafael.torres@ecopoints.local              | EPTU
+//   ramon.fernandez           | ramon.fernandez@ecopoints.local            | EPTU
+//   regina.salvador           | regina.salvador@ecopoints.local            | EPTU
+//   renzo.pascual             | renzo.pascual@ecopoints.local              | EPTU
+//   samantha.flores           | samantha.flores@ecopoints.local            | EPTU
+//   sofia.ramos               | sofia.ramos@ecopoints.local                | EPTU
+//   victoria.cruz             | victoria.cruz@ecopoints.local              | EPTU
 //
 // ── DEMO DATA INCLUDED ──────────────────────────────────────────────────────
 //   ~200 recycling sessions, ~600 items, ~250 transactions
