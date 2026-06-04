@@ -77,3 +77,41 @@
   - [ ] 9.3 Backend smoke tests pass
   - [ ] 9.4 Trigger Cloudflare Pages rebuild
   - [ ] 9.5 Manual walkthrough of all admin + user pages
+
+---
+
+## Part 2 Tasks
+
+- [x] 10. Phase 10 — Location Modal: Community Groups + Org Type Edit
+  - [x] 10.1 Backend: extend `LocationCreateSchema` to accept `communityGroups` array
+  - [x] 10.2 Backend: bulk-create `CommunityGroup` rows inside `POST /locations`
+  - [x] 10.3 Frontend: community groups inline table in Add Location modal (name, abbreviation, groupType)
+  - [x] 10.4 Backend: `PUT /org-types/<id>` endpoint for renaming
+  - [x] 10.5 Frontend: edit (pencil) + delete (trash) buttons on org type dropdown items — both Add and Edit Location modals
+  - [x] 10.6 Frontend API: added `updateOrgType(id, name)` to `locations.js`
+
+- [x] 11. Phase 11 — User Modal: Cascading Fields
+  - [x] 11.1 Backend: added `educational_level`, `year_level` columns to `User` model
+  - [x] 11.2 Backend: expanded `user_type` enum to include `alumni`
+  - [x] 11.3 Backend: schemas and users CRUD accept/return `educationalLevel`, `yearLevel`, `communityGroupId`
+  - [x] 11.4 Backend: `_serialize_user()` includes new fields
+  - [x] 11.5 Frontend: `AddRegularUserModal.jsx` — full rewrite with firstName/middleName/lastName split + cascading OrgType → EducationalLevel → YearLevel → CommunityGroup
+  - [ ] 11.6 Frontend: Edit User modal — cascading fields + pre-populate (not yet done)
+
+- [x] 12. Phase 12 — Admin Modal: Name Normalization
+  - [x] 12.1 Frontend: `AddUserModal.jsx` — replaced single Full Name field with firstName / middleName / lastName (3-column grid)
+  - [x] 12.2 Payload sends separate name parts; avatar initials built from firstName + lastName
+
+- [x] 13. Phase 13 — Reward Categories CRUD
+  - [x] 13.1 Backend: new `RewardCategory` model (id, organization_id, name, timestamps)
+  - [x] 13.2 Backend: `rewards.category_id` FK → `reward_categories`
+  - [x] 13.3 Backend: full CRUD at `/api/web/reward-categories` (GET, POST, PUT/:id, DELETE/:id)
+  - [x] 13.4 Backend: schemas — `RewardCategoryCreateSchema`, `RewardCategoryUpdateSchema`
+  - [x] 13.5 Frontend API: new `rewardCategories.js` module (getAll, create, update, delete)
+  - [x] 13.6 Frontend: `CategorySearchField` in `rewards/page.js` rewired to API — inline edit (pencil) + delete (trashcan) buttons per item
+  - [x] 13.7 Database migration applied: `reward_categories` table + `rewards.category_id` + `users.educational_level` + `users.year_level` + `user_type` varchar widened ✅
+
+- [x] 14. Phase 14 — Skeleton Loading
+  - [x] 14.1 Created `SkeletonLoaders.jsx` with shared components: `SkeletonCard`, `SkeletonChart`, `SkeletonTable`, `SkeletonTableRow`, `SkeletonRewardCard`, `SkeletonDashboard`
+  - [x] 14.2 Dashboard (`admin/page.js`) — stat cards show skeleton while `isDataLoading` and no cached data
+  - [ ] 14.3 Other admin pages (users, rewards, locations, etc.) — skeleton loading not yet applied

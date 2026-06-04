@@ -132,7 +132,13 @@ class RegisterSchema(_StrictModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
-    userType: Optional[Literal['student', 'faculty', 'staff']] = None
+    userType: Optional[Literal[
+        'student', 'faculty', 'staff', 'alumni',
+        'resident', 'community_official', 'community_worker', 'business_owner',
+        'employee', 'manager', 'executive', 'contractor', 'guest',
+    ]] = None
+    educationalLevel: Optional[str] = None
+    yearLevel: Optional[str] = None
     locationId: Optional[int] = None
     groupId: Optional[int] = None
 
@@ -156,6 +162,9 @@ class UserCreateSchema(_StrictModel):
     password: Optional[str] = None
     role: Optional[str] = None
     userType: Optional[str] = None
+    educationalLevel: Optional[str] = None
+    yearLevel: Optional[str] = None
+    communityGroupId: Optional[int] = None
     isActive: Optional[bool] = None
     locationId: Optional[int] = None
     groupId: Optional[int] = None
@@ -175,6 +184,9 @@ class UserUpdateSchema(_StrictModel):
     password: Optional[str] = None
     role: Optional[str] = None
     userType: Optional[str] = None
+    educationalLevel: Optional[str] = None
+    yearLevel: Optional[str] = None
+    communityGroupId: Optional[int] = None
     isActive: Optional[bool] = None
 
 
@@ -305,6 +317,20 @@ class OrgTypeCreateSchema(_StrictModel):
     name: Optional[str] = None
 
 
+class OrgTypeUpdateSchema(_StrictModel):
+    """Body for ``PUT /api/web/org-types/<id>``."""
+
+    name: Optional[str] = None
+
+
+class CommunityGroupInlineSchema(_StrictModel):
+    """One community group supplied inline during location creation."""
+
+    name: str
+    abbreviation: Optional[str] = None
+    groupType: Optional[str] = None
+
+
 class LocationCreateSchema(_StrictModel):
     """Body for ``POST /api/web/locations``."""
 
@@ -322,6 +348,7 @@ class LocationCreateSchema(_StrictModel):
     contactPerson: Optional[str] = None
     contactEmail: Optional[str] = None
     contactPhone: Optional[str] = None
+    communityGroups: Optional[List[CommunityGroupInlineSchema]] = None
 
 
 class LocationUpdateSchema(_StrictModel):
@@ -376,6 +403,7 @@ class RewardCreateSchema(_StrictModel):
     name: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
+    categoryId: Optional[int] = None
     pointsRequired: Optional[int] = None
     imageUrl: Optional[str] = None
     isActive: Optional[bool] = None
@@ -388,10 +416,24 @@ class RewardUpdateSchema(_StrictModel):
     name: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
+    categoryId: Optional[int] = None
     pointsRequired: Optional[int] = None
     imageUrl: Optional[str] = None
     isActive: Optional[bool] = None
     stockQuantity: Optional[int] = None
+
+
+class RewardCategoryCreateSchema(_StrictModel):
+    """Body for ``POST /api/web/reward-categories``."""
+
+    name: Optional[str] = None
+    organizationId: Optional[int] = None
+
+
+class RewardCategoryUpdateSchema(_StrictModel):
+    """Body for ``PUT /api/web/reward-categories/<id>``."""
+
+    name: Optional[str] = None
 
 
 class RewardRedeemSchema(_StrictModel):
@@ -544,6 +586,8 @@ __all__ = [
     'BulkDepositCreateSchema',
     # locations_controller
     'OrgTypeCreateSchema',
+    'OrgTypeUpdateSchema',
+    'CommunityGroupInlineSchema',
     'LocationCreateSchema',
     'LocationUpdateSchema',
     # machines_controller
@@ -553,6 +597,8 @@ __all__ = [
     'RewardCreateSchema',
     'RewardUpdateSchema',
     'RewardRedeemSchema',
+    'RewardCategoryCreateSchema',
+    'RewardCategoryUpdateSchema',
     # logs_controller
     'MachineLogCreateSchema',
     'RewardRedemptionUpdateSchema',

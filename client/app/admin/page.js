@@ -7,6 +7,7 @@ import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
 import { detectedClassLabel } from '../../src/lib/enumLabels';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
+import { SkeletonCard, SkeletonChart } from '../../src/components/admin/SkeletonLoaders';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
@@ -312,6 +313,13 @@ export default function AdminDashboard() {
             )}
 
             {/* 1. Statistics Row - Location Filtered */}
+            {isDataLoading && !stats.totalBottles ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <SkeletonCard key={i} />
+                    ))}
+                </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     title="Total Bottles"
@@ -342,6 +350,7 @@ export default function AdminDashboard() {
                     icon={Users}
                 />
             </div>
+            )}
 
             {/* 2. Recycling Trends - Full Width with Recharts */}
             <div className="rounded-2xl p-6 shadow-xl relative transition-all duration-500 mb-8

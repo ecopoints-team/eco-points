@@ -26,7 +26,7 @@ from ..models import (
     User,
 )
 from ..middleware import token_required, permission_required, superadmin_required, get_user_org_id, validate_request
-from ..schemas import OrgTypeCreateSchema, LocationCreateSchema, LocationUpdateSchema
+from ..schemas import OrgTypeCreateSchema, OrgTypeUpdateSchema, LocationCreateSchema, LocationUpdateSchema
 from .. import db
 from ._shared import (
     _serialize_org_type,
@@ -97,6 +97,32 @@ def delete_org_type(current_user, ot_id):
         db.session.delete(ot)
         db.session.commit()
         return jsonify({'success': True, 'message': 'Deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@locations_bp.route('/org-types/<int:ot_id>', methods=['PUT'])
+@token_required
+@superadmin_required
+@validate_request(OrgTypeUpdateSchema)
+def update_org_type(current_user, ot_id, payload):
+    """Rename an organization type (superadmin only)."""
+    try:
+        ot = db.session.get(OrgType, ot_id)
+        if not ot:
+            return jsonify({'success': False, 'error': 'Not found'}), 404
+        name = (payload.name or '').strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'Name is required'}), 400
+        existing = OrgType.query.filter(
+            func.lower(OrgType.name) == name.lower(), OrgType.id != ot_id
+        ).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Organization type already exists'}), 409
+        ot.name = name
+        db.session.commit()
+        return jsonify({'success': True, 'orgType': _serialize_org_type(ot)}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -173,10 +199,32 @@ def create_location(current_user, payload):
             )
             db.session.add(contact)
 
-        # Create default community groups for this org
-        for gtype, gname, abbr in [('staff', 'Campus Staff', 'Staff')]:
-            cg = CommunityGroup(organization_id=org.id, name=gname, abbreviation=abbr, group_type=gtype)
-            db.session.add(cg)
+        # Create community groups — use provided list or fall back to default
+        groups_data = data.get('communityGroups')
+        if groups_data and isinstance(groups_data, list):
+            for gd in groups_data:
+                # Handle both dict and Pydantic model objects
+                if hasattr(gd, 'name'):
+                    gname = gd.name
+                    gabbr = gd.abbreviation or ''
+                    gtype = gd.groupType or 'college'
+                else:
+                    gname = gd.get('name', '')
+                    gabbr = gd.get('abbreviation', '')
+                    gtype = gd.get('groupType', 'college')
+                if gname and gname.strip():
+                    cg = CommunityGroup(
+                        organization_id=org.id,
+                        name=gname.strip(),
+                        abbreviation=gabbr.strip() or None,
+                        group_type=gtype,
+                    )
+                    db.session.add(cg)
+        else:
+            # Default: create a single "Campus Staff" group
+            for gtype, gname, abbr in [('staff', 'Campus Staff', 'Staff')]:
+                cg = CommunityGroup(organization_id=org.id, name=gname, abbreviation=abbr, group_type=gtype)
+                db.session.add(cg)
 
         _log_action(current_user, 'Location Created', org.name, 'Locations')
         db.session.commit()

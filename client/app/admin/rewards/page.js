@@ -5,7 +5,7 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { rewards as rewardsApi } from '../../../src/services/api';
+import { rewards as rewardsApi, rewardCategories as categoriesApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
@@ -79,14 +79,25 @@ const CategoryBadge = ({ category }) => {
     );
 };
 
-// Searchable Category Field (with + button, upward dropdown, 5-item scroll)
+// Searchable Category Field — API-backed CRUD with edit/delete
 const CategorySearchField = ({ value, onChange, existingCategories }) => {
     const [search, setSearch] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
-    const [customCategories, setCustomCategories] = useState([]);
+    const [apiCategories, setApiCategories] = useState([]);
+    const [editingId, setEditingId] = useState(null);
+    const [editingName, setEditingName] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
+    const [catError, setCatError] = useState('');
     const ref = useRef(null);
+
+    // Load categories from API
+    useEffect(() => {
+        categoriesApi.getAll()
+            .then(cats => setApiCategories(cats || []))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -99,17 +110,55 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const allOptions = [...new Set([...DEFAULT_CATEGORIES, ...existingCategories, ...customCategories])];
-    const filtered = allOptions.filter(c => c.toLowerCase().includes((showDropdown ? search : '').toLowerCase()));
+    // Merge API categories with existing (from rewards data), deduplicated
+    const allCatNames = [...new Set([...apiCategories.map(c => c.name), ...existingCategories])];
+    const filtered = allCatNames.filter(c => c.toLowerCase().includes((showDropdown ? search : '').toLowerCase()));
 
-    const handleAddCategory = () => {
+    const handleAddCategory = async () => {
         const trimmed = newCategoryName.trim();
         if (!trimmed) return;
-        setCustomCategories(prev => [...new Set([...prev, trimmed])]);
-        onChange(trimmed);
-        setNewCategoryName('');
-        setShowAddCategory(false);
-        setShowDropdown(false);
+        setIsAdding(true);
+        setCatError('');
+        try {
+            const created = await categoriesApi.create(trimmed);
+            setApiCategories(prev => [...prev, created]);
+            onChange(trimmed);
+            setNewCategoryName('');
+            setShowAddCategory(false);
+            setShowDropdown(false);
+        } catch (err) {
+            setCatError(err?.message || 'Failed to create category');
+        } finally {
+            setIsAdding(false);
+        }
+    };
+
+    const handleEditCategory = async (id) => {
+        const name = editingName.trim();
+        if (!name) return;
+        setCatError('');
+        try {
+            const updated = await categoriesApi.update(id, name);
+            setApiCategories(prev => prev.map(c => c.id === id ? { ...c, name: updated.name } : c));
+            if (value === editingName) onChange(updated.name);
+            setEditingId(null);
+            setEditingName('');
+        } catch (err) {
+            setCatError(err?.message || 'Failed to rename');
+        }
+    };
+
+    const handleDeleteCategory = async (cat) => {
+        const apiCat = apiCategories.find(c => c.name === cat);
+        if (!apiCat) return;
+        setCatError('');
+        try {
+            await categoriesApi.delete(apiCat.id);
+            setApiCategories(prev => prev.filter(c => c.id !== apiCat.id));
+            if (value === cat) onChange('');
+        } catch (err) {
+            setCatError(err?.message || 'Cannot delete: rewards use this category');
+        }
     };
 
     return (
@@ -130,19 +179,46 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
                     />
                     {showDropdown && (
                         <div className="absolute z-50 bottom-full mb-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[185px] overflow-y-auto">
-                            {filtered.length > 0 ? filtered.map(cat => (
-                                <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => { onChange(cat); setShowDropdown(false); setSearch(''); }}
-                                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${cat === value
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-medium'
-                                        : 'text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400'
-                                    }`}
-                                >
-                                    {cat}
-                                </button>
-                            )) : (
+                            {filtered.length > 0 ? filtered.map(cat => {
+                                const apiCat = apiCategories.find(c => c.name === cat);
+                                return (
+                                    <div key={cat} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
+                                        {editingId && apiCat && editingId === apiCat.id ? (
+                                            <div className="flex-1 flex gap-1">
+                                                <input type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditCategory(apiCat.id); } if (e.key === 'Escape') setEditingId(null); }}
+                                                    className="flex-1 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-900 text-sm outline-none" autoFocus />
+                                                <button type="button" onClick={() => handleEditCategory(apiCat.id)} className="text-emerald-600 text-xs font-medium">Save</button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { onChange(cat); setShowDropdown(false); setSearch(''); }}
+                                                    className={`flex-1 text-left text-sm transition-colors ${cat === value
+                                                        ? 'text-emerald-700 dark:text-emerald-400 font-medium'
+                                                        : 'text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-400'
+                                                    }`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                                {apiCat && (
+                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); setEditingId(apiCat.id); setEditingName(cat); }}
+                                                            className="p-1 rounded text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
+                                                            <Edit2 size={12} />
+                                                        </button>
+                                                        <button type="button" onClick={async (e) => { e.stopPropagation(); await handleDeleteCategory(cat); }}
+                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            }) : (
                                 <div className="px-3 py-3 text-center text-xs text-slate-400">No matches — use + to add</div>
                             )}
                         </div>
@@ -159,12 +235,13 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
                     <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category name..."
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
                         className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
-                    <button type="button" onClick={handleAddCategory} disabled={!newCategoryName.trim()}
+                    <button type="button" onClick={handleAddCategory} disabled={!newCategoryName.trim() || isAdding}
                         className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">
-                        Add
+                        {isAdding ? '...' : 'Add'}
                     </button>
                 </div>
             )}
+            {catError && <p className="text-red-500 text-xs mt-1">{catError}</p>}
         </div>
     );
 };
