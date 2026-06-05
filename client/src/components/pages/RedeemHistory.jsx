@@ -138,10 +138,17 @@ export default function RedeemHistory() {
               >
                 {/* Left: Reward Info */}
                 <div className="flex-grow">
-                  <div className="flex items-center gap-2 text-emerald-600 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Active Reward</span>
-                  </div>
+                  {rd.status === 'claimed' ? (
+                    <div className="flex items-center gap-2 text-slate-500 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-slate-400" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">Claimed</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-emerald-600 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">Active Reward</span>
+                    </div>
+                  )}
                   <h3 className="text-3xl font-black text-[#064e3b] mb-3 leading-none" style={{ fontFamily: "'Fredoka', sans-serif" }}>{rd.rewardName}</h3>
                   <div className="flex items-center gap-6 text-slate-400 text-sm font-bold">
                     <div className="flex items-center gap-2">
@@ -156,30 +163,43 @@ export default function RedeemHistory() {
 
                 {/* Right: Code Reveal */}
                 <div className="flex flex-col items-center md:items-end gap-4 flex-shrink-0">
-                  <div className={`w-full md:w-auto flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-700 border ${revealCodeId === rd.id ? 'bg-emerald-50 border-emerald-200 scale-105 shadow-inner' : 'bg-slate-50 border-slate-100 hover:bg-slate-100/50'}`}>
-                    <div className="flex flex-col flex-grow md:flex-grow-0 min-w-[140px]">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Redemption Code</span>
-                      <span className={`font-mono font-black text-2xl tracking-[0.2em] transition-all duration-700 ${revealCodeId === rd.id ? 'text-emerald-700' : 'text-slate-300 blur-md select-none'}`}>
-                        {rd.redemptionCode}
-                      </span>
+                  {rd.status === 'claimed' ? (
+                    <div className="w-full md:w-auto flex items-center gap-4 p-4 rounded-[1.5rem] border bg-slate-50 border-slate-200 opacity-80 min-w-[180px]">
+                      <div className="flex flex-col flex-grow text-center md:text-left">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Redemption Code</span>
+                        <span className="font-mono font-black text-xl text-slate-500 tracking-[0.2em]">
+                          {rd.redemptionCode}
+                        </span>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => toggleReveal(rd.id)}
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${revealCodeId === rd.id ? 'bg-emerald-200 text-emerald-700' : 'bg-white text-slate-400 shadow-sm hover:text-emerald-500 hover:scale-110'}`}
-                      aria-label={revealCodeId === rd.id ? "Hide Code" : "Reveal Code"}
-                    >
-                      {revealCodeId === rd.id ? <EyeOff size={24} /> : <Eye size={24} />}
-                    </button>
-                  </div>
-                  
-                  {revealCodeId === rd.id && (
-                    <button 
-                      onClick={() => setActiveQrRedemption(rd)}
-                      className="flex items-center gap-2 text-xs font-black text-emerald-600 hover:text-[#064e3b] transition-colors animate-fade-in uppercase tracking-widest hover:underline"
-                    >
-                      <QrCode size={16} />
-                      Generate Redemption QR
-                    </button>
+                  ) : (
+                    <>
+                      <div className={`w-full md:w-auto flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-700 border ${revealCodeId === rd.id ? 'bg-emerald-50 border-emerald-200 scale-105 shadow-inner' : 'bg-slate-50 border-slate-100 hover:bg-slate-100/50'}`}>
+                        <div className="flex flex-col flex-grow md:flex-grow-0 min-w-[140px]">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Redemption Code</span>
+                          <span className={`font-mono font-black text-2xl tracking-[0.2em] transition-all duration-700 ${revealCodeId === rd.id ? 'text-emerald-700' : 'text-slate-300 blur-md select-none'}`}>
+                            {rd.redemptionCode}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => toggleReveal(rd.id)}
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${revealCodeId === rd.id ? 'bg-emerald-200 text-emerald-700' : 'bg-white text-slate-400 shadow-sm hover:text-emerald-500 hover:scale-110'}`}
+                          aria-label={revealCodeId === rd.id ? "Hide Code" : "Reveal Code"}
+                        >
+                          {revealCodeId === rd.id ? <EyeOff size={24} /> : <Eye size={24} />}
+                        </button>
+                      </div>
+                      
+                      {revealCodeId === rd.id && (
+                        <button 
+                          onClick={() => setActiveQrRedemption(rd)}
+                          className="flex items-center gap-2 text-xs font-black text-emerald-600 hover:text-[#064e3b] transition-colors animate-fade-in uppercase tracking-widest hover:underline"
+                        >
+                          <QrCode size={16} />
+                          Generate Redemption QR
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

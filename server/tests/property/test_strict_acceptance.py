@@ -173,7 +173,7 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         frozenset({
             'firstName', 'lastName', 'middleName', 'username', 'email',
             'phone', 'password', 'role', 'userType', 'locationId', 'groupId',
-            'name',
+            'name', 'educationalLevel', 'yearLevel', 'communityGroupId',
         }),
         _users_create_body,
     ),
@@ -183,6 +183,7 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         frozenset({
             'firstName', 'lastName', 'middleName', 'username', 'email',
             'phone', 'role', 'userType', 'isActive', 'password', 'name',
+            'educationalLevel', 'yearLevel', 'communityGroupId',
         }),
         _users_update_body,
     ),

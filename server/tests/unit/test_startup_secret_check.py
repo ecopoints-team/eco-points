@@ -27,7 +27,8 @@ import pytest
 # `app` is on sys.path via tests/conftest.py.
 from app import (
     KNOWN_DEV_DEFAULTS,
-    REQUIRED_PRODUCTION_SECRETS,
+    CRITICAL_PRODUCTION_SECRETS,
+    OPTIONAL_PRODUCTION_SECRETS,
     _check_required_secrets_in_production,
 )
 
@@ -91,19 +92,22 @@ def _set_clean_production_env(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]
 
 
 def test_required_set_matches_phase4a_carveout():
-    """The required-secret set is exactly the Phase 4A carve-out: the
-    four web-required secrets, with `qr_hmac_secret_ref` deliberately
-    absent until Phase 4A lands.
+    """The critical and optional secret sets contain exactly the Phase 4A
+    carve-out, with `qr_hmac_secret_ref` deliberately absent.
     """
-    assert set(REQUIRED_PRODUCTION_SECRETS) == {
+    assert set(CRITICAL_PRODUCTION_SECRETS) == {
         'SECRET_KEY',
         'DATABASE_URL',
+    }
+    assert set(OPTIONAL_PRODUCTION_SECRETS) == {
         'SMTP_PASS',
         'TWILIO_AUTH_TOKEN',
     }
     # qr_hmac_secret_ref MUST NOT be present yet (Phase 4A is rpi-deferred).
-    assert 'qr_hmac_secret_ref' not in REQUIRED_PRODUCTION_SECRETS
-    assert 'QR_HMAC_SECRET_REF' not in REQUIRED_PRODUCTION_SECRETS
+    assert 'qr_hmac_secret_ref' not in CRITICAL_PRODUCTION_SECRETS
+    assert 'qr_hmac_secret_ref' not in OPTIONAL_PRODUCTION_SECRETS
+    assert 'QR_HMAC_SECRET_REF' not in CRITICAL_PRODUCTION_SECRETS
+    assert 'QR_HMAC_SECRET_REF' not in OPTIONAL_PRODUCTION_SECRETS
 
 
 def test_known_dev_defaults_cover_repo_placeholders():
@@ -129,7 +133,7 @@ def test_noop_outside_production(
         monkeypatch.delenv('FLASK_ENV', raising=False)
     else:
         monkeypatch.setenv('FLASK_ENV', flask_env)
-    for name in REQUIRED_PRODUCTION_SECRETS:
+    for name in list(CRITICAL_PRODUCTION_SECRETS) + list(OPTIONAL_PRODUCTION_SECRETS):
         monkeypatch.delenv(name, raising=False)
 
     # Returns None and does NOT call sys.exit.
@@ -147,8 +151,8 @@ def test_production_clean_env_passes(monkeypatch: pytest.MonkeyPatch):
 # ── Production: missing required secrets exit non-zero ──────────────────
 
 
-@pytest.mark.parametrize('missing', list(REQUIRED_PRODUCTION_SECRETS))
-def test_production_missing_secret_exits_nonzero(
+@pytest.mark.parametrize('missing', list(CRITICAL_PRODUCTION_SECRETS))
+def test_production_missing_critical_secret_exits_nonzero(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     missing: str,
@@ -171,14 +175,14 @@ def test_production_empty_string_treated_as_missing(
 ):
     """A blank value (set but empty) is treated identically to unset."""
     _set_clean_production_env(monkeypatch)
-    monkeypatch.setenv('SMTP_PASS', '')
+    monkeypatch.setenv('DATABASE_URL', '')
 
     with caplog.at_level(logging.CRITICAL, logger='app'):
         with pytest.raises(SystemExit) as excinfo:
             _check_required_secrets_in_production()
 
     assert excinfo.value.code == 1
-    assert any('SMTP_PASS' in r.getMessage() for r in caplog.records)
+    assert any('DATABASE_URL' in r.getMessage() for r in caplog.records)
 
 
 # ── Production: dev-default values exit non-zero ────────────────────────
@@ -188,11 +192,11 @@ def test_production_empty_string_treated_as_missing(
     'name,value',
     [
         (name, value)
-        for name, defaults in KNOWN_DEV_DEFAULTS.items()
-        for value in defaults
+        for name in CRITICAL_PRODUCTION_SECRETS
+        for value in KNOWN_DEV_DEFAULTS[name]
     ],
 )
-def test_production_dev_default_value_exits_nonzero(
+def test_production_critical_dev_default_value_exits_nonzero(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     name: str,
@@ -219,6 +223,46 @@ def test_production_dev_default_value_exits_nonzero(
         assert not _value_leaked(msg, value), (
             f"Secret value {value!r} for {name} leaked into log message: {msg!r}"
         )
+
+
+@pytest.mark.parametrize('optional', list(OPTIONAL_PRODUCTION_SECRETS))
+def test_production_missing_optional_secret_warns_only(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    optional: str,
+):
+    _set_clean_production_env(monkeypatch)
+    monkeypatch.delenv(optional, raising=False)
+
+    with caplog.at_level(logging.WARNING, logger='app'):
+        assert _check_required_secrets_in_production() is None
+
+    assert any(optional in record.getMessage() for record in caplog.records)
+    assert not any(record.levelno >= logging.CRITICAL for record in caplog.records)
+
+
+@pytest.mark.parametrize(
+    'name,value',
+    [
+        (name, value)
+        for name in OPTIONAL_PRODUCTION_SECRETS
+        for value in KNOWN_DEV_DEFAULTS[name]
+    ],
+)
+def test_production_optional_dev_default_value_warns_only(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    name: str,
+    value: str,
+):
+    _set_clean_production_env(monkeypatch)
+    monkeypatch.setenv(name, value)
+
+    with caplog.at_level(logging.WARNING, logger='app'):
+        assert _check_required_secrets_in_production() is None
+
+    assert any(name in record.getMessage() for record in caplog.records)
+    assert not any(record.levelno >= logging.CRITICAL for record in caplog.records)
 
 
 # ── Production: secret VALUES never appear in logs ──────────────────────

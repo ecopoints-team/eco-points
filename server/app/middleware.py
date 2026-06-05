@@ -403,7 +403,7 @@ def superadmin_required(f):
     return decorated
 
 
-def permission_required(*categories):
+def permission_required(*categories, allow_non_admin=False):
     """Decorator that gates a route on `ROLE_PERMISSIONS[current_user.role]`
     after the universal admin guard passes (Requirement 0.3, 0.4, 0.8).
 
@@ -412,6 +412,7 @@ def permission_required(*categories):
          which returns HTTP 403 `ADMIN_REQUIRED` for every non-admin role
          regardless of HTTP method. The previous `if request.method != 'GET'`
          early-return branch is removed entirely.
+         Exception: if `allow_non_admin` is True, non-admin roles bypass the check.
       2. Only after the admin guard passes does the decorator evaluate the
          requested categories against `ROLE_PERMISSIONS[current_user.role]`.
       3. On a category miss the decorator returns HTTP 403 with
@@ -432,9 +433,17 @@ def permission_required(*categories):
     def decorator(f):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
-            denied = _require_admin_or_403(current_user)
-            if denied:
-                return denied
+            role = getattr(current_user, 'role', None)
+            if role not in ADMIN_ROLE_SET:
+                if allow_non_admin:
+                    return f(current_user, *args, **kwargs)
+                return jsonify({
+                    'success': False,
+                    'error': {
+                        'code': 'ADMIN_REQUIRED',
+                        'message': 'Admin access required',
+                    },
+                }), 403
             role_perms = ROLE_PERMISSIONS.get(current_user.role, set())
             for cat in categories:
                 if cat not in role_perms:
