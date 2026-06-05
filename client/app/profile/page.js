@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ArrowLeft } from "lucide-react";
 import ProfileSkeleton from "../../src/components/shared/skeletons/ProfileSkeleton";
-
-const ProfileSection = dynamic(
-  () => import("../../src/components/pages/ProfileSection"),
-  { loading: () => <ProfileSkeleton /> }
-);
+import { useAuth } from "../../src/context/AuthContext";
+import AdminLayoutComponent from "../../src/components/admin/AdminLayout";
+import ProfileSection from "../../src/components/pages/ProfileSection";
+import AdminProfile from "../../src/components/admin/AdminProfile";
 
 function ProfileHeader() {
   return (
@@ -55,11 +53,16 @@ function ProfileHeader() {
 }
 
 export default function ProfilePage() {
+  const { currentUser, isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return <ProfileSkeleton />;
+  }
+
   return (
     <>
       <ProfileHeader />
       <main className="pt-16 min-h-screen bg-slate-50">
-        {/* Developers: add your sections below */}
         <ProfileSection />
       </main>
     </>

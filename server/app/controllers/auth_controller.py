@@ -322,6 +322,8 @@ def _serialize_auth_user(u):
         'isActive': u.is_active, 'locationId': location_id,
         'locationName': (org['name'] if org else None),
         'organization': org,
+        'displayId': u.display_id,
+        'qrToken': u.qr_token,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,

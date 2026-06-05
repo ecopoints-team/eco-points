@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Package, FileText, Activity,
-    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers
+    LogOut, Leaf, ChevronLeft, ChevronRight, ChevronDown, Settings, Building2, Trophy, BarChart3, Layers,
+    Home, QrCode
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -152,11 +153,13 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
     // to every authenticated admin.
     let currentUser = null;
     let logout = () => { };
+    let hasPermission = () => false;
 
     try {
         const auth = useAuth();
         currentUser = auth.currentUser;
         logout = auth.logout;
+        hasPermission = auth.hasPermission || (() => false);
     } catch (e) {
         // AuthContext not available yet, use defaults
     }
@@ -229,6 +232,13 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
             icon: FileText,
             href: '/admin/rewards',
             category: 'rewards',
+        },
+        {
+            type: 'item',
+            label: 'Claim Scanner',
+            icon: QrCode,
+            href: '/admin/claims',
+            hidden: !hasPermission('rewards', 'view') // Assuming staff who can view rewards can scan claims
         },
         {
             type: 'item',

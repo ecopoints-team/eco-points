@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf, Bell, ShieldAlert } from 'lucide-react';
+import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf, Bell, ShieldAlert, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { ROLES } from '../../data/roleConfig';
@@ -124,6 +124,13 @@ export default function AdminLayout({ children }) {
         }
     }, [isInitialized, currentUser, router]);
 
+    // Prefetch unified profile route for admins
+    useEffect(() => {
+        if (router) {
+            router.prefetch('/admin/profile');
+        }
+    }, [router]);
+
     // Load sidebar state from localStorage after mount (client-only)
     useEffect(() => {
         const saved = localStorage.getItem('sidebarOpen');
@@ -154,7 +161,7 @@ export default function AdminLayout({ children }) {
         if (path === '/admin/analytics') return { main: 'System', sub: 'Analytics' };
         if (path === '/admin/bulk-sessions') return { main: 'Bulk', sub: 'Sessions' };
         if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
-        if (path === '/admin/profile') return { main: 'My', sub: 'Profile' };
+        if (path === '/admin/profile' || path === '/profile') return { main: 'My', sub: 'Profile' };
         return { main: 'Admin', sub: 'Panel' };
     };
 
@@ -240,7 +247,9 @@ export default function AdminLayout({ children }) {
                 // Notifications are non-critical — fail silently
             }
         };
-        if (currentUser) loadNotifications();
+        if (currentUser && ADMIN_ROLES.includes(currentUser.role)) {
+            loadNotifications();
+        }
         return () => { cancelled = true; };
     }, [currentUser, effectiveLocationId]);
 
@@ -519,8 +528,8 @@ export default function AdminLayout({ children }) {
 
                                             <Link href="/admin/profile">
                                                 <button onClick={() => setIsProfileOpen(false)} className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
-                            text-slate-700 hover:bg-gray-50 hover:text-indigo-600
-                            dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-indigo-400">
+                                            text-slate-700 hover:bg-gray-50 hover:text-indigo-600
+                                            dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-indigo-400">
                                                     <Settings size={16} />
                                                     Manage Profile
                                                 </button>

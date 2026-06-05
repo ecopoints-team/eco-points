@@ -1149,7 +1149,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
         `}
         >
           <div
-            className={`w-full max-w-xs flex flex-col items-center transition-opacity duration-500 ${isSignUp ? "opacity-100" : "opacity-0 md:opacity-100"}`}
+            className={`w-full max-w-xs md:max-w-sm flex flex-col items-center transition-opacity duration-500 ${isSignUp ? "opacity-100" : "opacity-0 md:opacity-100"}`}
           >
             {/* Phase Indicator */}
             {isSignUp && (
@@ -1185,53 +1185,58 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
             {/* PHASE 1: Basic Credentials ONLY (Name, Email, Passwords) */}
             {signUpPhase === 1 && (
-              <form onSubmit={handleSignUpPhase1} className="w-full space-y-2">
-                <InputField
-                  type="text"
-                  placeholder="Full Name"
-                  icon={<User size={18} />}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
+              <form onSubmit={handleSignUpPhase1} className={`w-full space-y-2.5 ${passwordMismatchShake ? "animate-shake" : ""}`}>
+                {/* Row 1: Full Name + Username side-by-side */}
+                <div className="flex gap-2">
+                  <InputField
+                    type="text"
+                    placeholder="Full Name"
+                    icon={<User size={16} />}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                  <InputField
+                    type="text"
+                    placeholder="Username"
+                    icon={<AtSign size={16} />}
+                    value={signUpUsername}
+                    onChange={(e) => setSignUpUsername(e.target.value)}
+                    required
+                  />
+                </div>
 
-                <InputField
-                  type="text"
-                  placeholder="Username"
-                  icon={<AtSign size={18} />}
-                  value={signUpUsername}
-                  onChange={(e) => setSignUpUsername(e.target.value)}
-                  required
-                />
-
+                {/* Row 2: Email full-width */}
                 <InputField
                   type="email"
                   placeholder="Email"
-                  icon={<Mail size={18} />}
+                  icon={<Mail size={16} />}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
 
-                <InputField
-                  type="password"
-                  placeholder="Password"
-                  icon={<Lock size={18} />}
-                  showToggle={true}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-
-                <InputField
-                  type="password"
-                  placeholder="Confirm Password"
-                  icon={<Lock size={18} />}
-                  showToggle={true}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                {/* Row 3: Password + Confirm Password side-by-side */}
+                <div className="flex gap-2">
+                  <InputField
+                    type="password"
+                    placeholder="Password"
+                    icon={<Lock size={16} />}
+                    showToggle={true}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <InputField
+                    type="password"
+                    placeholder="Confirm Password"
+                    icon={<Lock size={16} />}
+                    showToggle={true}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
 
                 {error && isSignUp && signUpPhase === 1 && (
                   <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">

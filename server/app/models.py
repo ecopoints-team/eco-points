@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import secrets
 from werkzeug.security import generate_password_hash, check_password_hash
 import bcrypt as _bcrypt
 from . import db
@@ -175,6 +176,7 @@ class User(db.Model):
     community_group_id = db.Column(db.Integer, db.ForeignKey('community_groups.id'),
                                    nullable=False, index=True)
     display_id = db.Column(db.String(30), unique=True, nullable=True, index=True)
+    qr_token = db.Column(db.String(100), unique=True, nullable=True, index=True, default=lambda: secrets.token_hex(16))
 
     # Identity (split name per ERD)
     first_name = db.Column(db.String(200), nullable=False)
@@ -274,6 +276,11 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.first_name} {self.last_name} ({self.role})>'
+
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if not self.qr_token:
+            self.qr_token = secrets.token_hex(16)
 
 
 class Wallet(db.Model):
