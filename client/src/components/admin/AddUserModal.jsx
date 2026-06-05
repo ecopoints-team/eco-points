@@ -149,7 +149,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     const [activeTab, setActiveTab] = useState('information');
 
     // Form state - Information tab
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -231,11 +233,11 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
 
         // Validate using shared rules
         const fieldErrors = [];
-        const nameErr = validateField(VALIDATION_RULES.user, 'name', name);
+        if (!firstName.trim()) fieldErrors.push('First name is required');
+        if (!lastName.trim()) fieldErrors.push('Last name is required');
         const usernameErr = validateField(VALIDATION_RULES.user, 'username', username);
         const emailErr = validateField(VALIDATION_RULES.user, 'email', email);
         const pwErr = validateField(VALIDATION_RULES.user, 'password', password);
-        if (nameErr) fieldErrors.push(nameErr);
         if (usernameErr) fieldErrors.push(usernameErr);
         if (emailErr) fieldErrors.push(emailErr);
         if (pwErr) fieldErrors.push(pwErr);
@@ -271,7 +273,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         try {
             // Build the payload for the API
             const payload = {
-                name,
+                firstName: firstName.trim(),
+                middleName: middleName.trim() || undefined,
+                lastName: lastName.trim(),
                 username: username || undefined,
                 email,
                 phone: phone || undefined,
@@ -287,7 +291,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
             const newUser = {
                 ...created,
                 id: String(created.id),
-                avatar: (created.name || name).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+                avatar: (`${created.firstName || firstName} ${created.lastName || lastName}`).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
                 status: 'Active',
                 accountHealth: 'Active',
                 lastLogin: 'Never',
@@ -308,7 +312,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     };
 
     const resetForm = () => {
-        setName('');
+        setFirstName('');
+        setMiddleName('');
+        setLastName('');
         setUsername('');
         setEmail('');
         setPhone('');
@@ -384,14 +390,32 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                         {/* Information Tab */}
                         {activeTab === 'information' && (
                             <div className="p-6 space-y-4">
-                                <InputField
-                                    type="text"
-                                    placeholder="John Doe"
-                                    icon={User}
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    label="Full Name *"
-                                />
+                                <div className="grid grid-cols-3 gap-4">
+                                    <InputField
+                                        type="text"
+                                        placeholder="First Name"
+                                        icon={User}
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        label="First Name *"
+                                    />
+                                    <InputField
+                                        type="text"
+                                        placeholder="Middle Name"
+                                        icon={User}
+                                        value={middleName}
+                                        onChange={(e) => setMiddleName(e.target.value)}
+                                        label="Middle Name"
+                                    />
+                                    <InputField
+                                        type="text"
+                                        placeholder="Last Name"
+                                        icon={User}
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        label="Last Name *"
+                                    />
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField
                                         type="text"

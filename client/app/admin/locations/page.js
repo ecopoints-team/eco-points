@@ -43,6 +43,11 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
     const [newOrgTypeName, setNewOrgTypeName] = useState('');
     const [isAddingOrgType, setIsAddingOrgType] = useState(false);
     const orgTypeRef = useRef(null);
+    const [editingOrgTypeId, setEditingOrgTypeId] = useState(null);
+    const [editingOrgTypeName, setEditingOrgTypeName] = useState('');
+
+    // Community groups state
+    const [communityGroups, setCommunityGroups] = useState([]);
 
 
 
@@ -102,6 +107,33 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
         }
     };
 
+    const handleEditOrgType = async (id) => {
+        const name = editingOrgTypeName.trim();
+        if (!name) return;
+        setOrgTypeError('');
+        try {
+            const updated = await orgTypesApi.update(id, name);
+            setOrgTypesList(prev => prev.map(t => t.id === id ? { ...t, name: updated.name } : t));
+            setEditingOrgTypeId(null);
+            setEditingOrgTypeName('');
+        } catch (err) {
+            const msg = err?.message || err?.error || 'Failed to rename';
+            setOrgTypeError(msg);
+        }
+    };
+
+    const handleAddCommunityGroup = () => {
+        setCommunityGroups(prev => [...prev, { name: '', abbreviation: '', groupType: 'college' }]);
+    };
+
+    const handleRemoveCommunityGroup = (idx) => {
+        setCommunityGroups(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleGroupChange = (idx, field, value) => {
+        setCommunityGroups(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
+    };
+
     const validateForm = () => {
         const { errors: newErrors, isValid } = validateAll(VALIDATION_RULES.location, formData);
         setErrors(newErrors);
@@ -123,10 +155,8 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
             onSubmit({
                 ...formData,
                 orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
+                communityGroups: communityGroups.filter(g => g.name.trim()),
                 id: `LOC-${Date.now()}`,
-                // The page now reads `createdAt` from the GET response (alignment
-                // doc §4); the local optimistic shape keeps the same key so the
-                // card renders without a flash of empty state.
                 createdAt: new Date().toISOString(),
                 machineCount: 0,
                 userCount: 0,
@@ -134,6 +164,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                 totalPoints: 0,
             });
             setFormData({ name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
+            setCommunityGroups([]);
             onClose();
         }
     };
@@ -196,15 +227,32 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                         <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
                                             {filteredOrgTypes.length > 0 ? filteredOrgTypes.map(opt => (
                                                 <div key={opt.id} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
-                                                    <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
-                                                        className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
-                                                        {opt.name}
-                                                    </button>
-                                                    {isSuperAdmin && (
-                                                        <button type="button" onClick={async (e) => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
-                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100">
-                                                            <Trash2 size={12} />
-                                                        </button>
+                                                    {editingOrgTypeId === opt.id ? (
+                                                        <div className="flex-1 flex gap-1">
+                                                            <input type="text" value={editingOrgTypeName} onChange={(e) => setEditingOrgTypeName(e.target.value)}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEditOrgType(opt.id); } if (e.key === 'Escape') setEditingOrgTypeId(null); }}
+                                                                className="flex-1 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-900 text-sm outline-none" autoFocus />
+                                                            <button type="button" onClick={() => handleEditOrgType(opt.id)} className="text-emerald-600 text-xs font-medium">Save</button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
+                                                                className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                                                                {opt.name}
+                                                            </button>
+                                                            {isSuperAdmin && (
+                                                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button type="button" onClick={(e) => { e.stopPropagation(); setEditingOrgTypeId(opt.id); setEditingOrgTypeName(opt.name); }}
+                                                                        className="p-1 rounded text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
+                                                                        <Edit2 size={12} />
+                                                                    </button>
+                                                                    <button type="button" onClick={async (e) => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
+                                                                        className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                                                        <Trash2 size={12} />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             )) : (
@@ -360,6 +408,41 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 size="md"
                             />
                         </div>
+                    </div>
+                    {/* Community Groups Section */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Community Groups</label>
+                            <button type="button" onClick={handleAddCommunityGroup}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 transition-colors">
+                                <Plus size={14} /> Add Group
+                            </button>
+                        </div>
+                        {communityGroups.length === 0 && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 italic">A default "Campus Staff" group will be created if none are added.</p>
+                        )}
+                        {communityGroups.map((g, idx) => (
+                            <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 mb-2 items-center">
+                                <input type="text" placeholder="Group name (e.g., BSIT)" value={g.name}
+                                    onChange={(e) => handleGroupChange(idx, 'name', e.target.value)}
+                                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                                <input type="text" placeholder="Abbr" value={g.abbreviation}
+                                    onChange={(e) => handleGroupChange(idx, 'abbreviation', e.target.value)}
+                                    className="w-20 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                                <select value={g.groupType} onChange={(e) => handleGroupChange(idx, 'groupType', e.target.value)}
+                                    className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs outline-none">
+                                    <option value="college">College</option>
+                                    <option value="shs_strand">SHS Strand</option>
+                                    <option value="jhs">JHS</option>
+                                    <option value="elementary">Elementary</option>
+                                    <option value="staff">Staff</option>
+                                </select>
+                                <button type="button" onClick={() => handleRemoveCommunityGroup(idx)}
+                                    className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))}
                     </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">

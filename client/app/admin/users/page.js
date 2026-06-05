@@ -29,15 +29,13 @@ function ManageUsersPageContent() {
 
     // Column visibility toggles
     const [showDepartment, setShowDepartment] = useState(true);
-    const [showStrand, setShowStrand] = useState(true);
-    const [showAccountHealth, setShowAccountHealth] = useState(false);
 
     // Edit and Delete modal states
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
-        name: '', username: '', email: '', phone: '', userType: '', yearLevel: '', isActive: true
+        name: '', username: '', email: '', phone: '', userType: '', isActive: true
     });
 
     // Adjust Points modal state
@@ -55,7 +53,6 @@ function ManageUsersPageContent() {
             email: user.email || '',
             phone: user.phone || '',
             userType: user.userType || '',
-            yearLevel: user.yearLevel || '',
             isActive: user.isActive !== undefined ? user.isActive : true
         });
         setIsEditModalOpen(true);
@@ -74,7 +71,6 @@ function ManageUsersPageContent() {
                     email: editFormData.email,
                     phone: editFormData.phone,
                     userType: editFormData.userType,
-                    yearLevel: editFormData.yearLevel,
                     isActive: editFormData.isActive,
                 };
                 const updated = await usersApi.update(selectedUser.id, payload);
@@ -188,7 +184,6 @@ function ManageUsersPageContent() {
 
     const roles = [...new Set(users.map(u => u.userType).filter(Boolean))];
     const statuses = ['Active', 'Inactive'];
-    const accountHealthOptions = ['Active', 'Inactive'];
 
     const filteredUsers = useMemo(() => {
         let result = users.filter(user => {
@@ -202,10 +197,8 @@ function ManageUsersPageContent() {
             // alignment doc §13).
             const matchesStatus = filterStatus === ''
                 || (filterStatus === 'Active' ? user.isActive === true : user.isActive === false);
-            const matchesAccountHealth = filterAccountHealth === ''
-                || (filterAccountHealth === 'Active' ? user.isActive === true : user.isActive === false);
             const matchesSchool = filterSchool === '' || user.locationId === filterSchool;
-            return matchesSearch && matchesRole && matchesStatus && matchesAccountHealth && matchesSchool;
+            return matchesSearch && matchesRole && matchesStatus && matchesSchool;
         });
 
         // Apply sortable column sorting
@@ -238,7 +231,7 @@ function ManageUsersPageContent() {
         }
 
         return result;
-    }, [users, searchQuery, filterRole, filterStatus, filterAccountHealth, filterSchool, sortColumn, sortDirection]);
+    }, [users, searchQuery, filterRole, filterStatus, filterSchool, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -268,8 +261,8 @@ function ManageUsersPageContent() {
     };
 
     const handleFilterChange = (setter, value) => { setter(value); setCurrentPage(1); };
-    const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setFilterAccountHealth(''); setFilterSchool(''); setSortColumn(''); setSortDirection('asc'); setSearchQuery(''); setCurrentPage(1); };
-    const hasActiveFilters = filterRole || filterStatus || filterAccountHealth || filterSchool || sortColumn;
+    const clearFilters = () => { setFilterRole(''); setFilterStatus(''); setFilterSchool(''); setSortColumn(''); setSortDirection('asc'); setSearchQuery(''); setCurrentPage(1); };
+    const hasActiveFilters = filterRole || filterStatus || filterSchool || sortColumn;
 
     // Get location name
     const getLocationName = (locationId) => {
@@ -283,11 +276,7 @@ function ManageUsersPageContent() {
             : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
     };
 
-    const getAccountHealthColor = (isActive) => {
-        return isActive
-            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-            : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
-    };
+
 
     const getRoleColor = (role) => {
         switch (role) {
@@ -432,7 +421,6 @@ function ManageUsersPageContent() {
                         <div className="flex flex-wrap gap-3 items-center mb-3">
                             <CustomDropdown value={filterRole} onChange={(v) => handleFilterChange(setFilterRole, v)} options={roles} placeholder="All Roles" />
                             <CustomDropdown value={filterStatus} onChange={(v) => handleFilterChange(setFilterStatus, v)} options={statuses} placeholder="All Status" />
-                            <CustomDropdown value={filterAccountHealth} onChange={(v) => handleFilterChange(setFilterAccountHealth, v)} options={accountHealthOptions} placeholder="All Account Health" />
 
                             {/* School Filter (Super Admin) */}
                             {isSuperAdmin && !effectiveLocationId && (
@@ -454,26 +442,6 @@ function ManageUsersPageContent() {
                             >
                                 {showDepartment ? <Eye size={12} /> : <EyeOff size={12} />}
                                 Group
-                            </button>
-                            <button
-                                onClick={() => setShowStrand(!showStrand)}
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showStrand
-                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                                    }`}
-                            >
-                                {showStrand ? <Eye size={12} /> : <EyeOff size={12} />}
-                                Strand
-                            </button>
-                            <button
-                                onClick={() => setShowAccountHealth(!showAccountHealth)}
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${showAccountHealth
-                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                                    }`}
-                            >
-                                {showAccountHealth ? <Eye size={12} /> : <EyeOff size={12} />}
-                                Account Health
                             </button>
                         </div>
                     </div>
@@ -512,11 +480,9 @@ function ManageUsersPageContent() {
                                 </th>
                                 <th className="px-3 py-3 whitespace-nowrap">Email</th>
                                 {showDepartment && <th className="px-3 py-3 whitespace-nowrap">Group</th>}
-                                {showStrand && <th className="px-3 py-3 whitespace-nowrap">Strand</th>}
                                 <th className="px-3 py-3 whitespace-nowrap">Location</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Role</th>
                                 <th className="px-3 py-3 whitespace-nowrap">Status</th>
-                                {showAccountHealth && <th className="px-3 py-3 whitespace-nowrap">Acct Health</th>}
                                 <th className="px-3 py-3 cursor-pointer hover:text-emerald-600 whitespace-nowrap" onClick={() => handleSort('pointsBalance')}>
                                     <div className="flex items-center gap-1">Points <SortIcon column="pointsBalance" /></div>
                                 </th>
@@ -543,11 +509,6 @@ function ManageUsersPageContent() {
                                             <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.groupName)}</span>
                                         </td>
                                     )}
-                                    {showStrand && (
-                                        <td className="px-3 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.yearLevel)}</span>
-                                        </td>
-                                    )}
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="text-xs text-slate-600 dark:text-slate-300">{formatField(user.locationName ?? getLocationName(user.locationId))}</span>
                                     </td>
@@ -558,9 +519,6 @@ function ManageUsersPageContent() {
                                             {user.isActive ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    {showAccountHealth && (
-                                        <td className="px-3 py-3 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getAccountHealthColor(user.isActive)}`}>{user.isActive ? 'Active' : 'Inactive'}</span></td>
-                                    )}
                                     <td className="px-3 py-3 whitespace-nowrap"><span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{(user.pointsBalance ?? 0).toLocaleString()}</span></td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="text-xs text-slate-500 dark:text-slate-400">{formatField(user.createdAt)}</span>
@@ -699,16 +657,6 @@ function ManageUsersPageContent() {
                                         onChange={(v) => handleEditChange('userType', v)}
                                         options={[{value: 'student', label: 'Student'}, {value: 'faculty', label: 'Faculty'}, {value: 'staff', label: 'Staff'}]}
                                         showPlaceholder={false}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Year Level</label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.yearLevel}
-                                        onChange={(e) => handleEditChange('yearLevel', e.target.value)}
-                                        placeholder="e.g. Grade 11, 1st Year"
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                             </div>

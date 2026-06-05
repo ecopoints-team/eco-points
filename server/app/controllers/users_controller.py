@@ -201,6 +201,8 @@ def create_user(current_user, payload):
             phone=data.get('phone'),
             role=role,
             user_type=data.get('userType'),
+            educational_level=data.get('educationalLevel'),
+            year_level=data.get('yearLevel'),
             is_active=True,
         )
         user.set_password(password)
@@ -326,10 +328,15 @@ def update_user(current_user, user_id, payload):
             ('firstName', 'first_name'), ('lastName', 'last_name'), ('middleName', 'middle_name'),
             ('username', 'username'), ('email', 'email'),
             ('phone', 'phone'), ('role', 'role'), ('userType', 'user_type'),
+            ('educationalLevel', 'educational_level'), ('yearLevel', 'year_level'),
             ('isActive', 'is_active'),
         ]:
             if front in data:
                 setattr(user, back, data[front])
+
+        # Update community group if provided
+        if 'communityGroupId' in data and data['communityGroupId']:
+            user.community_group_id = data['communityGroupId']
 
         # Backward compat: if 'name' sent, split into first/last
         if 'name' in data and data['name'] and 'firstName' not in data:

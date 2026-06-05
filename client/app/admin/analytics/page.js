@@ -200,7 +200,12 @@ function AnalyticsPageContent() {
     const [orgTypeFilter, setOrgTypeFilter] = useState('all');
     const [orgTypesList, setOrgTypesList] = useState([]);
 
-    useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => {
+            requestAnimationFrame(() => setMounted(true));
+        });
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     const fetchAnalytics = useCallback(async (showFullLoading = true) => {
         try {
@@ -787,8 +792,9 @@ function AnalyticsPageContent() {
                     </div>
                 }
             >
-                <div className="w-full h-96">
-                    <ResponsiveContainer key={`${trendChartType}-${trendTimeRange}`} width="100%" height="100%">
+                {mounted ? (
+                    <div className="w-full h-96">
+                        <ResponsiveContainer key={`${trendChartType}-${trendTimeRange}`} width="100%" height="100%">
                         {trendChartType === 'line' ? (
                             <LineChart data={trendFilteredData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.3)" />
@@ -828,8 +834,9 @@ function AnalyticsPageContent() {
                                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }} iconType="circle" formatter={legendFormatter} />
                             </PieChart>
                         )}
-                    </ResponsiveContainer>
-                </div>
+                        </ResponsiveContainer>
+                    </div>
+                ) : <div className="w-full h-96 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
             </SectionCard>
 
             {/* ─── 3. TWO-COLUMN: User Growth + Points Economy ────────── */}
@@ -867,18 +874,20 @@ function AnalyticsPageContent() {
                         </div>
                     }
                 >
-                    <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={userGrowthData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
-                                <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-                                <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-                                <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} iconType="circle" formatter={legendFormatter} />
-                                <Bar dataKey="New Users" fill="#8b5cf6" radius={[4, 4, 0, 0]} animationDuration={600} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {mounted ? (
+                        <div className="w-full h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={userGrowthData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
+                                    <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
+                                    <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
+                                    <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
+                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} iconType="circle" formatter={legendFormatter} />
+                                    <Bar dataKey="New Users" fill="#8b5cf6" radius={[4, 4, 0, 0]} animationDuration={600} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
 
                 <SectionCard
@@ -914,25 +923,28 @@ function AnalyticsPageContent() {
                         </div>
                     }
                 >
-                    <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={pointsEconomyData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
-                                <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-                                <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-                                <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} iconType="circle" formatter={legendFormatter} />
-                                <Bar dataKey="Earned" fill="#10b981" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="Redeemed" fill="#f59e0b" radius={[3, 3, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {mounted ? (
+                        <div className="w-full h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={pointsEconomyData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
+                                    <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
+                                    <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
+                                    <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
+                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} iconType="circle" formatter={legendFormatter} />
+                                    <Bar dataKey="Earned" fill="#10b981" radius={[3, 3, 0, 0]} />
+                                    <Bar dataKey="Redeemed" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
             </div>
 
             {/* ─── 4. PEAK HOURS + PEAK DAYS ──────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <SectionCard title="Peak Hours" icon={Clock}>
+                {mounted ? (
                     <div className="w-full h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={peakHoursData}>
@@ -948,9 +960,11 @@ function AnalyticsPageContent() {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
 
                 <SectionCard title="Peak Days of Week" icon={Activity}>
+                {mounted ? (
                     <div className="w-full h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={peakDaysData}>
@@ -966,6 +980,7 @@ function AnalyticsPageContent() {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
             </div>
 
@@ -1003,8 +1018,9 @@ function AnalyticsPageContent() {
             >
                 {machineData.length > 0 ? (
                     <div className="space-y-4">
-                        <div className="w-full" style={{ height: Math.max(280, filteredMachineData.length * 50 + 60) }}>
-                            <ResponsiveContainer width="100%" height="100%">
+                        {mounted ? (
+                            <div className="w-full" style={{ height: Math.max(280, filteredMachineData.length * 50 + 60) }}>
+                                <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={filteredMachineData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                     <XAxis type="number" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -1016,6 +1032,7 @@ function AnalyticsPageContent() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
+                        ) : <div style={{ height: 280 }} className="flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
 
                         {/* Expandable Machine Status Panel — separated Online / Offline */}
                         {showMachineStatus && (
@@ -1083,47 +1100,51 @@ function AnalyticsPageContent() {
             {/* ─── 6. TWO-COLUMN: User Types + Bottle Conditions ──────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <SectionCard title="User Types" icon={Users}>
-                    <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={userTypePieData}
-                                    cx="50%" cy="45%"
-                                    label={renderPieLabel}
-                                    labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
-                                    outerRadius={90} innerRadius={45}
-                                    fill="#10b981" dataKey="value" animationDuration={800}
-                                >
-                                    {userTypePieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip content={<ChartTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} iconType="circle" formatter={legendFormatter} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {mounted ? (
+                        <div className="w-full h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={userTypePieData}
+                                        cx="50%" cy="45%"
+                                        label={renderPieLabel}
+                                        labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                                        outerRadius={90} innerRadius={45}
+                                        fill="#10b981" dataKey="value" animationDuration={800}
+                                    >
+                                        {userTypePieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                    </Pie>
+                                    <Tooltip content={<ChartTooltip />} />
+                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} iconType="circle" formatter={legendFormatter} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
 
                 <SectionCard title="Bottle Conditions" icon={Recycle}>
-                    <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={conditionPieData}
-                                    cx="50%" cy="45%"
-                                    label={renderPieLabel}
-                                    labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
-                                    outerRadius={90} innerRadius={45}
-                                    fill="#10b981" dataKey="value" animationDuration={800}
-                                >
-                                    {conditionPieData.map((_, i) => (
-                                        <Cell key={i} fill={['#10b981', '#f59e0b', '#ef4444', '#6366f1'][i % 4]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip content={<ChartTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} iconType="circle" formatter={legendFormatter} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {mounted ? (
+                        <div className="w-full h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={conditionPieData}
+                                        cx="50%" cy="45%"
+                                        label={renderPieLabel}
+                                        labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                                        outerRadius={90} innerRadius={45}
+                                        fill="#10b981" dataKey="value" animationDuration={800}
+                                    >
+                                        {conditionPieData.map((_, i) => (
+                                            <Cell key={i} fill={['#10b981', '#f59e0b', '#ef4444', '#6366f1'][i % 4]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<ChartTooltip />} />
+                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} iconType="circle" formatter={legendFormatter} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : <div className="w-full h-80 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
                 </SectionCard>
             </div>
 
@@ -1171,19 +1192,21 @@ function AnalyticsPageContent() {
                     }
                 >
                     <div className="space-y-6">
-                        <div className="w-full h-96">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={filteredLocationData} margin={{ bottom: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
-                                    <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} angle={-15} textAnchor="end" />
-                                    <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-                                    <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
-                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" formatter={legendFormatter} />
-                                    <Bar dataKey="bottles" name="Bottles" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="users" name="Users" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        {mounted ? (
+                            <div className="w-full h-96">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={filteredLocationData} margin={{ bottom: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
+                                        <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} angle={-15} textAnchor="end" />
+                                        <YAxis stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
+                                        <Tooltip content={<ChartTooltip />} cursor={barCursorStyle} />
+                                        <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" formatter={legendFormatter} />
+                                        <Bar dataKey="bottles" name="Bottles" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="users" name="Users" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : <div className="w-full h-96 flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}
 
                         {/* Data table (max 5 visible rows, scrollable) */}
                         <div className="overflow-x-auto max-h-[280px] overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]">
