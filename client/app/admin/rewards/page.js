@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -666,7 +667,9 @@ function RewardsInventoryPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {currentRewards.map((r) => {
+                            {isDataLoading ? (
+                                Array.from({ length: 6 }).map((_, i) => <SkeletonTableRow key={i} columns={8} />)
+                            ) : currentRewards.map((r) => {
                                 const isLowStock = r.stockQuantity < LOW_STOCK_THRESHOLD;
                                 const isOutOfStock = r.stockQuantity === 0;
 

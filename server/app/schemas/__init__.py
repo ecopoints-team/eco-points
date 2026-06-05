@@ -351,6 +351,15 @@ class LocationCreateSchema(_StrictModel):
     communityGroups: Optional[List[CommunityGroupInlineSchema]] = None
 
 
+class CommunityGroupUpdateInlineSchema(_StrictModel):
+    """One community group in a location update — may have an existing `id`."""
+
+    id: Optional[int] = None
+    name: str
+    abbreviation: Optional[str] = None
+    groupType: Optional[str] = None
+
+
 class LocationUpdateSchema(_StrictModel):
     """Body for ``PUT /api/web/locations/<id>``."""
 
@@ -365,6 +374,10 @@ class LocationUpdateSchema(_StrictModel):
     province: Optional[str] = None
     region: Optional[str] = None
     zipCode: Optional[str] = None
+    contactPerson: Optional[str] = None
+    contactEmail: Optional[str] = None
+    contactPhone: Optional[str] = None
+    communityGroups: Optional[List[CommunityGroupUpdateInlineSchema]] = None
 
 
 # ══════════════════════════════════════════════════════════════════════════

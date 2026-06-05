@@ -2,12 +2,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import AddRegularUserModal from '../../../src/components/admin/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
 // getDepartmentName replaced — server returns groupName directly
-import { users as usersApi } from '../../../src/services/api';
+import { users as usersApi, groups as groupsApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { userRoleLabel, userTypeLabel } from '../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle, Coins } from 'lucide-react';
@@ -35,8 +36,13 @@ function ManageUsersPageContent() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
-        name: '', username: '', email: '', phone: '', userType: '', isActive: true
+        firstName: '', middleName: '', lastName: '', username: '', email: '', phone: '',
+        userType: '', educationalLevel: '', yearLevel: '', communityGroupId: '', isActive: true
     });
+
+    // Edit modal cascading state
+    const [editGroups, setEditGroups] = useState([]);
+    const [editGroupsLoading, setEditGroupsLoading] = useState(false);
 
     // Adjust Points modal state
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -48,29 +54,61 @@ function ManageUsersPageContent() {
     const handleEdit = (user) => {
         setSelectedUser(user);
         setEditFormData({
-            name: user.name || '',
+            firstName: user.firstName || '',
+            middleName: user.middleName || '',
+            lastName: user.lastName || '',
             username: user.username || '',
             email: user.email || '',
             phone: user.phone || '',
             userType: user.userType || '',
+            educationalLevel: user.educationalLevel || '',
+            yearLevel: user.yearLevel || '',
+            communityGroupId: user.communityGroupId ? String(user.communityGroupId) : '',
             isActive: user.isActive !== undefined ? user.isActive : true
         });
         setIsEditModalOpen(true);
+        // Fetch groups for user's location
+        const locId = user.locationId || effectiveLocationId;
+        if (locId) {
+            setEditGroupsLoading(true);
+            groupsApi.getAll(locId)
+                .then(g => setEditGroups(g || []))
+                .catch(() => setEditGroups([]))
+                .finally(() => setEditGroupsLoading(false));
+        }
     };
 
     const handleEditChange = (field, value) => {
-        setEditFormData(prev => ({ ...prev, [field]: value }));
+        setEditFormData(prev => {
+            const next = { ...prev, [field]: value };
+            // Reset dependent fields on cascade change
+            if (field === 'userType') {
+                next.educationalLevel = '';
+                next.yearLevel = '';
+                next.communityGroupId = '';
+            }
+            if (field === 'educationalLevel') {
+                next.yearLevel = '';
+                next.communityGroupId = '';
+            }
+            return next;
+        });
     };
 
     const saveEdit = async () => {
         if (selectedUser) {
             try {
                 const payload = {
-                    name: editFormData.name,
+                    firstName: editFormData.firstName.trim(),
+                    middleName: editFormData.middleName.trim() || null,
+                    lastName: editFormData.lastName.trim(),
                     username: editFormData.username,
                     email: editFormData.email,
                     phone: editFormData.phone,
                     userType: editFormData.userType,
+                    educationalLevel: editFormData.educationalLevel || null,
+                    yearLevel: editFormData.yearLevel || null,
+                    communityGroupId: editFormData.communityGroupId ? parseInt(editFormData.communityGroupId) : null,
                     isActive: editFormData.isActive,
                 };
                 const updated = await usersApi.update(selectedUser.id, payload);
@@ -493,7 +531,9 @@ function ManageUsersPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {currentUsers.map((user) => (
+                            {isDataLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => <SkeletonTableRow key={i} columns={10} />)
+                            ) : currentUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-emerald-900/10 transition-colors">
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{formatField(user.displayId ?? user.id)}</span>
@@ -587,13 +627,80 @@ function ManageUsersPageContent() {
                 }}
             />
 
-            {/* Edit User Modal */}
-            {isEditModalOpen && selectedUser && (
+            {/* Edit User Modal — Cascading fields aligned with AddRegularUserModal */}
+            {isEditModalOpen && selectedUser && (() => {
+                // Derive org type from user's location
+                const editOrgType = (() => {
+                    const locId = selectedUser.locationId || effectiveLocationId;
+                    const loc = allLocations?.find(l => String(l.id) === String(locId));
+                    return loc?.orgType || null;
+                })();
+                const editIsSchoolOrg = editOrgType && ['university', 'school'].includes(editOrgType.toLowerCase());
+                const editUserTypes = (() => {
+                    if (!editOrgType) return ['Staff'];
+                    const USER_TYPES_MAP = {
+                        University: ['Student', 'Alumni', 'Faculty', 'Staff'],
+                        School:     ['Student', 'Alumni', 'Faculty', 'Staff'],
+                        Community:  ['Resident', 'Community Official', 'Community Worker', 'Business Owner'],
+                        Corporate:  ['Employee', 'Manager', 'Executive', 'Contractor', 'Guest'],
+                    };
+                    const key = Object.keys(USER_TYPES_MAP).find(k => k.toLowerCase() === editOrgType.toLowerCase());
+                    return key ? USER_TYPES_MAP[key] : ['Staff'];
+                })();
+                const editIsStudent = editFormData.userType === 'student';
+                const editShowEduc = editIsSchoolOrg && editIsStudent;
+                const EDUC_LEVELS = [
+                    { value: 'Kindergarten', label: 'Kindergarten' },
+                    { value: 'Elementary', label: 'Elementary School' },
+                    { value: 'JHS', label: 'Junior High School (JHS)' },
+                    { value: 'SHS', label: 'Senior High School (SHS)' },
+                    { value: 'College', label: 'College' },
+                ];
+                const YEAR_MAP = {
+                    Kindergarten: [],
+                    Elementary: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
+                    JHS: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
+                    SHS: ['Grade 11', 'Grade 12'],
+                    College: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+                };
+                const GROUP_TYPE_MAP = { Elementary: 'elementary', JHS: 'jhs', SHS: 'shs_strand', College: 'college' };
+                const editYearOptions = editFormData.educationalLevel ? (YEAR_MAP[editFormData.educationalLevel] || []) : [];
+                const editFilteredGroups = (() => {
+                    if (editShowEduc && editFormData.educationalLevel) {
+                        const gType = GROUP_TYPE_MAP[editFormData.educationalLevel];
+                        return gType ? editGroups.filter(g => g.groupType === gType) : [];
+                    }
+                    if (editFormData.userType === 'faculty') return editGroups.filter(g => g.groupType === 'college');
+                    if (editFormData.userType === 'staff') return editGroups.filter(g => g.groupType === 'staff' || !g.groupType);
+                    if (!editIsSchoolOrg) return editGroups;
+                    return [];
+                })();
+                const editShowGroup = (() => {
+                    if (!editFormData.userType) return false;
+                    if (editShowEduc) {
+                        if (editFormData.educationalLevel === 'Kindergarten') return false;
+                        return !!editFormData.educationalLevel;
+                    }
+                    return true;
+                })();
+                const editGroupLabel = (() => {
+                    if (editShowEduc) {
+                        if (editFormData.educationalLevel === 'SHS') return 'SHS Strand';
+                        if (editFormData.educationalLevel === 'College') return 'College Department';
+                        return 'Section';
+                    }
+                    if (editFormData.userType === 'faculty') return 'College Department';
+                    return 'Community Group';
+                })();
+                const typeToValue = (t) => t.toLowerCase().replace(/ /g, '_');
+                const editAvatarInitial = editFormData.firstName ? editFormData.firstName.charAt(0).toUpperCase() : (selectedUser.name || '?').charAt(0).toUpperCase();
+
+                return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg">
-                                {selectedUser.name.charAt(0).toUpperCase()}
+                                {editAvatarInitial}
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Edit User</h3>
@@ -605,61 +712,103 @@ function ManageUsersPageContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Name: 3-column grid */}
+                            <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Full Name <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.name}
-                                        onChange={(e) => handleEditChange('name', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
-                                    />
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">First Name <span className="text-red-500">*</span></label>
+                                    <input type="text" value={editFormData.firstName}
+                                        onChange={(e) => handleEditChange('firstName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="email"
-                                        value={editFormData.email}
-                                        onChange={(e) => handleEditChange('email', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
-                                    />
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Middle Name</label>
+                                    <input type="text" value={editFormData.middleName}
+                                        onChange={(e) => handleEditChange('middleName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Last Name <span className="text-red-500">*</span></label>
+                                    <input type="text" value={editFormData.lastName}
+                                        onChange={(e) => handleEditChange('lastName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Username</label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.username}
+                                    <input type="text" value={editFormData.username}
                                         onChange={(e) => handleEditChange('username', e.target.value)}
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
-                                    />
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Phone</label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.phone}
-                                        onChange={(e) => handleEditChange('phone', e.target.value)}
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500"
-                                    />
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email <span className="text-red-500">*</span></label>
+                                    <input type="email" value={editFormData.email}
+                                        onChange={(e) => handleEditChange('email', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Phone</label>
+                                    <input type="text" value={editFormData.phone}
+                                        onChange={(e) => handleEditChange('phone', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-emerald-500" />
+                                </div>
+                                <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">User Type <span className="text-red-500">*</span></label>
                                     <CustomDropdown
                                         value={editFormData.userType}
                                         onChange={(v) => handleEditChange('userType', v)}
-                                        options={[{value: 'student', label: 'Student'}, {value: 'faculty', label: 'Faculty'}, {value: 'staff', label: 'Staff'}]}
+                                        options={editUserTypes.map(t => ({ value: typeToValue(t), label: t }))}
                                         showPlaceholder={false}
                                     />
                                 </div>
                             </div>
+
+                            {/* Cascading: Educational Level + Year Level (school org + student only) */}
+                            {editShowEduc && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Educational Level <span className="text-red-500">*</span></label>
+                                        <CustomDropdown
+                                            value={editFormData.educationalLevel}
+                                            onChange={(v) => handleEditChange('educationalLevel', v)}
+                                            options={EDUC_LEVELS}
+                                            placeholder="Select level"
+                                            showPlaceholder={false}
+                                        />
+                                    </div>
+                                    {editYearOptions.length > 0 && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Year / Grade Level</label>
+                                            <CustomDropdown
+                                                value={editFormData.yearLevel}
+                                                onChange={(v) => handleEditChange('yearLevel', v)}
+                                                options={editYearOptions}
+                                                placeholder="Select year"
+                                                showPlaceholder={false}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Cascading: Community Group */}
+                            {editShowGroup && (
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{editGroupLabel}</label>
+                                    <CustomDropdown
+                                        value={editFormData.communityGroupId}
+                                        onChange={(v) => handleEditChange('communityGroupId', v)}
+                                        options={editFilteredGroups.map(g => ({ value: String(g.id), label: g.name }))}
+                                        placeholder={editGroupsLoading ? 'Loading...' : `Select ${editGroupLabel.toLowerCase()}`}
+                                        searchable
+                                        showPlaceholder={false}
+                                    />
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -683,7 +832,8 @@ function ManageUsersPageContent() {
                             </button>
                             <button
                                 onClick={saveEdit}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                                disabled={!editFormData.firstName.trim() || !editFormData.lastName.trim() || !editFormData.email.trim()}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 <Edit2 size={16} />
                                 Save Changes
@@ -691,7 +841,8 @@ function ManageUsersPageContent() {
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Delete Confirmation Modal */}
             {isDeleteModalOpen && selectedUser && (

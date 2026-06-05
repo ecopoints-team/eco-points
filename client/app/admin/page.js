@@ -714,7 +714,7 @@ export default function AdminDashboard() {
                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{detectedClassLabel(log.detectedClass)}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.confidenceScore != null ? `${(log.confidenceScore * 100).toFixed(1)}%` : '—'}</span>
+                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.confidenceScore != null ? `${log.confidenceScore}%` : '—'}</span>
                                     </td>
                                     <td className="px-3 py-3">
                                         <span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]' : 'text-red-500'}`}>

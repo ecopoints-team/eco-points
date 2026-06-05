@@ -5,6 +5,7 @@ import { formatDate } from '../../../../src/utils/formatDate';
 import { formatField } from '../../../../src/lib/formatField';
 import { userRoleLabel } from '../../../../src/lib/enumLabels';
 import RequirePermission from '../../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
@@ -278,7 +279,9 @@ function AdminAccessLogsPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {currentLogs.map((log) => (
+                            {isDataLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => <SkeletonTableRow key={i} columns={7} />)
+                            ) : currentLogs.map((log) => (
                                 <tr
                                     key={log.id}
                                     className="transition-colors hover:bg-slate-50 dark:hover:bg-purple-900/10"

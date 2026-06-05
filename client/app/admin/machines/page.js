@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi, logs } from '../../../src/services/api';
@@ -855,7 +856,9 @@ function MachinesPageContent() {
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                        {currentMachines.map((machine) => (
+                        {isDataLoading ? (
+                            Array.from({ length: 6 }).map((_, i) => <SkeletonMachineCard key={i} />)
+                        ) : currentMachines.map((machine) => (
                             <MachineCard
                                 key={machine.id}
                                 machine={machine}

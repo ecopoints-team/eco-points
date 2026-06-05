@@ -86,6 +86,35 @@ export function SkeletonRewardCard() {
     );
 }
 
+export function SkeletonMachineCard() {
+    return (
+        <div className="animate-pulse rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+                    <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded" />
+                </div>
+                <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-full" />
+            </div>
+            <div className="h-3 w-32 bg-slate-100 dark:bg-slate-700/50 rounded mb-4" />
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
+                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+                    <div className="h-6 w-12 bg-slate-200 dark:bg-slate-700 rounded" />
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
+                    <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+                    <div className="h-6 w-14 bg-slate-200 dark:bg-slate-700 rounded" />
+                </div>
+            </div>
+            <div className="flex gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex-1 h-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+            </div>
+        </div>
+    );
+}
+
 export function SkeletonDashboard() {
     return (
         <div className="space-y-6">

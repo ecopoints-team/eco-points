@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import RequirePermission from '../../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
@@ -285,7 +286,9 @@ function BottleLogsPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {currentLogs.map((log) => (
+                            {isDataLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => <SkeletonTableRow key={i} columns={8} />)
+                            ) : currentLogs.map((log) => (
                                 <tr
                                     key={log.id}
                                     className={`transition-colors ${log.status === 'Rejected'

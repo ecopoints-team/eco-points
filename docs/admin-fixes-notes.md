@@ -98,4 +98,58 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 - On the category field, the selection should have the delete and edit button like on the `Organization Type` field on the add location modal. 
 
 
+# Admin Dashoard Fixes Part 3
+
+## Console Errors Found
+
+-       ## Error Type
+        Console ApiError
+
+        ## Error Message
+        INTERNAL SERVER ERROR
+
+
+            at <unknown> (src/services/api/client.js:211:15)
+
+        ## Code Frame
+        209 |             dispatchUnauthorized();
+        210 |         }
+        > 211 |         throw new ApiError(
+            |               ^
+        212 |             serverError.code || `HTTP_${response.status}`,
+        213 |             serverError.message || response.statusText || `Request failed (${response.status})`,
+        214 |             response.status,
+
+        Next.js version: 16.2.6 (Turbopack)
+
+
+
+## Tasks
+
+### Bulk Sessions Menu Fixes
+
+- On the `New Bulk Session` modal, make it two side by side pages. The other page is for the items addition with import feature with proper template just like the plan of ours in the community groups for the location modal.
+
+### Pending Fixes
+
+- Do the 14.3 pending on the task tracker.
+- Also align the edit modals action on the tables of the `manage user` and `manage admin` modal. The fields should be aligned with their `Add` modals fields that is aligned with the ERD
+
+
+
+## Admin Dashboard Fixes Part 4
+
+## Tasks 
+
+### Dashboard Overview
+
+- On the  `Real-Time Bottle Logs` table, under the confidence column, the the numbers are formatted like this `8565.0%` which is wrong. Where in the `Bottle Logs` menu the numbers are formatted like this `85.65%` which is the right format.
+
+### Locations Menu 
+
+- On the `Add Location` modal, make it two paged modal as well like we did on the `New Bulk Session` modal.
+- The edit modal should be the same layout of the add modal
+- The bottle count of the cards shows NaNk, why is that? don't it fetch the bottles in the location? can we find what's causing it
+
+
 

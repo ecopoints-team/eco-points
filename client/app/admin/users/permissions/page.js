@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import AddUserModal from '../../../../src/components/admin/AddUserModal';
@@ -316,18 +317,26 @@ function PermissionsPageContent() {
         return () => { cancelled = true; };
     }, [refreshKey]);
     const [editFormData, setEditFormData] = useState({
-        name: '', email: '', role: '', status: '', accountHealth: '', locationId: ''
+        firstName: '', middleName: '', lastName: '', email: '', role: '', isActive: true, locationId: ''
     });
 
     // Handle Edit
     const handleEdit = (user) => {
         setSelectedUser(user);
+        // Try firstName/lastName from server; fall back to parsing name
+        let fn = user.firstName || '', mn = user.middleName || '', ln = user.lastName || '';
+        if (!fn && !ln && user.name) {
+            const parts = user.name.trim().split(/\s+/);
+            fn = parts[0] || '';
+            ln = parts.length > 2 ? parts.slice(2).join(' ') : (parts[1] || '');
+            mn = parts.length > 2 ? parts[1] : '';
+        }
         setEditFormData({
-            name: user.name || '',
+            firstName: fn,
+            middleName: mn,
+            lastName: ln,
             email: user.email || '',
             role: user.role || '',
-            // The page now binds the form's "Account Status" directly to `isActive`
-            // rather than the legacy `accountHealth` synonym (alignment doc §14).
             isActive: user.isActive !== false,
             locationId: user.locationId || ''
         });
@@ -342,7 +351,9 @@ function PermissionsPageContent() {
         if (selectedUser) {
             try {
                 await usersApi.update(selectedUser.id, {
-                    name: editFormData.name,
+                    firstName: editFormData.firstName.trim(),
+                    middleName: editFormData.middleName.trim() || null,
+                    lastName: editFormData.lastName.trim(),
                     email: editFormData.email,
                     role: editFormData.role,
                     isActive: editFormData.isActive,
@@ -352,9 +363,10 @@ function PermissionsPageContent() {
                     ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
                     : selectedUser.permissions;
 
+                const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
                 setAdminUsers(prev => prev.map(u =>
                     u.id === selectedUser.id
-                        ? { ...u, ...editFormData, permissions: newPermissions }
+                        ? { ...u, ...editFormData, name: updatedName, avatar: editFormData.firstName.charAt(0).toUpperCase(), permissions: newPermissions }
                         : u
                 ));
                 setIsEditModalOpen(false);
@@ -712,7 +724,9 @@ function PermissionsPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {currentUsers.map(user => (
+                            {isDataLoading ? (
+                                Array.from({ length: 8 }).map((_, i) => <SkeletonTableRow key={i} columns={9} />)
+                            ) : currentUsers.map(user => (
                                 <UserAccountRow
                                     key={user.id}
                                     user={user}
@@ -769,7 +783,7 @@ function PermissionsPageContent() {
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                                {selectedUser.name.charAt(0).toUpperCase()}
+                                {editFormData.firstName ? editFormData.firstName.charAt(0).toUpperCase() : (selectedUser.name || '?').charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Edit Admin</h3>
@@ -781,30 +795,35 @@ function PermissionsPageContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Name: 3-column grid */}
+                            <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Full Name <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        value={editFormData.name}
-                                        onChange={(e) => handleEditChange('name', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500"
-                                    />
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">First Name <span className="text-red-500">*</span></label>
+                                    <input type="text" value={editFormData.firstName}
+                                        onChange={(e) => handleEditChange('firstName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="email"
-                                        value={editFormData.email}
-                                        onChange={(e) => handleEditChange('email', e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500"
-                                    />
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Middle Name</label>
+                                    <input type="text" value={editFormData.middleName}
+                                        onChange={(e) => handleEditChange('middleName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Last Name <span className="text-red-500">*</span></label>
+                                    <input type="text" value={editFormData.lastName}
+                                        onChange={(e) => handleEditChange('lastName', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email <span className="text-red-500">*</span></label>
+                                    <input type="email" value={editFormData.email}
+                                        onChange={(e) => handleEditChange('email', e.target.value)}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:border-purple-500" />
+                                </div>
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Role <span className="text-red-500">*</span></label>
                                     <CustomDropdown
@@ -819,6 +838,9 @@ function PermissionsPageContent() {
                                         showPlaceholder={false}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Account Status <span className="text-red-500">*</span></label>
                                     <CustomDropdown
@@ -828,9 +850,6 @@ function PermissionsPageContent() {
                                         showPlaceholder={false}
                                     />
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Location <span className="text-red-500">*</span></label>
                                     <CustomDropdown
@@ -854,7 +873,8 @@ function PermissionsPageContent() {
                             </button>
                             <button
                                 onClick={saveEdit}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                                disabled={!editFormData.firstName.trim() || !editFormData.lastName.trim() || !editFormData.email.trim()}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 <Edit2 size={16} />
                                 Save Changes

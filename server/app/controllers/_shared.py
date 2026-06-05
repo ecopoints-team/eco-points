@@ -14,7 +14,7 @@ import json as _json
 from flask import request
 from sqlalchemy import func
 
-from ..models import AdminLog, RecyclingItem, RewardRedemption, Wallet
+from ..models import AdminLog, RecyclingItem, RecyclingSession, RewardRedemption, RVM, Wallet
 from ..middleware import get_user_org_id, ROLE_HIERARCHY, ROLE_PERMISSIONS
 from .. import db
 
@@ -114,6 +114,8 @@ def _serialize_organization(o):
         # render the empty-state until 8.3 removes the field from the form.
         'cityId': None,
         'zipCode': addr.get('zipCode') if addr else None,
+        'province': addr.get('province') if addr else None,
+        'region': addr.get('region') if addr else None,
         'contacts': contacts,
         'contactPerson': f"{contacts[0]['firstName']} {contacts[0]['lastName']}" if contacts else None,
         'contactEmail': contacts[0].get('email') if contacts else None,
@@ -123,6 +125,16 @@ def _serialize_organization(o):
         'machineCount': machine_count,
         'userCount': user_count,
         'totalPoints': total_points,
+        'totalBottlesCollected': db.session.query(func.count(RecyclingItem.id))
+            .join(RecyclingSession, RecyclingItem.session_id == RecyclingSession.id)
+            .join(RVM, RecyclingSession.rvm_id == RVM.id)
+            .filter(RVM.organization_id == o.id)
+            .scalar() or 0,
+        'communityGroups': [
+            {'id': cg.id, 'name': cg.name, 'abbreviation': cg.abbreviation or '',
+             'groupType': cg.group_type or 'college'}
+            for cg in (o.community_groups or [])
+        ],
     }
 
 

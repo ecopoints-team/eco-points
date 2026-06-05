@@ -115,3 +115,74 @@
   - [x] 14.1 Created `SkeletonLoaders.jsx` with shared components: `SkeletonCard`, `SkeletonChart`, `SkeletonTable`, `SkeletonTableRow`, `SkeletonRewardCard`, `SkeletonDashboard`
   - [x] 14.2 Dashboard (`admin/page.js`) — stat cards show skeleton while `isDataLoading` and no cached data
   - [ ] 14.3 Other admin pages (users, rewards, locations, etc.) — skeleton loading not yet applied
+
+---
+
+## Part 3 Tasks
+
+- [x] 15.0 Console Error Fix — N+1 bottle logs crash
+  - [x] 15.1 Backend: add `joinedload(session→wallet→user)` to `GET /logs/bottles`
+  - [x] 15.2 Backend: replace `db.session.get(Wallet)` with `session.wallet` in `_serialize_bottle_log`
+  - [x] 15.3 Backend: add `joinedload(rvm→org, performed_by)` to `GET /logs/machines`
+  - [x] 15.4 Backend: add `joinedload(admin→community_group→org)` to `GET /logs/access`
+  - [x] 15.5 Frontend: fix React hooks order in `AddRegularUserModal.jsx`
+
+- [x] 15. Phase 15 — Bulk Sessions Modal Redesign
+  - [x] 15.1 Frontend: redesign modal to two side-by-side panels (Session Info + Items)
+  - [x] 15.2 Frontend: add placeholder section for future CSV import on Items panel
+  - [x] 15.3 Frontend: manual item add/remove on the Items panel
+
+- [x] 16. Phase 16 — Edit User Modal: Cascading Fields (11.6)
+  - [x] 16.1 Frontend: replace `name` with `firstName/middleName/lastName` (3-column grid)
+  - [x] 16.2 Frontend: dynamic `userType` dropdown based on org type (`USER_TYPES_BY_ORG`)
+  - [x] 16.3 Frontend: cascading Educational Level → Year Level → Community Group (school orgs)
+  - [x] 16.4 Frontend: pre-populate all fields from `selectedUser` data
+  - [x] 16.5 Frontend: update `saveEdit()` payload with new field names
+  - [x] 16.6 Frontend: input validation (required firstName + lastName, valid email)
+
+- [x] 17. Phase 17 — Edit Admin Modal: Name Normalization
+  - [x] 17.1 Frontend: replace `Full Name` with `firstName/middleName/lastName` (3-column grid)
+  - [x] 17.2 Frontend: update `editFormData` state and `saveEdit()` payload
+  - [x] 17.3 Frontend: pre-populate from `selectedUser` (parse name if needed)
+  - [x] 17.4 Frontend: avatar initial from `firstName.charAt(0)`
+
+- [x] 18. Phase 18 — Skeleton Loading on All Admin Pages (14.3)
+  - [x] 18.1 `admin/users/page.js` — SkeletonTableRow while loading
+  - [x] 18.2 `admin/users/permissions/page.js` — SkeletonTableRow while loading
+  - [x] 18.3 `admin/rewards/page.js` — SkeletonTableRow while loading
+  - [x] 18.4 `admin/machines/page.js` — SkeletonMachineCard while loading
+  - [x] 18.5 `admin/locations/page.js` — SkeletonMachineCard grid while loading
+  - [x] 18.6 `admin/logs/bottles/page.js` — SkeletonTableRow while loading
+  - [x] 18.7 `admin/logs/transactions/page.js` — SkeletonTableRow while loading
+  - [x] 18.8 `admin/logs/rewards/page.js` — SkeletonTableRow while loading
+  - [x] 18.9 `admin/logs/machines/page.js` — SkeletonTableRow while loading
+  - [x] 18.10 `admin/logs/access/page.js` — SkeletonTableRow while loading
+  - [x] 18.11 `admin/bulk-sessions/page.js` — SkeletonTableRow while loading
+
+---
+
+## Part 4 Tasks
+
+- [x] 19. Dashboard Confidence Score Fix
+  - [x] 19.1 `admin/page.js` L717 — remove `* 100` multiplication, use `${log.confidenceScore}%` to match bottle logs format
+
+- [x] 20. Location Cards — NaN Bottle Count Fix
+  - [x] 20.1 Backend: add `totalBottlesCollected` field to `_serialize_organization()` in `_shared.py`
+  - [x] 20.2 Frontend: add `|| 0` fallback on `location.totalBottlesCollected` in card display (L1029)
+  - [x] 20.3 Frontend: improve display logic (raw number if <1000, `Xk` if ≥1000)
+
+- [x] 21. Add Location Modal — Two-Page Tabbed Layout
+  - [x] 21.1 Add `activeTab` state + tab header UI (Location Info / Community Groups)
+  - [x] 21.2 Split form: Page 1 = org info + address + contact, Page 2 = community groups + CSV placeholder
+  - [x] 21.3 Add Next/Back tab navigation with Page 1 validation before advancing
+  - [x] 21.4 Page 2 Submit triggers full validation + submit
+
+- [x] 22. Edit Location Modal — Match Add Modal Layout
+  - [x] 22.1 Mirror two-page tabbed layout from redesigned AddLocationModal
+  - [x] 22.2 Add Community Groups tab (Page 2) with pre-populated groups
+  - [x] 22.3 Ensure all fields pre-populate from `location` prop
+  - [x] 22.4 Include `communityGroups` in save payload
+  - [x] 22.5 Backend: add CG sync + contact sync to PUT handler
+  - [x] 22.6 Schema: add `CommunityGroupUpdateInlineSchema` + contact fields to `LocationUpdateSchema`
+
+  

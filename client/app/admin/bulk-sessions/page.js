@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -11,7 +12,8 @@ import { formatField } from '../../../src/lib/formatField';
 import { sessionStatusLabel } from '../../../src/lib/enumLabels';
 import {
     Layers, Plus, X, Search, ChevronLeft, ChevronRight, RefreshCw,
-    Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2
+    Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2,
+    Upload, FileText
 } from 'lucide-react';
 
 // Auto-calculate points from the org's points config (fetched from DB)
@@ -300,9 +302,7 @@ function BulkSessionsPageContent() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                             {loading ? (
-                                <tr><td colSpan={8} className="px-4 py-12 text-center">
-                                    <RefreshCw size={24} className="animate-spin text-emerald-500 mx-auto" />
-                                </td></tr>
+                                Array.from({ length: 6 }).map((_, i) => <SkeletonTableRow key={i} columns={8} />)
                             ) : currentRows.length === 0 ? (
                                 <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500">No bulk sessions found</td></tr>
                             ) : currentRows.map(s => (
@@ -345,53 +345,77 @@ function BulkSessionsPageContent() {
                 )}
             </div>
 
-            {/* ═══ NEW BULK SESSION MODAL ═══ */}
+            {/* ═══ NEW BULK SESSION MODAL — Two-Panel Layout ═══ */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
-                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col">
+                        {/* Header */}
+                        <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <Layers size={20} className="text-emerald-600 dark:text-emerald-400" />
                                 New Bulk Session
                             </h3>
-                            <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"><X size={20} /></button>
+                            <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors"><X size={20} /></button>
                         </div>
 
-                        <div className="p-6 space-y-5">
-                            {modalError && (
-                                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
-                                    <AlertTriangle size={16} /> {modalError}
-                                </div>
-                            )}
+                        {modalError && (
+                            <div className="mx-5 mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400 flex items-center gap-2 shrink-0">
+                                <AlertTriangle size={16} /> {modalError}
+                            </div>
+                        )}
 
-                            <div className="grid grid-cols-2 gap-4">
+                        {/* Two-Panel Body */}
+                        <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
+                            {/* ── Left Panel: Session Info ── */}
+                            <div className="p-5 overflow-y-auto space-y-5">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20">
+                                        <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">Session Information</h4>
+                                </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Machine (RVM) *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Machine (RVM) <span className="text-red-500">*</span></label>
                                     <CustomDropdown value={selectedRvm} onChange={setSelectedRvm} searchable showPlaceholder={false}
                                         options={machines.map(m => ({ value: String(m.id), label: m.name }))} placeholder="Select machine" />
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">User Account *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">User Account <span className="text-red-500">*</span></label>
                                     <CustomDropdown value={selectedAccount} onChange={setSelectedAccount} searchable showPlaceholder={false}
                                         options={allUsers.map(u => ({ value: String(u.accountId || u.id), label: `${u.name} (${u.email})` }))} placeholder="Select user" />
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
+                                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes..." rows={4}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-none text-sm" />
+                                </div>
+
+                                {/* Summary */}
+                                <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/30">
+                                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                                    <span className="text-lg font-black text-emerald-700 dark:text-emerald-400">+{totalPoints} pts</span>
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes</label>
-                                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes..." rows={3}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 resize-none" />
-                            </div>
-
-                            {/* Items */}
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Items ({items.length})</label>
-                                    <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                            {/* ── Right Panel: Items ── */}
+                            <div className="p-5 overflow-y-auto space-y-4 flex flex-col">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
+                                            <Package size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">Items ({items.length})</h4>
+                                    </div>
+                                    <button onClick={addItem} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
                                         <Plus size={14} /> Add Item
                                     </button>
                                 </div>
-                                <div className="space-y-3 pr-1">
+
+                                {/* Items list */}
+                                <div className="space-y-2 flex-1 overflow-y-auto pr-1">
                                     {items.map((item, idx) => (
                                         <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-3 flex-wrap">
                                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
@@ -413,29 +437,37 @@ function BulkSessionsPageContent() {
                                                 <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{item.pointsAwarded} pts</span>
                                             </div>
                                             {items.length > 1 && (
-                                                <button onClick={() => removeItem(idx)} className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
+                                                <button onClick={() => removeItem(idx)} className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
                                                     <Trash2 size={14} />
                                                 </button>
                                             )}
                                         </div>
                                     ))}
                                 </div>
-                            </div>
 
-                            {/* Summary */}
-                            <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/30">
-                                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{items.length} items</span>
-                                <span className="text-lg font-black text-emerald-700 dark:text-emerald-400">+{totalPoints} pts</span>
+                                {/* CSV Import Placeholder */}
+                                <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/30">
+                                        <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700">
+                                            <Upload size={18} className="text-slate-400 dark:text-slate-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Import from CSV</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-600">Coming soon — bulk import items from a CSV file</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                        {/* Footer */}
+                        <div className="p-5 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
                             <button onClick={() => setShowModal(false)}
-                                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium">
+                                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">
                                 Cancel
                             </button>
                             <button onClick={handleSubmit} disabled={submitting}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 text-sm font-bold shadow-lg disabled:opacity-50">
+                                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 text-sm font-bold shadow-lg disabled:opacity-50 transition-colors">
                                 {submitting ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                                 Create Session
                             </button>

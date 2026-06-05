@@ -271,6 +271,62 @@ def update_location(current_user, loc_id, payload):
             for k, v in addr_data.items():
                 setattr(org.address, k, v)
 
+        # Update contact
+        if any(k in data for k in ('contactPerson', 'contactEmail', 'contactPhone')):
+            contact = org.contacts[0] if org.contacts else None
+            if not contact:
+                contact = OrgContact(organization_id=org.id)
+                db.session.add(contact)
+            if 'contactPerson' in data:
+                parts = (data['contactPerson'] or '').split(' ', 1)
+                contact.first_name = parts[0] if parts else ''
+                contact.last_name = parts[1] if len(parts) > 1 else ''
+            if 'contactEmail' in data:
+                contact.email = data['contactEmail']
+            if 'contactPhone' in data:
+                contact.phone_number = data['contactPhone']
+
+        # Sync community groups
+        groups_data = data.get('communityGroups')
+        if groups_data is not None and isinstance(groups_data, list):
+            existing_ids = {cg.id for cg in (org.community_groups or [])}
+            incoming_ids = set()
+            for gd in groups_data:
+                if hasattr(gd, 'name'):
+                    gid, gname = getattr(gd, 'id', None), gd.name
+                    gabbr = gd.abbreviation or ''
+                    gtype = gd.groupType or 'college'
+                else:
+                    gid = gd.get('id')
+                    gname = gd.get('name', '')
+                    gabbr = gd.get('abbreviation', '')
+                    gtype = gd.get('groupType', 'college')
+                if not gname or not gname.strip():
+                    continue
+                if gid and gid in existing_ids:
+                    # Update existing
+                    cg = next((c for c in org.community_groups if c.id == gid), None)
+                    if cg:
+                        cg.name = gname.strip()
+                        cg.abbreviation = gabbr.strip() or None
+                        cg.group_type = gtype
+                        incoming_ids.add(gid)
+                else:
+                    # Create new
+                    cg = CommunityGroup(
+                        organization_id=org.id,
+                        name=gname.strip(),
+                        abbreviation=gabbr.strip() or None,
+                        group_type=gtype,
+                    )
+                    db.session.add(cg)
+            # Remove groups not in incoming list
+            for cg in list(org.community_groups or []):
+                if cg.id not in incoming_ids and cg.id in existing_ids:
+                    # Only delete if group has no users
+                    if not cg.users:
+                        db.session.delete(cg)
+
         _log_action(current_user, 'Location Updated', org.name, 'Locations')
         db.session.commit()
         return jsonify({'success': True, 'location': _serialize_organization(org)}), 200
