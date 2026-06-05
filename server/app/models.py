@@ -189,7 +189,9 @@ class User(db.Model):
 
     # Role & Classification
     role = db.Column(db.String(30), default='user', nullable=False, index=True)
-    user_type = db.Column(db.String(20), nullable=True)           # student, faculty, staff
+    user_type = db.Column(db.String(30), nullable=True)           # Org-type dependent: student, alumni, faculty, staff, resident, employee, etc.
+    educational_level = db.Column(db.String(30), nullable=True)   # Kindergarten, Elementary, JHS, SHS, College
+    year_level = db.Column(db.String(30), nullable=True)          # e.g. Grade 11, 3rd Year
 
     # Status
     is_active = db.Column(db.Boolean, default=True)
@@ -473,6 +475,25 @@ class Transaction(db.Model):
         return f'<Transaction {self.transaction_type} {self.amount:+d} pts>'
 
 
+class RewardCategory(db.Model):
+    """
+    CRUD-managed reward categories per organization.
+    Replaces the previous plain-string category on Reward.
+    """
+    __tablename__ = 'reward_categories'
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'),
+                                nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    rewards = db.relationship('Reward', backref='category_ref', lazy=True)
+
+    def __repr__(self):
+        return f'<RewardCategory {self.name}>'
+
+
 class Reward(db.Model):
     """
     A redeemable item offered by a specific Organization.
@@ -484,7 +505,9 @@ class Reward(db.Model):
                                 nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    category = db.Column(db.String(100))                          # Merchandise, Voucher, etc.
+    category = db.Column(db.String(100))                          # Legacy string — kept for migration
+    category_id = db.Column(db.Integer, db.ForeignKey('reward_categories.id'),
+                            nullable=True, index=True)            # New FK to RewardCategory
     points_required = db.Column(db.Integer, nullable=False)
     image_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, default=True)

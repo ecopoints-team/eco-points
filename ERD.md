@@ -12,6 +12,7 @@ erDiagram
     ORGANIZATIONS ||--o{ RVMS : "deploys"
     ORGANIZATIONS ||--o{ NOTIFICATION_SETTINGS : "configures alerts"
     ORGANIZATIONS ||--o{ NOTIFICATION_LOGS : "receives alerts"
+    REWARD_CATEGORIES ||--o{ REWARDS : "classifies"
     COMMUNITY_GROUPS ||--o{ USERS : "has members"
     USERS ||--|| WALLET: "owns"
     USERS ||--|| USER_SECURITY : "secures account"
@@ -76,12 +77,19 @@ erDiagram
         datetime created_at
     }
 
+    REWARD_CATEGORIES {
+        int id PK "Newly Added"
+        int organization_id FK "Reference -> ORGANIZATIONS | Newly Added"
+        string name "e.g. Merchandise, Voucher, Sustainable | Newly Added"
+        datetime created_at "Newly Added"
+    }
+
     REWARDS {
         int id PK
         int organization_id FK "Reference -> ORGANIZATIONS"
         string name "e.g. Pen"
         text description "e.g. Used for Writing"
-        string category "e.g. Merchandise, Voucher, Sustainable, Education"
+        int category_id FK "Reference -> REWARD_CATEGORIES | Newly Added (replaces string category)"
         int points_required "Points Needed for Redemption"
         string image_url "Image Storage"
         boolean is_active
@@ -160,7 +168,9 @@ erDiagram
         string phone UK "Nullable"
         string password_hash "Required - for Account Access"
         string role "e.g. admin roles and user"
-        string user_type "student, faculty, staff"
+        string user_type "Org-type dependent - see user_type_config | Newly Added: alumni, resident, community_official, community_worker, business_owner, employee, manager, executive, contractor, guest"
+        string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | Newly Added"
+        string year_level "Nullable - e.g. Grade 11, 3rd Year | Newly Added"
         boolean is_active
         datetime last_login "Log in Tracking"
         datetime deactivated_at "Nullable - When account was disabled"

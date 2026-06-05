@@ -63,7 +63,6 @@ function TransactionLogsPageContent() {
             const matchesSearch = searchQuery === '' ||
                 (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.userEmail || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (log.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 String(log.id).includes(searchQuery);
             return matchesSearch &&
                 (filterType === '' || log.transactionType === filterType) &&
@@ -112,10 +111,10 @@ function TransactionLogsPageContent() {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'ID', 'User', 'Email', 'Type', 'Amount', 'Before', 'After', 'Description', 'Reference', 'Location'];
+        const headers = ['Date', 'ID', 'User', 'Email', 'Type', 'Amount', 'Before', 'After', 'Reference', 'Location'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.transactionType,
-            log.amount, log.balanceBefore, log.balanceAfter, log.description, log.referenceId,
+            log.amount, log.balanceBefore, log.balanceAfter, log.referenceId,
             log.locationName || '-'
         ]);
         const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -235,7 +234,6 @@ function TransactionLogsPageContent() {
                                     <div className="flex items-center gap-1">Amount <SortIcon column="amount" /></div>
                                 </th>
                                 {showBalance && <th className="px-3 py-3">Before → After</th>}
-                                <th className="px-3 py-3">Description</th>
                                 {showLocation && <th className="px-3 py-3">Location</th>}
                             </tr>
                         </thead>
@@ -267,7 +265,6 @@ function TransactionLogsPageContent() {
                                             </span>
                                         </td>
                                     )}
-                                    <td className="px-3 py-3"><span className="text-xs text-slate-600 dark:text-slate-300">{formatField(log.description)}</span></td>
                                     {showLocation && (
                                         <td className="px-3 py-3"><span className="text-xs text-slate-500 dark:text-slate-400">{formatField(log.locationName)}</span></td>
                                     )}

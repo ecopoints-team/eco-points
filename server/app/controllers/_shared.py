@@ -196,6 +196,9 @@ def _serialize_user(u):
         'phone': u.phone,
         'role': role_value,
         'userType': u.user_type,
+        'educationalLevel': u.educational_level,
+        'yearLevel': u.year_level,
+        'communityGroupId': u.community_group_id,
         'isActive': u.is_active,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
@@ -373,7 +376,7 @@ def _serialize_bottle_log(item):
         read.
     """
     session = item.session
-    wallet = db.session.get(Wallet, session.wallet_id) if session else None
+    wallet = session.wallet if session else None
     user = wallet.user if wallet else None
     rvm = session.rvm if session else None
     org = rvm.organization if rvm else None

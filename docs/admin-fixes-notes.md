@@ -40,3 +40,62 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 - So far, let's fix these issues first. 
 - These are the only issues that I have found by eye. I want you to comprehensively look for other issues and bugs according to these issues that I have found.
 - Don't you limit on these found issues. As much as possible, scan the parts of these issues and their affected areas so that we can fix all the connection/connected parts of the admin and website.
+
+
+
+# Admin Dashboard Fixes Part 2
+
+## Question About the last part (On Local dev not prod)
+
+- The task should optimized the `Dashboard Overview`, `Locations`, and `Machines` menu, right? Now, why does the `Analytics` Menu renders the analytics charts and graphs faster than the `Dashboard Overview`? it should be the same I think? since they are just using the same data fetching method right? What's actually happening is whenever I try to wait on the dashboard overview's data to show, I go to analytics then when it renders I will go back to the dashboard overview and then it will render or sometimes even no. 
+- What are the error logs mentioned in the chat?
+
+## Tasks
+
+
+### FIRST PRIORITY (Creation of Community Groups)
+
+- Upon creation of location on the `Location` Menu, it should have a field to put the community groups inside that location. We can also add an import of csv with a helper icon modal to show how the format template should be and have a sample template for it as well. This is mainly for school since they have the most community groups they need because of courses (for college), strands (for senior high school), elementary, and kindergarden (for sections). Other than that should be the same.
+
+#### Additional fixes
+
+- On the Organization Type field on the `Add Location` modal, we can add an edit button as well beside the delete button.
+
+### Manage User Modal Realignment
+
+- The `Add User` modal and `Edit User` modal don't have the same entities or fields or values that we need to capture. Refactor the fields based on the ERD needs and its entities.
+- The `Add User` and `Edit User` modal should have these features. Since we're a multi-tenant system, the fields inside the modal should change based on the client/customer's organization type or status.Since we have `Location` field on the modal, we can determine the org type of the client/customer so we can determine what field to follow up or to show so let's make it like a flow where the other fields are disabled until the previous field is filled. So, obviously the `Location` field then the `User Type` field then the rest is the corresponding field aligned to the location. Here's tjo follow:
+
+    If the organization type of the location is `University` or `School`, the following fields should be shown:
+    - The current fields we got:
+        - Role (Change to User Type): Student, Alumni, Faculty, Staff
+        - Educational Level: Kindergarden, Elementary School, Junior High School (JHS), Senior High School (SHS), and College
+        - For the year level field:
+            - If kindergarden, that's it, no year level needed and community group
+            - If elementary school, the year level goes from 1-6 and then community group
+            - If JHS, the year level goes from grade 7-10 and then community group
+            - If SHS, the year level goes from grade 11-12 and then community group
+            - If College, the year level goes from 1st year - 5th year and then community group
+    Other than that, it should be the same still.
+
+    If the organization type of the location is `Community`, the following fields should be shown:
+    - The current fields we got:
+        - Role (Change to User Type): Resident, Community Official, Community Worker, Business Owner.
+        - Then show the community groups field selection based on the location.
+
+    If the organization type of the location is `Corporate`, the following fiels should be shown:
+    - The current fields we got:
+        - Role (Change to User Type): Employee, Manager, Executive, Contractor, Guest
+        - Then show the community groups field selection based on the location.
+
+
+### Manage Admin Modal Realignment
+
+- The `Add Admin` and `Edit Admin` modal stays the same except the name field. Follow the normalization of the ERD. 
+
+### Rewards Inventory Menu Modal Redesigning
+
+- On the category field, the selection should have the delete and edit button like on the `Organization Type` field on the add location modal. 
+
+
+

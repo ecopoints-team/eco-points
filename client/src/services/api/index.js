@@ -30,6 +30,7 @@ import * as groups from './groups';
 import * as analytics from './analytics';
 import * as settings from './settings';
 import * as sessions from './sessions';
+import * as rewardCategories from './rewardCategories';
 
 export {
     auth,
@@ -44,6 +45,7 @@ export {
     analytics,
     settings,
     sessions,
+    rewardCategories,
 };
 
 // ── Legacy compatibility namespaces ───────────────────────────────────────
@@ -61,6 +63,7 @@ export {
 export const orgTypes = {
     getAll: locations.getOrgTypes,
     create: locations.createOrgType,
+    update: locations.updateOrgType,
     delete: locations.deleteOrgType,
 };
 
@@ -83,6 +86,7 @@ const api = {
     analytics,
     settings,
     sessions,
+    rewardCategories,
     orgTypes,
     bulkSessions,
 };

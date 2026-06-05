@@ -60,3 +60,9 @@ export async function createOrgType(name) {
 export async function deleteOrgType(id) {
     return await request('DELETE', `/org-types/${id}`);
 }
+
+/** PUT /api/web/org-types/:id — rename organization type. */
+export async function updateOrgType(id, name) {
+    const data = await request('PUT', `/org-types/${id}`, { body: { name } });
+    return data.orgType;
+}

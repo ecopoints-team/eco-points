@@ -135,6 +135,9 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-DO-NOT-USE-IN-PRODUCTION')
     JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Supabase (PgBouncer) drops idle connections. pool_pre_ping checks each
+    # connection before use so stale connections are transparently recycled.
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
 
 
 def create_app():
@@ -262,11 +265,12 @@ def create_app():
         from .controllers.analytics_controller import analytics_bp
         from .controllers.settings_controller import settings_bp
         from .controllers.sessions_controller import sessions_bp
+        from .controllers.reward_categories_controller import reward_categories_bp
 
         for sub_bp in (
             dashboard_bp, users_bp, locations_bp, machines_bp, rewards_bp,
             logs_bp, leaderboard_bp, groups_bp, analytics_bp, settings_bp,
-            sessions_bp,
+            sessions_bp, reward_categories_bp,
         ):
             web_bp.register_blueprint(sub_bp)
 
