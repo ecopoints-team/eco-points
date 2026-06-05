@@ -533,15 +533,6 @@ export default function AdminLayout({ children }) {
                                                 </button>
                                             </Link>
 
-                                            <Link href="/">
-                                                <button onClick={() => setIsProfileOpen(false)} className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
-                            text-slate-700 hover:bg-gray-50 hover:text-emerald-600
-                            dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-emerald-400">
-                                                    <Home size={16} />
-                                                    Go to Website
-                                                </button>
-                                            </Link>
-
                                             <button
                                                 onClick={async () => { await logout(); router.push('/?login=true'); }}
                                                 className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors

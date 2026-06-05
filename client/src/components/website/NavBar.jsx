@@ -300,16 +300,6 @@ export default function NavBar({ onLoginClick }) {
                     </p>
                   </div>
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
-                  {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) && (
-                    <button
-                      onClick={handleDashboardClick}
-                      className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
-                      style={{ fontFamily: "'Quicksand'" }}
-                    >
-                      <LayoutDashboard size={14} className="text-slate-400" />
-                      Go to Dashboard
-                    </button>
-                  )}
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
@@ -413,16 +403,6 @@ export default function NavBar({ onLoginClick }) {
                   </p>
                 </div>
               </div>
-              {currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role) && (
-                <button
-                  onClick={handleDashboardClick}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-sm border-none mb-1"
-                  style={{ fontFamily: "'Quicksand'" }}
-                >
-                  <LayoutDashboard size={16} />
-                  Go to Dashboard
-                </button>
-              )}
               <button
                 onClick={() => {
                   setIsDropdownOpen(false);
