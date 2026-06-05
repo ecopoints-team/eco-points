@@ -376,7 +376,7 @@ def _serialize_bottle_log(item):
         read.
     """
     session = item.session
-    wallet = db.session.get(Wallet, session.wallet_id) if session else None
+    wallet = session.wallet if session else None
     user = wallet.user if wallet else None
     rvm = session.rvm if session else None
     org = rvm.organization if rvm else None

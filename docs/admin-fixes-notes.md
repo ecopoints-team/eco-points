@@ -64,7 +64,7 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 ### Manage User Modal Realignment
 
 - The `Add User` modal and `Edit User` modal don't have the same entities or fields or values that we need to capture. Refactor the fields based on the ERD needs and its entities.
-- The `Add User` and `Edit User` modal should have these features. Since we're a multi-tenant system, the fields inside the modal should change based on the client/customer's organization type or status.Since we have `Location` field on the modal, we can determine the org type of the client/customer so we can determine what field to follow up or to show so let's make it like a flow where the other fields are disabled until the previous field is filled. So, obviously the `Location` field then the `User Type` field then the rest is the corresponding field aligned to the location. Here's to follow:
+- The `Add User` and `Edit User` modal should have these features. Since we're a multi-tenant system, the fields inside the modal should change based on the client/customer's organization type or status.Since we have `Location` field on the modal, we can determine the org type of the client/customer so we can determine what field to follow up or to show so let's make it like a flow where the other fields are disabled until the previous field is filled. So, obviously the `Location` field then the `User Type` field then the rest is the corresponding field aligned to the location. Here's tjo follow:
 
     If the organization type of the location is `University` or `School`, the following fields should be shown:
     - The current fields we got:
