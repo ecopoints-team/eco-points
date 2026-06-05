@@ -821,7 +821,11 @@ function MachinesPageContent() {
             </div>
 
             {/* Machine Cards Grid */}
-            {machines.length > 0 ? (
+            {isDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    {Array.from({ length: 6 }).map((_, i) => <SkeletonMachineCard key={i} />)}
+                </div>
+            ) : machines.length > 0 ? (
                 <>
                     {/* Top Pagination */}
                     {totalPages > 1 && (
@@ -856,9 +860,7 @@ function MachinesPageContent() {
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                        {isDataLoading ? (
-                            Array.from({ length: 6 }).map((_, i) => <SkeletonMachineCard key={i} />)
-                        ) : currentMachines.map((machine) => (
+                        {currentMachines.map((machine) => (
                             <MachineCard
                                 key={machine.id}
                                 machine={machine}
