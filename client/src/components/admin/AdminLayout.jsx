@@ -247,7 +247,9 @@ export default function AdminLayout({ children }) {
                 // Notifications are non-critical — fail silently
             }
         };
-        if (currentUser) loadNotifications();
+        if (currentUser && ADMIN_ROLES.includes(currentUser.role)) {
+            loadNotifications();
+        }
         return () => { cancelled = true; };
     }, [currentUser, effectiveLocationId]);
 
