@@ -52,6 +52,9 @@ def get_bottle_logs(current_user):
             joinedload(RecyclingItem.session)
                 .joinedload(RecyclingSession.rvm)
                 .joinedload(RVM.organization),
+            joinedload(RecyclingItem.session)
+                .joinedload(RecyclingSession.wallet)
+                .joinedload(Wallet.user),
         )
         if loc_id:
             query = query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
@@ -76,7 +79,11 @@ def get_machine_logs(current_user):
     """Maintenance logs, scoped by location."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = MaintenanceLog.query.join(RVM)
+        query = MaintenanceLog.query.join(RVM).options(
+            joinedload(MaintenanceLog.rvm)
+                .joinedload(RVM.organization),
+            joinedload(MaintenanceLog.performed_by),
+        )
         if loc_id:
             query = query.filter(RVM.organization_id == loc_id)
             
@@ -97,8 +104,7 @@ def get_machine_logs(current_user):
                     cutoff = datetime.now(timezone.utc) - timedelta(hours=threshold_hrs)
                     unresolved = [l for l in logs if l.status == 'Pending' and l.created_at and l.created_at < cutoff]
                     for log_entry in unresolved[:5]:
-                        rvm_obj = db.session.get(RVM, log_entry.rvm_id)
-                        rvm_name = rvm_obj.name if rvm_obj else f'RVM #{log_entry.rvm_id}'
+                        rvm_name = log_entry.rvm.name if log_entry.rvm else f'RVM #{log_entry.rvm_id}'
                         trigger_alert(loc_id, 'maintenance_unresolved',
                                       f'Unresolved maintenance: {rvm_name}',
                                       f'Maintenance log "{log_entry.action_type}" on "{rvm_name}" '
@@ -165,7 +171,11 @@ def get_access_logs(current_user):
     """Admin action logs, scoped by location."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = AdminLog.query.join(User, AdminLog.admin_user_id == User.id)
+        query = AdminLog.query.join(User, AdminLog.admin_user_id == User.id).options(
+            joinedload(AdminLog.admin)
+                .joinedload(User.community_group)
+                .joinedload(CommunityGroup.organization),
+        )
         if loc_id:
             query = query.join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
                          .filter(CommunityGroup.organization_id == loc_id)
