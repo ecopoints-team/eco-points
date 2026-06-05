@@ -2,11 +2,11 @@
 import dynamic from "next/dynamic";
 import RewardsSkeleton from "../../src/components/shared/skeletons/RewardsSkeleton";
 
-const MyRewards = dynamic(
-  () => import("../../src/components/pages/MyRewards"),
+const RedeemHistory = dynamic(
+  () => import("../../src/components/pages/RedeemHistory"),
   { loading: () => <RewardsSkeleton /> }
 );
 
-export default function MyRewardsPage() {
-  return <MyRewards />;
+export default function RedeemHistoryPage() {
+  return <RedeemHistory />;
 }

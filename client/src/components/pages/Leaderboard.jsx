@@ -209,7 +209,7 @@ export default function LeaderboardCTA({ onLoginClick }) {
 
   const handleCTAClick = () => {
     if (currentUser) {
-      router.push("/admin/leaderboards");
+      router.push("/leaderboard");
     } else {
       onLoginClick?.();
     }
@@ -219,7 +219,7 @@ export default function LeaderboardCTA({ onLoginClick }) {
     <section
       id="leaderboard"
       ref={sectionRef}
-      className="mb-32 relative overflow-hidden rounded-3xl"
+      className="mb-32 relative overflow-hidden rounded-3xl scroll-mt-28"
     >
       {/* ── Background glow blobs ── */}
       <div className="pointer-events-none absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-emerald-400/10 blur-3xl" />
@@ -362,7 +362,7 @@ export default function LeaderboardCTA({ onLoginClick }) {
                 {currentUser && (
                   <button
                     id="leaderboard-cta-secondary"
-                    onClick={() => router.push("/admin/leaderboards")}
+                    onClick={() => router.push("/leaderboard")}
                     className="flex items-center gap-2 px-5 py-3.5 border border-emerald-200 font-bold text-sm rounded-2xl transition-all duration-300 hover:-translate-y-0.5"
                     style={{ ...fonts.body, color: "#065F46" }}
                   >

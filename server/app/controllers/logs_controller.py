@@ -43,7 +43,7 @@ logs_bp = Blueprint('logs', __name__, url_prefix='/logs')
 
 @logs_bp.route('/bottles', methods=['GET'])
 @token_required
-@permission_required('logs')
+@permission_required('logs', allow_non_admin=True)
 def get_bottle_logs(current_user):
     """Recycling item logs, scoped by location."""
     try:
@@ -246,6 +246,20 @@ def update_reward_redemption(current_user, redemption_id, payload):
         rd.status = new_status
         if new_status == 'claimed' and not rd.claimed_at:
             rd.claimed_at = datetime.now(timezone.utc)
+            if old_status == 'pending':
+                wallet = rd.wallet
+                if wallet:
+                    confirm_txn = Transaction(
+                        wallet_id=rd.wallet_id,
+                        transaction_type='redeem_confirm',
+                        amount=0,
+                        balance_before=wallet.points_balance,
+                        balance_after=wallet.points_balance,
+                        reference_type='reward_redemption',
+                        reference_id=rd.id,
+                        created_at=datetime.now(timezone.utc)
+                    )
+                    db.session.add(confirm_txn)
 
         _log_action(current_user, 'Redemption Status Updated',
                      f'{rd.redemption_code}: {old_status} → {new_status}', 'Rewards')
@@ -271,7 +285,7 @@ def update_reward_redemption(current_user, redemption_id, payload):
 
 @logs_bp.route('/transactions', methods=['GET'])
 @token_required
-@permission_required('logs')
+@permission_required('logs', allow_non_admin=True)
 def get_transaction_logs(current_user):
     """Transaction logs (earn/redeem/adjustment), scoped by location."""
     try:
@@ -343,6 +357,14 @@ def _describe_transaction(txn):
 
     # Most informative combinations first.
     if ref_type == 'reward_redemption' and ref_id is not None:
+        rd = db.session.get(RewardRedemption, ref_id)
+        if rd and rd.variant and rd.variant.reward:
+            reward_name = rd.variant.reward.name
+            if txn_type == 'redeem_confirm':
+                return f'Claimed Reward: {reward_name}'
+            return f'Redeemed Reward: {reward_name}'
+        if txn_type == 'redeem_confirm':
+            return f'Claimed Reward #{ref_id}'
         return f'Reward redemption #{ref_id}'
     if ref_type == 'recycling_session' and ref_id is not None:
         return f'Bottle deposit (session #{ref_id})'

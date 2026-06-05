@@ -27,6 +27,7 @@ os.environ.setdefault(
 )
 os.environ.setdefault('SECRET_KEY', 'test-secret-key-do-not-use-in-prod')
 os.environ.setdefault('JWT_EXPIRY_HOURS', '1')
+os.environ.setdefault('COOKIE_SAMESITE', 'Strict')
 
 # ── Phase 4B / Task 11.3: CSRF escape hatch for the test suite ────────────
 #

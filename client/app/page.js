@@ -111,9 +111,9 @@ function HomeContent() {
           <Footer />
         </div>
 
-        {/* Expandable Test Navigation Pill — bottom-left */}
+        {/* Expandable Test Navigation Pill — bottom-left (Hidden) */}
+        {/*
         <div className="fixed bottom-6 left-6 z-[1000]">
-          {/* Pill Toggle Button */}
           <button
             onClick={() => setIsNavOpen(!isNavOpen)}
             className="flex items-center gap-2 px-4 py-2.5 bg-lime-950/90 backdrop-blur-md border border-white/20 rounded-full shadow-2xl text-white hover:bg-lime-900/90 transition-all duration-300 group"
@@ -128,7 +128,6 @@ function HomeContent() {
             </span>
           </button>
 
-          {/* Expandable Nav Links */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out ${isNavOpen ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
               }`}
@@ -161,6 +160,7 @@ function HomeContent() {
             </div>
           </div>
         </div>
+        */}
 
         {/* Login Modal — overlays page with blurred backdrop */}
         {isLoginOpen && (

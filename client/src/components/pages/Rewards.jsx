@@ -21,6 +21,9 @@ const ITEMS_PER_PAGE = 20;
 
 // --- REWARDS HEADER ---
 function RewardsHeader() {
+  const { currentUser } = useAuth();
+  const isLoggedIn = !!currentUser;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-[999] bg-white/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border-b border-[#10b981]/10">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center gap-4">
@@ -46,14 +49,7 @@ function RewardsHeader() {
         </div>
 
         {/* Right: EcoPoints Logo */}
-        <div className="flex-1 flex justify-end items-center gap-4 sm:gap-6">
-          <Link 
-            href="/my-rewards" 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[#064e3b] font-bold text-[10px] uppercase tracking-widest bg-[#10b981]/10 hover:bg-[#10b981]/20 transition-all"
-          >
-            <Ticket size={14} className="fill-[#064e3b]" />
-            <span className="hidden sm:inline">My Vouchers</span>
-          </Link>
+        <div className="flex-1 flex justify-end items-center gap-3 sm:gap-4">
           <img
             src="/ecopoints-logo-mark.png"
             alt="EcoPoints"
@@ -81,6 +77,7 @@ export default function Rewards() {
 
   // Refs
   const filterContainerRef = useRef(null);
+  const statsContainerRef = useRef(null);
 
   const { currentUser, isLoading: isAuthLoading, refreshUser } = useAuth();
   const isLoggedIn = !!currentUser;
@@ -89,6 +86,7 @@ export default function Rewards() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showFloatingBalance, setShowFloatingBalance] = useState(false);
 
   // Rewards Data
   const [products, setProducts] = useState([]);
@@ -182,6 +180,24 @@ export default function Rewards() {
       refreshUser();
     }
   }, [isLoggedIn, refreshUser]);
+
+  // Intersection Observer for floating user balance relative to stats cards visibility
+  useEffect(() => {
+    const el = statsContainerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFloatingBalance(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+    };
+  }, [isLoggedIn]);
 
   // Track typing/debouncing state
   useEffect(() => {
@@ -338,8 +354,8 @@ export default function Rewards() {
 
 
 
-      {/* FLOATING USER BALANCE (Only visible when logged in) */}
-      {isLoggedIn && (
+      {/* FLOATING USER BALANCE (Only visible when logged in and stats cards are out of view) */}
+      {isLoggedIn && showFloatingBalance && (
         <div className="fixed top-20 left-4 sm:left-8 z-40 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.15)] rounded-full px-4 py-2 border border-emerald-100 flex items-center gap-3 animate-slide-up pointer-events-auto">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-inner">
             <Zap size={18} className="text-white fill-white" />
@@ -399,7 +415,7 @@ export default function Rewards() {
                         </p>
                       </>
                     )}
-                    <div className="flex gap-2 justify-center md:justify-start flex-wrap">
+                    <div className="flex gap-2 justify-center md:justify-start flex-wrap items-center">
                       <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#10b981]/20">
                         Active Member
                       </span>
@@ -416,7 +432,7 @@ export default function Rewards() {
                 </div>
 
                 {/* Right: Stats Cards */}
-                <div className="lg:col-span-8 space-y-6">
+                <div ref={statsContainerRef} className="lg:col-span-8 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Available Balance */}
                     <div className="bg-gradient-to-br from-[#10b981]/5 to-[#34d399]/10 rounded-[1.5rem] p-6 border border-[#10b981]/10 relative overflow-hidden">
@@ -466,10 +482,21 @@ export default function Rewards() {
                           </>
                         )}
                       </div>
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          No redemptions yet
-                        </span>
+                      <div className="mt-3">
+                        {isLoggedIn ? (
+                          <Link 
+                            href="/redeem-history"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:from-amber-600 hover:to-orange-600 transition-all duration-300 group shadow-md shadow-orange-500/10 hover:shadow-lg hover:-translate-y-0.5"
+                            style={{ fontFamily: "'Quicksand', sans-serif" }}
+                          >
+                            <Ticket size={14} className="text-amber-100 transition-transform duration-300 group-hover:scale-110" />
+                            <span>View Redeem History</span>
+                          </Link>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                            No redemptions yet
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

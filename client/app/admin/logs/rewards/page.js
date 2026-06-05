@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import RequirePermission from '../../../../src/components/admin/RequirePermission';
 import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
@@ -9,13 +9,182 @@ import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/api';
 import { formatField } from '../../../../src/lib/formatField';
 import { redemptionStatusLabel } from '../../../../src/lib/enumLabels';
-import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon, QrCode, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 function RewardsLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
 
     // API-loaded data
     const [allRewardsLogs, setAllRewardsLogs] = useState([]);
+
+    // Scanner states
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [scanInput, setScanInput] = useState('');
+    const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'processing' | 'success' | 'error'
+    const [scanResult, setScanResult] = useState(null);
+    const scannerInputRef = useRef(null);
+
+    // Keep scanner input focused while modal is open
+    useEffect(() => {
+        if (isScannerOpen && scannerInputRef.current) {
+            const timer = setTimeout(() => {
+                scannerInputRef.current.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isScannerOpen, scanStatus]);
+
+    const handleScannerAreaClick = () => {
+        if (scannerInputRef.current) {
+            scannerInputRef.current.focus();
+        }
+    };
+
+    // Play cybernetic sound effects using the built-in browser Web Audio API
+    const playBeep = (type = 'success') => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'success') {
+                osc.frequency.setValueAtTime(660, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.25);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.setValueAtTime(120, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.35);
+            }
+        } catch (e) {
+            console.error('Audio synthesizer error:', e);
+        }
+    };
+
+    // Process redemption QR scans or manual inputs
+    const handleScanSubmit = async (e) => {
+        if (e) e.preventDefault();
+        const code = scanInput.trim();
+        if (!code) return;
+
+        setScanStatus('processing');
+        setScanResult(null);
+
+        // Parse scanner inputs. Standard payload is REDEEM:redemptionCode.
+        let parsedCode = code;
+        if (code.toUpperCase().startsWith('REDEEM:')) {
+            parsedCode = code.slice(7).trim();
+        }
+
+        // Search locally through active rewards logs
+        const matchedLog = allRewardsLogs.find(
+            log => (log.redemptionCode && log.redemptionCode.toUpperCase() === parsedCode.toUpperCase())
+        );
+
+        if (!matchedLog) {
+            playBeep('error');
+            setScanStatus('error');
+            setScanResult({
+                message: `Redemption code "${parsedCode.toUpperCase()}" not found. Please verify the code and try again.`,
+                code: parsedCode.toUpperCase()
+            });
+            setScanInput('');
+            return;
+        }
+
+        // Verify status constraints
+        if (matchedLog.status === 'claimed') {
+            playBeep('error');
+            setScanStatus('error');
+            setScanResult({
+                message: `This reward was already claimed!`,
+                details: {
+                    userName: matchedLog.userName,
+                    userEmail: matchedLog.userEmail,
+                    rewardName: matchedLog.rewardName,
+                    claimedAt: matchedLog.claimedAt || matchedLog.timestamp,
+                    redemptionCode: matchedLog.redemptionCode
+                }
+            });
+            setScanInput('');
+            return;
+        }
+
+        if (matchedLog.status === 'expired') {
+            playBeep('error');
+            setScanStatus('error');
+            setScanResult({
+                message: `This redemption code has expired!`,
+                details: {
+                    userName: matchedLog.userName,
+                    rewardName: matchedLog.rewardName,
+                    redemptionCode: matchedLog.redemptionCode
+                }
+            });
+            setScanInput('');
+            return;
+        }
+
+        if (matchedLog.status === 'used') {
+            playBeep('error');
+            setScanStatus('error');
+            setScanResult({
+                message: `This reward is already marked as used!`,
+                details: {
+                    userName: matchedLog.userName,
+                    rewardName: matchedLog.rewardName,
+                    redemptionCode: matchedLog.redemptionCode
+                }
+            });
+            setScanInput('');
+            return;
+        }
+
+        // Complete claim through API
+        try {
+            const updated = await logsApi.updateRedemptionStatus(matchedLog.id, 'claimed');
+            
+            // Success audio cue
+            playBeep('success');
+
+            // Reflect the updated status instantly in local table state
+            setAllRewardsLogs(prev => prev.map(l =>
+                l.id === String(matchedLog.id) || l.id === matchedLog.id
+                    ? { ...l, status: updated.status, claimedAt: updated.claimedAt || new Date().toISOString() }
+                    : l
+            ));
+
+            setScanStatus('success');
+            setScanResult({
+                message: `Success! Reward claimed.`,
+                details: {
+                    userName: matchedLog.userName,
+                    userEmail: matchedLog.userEmail,
+                    rewardName: matchedLog.rewardName,
+                    pointsCost: matchedLog.pointsCost,
+                    redemptionCode: matchedLog.redemptionCode
+                }
+            });
+            setScanInput('');
+        } catch (err) {
+            playBeep('error');
+            setScanStatus('error');
+            setScanResult({
+                message: err.message || 'Failed to claim redemption on server.',
+                code: parsedCode.toUpperCase()
+            });
+            setScanInput('');
+        }
+    };
     const [refreshKey, setRefreshKey] = useState(0);
     const [isDataLoading, setIsDataLoading] = useState(true);
     useEffect(() => {
@@ -162,15 +331,27 @@ function RewardsLogsPageContent() {
 
     return (
         <>
-            <div className="mb-8 flex justify-between items-end">
+            <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Rewards Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">Reward redemption history and transactions</p>
                 </div>
-                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
-                    <Download size={18} />
-                    Export CSV
-                </button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <button
+                        onClick={() => setIsScannerOpen(true)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all font-bold text-sm shadow-lg shadow-emerald-500/20 cursor-pointer"
+                    >
+                        <QrCode size={18} />
+                        Scan QR Code
+                    </button>
+                    <button
+                        onClick={exportToCSV}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold text-sm shadow-lg dark:bg-slate-700 dark:hover:bg-slate-600"
+                    >
+                        <Download size={18} />
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
@@ -350,6 +531,206 @@ function RewardsLogsPageContent() {
                     </div>
                 )}
             </div>
+
+            {/* Premium Redemption Scanner Modal */}
+            {isScannerOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300">
+                    <style dangerouslySetInnerHTML={{ __html: `
+                        @keyframes scan {
+                            0% { top: 0%; opacity: 0.3; }
+                            50% { top: 100%; opacity: 1; }
+                            100% { top: 0%; opacity: 0.3; }
+                        }
+                    `}} />
+                    <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform scale-100 transition-all duration-300 animate-in fade-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    <QrCode size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-extrabold text-slate-800 dark:text-white">Redemption Scanner</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Claim student rewards by scanning or manually entering codes</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsScannerOpen(false);
+                                    setScanStatus('idle');
+                                    setScanResult(null);
+                                    setScanInput('');
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Scanner View Area */}
+                        <div className="p-6 flex flex-col items-center justify-center min-h-[320px]" onClick={handleScannerAreaClick}>
+                            {(scanStatus === 'idle' || scanStatus === 'processing') && (
+                                <>
+                                    <div className="relative w-48 h-48 border-2 border-emerald-500/30 rounded-2xl overflow-hidden flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 group transition-all duration-300 shadow-inner">
+                                        {/* Sweeping laser line */}
+                                        <div className="absolute left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#10b981] pointer-events-none" style={{ animation: 'scan 2s linear infinite' }}></div>
+                                        
+                                        <QrCode size={64} className="text-emerald-500/20 group-hover:text-emerald-500/45 transition-colors animate-pulse pointer-events-none" />
+
+                                        {/* Viewfinder Corners */}
+                                        <div className="absolute top-2 left-2 w-5 h-5 border-t-4 border-l-4 border-emerald-500 rounded-tl-md"></div>
+                                        <div className="absolute top-2 right-2 w-5 h-5 border-t-4 border-r-4 border-emerald-500 rounded-tr-md"></div>
+                                        <div className="absolute bottom-2 left-2 w-5 h-5 border-b-4 border-l-4 border-emerald-500 rounded-bl-md"></div>
+                                        <div className="absolute bottom-2 right-2 w-5 h-5 border-b-4 border-r-4 border-emerald-500 rounded-br-md"></div>
+                                    </div>
+
+                                    <form onSubmit={handleScanSubmit} className="mt-6 w-full max-w-xs relative text-center">
+                                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                                            Scanning hardware input (autofocus enabled)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                ref={scannerInputRef}
+                                                type="text"
+                                                value={scanInput}
+                                                onChange={(e) => setScanInput(e.target.value)}
+                                                placeholder="Ready for hardware scan..."
+                                                className="w-full text-center tracking-widest uppercase font-mono bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-semibold"
+                                                disabled={scanStatus === 'processing'}
+                                            />
+                                            {scanStatus === 'processing' && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <Loader2 className="animate-spin text-emerald-500" size={18} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={!scanInput.trim() || scanStatus === 'processing'}
+                                            className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all disabled:opacity-40 text-sm shadow-lg shadow-emerald-600/10 cursor-pointer"
+                                        >
+                                            Submit Code Manual
+                                        </button>
+                                    </form>
+                                </>
+                            )}
+
+                            {scanStatus === 'success' && (
+                                <div className="flex flex-col items-center text-center p-4 w-full">
+                                    <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)] animate-bounce">
+                                        <CheckCircle2 size={36} />
+                                    </div>
+                                    <h4 className="text-xl font-black text-slate-800 dark:text-white mb-1">Claim Processed Successfully!</h4>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">The redemption code has been marked as Claimed</p>
+
+                                    <div className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 text-left mb-6 font-sans">
+                                        <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                            <span className="text-xs text-slate-400 uppercase font-bold">Reward</span>
+                                            <span className="text-sm font-semibold text-slate-800 dark:text-white">{scanResult?.details?.rewardName}</span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                            <span className="text-xs text-slate-400 uppercase font-bold">Student</span>
+                                            <div className="text-right">
+                                                <div className="text-sm font-semibold text-slate-800 dark:text-white">{scanResult?.details?.userName}</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400">{scanResult?.details?.userEmail}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                            <span className="text-xs text-slate-400 uppercase font-bold">Points Cost</span>
+                                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{scanResult?.details?.pointsCost?.toLocaleString()} pts</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-slate-400 uppercase font-bold">Redemption Code</span>
+                                            <span className="text-xs font-mono font-bold bg-slate-200/50 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600">{scanResult?.details?.redemptionCode}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 w-full max-w-xs">
+                                        <button
+                                            onClick={() => {
+                                                setScanStatus('idle');
+                                                setScanResult(null);
+                                                setScanInput('');
+                                            }}
+                                            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all text-sm shadow-lg shadow-emerald-600/10 cursor-pointer"
+                                        >
+                                            Scan Next
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsScannerOpen(false);
+                                                setScanStatus('idle');
+                                                setScanResult(null);
+                                                setScanInput('');
+                                            }}
+                                            className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl font-bold transition-all text-sm cursor-pointer"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {scanStatus === 'error' && (
+                                <div className="flex flex-col items-center text-center p-4 w-full">
+                                    <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)] animate-pulse">
+                                        <AlertCircle size={36} />
+                                    </div>
+                                    <h4 className="text-xl font-black text-slate-800 dark:text-white mb-2">Scan Verification Failed</h4>
+                                    <p className="text-sm text-red-500/90 font-medium px-4 mb-6">{scanResult?.message}</p>
+
+                                    {scanResult?.details && (
+                                        <div className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 text-left mb-6 font-sans">
+                                            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                                <span className="text-xs text-slate-400 uppercase font-bold">Reward</span>
+                                                <span className="text-sm font-semibold text-slate-800 dark:text-white">{scanResult.details.rewardName}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                                <span className="text-xs text-slate-400 uppercase font-bold">Student</span>
+                                                <span className="text-sm font-semibold text-slate-800 dark:text-white">{scanResult.details.userName}</span>
+                                            </div>
+                                            {scanResult.details.claimedAt && (
+                                                <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
+                                                    <span className="text-xs text-slate-400 uppercase font-bold">Claimed At</span>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(scanResult.details.claimedAt)}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-slate-400 uppercase font-bold">Redemption Code</span>
+                                                <span className="text-xs font-mono font-bold bg-slate-200/50 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600">{scanResult.details.redemptionCode}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-3 w-full max-w-xs">
+                                        <button
+                                            onClick={() => {
+                                                setScanStatus('idle');
+                                                setScanResult(null);
+                                                setScanInput('');
+                                            }}
+                                            className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-all text-sm shadow-lg shadow-red-600/10 cursor-pointer"
+                                        >
+                                            Try Again
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsScannerOpen(false);
+                                                setScanStatus('idle');
+                                                setScanResult(null);
+                                                setScanInput('');
+                                            }}
+                                            className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl font-bold transition-all text-sm cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

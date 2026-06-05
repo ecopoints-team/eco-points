@@ -101,17 +101,48 @@ export default function RecentActivity() {
       try {
         setIsLoading(true);
         const data = await api.logs.getTransactions();
-        const mappedData = data.map(txn => ({
-          id: txn.id,
-          type: txn.transactionType, // 'earn', 'redeem', 'adjustment'
-          amount: txn.amount,
-          description: txn.description,
-          date: txn.timestamp,
-          reference: txn.referenceId || "N/A",
-          bottles: 0, // Transaction log doesn't store direct bottle count easily, let's default to 0
-          location: txn.locationName || "Unknown Location",
-          category: txn.transactionType === "earn" ? "Recycling" : "Reward",
-        }));
+        const mappedData = data.map(txn => {
+          let description = txn.description;
+          if (!description) {
+            const type = txn.transactionType;
+            const refType = txn.referenceType;
+            if (type === "earn") {
+              if (refType === "session") {
+                description = "Recycled at RVM";
+              } else if (refType === "bulk_deposit") {
+                description = "Bulk Recycling Deposit";
+              } else {
+                description = "EcoPoints Earned";
+              }
+            } else if (type === "redeem") {
+              if (refType === "reward_redemption" || refType === "redemption") {
+                description = "Reward Redeemed";
+              } else {
+                description = "Points Redeemed";
+              }
+            } else if (type === "redeem_confirm") {
+              description = "Reward Claimed";
+            } else if (type === "adjustment") {
+              description = "Points Adjusted by Admin";
+            } else {
+              description = type 
+                ? type.charAt(0).toUpperCase() + type.slice(1) 
+                : "Points Transaction";
+            }
+          }
+
+          return {
+            id: txn.id,
+            type: txn.transactionType, // 'earn', 'redeem', 'adjustment', 'redeem_confirm'
+            amount: txn.amount,
+            description: description,
+            date: txn.timestamp,
+            reference: txn.referenceId ? `TXN-${txn.referenceId}` : "N/A",
+            bottles: 0, // Transaction log doesn't store direct bottle count easily, let's default to 0
+            location: txn.locationName || "Unknown Location",
+            category: txn.transactionType === "earn" ? "Recycling" : "Reward",
+          };
+        });
         setActivities(mappedData);
       } catch (err) {
         console.error("Failed to load recent activity:", err);
@@ -133,7 +164,13 @@ export default function RecentActivity() {
 
   const filteredActivities = useMemo(() => {
     let result = [...activities];
-    if (filterType !== "all") result = result.filter(a => a.type === filterType);
+    if (filterType !== "all") {
+      if (filterType === "redeem") {
+        result = result.filter(a => a.type === "redeem" || a.type === "redeem_confirm");
+      } else {
+        result = result.filter(a => a.type === filterType);
+      }
+    }
     result.sort((a, b) => {
       if (sortBy === "newest") return new Date(b.date) - new Date(a.date);
       if (sortBy === "oldest") return new Date(a.date) - new Date(b.date);
@@ -199,8 +236,14 @@ export default function RecentActivity() {
               onClick={() => setSelectedActivity(activity)}
               className="group flex items-center gap-4 p-3 rounded-xl hover:bg-emerald-50 cursor-pointer transition-all duration-300 border border-transparent hover:border-emerald-100 shadow-sm"
             >
-              <div className={`p-2.5 rounded-lg ${activity.type === "earn" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
-                {activity.type === "earn" ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+              <div className={`p-2.5 rounded-lg ${
+                activity.type === "earn" ? "bg-emerald-100 text-emerald-600" :
+                activity.type === "redeem_confirm" ? "bg-emerald-100 text-emerald-600" :
+                "bg-amber-100 text-amber-600"
+              }`}>
+                {activity.type === "earn" ? <ArrowDownLeft size={18} /> :
+                 activity.type === "redeem_confirm" ? <Check size={18} /> :
+                 <ArrowUpRight size={18} />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-emerald-900 text-sm sm:text-base truncate" style={fonts.heading}>{activity.description}</h3>
@@ -208,7 +251,9 @@ export default function RecentActivity() {
                   {formatDate(activity.date)}
                 </p>
               </div>
-              <div className={`font-black text-sm sm:text-lg ${activity.type === "earn" ? "text-emerald-600" : "text-amber-600"}`} style={fonts.data}>
+              <div className={`font-black text-sm sm:text-lg ${
+                activity.type === "earn" || activity.type === "redeem_confirm" ? "text-emerald-600" : "text-amber-600"
+              }`} style={fonts.data}>
                 {activity.amount > 0 ? "+" : ""}{activity.amount}
               </div>
             </div>
@@ -297,7 +342,9 @@ export default function RecentActivity() {
 
               <div className="w-full flex justify-between items-center bg-stone-50 p-4 rounded-xl border border-stone-100">
                 <span className="text-xs font-black text-stone-900 uppercase tracking-widest">Points Total</span>
-                <span className={`text-2xl font-black ${selectedActivity.amount > 0 ? "text-emerald-600" : "text-amber-600"}`} style={fonts.data}>
+                <span className={`text-2xl font-black ${
+                  selectedActivity.amount > 0 || selectedActivity.type === "redeem_confirm" ? "text-emerald-600" : "text-amber-600"
+                }`} style={fonts.data}>
                   {selectedActivity.amount > 0 ? "+" : ""}{selectedActivity.amount}
                 </span>
               </div>

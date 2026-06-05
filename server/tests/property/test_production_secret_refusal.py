@@ -48,7 +48,8 @@ from hypothesis import HealthCheck, assume, given, settings, strategies as st
 # `app` is on sys.path via tests/conftest.py.
 from app import (
     KNOWN_DEV_DEFAULTS,
-    REQUIRED_PRODUCTION_SECRETS,
+    CRITICAL_PRODUCTION_SECRETS,
+    OPTIONAL_PRODUCTION_SECRETS,
     _check_required_secrets_in_production,
 )
 
@@ -62,10 +63,12 @@ from app import (
 # ─────────────────────────────────────────────────────────────────────
 
 def test_required_set_matches_phase4a_carveout():
-    """The required-secret set is exactly the rpi-carveout four names."""
-    assert set(REQUIRED_PRODUCTION_SECRETS) == {
+    """The critical + optional secret sets contain exactly the rpi-carveout four names."""
+    assert set(CRITICAL_PRODUCTION_SECRETS) == {
         'SECRET_KEY',
         'DATABASE_URL',
+    }
+    assert set(OPTIONAL_PRODUCTION_SECRETS) == {
         'SMTP_PASS',
         'TWILIO_AUTH_TOKEN',
     }
@@ -73,8 +76,10 @@ def test_required_set_matches_phase4a_carveout():
 
 def test_qr_hmac_secret_ref_not_in_required_set():
     """`qr_hmac_secret_ref` is reinstated once Phase 4A lands."""
-    assert 'qr_hmac_secret_ref' not in REQUIRED_PRODUCTION_SECRETS
-    assert 'QR_HMAC_SECRET_REF' not in REQUIRED_PRODUCTION_SECRETS
+    assert 'qr_hmac_secret_ref' not in CRITICAL_PRODUCTION_SECRETS
+    assert 'qr_hmac_secret_ref' not in OPTIONAL_PRODUCTION_SECRETS
+    assert 'QR_HMAC_SECRET_REF' not in CRITICAL_PRODUCTION_SECRETS
+    assert 'QR_HMAC_SECRET_REF' not in OPTIONAL_PRODUCTION_SECRETS
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -136,9 +141,10 @@ _CLEAN_PROD_ENV: dict[str, str] = {
 
 # Sanity at import time — ensures the baseline can never itself trip
 # the check or leave a required secret unset.
-assert set(_CLEAN_PROD_ENV) == set(REQUIRED_PRODUCTION_SECRETS), (
+_ALL_SECRETS = set(CRITICAL_PRODUCTION_SECRETS) | set(OPTIONAL_PRODUCTION_SECRETS)
+assert set(_CLEAN_PROD_ENV) == _ALL_SECRETS, (
     '_CLEAN_PROD_ENV must cover every required secret; missing '
-    f'{set(REQUIRED_PRODUCTION_SECRETS) - set(_CLEAN_PROD_ENV)!r}'
+    f'{_ALL_SECRETS - set(_CLEAN_PROD_ENV)!r}'
 )
 for _name, _val in _CLEAN_PROD_ENV.items():
     assert _val not in KNOWN_DEV_DEFAULTS.get(_name, frozenset()), (
@@ -160,9 +166,14 @@ def _apply_clean_prod_env(mp: pytest.MonkeyPatch) -> None:
 # ─────────────────────────────────────────────────────────────────────
 
 
-def required_secret_names() -> st.SearchStrategy[str]:
-    """Sample one required-secret name."""
-    return st.sampled_from(REQUIRED_PRODUCTION_SECRETS)
+def critical_secret_names() -> st.SearchStrategy[str]:
+    """Sample one critical-secret name."""
+    return st.sampled_from(CRITICAL_PRODUCTION_SECRETS)
+
+
+def optional_secret_names() -> st.SearchStrategy[str]:
+    """Sample one optional-secret name."""
+    return st.sampled_from(OPTIONAL_PRODUCTION_SECRETS)
 
 
 def dev_default_values(name: str) -> st.SearchStrategy[str]:
@@ -212,16 +223,16 @@ def realistic_secret_values() -> st.SearchStrategy[str]:
 )
 @given(
     missing=st.sets(
-        st.sampled_from(REQUIRED_PRODUCTION_SECRETS),
+        st.sampled_from(CRITICAL_PRODUCTION_SECRETS),
         min_size=1,
-        max_size=len(REQUIRED_PRODUCTION_SECRETS),
+        max_size=len(CRITICAL_PRODUCTION_SECRETS),
     ),
 )
-def test_missing_secret_exits_and_logs_name(
+def test_missing_critical_secret_exits_and_logs_name(
     caplog: pytest.LogCaptureFixture,
     missing: set[str],
 ):
-    """Property AA-1 — for every non-empty subset of required secrets
+    """Property AA-1 — for every non-empty subset of critical secrets
     to remove, ``_check_required_secrets_in_production()`` must:
 
       * raise ``SystemExit(1)``;
@@ -253,6 +264,45 @@ def test_missing_secret_exits_and_logs_name(
         )
 
 
+@settings(
+    max_examples=200,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+@given(
+    missing=st.sets(
+        st.sampled_from(OPTIONAL_PRODUCTION_SECRETS),
+        min_size=1,
+        max_size=len(OPTIONAL_PRODUCTION_SECRETS),
+    ),
+)
+def test_missing_optional_secret_warns_only(
+    caplog: pytest.LogCaptureFixture,
+    missing: set[str],
+):
+    """Property AA-1.1 — for every non-empty subset of optional secrets
+    to remove, ``_check_required_secrets_in_production()`` must:
+
+      * return None (no SystemExit);
+      * log every removed variable's NAME in at least one WARNING log record.
+    """
+    caplog.clear()
+    with pytest.MonkeyPatch.context() as mp:
+        _apply_clean_prod_env(mp)
+        for name in missing:
+            mp.delenv(name, raising=False)
+
+        with caplog.at_level(logging.WARNING, logger='app'):
+            assert _check_required_secrets_in_production() is None
+
+    messages = [r.getMessage() for r in caplog.records]
+    for name in missing:
+        assert any(name in m for m in messages), (
+            f'Expected variable name {name!r} in at least one WARNING '
+            f'log record; got {messages!r}'
+        )
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Property 2 — Dev-default values exit non-zero and log names.
 # ─────────────────────────────────────────────────────────────────────
@@ -264,27 +314,22 @@ def test_missing_secret_exits_and_logs_name(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(
-    secret_name=required_secret_names(),
+    secret_name=critical_secret_names(),
     data=st.data(),
 )
-def test_dev_default_value_exits_and_logs_name(
+def test_critical_dev_default_value_exits_and_logs_name(
     caplog: pytest.LogCaptureFixture,
     secret_name: str,
     data,
 ):
-    """Property AA-2 — for every required secret S and every value V
+    """Property AA-2 — for every critical secret S and every value V
     sampled from ``KNOWN_DEV_DEFAULTS[S]``, setting S to V in a
     production env must:
 
       * raise ``SystemExit(1)``;
       * log S's NAME at CRITICAL level;
-      * not leak V's VALUE into any log record (token-shape heuristic
-        because dev-default values include short English-overlapping
-        tokens like ``'dev'`` and ``'secret'``).
-
-    Validates Requirement 7.5.
+      * not leak V's VALUE into any log record (token-shape heuristic).
     """
-    # Dev-default value sets vary per secret; draw inside the body.
     violating_value = data.draw(
         dev_default_values(secret_name),
         label='dev_default_value',
@@ -313,8 +358,57 @@ def test_dev_default_value_exits_and_logs_name(
     for record in caplog.records:
         msg = record.getMessage()
         assert not _value_leaked(msg, violating_value), (
-            f'Dev-default value {violating_value!r} for {secret_name} '
-            f'leaked into log message: {msg!r}'
+            f"Dev-default value {violating_value!r} for {secret_name} "
+            f"leaked into log message: {msg!r}"
+        )
+
+
+@settings(
+    max_examples=200,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+@given(
+    secret_name=optional_secret_names(),
+    data=st.data(),
+)
+def test_optional_dev_default_value_warns_only(
+    caplog: pytest.LogCaptureFixture,
+    secret_name: str,
+    data,
+):
+    """Property AA-2.1 — for every optional secret S and every value V
+    sampled from ``KNOWN_DEV_DEFAULTS[S]``, setting S to V in a
+    production env must:
+
+      * return None (no SystemExit);
+      * log S's NAME at WARNING level;
+      * not leak V's VALUE into any log record.
+    """
+    violating_value = data.draw(
+        dev_default_values(secret_name),
+        label='dev_default_value',
+    )
+
+    caplog.clear()
+    with pytest.MonkeyPatch.context() as mp:
+        _apply_clean_prod_env(mp)
+        mp.setenv(secret_name, violating_value)
+
+        with caplog.at_level(logging.WARNING, logger='app'):
+            assert _check_required_secrets_in_production() is None
+
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(secret_name in m for m in messages), (
+        f'Expected variable name {secret_name!r} in at least one '
+        f'WARNING log record; got {messages!r}'
+    )
+
+    for record in caplog.records:
+        msg = record.getMessage()
+        assert not _value_leaked(msg, violating_value), (
+            f"Dev-default value {violating_value!r} for {secret_name} "
+            f"leaked into log message: {msg!r}"
         )
 
 
@@ -329,9 +423,9 @@ def test_dev_default_value_exits_and_logs_name(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(
-    present_name=required_secret_names(),
+    present_name=st.sampled_from(CRITICAL_PRODUCTION_SECRETS + OPTIONAL_PRODUCTION_SECRETS),
     present_value=realistic_secret_values(),
-    other_name=required_secret_names(),
+    other_name=st.sampled_from(CRITICAL_PRODUCTION_SECRETS),
     other_violation_kind=st.sampled_from(('missing', 'dev_default')),
     data=st.data(),
 )
@@ -371,6 +465,12 @@ def test_secret_value_never_logged(
     # Realistic values must also be distinct from the clean baselines
     # of *other* secrets so the leakage check below has a unique target.
     assume(present_value not in _CLEAN_PROD_ENV.values())
+    # Prevent substring collisions with English words in the log messages
+    assume("product" not in present_value.lower())
+    assume("secret" not in present_value.lower())
+    assume("default" not in present_value.lower())
+    assume("require" not in present_value.lower())
+    assume("refus" not in present_value.lower())
 
     if other_violation_kind == 'dev_default':
         other_value = data.draw(
@@ -464,7 +564,7 @@ def test_noop_outside_production(
             mp.delenv('FLASK_ENV', raising=False)
         else:
             mp.setenv('FLASK_ENV', flask_env)
-        for name in REQUIRED_PRODUCTION_SECRETS:
+        for name in list(CRITICAL_PRODUCTION_SECRETS) + list(OPTIONAL_PRODUCTION_SECRETS):
             mp.delenv(name, raising=False)
 
         with caplog.at_level(logging.CRITICAL, logger='app'):

@@ -541,6 +541,7 @@ class RpiSessionStartSchema(_StrictModel):
 class RpiDepositSchema(_StrictModel):
     """Body for ``POST /api/rpi/session/<id>/deposit``."""
 
+    machineUuid: str
     detectedClass: Optional[str] = None
     confidenceScore: Optional[float] = None
     pointsAwarded: Optional[int] = None
@@ -550,6 +551,7 @@ class RpiDepositSchema(_StrictModel):
 class RpiSessionEndSchema(_StrictModel):
     """Body for ``POST /api/rpi/session/<id>/end``."""
 
+    machineUuid: str
     status: Optional[str] = None
 
 

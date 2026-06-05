@@ -94,6 +94,7 @@ def authenticate_user(rvm, payload):
     """
     try:
         qr_payload = payload.qrPayload
+        print(f"[DEBUG AUTH] qr_payload: {qr_payload!r}")
 
         # Split on rightmost '.' to extract HMAC suffix
         if '.' not in qr_payload:
@@ -108,6 +109,7 @@ def authenticate_user(rvm, payload):
         last_dot = qr_payload.rfind('.')
         display_id = qr_payload[:last_dot]
         hmac_suffix = qr_payload[last_dot + 1:]
+        print(f"[DEBUG AUTH] parsed display_id: {display_id!r}, hmac_suffix: {hmac_suffix!r}")
 
         if not display_id or not hmac_suffix:
             return jsonify({

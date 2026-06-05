@@ -13,7 +13,7 @@ from ..models import (
     User, AdminLog, CommunityGroup, Wallet, UserSecurity, TokenBlacklist,
     LoginAttempt, NotificationSetting,
 )
-from ..middleware import token_required, get_user_org_id, ROLE_PERMISSIONS, validate_request
+from ..middleware import token_required, get_user_org_id, ROLE_PERMISSIONS, validate_request, compute_qr_suffix
 from ..services.password_policy import validate_password_policy
 from ..schemas import (
     LoginSchema,
@@ -271,11 +271,19 @@ def _serialize_auth_user(u):
     permission_categories = sorted(ROLE_PERMISSIONS.get(u.role, []))
 
     # ── Phase 3 task 8.2: derived profile fields ─────────────────────
-    # qrPayload: fall back to USER:<displayId> until Phase 4A signs it.
+    # qrPayload: signed QR payload (Phase 4A) of format <displayId>.<hmacSuffix>
+    qr_payload = None
     if u.display_id:
-        qr_payload = f'USER:{u.display_id}'
-    else:
-        qr_payload = None
+        org_model = u.community_group.organization if u.community_group else None
+        if org_model:
+            try:
+                org_secret = org_model.get_qr_hmac_secret()
+                suffix = compute_qr_suffix(org_secret, u.display_id)
+                qr_payload = f"{u.display_id}.{suffix}"
+            except Exception:
+                qr_payload = f"USER:{u.display_id}"
+        else:
+            qr_payload = f"USER:{u.display_id}"
 
     # campusRank: 1-indexed position in lifetime-points ordering scoped
     # to the user's organization. Returns None when no community group
@@ -322,6 +330,8 @@ def _serialize_auth_user(u):
         'isActive': u.is_active, 'locationId': location_id,
         'locationName': (org['name'] if org else None),
         'organization': org,
+        'displayId': u.display_id,
+        'qrToken': u.qr_token,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,

@@ -71,6 +71,7 @@ def cleanup_app():
 
     db.init_app(app)
     app.cli.add_command(cleanup_tokens)
+    app.logger.setLevel(logging.DEBUG)
 
     with app.app_context():
         db.create_all()
