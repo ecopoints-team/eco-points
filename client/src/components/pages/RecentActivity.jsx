@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // Recent Activity
 // User Profile
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -55,7 +55,7 @@ function CustomSelect({ label, value, options, onChange }) {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 bg-stone-50 border border-emerald-100 rounded-lg px-4 py-2 text-[11px] font-bold text-emerald-800 shadow-sm hover:border-emerald-300 transition-all min-w-[120px]"
+        className="flex items-center justify-between gap-2 bg-stone-50 border border-emerald-100 web-web-rounded-lg px-4 py-2 text-[11px] font-bold text-emerald-800 shadow-sm hover:border-emerald-300 transition-all min-w-[120px]"
         style={fonts.body}
       >
         <span className="truncate">{selectedOption?.label || label}</span>
@@ -63,7 +63,7 @@ function CustomSelect({ label, value, options, onChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 bg-white border border-emerald-100 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 min-w-[150px]">
+        <div className="absolute top-full mt-1 right-0 bg-white border border-emerald-100 web-web-rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 min-w-[150px]">
           <div className="p-1">
             {options.map((opt) => (
               <button
@@ -234,9 +234,9 @@ export default function RecentActivity() {
             <div
               key={activity.id}
               onClick={() => setSelectedActivity(activity)}
-              className="group flex items-center gap-4 p-3 rounded-xl hover:bg-emerald-50 cursor-pointer transition-all duration-300 border border-transparent hover:border-emerald-100 shadow-sm"
+              className="group flex items-center gap-4 p-3 web-web-rounded-xl hover:bg-emerald-50 cursor-pointer transition-all duration-300 border border-transparent hover:border-emerald-100 shadow-sm"
             >
-              <div className={`p-2.5 rounded-lg ${
+              <div className={`p-2.5 web-web-rounded-lg ${
                 activity.type === "earn" ? "bg-emerald-100 text-emerald-600" :
                 activity.type === "redeem_confirm" ? "bg-emerald-100 text-emerald-600" :
                 "bg-amber-100 text-amber-600"
@@ -340,7 +340,7 @@ export default function RecentActivity() {
 
               <div className="w-full border-t border-dashed border-stone-200 my-6" />
 
-              <div className="w-full flex justify-between items-center bg-stone-50 p-4 rounded-xl border border-stone-100">
+              <div className="w-full flex justify-between items-center bg-stone-50 p-4 web-web-rounded-xl border border-stone-100">
                 <span className="text-xs font-black text-stone-900 uppercase tracking-widest">Points Total</span>
                 <span className={`text-2xl font-black ${
                   selectedActivity.amount > 0 || selectedActivity.type === "redeem_confirm" ? "text-emerald-600" : "text-amber-600"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Leaf, Calendar, ChevronDown, Info,
   X, Zap, Recycle
@@ -247,7 +247,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
           <div className="relative z-20" data-year-dropdown>
             <button
               onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 web-web-rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none"
               style={fonts.body}
             >
               <Calendar size={14} className="text-[#10b981]" />
@@ -350,7 +350,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
             className="absolute z-50 pointer-events-none animate-heatmap-popup"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-2xl text-sm flex flex-col items-center border border-slate-700/50" style={fonts.body}>
+            <div className="bg-slate-800 text-white px-4 py-2.5 web-web-rounded-xl shadow-2xl text-sm flex flex-col items-center border border-slate-700/50" style={fonts.body}>
               <span className="font-bold whitespace-nowrap mb-0.5">
                 {tooltip.count === 0 ? "No bottles" : `${tooltip.count} bottles`} deposited
               </span>

@@ -1,4 +1,4 @@
-// Leaderboard Page
+﻿// Leaderboard Page
 // LeaderboardPodium Component — Redesigned
 
 "use client";
@@ -518,7 +518,7 @@ export default function LeaderboardPodium() {
               className="flex md:hidden justify-center mb-3"
               style={fonts.body}
             >
-              <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-yellow-950 px-3 py-1.5 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest ring-2 ring-white/50">
+              <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-yellow-950 px-3 py-1.5 web-web-rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest ring-2 ring-white/50">
                 <Crown size={13} fill="currentColor" className="text-yellow-950" />
                 <span>Top 100 Only</span>
               </div>
@@ -661,7 +661,7 @@ export default function LeaderboardPodium() {
 
           {/* Top 100 badge — desktop only (mobile badge is above title) */}
           <div
-            className="absolute bottom-6 right-8 z-20 hidden md:flex items-center gap-2 bg-yellow-400 text-yellow-950 px-4 py-2 rounded-xl shadow-md text-xs font-black uppercase tracking-widest ring-4 ring-yellow-400/20"
+            className="absolute bottom-6 right-8 z-20 hidden md:flex items-center gap-2 bg-yellow-400 text-yellow-950 px-4 py-2 web-web-rounded-xl shadow-md text-xs font-black uppercase tracking-widest ring-4 ring-yellow-400/20"
             style={fonts.body}
           >
             <Crown size={16} fill="currentColor" className="text-yellow-950" />
@@ -674,7 +674,7 @@ export default function LeaderboardPodium() {
           {/* Search + Org (org hidden on mobile) */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Search */}
-            <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-xl px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
+            <div className="flex items-center gap-2 bg-white border border-emerald-200 web-web-rounded-xl px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
               <Search size={14} className="text-emerald-500 flex-shrink-0" />
               <input
                 type="text"
@@ -700,7 +700,7 @@ export default function LeaderboardPodium() {
                 onClick={() => setOrgDropdownOpen((p) => !p)}
                 className={`w-full flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 py-1.5 sm:py-2 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
                   ? "rounded-t-lg rounded-b-none border-b-white z-[51] relative shadow-none"
-                  : "rounded-lg shadow-sm hover:border-emerald-400"
+                  : "web-web-rounded-lg shadow-sm hover:border-emerald-400"
                   }`}
                 style={fonts.body}
               >
@@ -741,7 +741,7 @@ export default function LeaderboardPodium() {
           </div>
 
           {/* Time toggle — on mobile sits inline after search; on sm+ right-aligned */}
-          <div className="flex items-center space-x-0.5 bg-white border border-emerald-200 p-0.5 rounded-xl shadow-sm shrink-0 flex-nowrap">
+          <div className="flex items-center space-x-0.5 bg-white border border-emerald-200 p-0.5 web-web-rounded-xl shadow-sm shrink-0 flex-nowrap">
             {[
               { key: "all", label: "All Time" },
               { key: "month", label: "This Month" },
@@ -750,7 +750,7 @@ export default function LeaderboardPodium() {
               <button
                 key={t.key}
                 onClick={() => setTimeFilter(t.key)}
-                className={`whitespace-nowrap px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-sm font-bold transition-colors ${timeFilter === t.key
+                className={`whitespace-nowrap px-2 sm:px-4 py-1 sm:py-1.5 web-web-rounded-lg text-[10px] sm:text-sm font-bold transition-colors ${timeFilter === t.key
                   ? "bg-emerald-100 text-emerald-800 shadow-sm"
                   : "text-slate-500 hover:bg-slate-50"
                   }`}
@@ -1073,7 +1073,7 @@ export default function LeaderboardPodium() {
 
           {/* ── Accumulated / Filtered Points ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-emerald-100 lg:border-t-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
-            <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center mb-4">
+            <div className="w-10 h-10 bg-sky-100 web-web-rounded-xl flex items-center justify-center mb-4">
               <Recycle className="text-sky-500 w-6 h-6" />
             </div>
             <p
@@ -1103,7 +1103,7 @@ export default function LeaderboardPodium() {
 
           {/* ── Rewards Claimed ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-l border-emerald-100 lg:border-t-0 lg:border-l-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
+            <div className="w-10 h-10 bg-amber-100 web-web-rounded-xl flex items-center justify-center mb-4">
               <Gift className="text-amber-500 w-6 h-6" />
             </div>
             <p

@@ -64,6 +64,17 @@
 }
 
 @layer utilities {
+  /* ============================================================================
+     WEBSITE-SCOPED BORDER RADIUS — preserves the website's large Material
+     Design corner style now that the global tailwind.config borderRadius
+     override has been removed (which was bleeding into the admin dashboard).
+     Admin panel uses standard Tailwind defaults (rounded-lg = 0.5rem, etc.)
+     Website uses these scoped classes instead.
+     ============================================================================ */
+  .web-rounded    { border-radius: 1rem; }     /* was: rounded DEFAULT */
+  .web-rounded-lg { border-radius: 2rem; }     /* was: rounded-lg     */
+  .web-rounded-xl { border-radius: 3rem; }     /* was: rounded-xl     */
+
   .animate-in {
     animation-fill-mode: both;
   }

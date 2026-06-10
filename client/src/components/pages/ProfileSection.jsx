@@ -1,4 +1,4 @@
-// user client
+﻿// user client
 // Profile section
 
 import { useState } from "react";
@@ -425,7 +425,7 @@ export default function ProfileSection() {
             <div className="px-4 py-4 space-y-2">
               <button
                 onClick={handleOpenEditModal}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-all duration-300 shadow-sm"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-50 border border-emerald-200 web-web-rounded-xl hover:bg-emerald-100 transition-all duration-300 shadow-sm"
               >
                 <PencilIcon size={14} className="text-emerald-600" />
                 <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#064E3B" }}>
@@ -434,7 +434,7 @@ export default function ProfileSection() {
               </button>
               <button
                 onClick={() => setIsQrModalOpen(true)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 web-web-rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
               >
                 <QrCodeIcon size={14} className="text-stone-500" />
                 <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
@@ -443,7 +443,7 @@ export default function ProfileSection() {
               </button>
               <Link
                 href="/redeem-history"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 web-web-rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
               >
                 <Ticket size={14} className="text-stone-500" />
                 <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
@@ -544,7 +544,7 @@ export default function ProfileSection() {
                     placeholder="Full Name"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
                     style={fonts.body}
                   />
                 </div>
@@ -557,7 +557,7 @@ export default function ProfileSection() {
                     placeholder="Username"
                     value={editUsername}
                     disabled={true}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
                     style={fonts.body}
                   />
                 </div>
@@ -572,7 +572,7 @@ export default function ProfileSection() {
                     placeholder="Email Address"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
                     style={fonts.body}
                   />
                 </div>
@@ -587,7 +587,7 @@ export default function ProfileSection() {
                     placeholder="Phone Number (e.g. +639123456789)"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
                     style={fonts.body}
                   />
                 </div>
@@ -600,7 +600,7 @@ export default function ProfileSection() {
                     placeholder="Institution"
                     value={currentUser?.organization?.fullName || currentUser?.organization?.name || "Polytechnic University of the Philippines"}
                     disabled={true}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
                     style={fonts.body}
                   />
                 </div>
@@ -613,7 +613,7 @@ export default function ProfileSection() {
                     placeholder="Role"
                     value={selectedRole}
                     disabled={true}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
                     style={fonts.body}
                   />
                 </div>
@@ -624,7 +624,7 @@ export default function ProfileSection() {
                 <button
                   type="button"
                   onClick={() => setIsChangingPassword(!isChangingPassword)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 text-slate-700 transition-all duration-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 web-web-rounded-xl hover:bg-slate-100 hover:border-slate-300 text-slate-700 transition-all duration-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
                   style={fonts.body}
                 >
                   <Lock size={14} className={isChangingPassword ? "text-emerald-500 animate-pulse" : "text-slate-500"} />
@@ -650,7 +650,7 @@ export default function ProfileSection() {
                         placeholder="Current Password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -669,7 +669,7 @@ export default function ProfileSection() {
                         placeholder="New Password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -688,7 +688,7 @@ export default function ProfileSection() {
                         placeholder="Confirm New Password"
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -711,12 +711,12 @@ export default function ProfileSection() {
             {/* ERROR & SUCCESS NOTIFICATIONS */}
             <div className="mt-6 space-y-3">
               {errorMsg && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2 animate-bounce" style={fonts.body}>
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold web-web-rounded-xl flex items-center gap-2 animate-bounce" style={fonts.body}>
                   <span>⚠️ {errorMsg}</span>
                 </div>
               )}
               {successMsg && (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2" style={fonts.body}>
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold web-web-rounded-xl flex items-center gap-2" style={fonts.body}>
                   <span>✅ {successMsg}</span>
                 </div>
               )}
@@ -727,7 +727,7 @@ export default function ProfileSection() {
               <button
                 onClick={() => setIsEditing(false)}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 web-web-rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={fonts.body}
               >
                 Cancel
@@ -736,7 +736,7 @@ export default function ProfileSection() {
               <button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-2.5 web-web-rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 style={fonts.body}
               >
                 {isSubmitting && <Loader2 size={16} className="animate-spin" />}
@@ -773,7 +773,7 @@ export default function ProfileSection() {
             <h3 className="text-xl font-black mb-1 tracking-tight text-center" style={{ ...fonts.heading, color: "#064E3B" }}>Your Personal QR</h3>
             <p className="text-xs mb-6 text-center font-medium" style={{ ...fonts.body, color: "#6B7280" }}>Scan this QR code at any Reverse Vending Machine to start recycling.</p>
 
-            <div className="bg-white p-4 rounded-xl shadow-inner border border-slate-100 mb-6 flex justify-center items-center">
+            <div className="bg-white p-4 web-web-rounded-xl shadow-inner border border-slate-100 mb-6 flex justify-center items-center">
               <QRCodeCanvas
                 id="user-qr-code"
                 value={qrPayload}
@@ -791,7 +791,7 @@ export default function ProfileSection() {
 
             <button
               onClick={downloadQR}
-              className="w-full py-3.5 bg-[#059669] hover:bg-[#065F46] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+              className="w-full py-3.5 bg-[#059669] hover:bg-[#065F46] text-white font-bold web-web-rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
               style={fonts.body}
             >
               <DownloadIcon size={18} />

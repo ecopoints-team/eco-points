@@ -196,3 +196,10 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 ### Rewards Reflection on the Website
 
 - First, check if the rewards shown on the rewards page on the website is mock or the data that we have on the seeded database. If yes, remove it and fetch the data on the database instead. If no, let's connect the rewards menu to the website's rewards page so we can test if we can post a reward on the website.
+
+
+## Admin Dashbaord UI Fixes 
+
+## Tasks
+
+- Currently, the website and the adin dashboard shares some of the same styling from the general style of ours. Now, I want you to separate the two styles. For instance, the custom dropdown of ours [text](../client/src/components/admin/CustomDropdown.jsx) the website and the admin dashboard are using the same component styling, which is good. But some of the styling affects the UI of the admin dashboard. You can see that almost all the cards on the admin dashbaord becamse radiused corner which is not good. I don't know if it came from the website or somewhere but its not supposed to be like that. 

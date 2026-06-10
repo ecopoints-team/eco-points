@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonCard, SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
@@ -772,6 +772,11 @@ function LocationsPageContent() {
             </ViewOnlyWrapper>
 
             {/* Global Stats */}
+            {isDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white dark:bg-slate-800/50 system:bg-[rgba(147,130,220,0.08)] system:border-[rgba(147,130,220,0.2)] rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-center gap-4">
@@ -818,6 +823,7 @@ function LocationsPageContent() {
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Search Bar */}
             <div className="mb-6 flex gap-4 items-center">
