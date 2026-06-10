@@ -231,7 +231,7 @@
   - [x] 28.4 Backend: add `_resolve_token()` helper in `middleware.py` — reads `admin_token` → `token` → Bearer
   - [x] 28.5 Backend: update `token_required()` to use `_resolve_token()`
   - [x] 28.6 Backend: enforce token source in `@admin_required` / `@permission_required` — reject `token` cookie on admin routes
-  - [x] 28.7 Frontend: AuthContext unchanged — HttpOnly cookies, no client-side reads needed
+  - [x] 28.7 Frontend: AuthContext.js — add ADMIN_ROLES guard in enrichUser(); admin cookies return null so public NavBar shows Login
   - [ ] 28.8 Test: admin login sets `admin_token`, public site shows "Login" button
   - [ ] 28.9 Test: regular user login sets `token`, `/admin` still rejected
 

@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard, Trophy, Gift } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, ADMIN_ROLES } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 
 const navItems = ["Home", "How It Works", "Features", "Leaderboard", "Rewards"];
@@ -16,6 +16,10 @@ export default function NavBar({ onLoginClick }) {
   const [activeSection, setActiveSection] = useState("home");
   
   const { currentUser, isInitialized, logout } = useAuth();
+  // Task 28: hide admin accounts from the public site NavBar.
+  // Admin roles belong only to /admin. The currentUser object stays intact
+  // (AdminLayout needs it), but the public site treats it as "no user".
+  const publicUser = currentUser && ADMIN_ROLES.has(currentUser.role) ? null : currentUser;
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -58,15 +62,15 @@ export default function NavBar({ onLoginClick }) {
   const handleDashboardClick = () => {
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
-    if (currentUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(currentUser.role)) {
+    if (publicUser?.role && ['superadmin', 'head_admin', 'auditor', 'inventory_officer', 'technician'].includes(publicUser.role)) {
       router.push("/admin");
     } else {
       router.push("/profile");
     }
   };
 
-  const initials = currentUser?.name
-    ? currentUser.name
+  const initials = publicUser?.name
+    ? publicUser.name
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -274,7 +278,7 @@ export default function NavBar({ onLoginClick }) {
 
         {/* Desktop Login / Profile Button */}
         <div className="hidden md:block relative" ref={dropdownRef}>
-          {isInitialized && currentUser ? (
+          {isInitialized && publicUser ? (
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleDropdown}
@@ -285,7 +289,7 @@ export default function NavBar({ onLoginClick }) {
                   {initials}
                 </div>
                 <div className="text-left font-bold text-xs max-w-[120px] truncate text-slate-700" style={{ fontFamily: "'Quicksand'" }}>
-                  {currentUser.name}
+                  {publicUser.name}
                 </div>
                 <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 group-hover:text-slate-600 ${isDropdownOpen ? "rotate-180" : ""}`} />
               </button>
@@ -294,9 +298,9 @@ export default function NavBar({ onLoginClick }) {
               {isDropdownOpen && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] p-2 z-[1001] flex flex-col gap-1 transition-all duration-300 transform origin-top-right">
                   <div className="px-3 py-2 text-left">
-                    <p className="text-xs font-black text-slate-800" style={{ fontFamily: "'Fredoka'" }}>{currentUser.name}</p>
+                    <p className="text-xs font-black text-slate-800" style={{ fontFamily: "'Fredoka'" }}>{publicUser.name}</p>
                     <p className="text-[10px] font-bold text-[#10b981] uppercase tracking-widest mt-0.5" style={{ fontFamily: "'Quicksand'" }}>
-                      {currentUser.role ? currentUser.role.replace('_', ' ') : 'User'}
+                      {publicUser.role ? publicUser.role.replace('_', ' ') : 'User'}
                     </p>
                   </div>
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
@@ -390,16 +394,16 @@ export default function NavBar({ onLoginClick }) {
               </button>
             );
           })}
-          {isInitialized && currentUser ? (
+          {isInitialized && publicUser ? (
             <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
               <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-xl">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center text-white font-black text-sm shadow-inner">
                   {initials}
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-black text-slate-800" style={{ fontFamily: "'Fredoka'" }}>{currentUser.name}</p>
+                  <p className="text-sm font-black text-slate-800" style={{ fontFamily: "'Fredoka'" }}>{publicUser.name}</p>
                   <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest" style={{ fontFamily: "'Quicksand'" }}>
-                    {currentUser.role ? currentUser.role.replace('_', ' ') : 'User'}
+                    {publicUser.role ? publicUser.role.replace('_', ' ') : 'User'}
                   </p>
                 </div>
               </div>

@@ -10,6 +10,12 @@ import { ROLES } from '../data/roleConfig';
 
 const AuthContext = createContext(null);
 
+// Roles that belong to the admin panel only.
+// Exported so the public NavBar can hide admin user info.
+export const ADMIN_ROLES = new Set([
+    'superadmin', 'head_admin', 'auditor', 'technician', 'inventory_officer',
+]);
+
 // Helper: attach role-based permissions to user object so existing code works
 function enrichUser(user) {
     if (!user) return null;
