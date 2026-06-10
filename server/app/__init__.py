@@ -137,7 +137,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Supabase (PgBouncer) drops idle connections. pool_pre_ping checks each
     # connection before use so stale connections are transparently recycled.
-    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
+    # pool_recycle forces connections to be replaced after 5 minutes, preventing
+    # "connection already closed" errors on long-idle Supabase pooler sessions.
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True, 'pool_recycle': 300}
 
 
 def create_app():
@@ -266,7 +268,6 @@ def create_app():
         from .controllers.machines_controller import machines_bp
         from .controllers.rewards_controller import rewards_bp
         from .controllers.logs_controller import logs_bp
-        from .controllers.leaderboard_controller import leaderboard_bp
         from .controllers.groups_controller import groups_bp
         from .controllers.analytics_controller import analytics_bp
         from .controllers.settings_controller import settings_bp
@@ -275,7 +276,7 @@ def create_app():
 
         for sub_bp in (
             dashboard_bp, users_bp, locations_bp, machines_bp, rewards_bp,
-            logs_bp, leaderboard_bp, groups_bp, analytics_bp, settings_bp,
+            logs_bp, groups_bp, analytics_bp, settings_bp,
             sessions_bp, reward_categories_bp,
         ):
             web_bp.register_blueprint(sub_bp)

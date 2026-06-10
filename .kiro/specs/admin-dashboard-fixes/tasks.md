@@ -189,23 +189,23 @@
 
 ## Part 5 Tasks
 
-- [ ] 23. Dashboard Overview UX
-  - [ ] 23.1 Move refresh button from Recycling Analytics section to page-level header
-  - [ ] 23.2 Add `SkeletonChart` loading state to Recycling Analytics section
-  - [ ] 23.3 Add `SkeletonTableRow` loading state to Real-Time Bottle Logs table
+- [x] 23. Dashboard Overview UX
+  - [x] 23.1 Move refresh button from Recycling Analytics section to page-level header
+  - [x] 23.2 Add `SkeletonChart` loading state to Recycling Analytics section
+  - [x] 23.3 Add `SkeletonTableRow` loading state to Real-Time Bottle Logs table (`<SkeletonTable rows={5} columns={9} />` at L681)
 
-- [ ] 24. Leaderboards Admin Menu — Complete Removal
-  - [ ] 24.1 Delete `admin/leaderboards/page.js`
-  - [ ] 24.2 Remove nav item from `Sidebar.jsx` (L245-248)
-  - [ ] 24.3 Remove breadcrumb from `AdminLayout.jsx` (L160)
-  - [ ] 24.4 Remove `leaderboard_bp` registration from `__init__.py` (L263, L272)
-  - [ ] 24.5 Keep public leaderboard files intact (api service, components, backend controller)
+- [x] 24. Leaderboards Admin Menu — Complete Removal
+  - [x] 24.1 Delete `admin/leaderboards/page.js`
+  - [x] 24.2 Remove nav item from `Sidebar.jsx` (L245-248)
+  - [x] 24.3 Remove breadcrumb from `AdminLayout.jsx` (L160)
+  - [x] 24.4 Remove `leaderboard_bp` registration from `__init__.py` (L263, L272)
+  - [x] 24.5 Keep public leaderboard files intact (api service, components, backend controller)
 
-- [ ] 25. Analytics Refresh Behavior
-  - [ ] 25.1 Change refresh button to call `fetchAnalytics(true)` to trigger full skeleton loading
+- [x] 25. Analytics Refresh Behavior
+  - [x] 25.1 Change refresh button to call `fetchAnalytics(true)` to trigger full skeleton loading
 
-- [ ] 26. Connection Pool Hardening
-  - [ ] 26.1 Add `pool_recycle: 300` to `SQLALCHEMY_ENGINE_OPTIONS` in `__init__.py`
+- [x] 26. Connection Pool Hardening
+  - [x] 26.1 Add `pool_recycle: 300` to `SQLALCHEMY_ENGINE_OPTIONS` in `__init__.py`
 
 ### Already Complete (verified — no changes needed)
 - ✅ Locations page — skeleton at L873 (SkeletonMachineCard grid)
@@ -247,4 +247,4 @@
   - [x] 29.8 Frontend: add `assign()` / `unassign()` / `getAssignments()` to `rewards.js` API service
   - [x] 29.9 Frontend: add "Assign to Locations" (Share2 icon) on rewards page (superadmin only) + modal with org checklist
   - [ ] 29.10 Test: superadmin assigns reward from Org A to Org B → Org B user sees it
-  - [ ] 29.11 Test: Org C user does NOT see Org A/B shared reward
+  - [ ] 29.11 Test: Org C user does NOT see Org A/B shared reward

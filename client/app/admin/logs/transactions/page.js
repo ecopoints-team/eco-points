@@ -52,12 +52,6 @@ function TransactionLogsPageContent() {
         return sortDirection === 'asc' ? <ChevronUp size={12} className="text-emerald-500" /> : <ChevronDown size={12} className="text-emerald-500" />;
     };
 
-    const stats = useMemo(() => {
-        const earned = allLogs.filter(l => l.transactionType === 'earn').reduce((s, l) => s + Math.abs(l.amount), 0);
-        const redeemed = allLogs.filter(l => l.transactionType === 'redeem').reduce((s, l) => s + Math.abs(l.amount), 0);
-        const adjustments = allLogs.filter(l => l.transactionType === 'adjustment').length;
-        return { totalTransactions: allLogs.length, earned, redeemed, adjustments };
-    }, [allLogs]);
 
     const filteredLogs = useMemo(() => {
         return allLogs.filter(log => {
@@ -140,24 +134,6 @@ function TransactionLogsPageContent() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Total Transactions</p>
-                    <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalTransactions.toLocaleString()}</p>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Points Earned</p>
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">+{stats.earned.toLocaleString()}</p>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Points Redeemed</p>
-                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">-{stats.redeemed.toLocaleString()}</p>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Adjustments</p>
-                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.adjustments}</p>
-                </div>
-            </div>
 
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">
