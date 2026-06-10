@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonMachineCard, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { machines as machinesApi, logs } from '../../../src/services/api';
@@ -767,41 +767,47 @@ function MachinesPageContent() {
             </ViewOnlyWrapper>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <Wifi size={24} className="text-emerald-600 dark:text-emerald-400" />
+            {isDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                                <Wifi size={24} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Online</p>
+                                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{onlineCount}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Online</p>
-                            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{onlineCount}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20">
+                                <Wrench size={24} className="text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Offline</p>
+                                <p className="text-2xl font-black text-red-600 dark:text-red-400">{offlineCount}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
+                                <Package size={24} className="text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Items Collected</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{totalItems.toLocaleString()}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20">
-                            <Wrench size={24} className="text-red-600 dark:text-red-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Offline</p>
-                            <p className="text-2xl font-black text-red-600 dark:text-red-400">{offlineCount}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
-                            <Package size={24} className="text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Items Collected</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{totalItems.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Search Bar */}
             <div className="mb-6 flex gap-4 items-center">

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -224,26 +224,32 @@ function BulkSessionsPageContent() {
             </ViewOnlyWrapper>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Layers size={24} className="text-blue-600 dark:text-blue-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Sessions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.total}</p></div>
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Layers size={24} className="text-blue-600 dark:text-blue-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Sessions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.total}</p></div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Package size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Items</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalItems}</p></div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20"><Zap size={24} className="text-amber-600 dark:text-amber-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Points Awarded</p><p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.totalPoints.toLocaleString()}</p></div>
+                        </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Package size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Items</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalItems}</p></div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20"><Zap size={24} className="text-amber-600 dark:text-amber-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Points Awarded</p><p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.totalPoints.toLocaleString()}</p></div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Sessions Table */}
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">

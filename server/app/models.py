@@ -517,9 +517,35 @@ class Reward(db.Model):
     # Relationships
     variants = db.relationship('RewardVariant', backref='reward', lazy=True,
                                cascade='all, delete-orphan')
+    org_assignments = db.relationship('RewardOrgAssignment', backref='reward',
+                                     lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Reward {self.name} ({self.points_required} pts)>'
+
+
+class RewardOrgAssignment(db.Model):
+    """Many-to-many: a reward can be visible to multiple organizations.
+
+    The owning organization is still ``Reward.organization_id``. This table
+    records *additional* organizations that should see the reward (shared
+    merchandise). Superadmin-only — Task 29.
+    """
+    __tablename__ = 'reward_organization_assignments'
+    __table_args__ = (
+        db.UniqueConstraint('reward_id', 'organization_id',
+                            name='uq_reward_org'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'),
+                          nullable=False, index=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'),
+                                nullable=False, index=True)
+    assigned_at = db.Column(db.DateTime,
+                            default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<RewardOrgAssignment reward={self.reward_id} org={self.organization_id}>'
 
 
 class RewardVariant(db.Model):

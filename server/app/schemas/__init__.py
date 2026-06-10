@@ -456,6 +456,16 @@ class RewardRedeemSchema(_StrictModel):
     quantity: Optional[int] = Field(default=None)
 
 
+class RewardAssignSchema(_StrictModel):
+    """Body for ``POST /api/web/rewards/<id>/assign`` (Task 29).
+
+    Superadmin assigns a reward to additional organizations so those
+    organizations' users can also see and redeem the reward.
+    """
+
+    organizationIds: List[int]
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # logs_controller (logs_bp — prefix /api/web/logs)
 # ══════════════════════════════════════════════════════════════════════════
@@ -612,6 +622,7 @@ __all__ = [
     'RewardCreateSchema',
     'RewardUpdateSchema',
     'RewardRedeemSchema',
+    'RewardAssignSchema',
     'RewardCategoryCreateSchema',
     'RewardCategoryUpdateSchema',
     # logs_controller

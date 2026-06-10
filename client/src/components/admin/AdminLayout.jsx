@@ -157,7 +157,6 @@ export default function AdminLayout({ children }) {
         if (path === '/admin/logs/access') return { main: 'System', sub: 'Access Logs' };
         if (path === '/admin/logs/machines') return { main: 'System', sub: 'Machine Logs' };
         if (path === '/admin/logs/rewards') return { main: 'System', sub: 'Reward Logs' };
-        if (path === '/admin/leaderboards') return { main: 'Leaderboards', sub: 'Overview' };
         if (path === '/admin/analytics') return { main: 'System', sub: 'Analytics' };
         if (path === '/admin/bulk-sessions') return { main: 'Bulk', sub: 'Sessions' };
         if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };

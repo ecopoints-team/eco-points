@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -11,7 +11,7 @@ import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
     Search, Filter, ChevronLeft, ChevronRight, Gift, Package, Plus, Edit2, Trash2, X,
-    Upload, Image, AlertTriangle, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown
+    Upload, Image, AlertTriangle, ShoppingBag, Building2, ChevronsUpDown, ChevronUp, ChevronDown, Share2, Check
 } from 'lucide-react';
 
 // Low stock threshold
@@ -268,6 +268,11 @@ function RewardsInventoryPageContent() {
     const [showModal, setShowModal] = useState(false);
     const [deletingReward, setDeletingReward] = useState(null);
     const [editingReward, setEditingReward] = useState(null);
+    // Task 29 — assign reward to additional locations (superadmin)
+    const [assigningReward, setAssigningReward] = useState(null);
+    const [assignModalOrgs, setAssignModalOrgs] = useState([]);
+    const [assignLoading, setAssignLoading] = useState(false);
+    const [assignError, setAssignError] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -300,6 +305,47 @@ function RewardsInventoryPageContent() {
         setCurrentPage(1);
         return () => { cancelled = true; };
     }, [effectiveLocationId]);
+
+    // Task 29: load current assignments when the assign modal opens
+    useEffect(() => {
+        if (!assigningReward) return;
+        setAssignError('');
+        setAssignLoading(true);
+        rewardsApi.getAssignments(assigningReward.id)
+            .then(data => {
+                const current = (data?.assignedOrganizations || []).map(o => o.id);
+                setAssignModalOrgs(current);
+            })
+            .catch(() => setAssignError('Failed to load current assignments.'))
+            .finally(() => setAssignLoading(false));
+    }, [assigningReward]);
+
+    const handleAssignToggle = (orgId) => {
+        setAssignModalOrgs(prev =>
+            prev.includes(orgId) ? prev.filter(id => id !== orgId) : [...prev, orgId]
+        );
+    };
+
+    const handleAssignSave = async () => {
+        if (!assigningReward) return;
+        setAssignLoading(true);
+        setAssignError('');
+        try {
+            await rewardsApi.assign(assigningReward.id, assignModalOrgs);
+            // Remove any orgs that were deselected
+            const data = await rewardsApi.getAssignments(assigningReward.id);
+            const currentIds = (data?.assignedOrganizations || []).map(o => o.id);
+            const toRemove = currentIds.filter(id => !assignModalOrgs.includes(id));
+            await Promise.all(toRemove.map(orgId =>
+                rewardsApi.unassign(assigningReward.id, orgId)
+            ));
+            setAssigningReward(null);
+        } catch {
+            setAssignError('Failed to save assignments. Please try again.');
+        } finally {
+            setAssignLoading(false);
+        }
+    };
 
     const categories = [...new Set(rewards.map(r => r.category))];
 
@@ -514,52 +560,58 @@ function RewardsInventoryPageContent() {
             </ViewOnlyWrapper>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <Gift size={24} className="text-emerald-600 dark:text-emerald-400" />
+            {isDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                                <Gift size={24} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Rewards</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{rewards.length}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Rewards</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{rewards.length}</p>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
+                                <Package size={24} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Stock</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{totalStock}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
+                                <AlertTriangle size={24} className="text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Low Stock Items</p>
+                                <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{lowStockCount}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
+                                <ShoppingBag size={24} className="text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Dispensed</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{totalDispensed.toLocaleString()}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                            <Package size={24} className="text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Stock</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{totalStock}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
-                            <AlertTriangle size={24} className="text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Low Stock Items</p>
-                            <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{lowStockCount}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/20">
-                            <ShoppingBag size={24} className="text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Dispensed</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{totalDispensed.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Low Stock Alert Banner */}
             {(lowStockCount > 0 || outOfStockCount > 0) && (
@@ -738,6 +790,15 @@ function RewardsInventoryPageContent() {
                                                     <ShoppingBag size={14} />
                                                     Dispense
                                                 </button>
+                                                {isSuperAdmin && (
+                                                    <button
+                                                        onClick={() => setAssigningReward(r)}
+                                                        className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/10"
+                                                        title="Assign to Locations"
+                                                    >
+                                                        <Share2 size={16} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => openEditModal(r)}
                                                     className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10"
@@ -758,14 +819,6 @@ function RewardsInventoryPageContent() {
                         </tbody>
                     </table>
                 </div>
-
-                {/* Empty State */}
-                {currentRewards.length === 0 && (
-                    <div className="p-12 text-center">
-                        <Gift size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-                        <p className="text-slate-500 dark:text-slate-400">No rewards found for this location.</p>
-                    </div>
-                )}
 
                 {/* Pagination */}
                 {totalPages > 0 && (
@@ -896,6 +949,100 @@ function RewardsInventoryPageContent() {
                                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"
                             >
                                 Deactivate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Assign to Locations Modal (superadmin only, Task 29) ── */}
+            {assigningReward && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
+                                    <Share2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 dark:text-white text-sm">Assign to Locations</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">{assigningReward.name}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setAssigningReward(null)} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-5">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                                Select locations whose users can also see and redeem this reward. The owner location (<strong className="text-slate-700 dark:text-slate-300">{assigningReward.locationName}</strong>) always has access.
+                            </p>
+
+                            {assignLoading ? (
+                                <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
+                                    <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-sm">Loading...</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    {(allLocations || [])
+                                        .filter(loc => loc.id !== assigningReward.locationId)
+                                        .map(loc => {
+                                            const isSelected = assignModalOrgs.includes(loc.id);
+                                            return (
+                                                <button
+                                                    key={loc.id}
+                                                    onClick={() => handleAssignToggle(loc.id)}
+                                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${
+                                                        isSelected
+                                                            ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-500/50 dark:bg-indigo-500/10'
+                                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/50'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Building2 size={14} className={isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                                                        <span className={`text-sm font-medium ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                            {loc.name}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                                        isSelected
+                                                            ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500'
+                                                            : 'border-slate-300 dark:border-slate-600'
+                                                    }`}>
+                                                        {isSelected && <Check size={12} className="text-white" />}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    {(allLocations || []).filter(loc => loc.id !== assigningReward.locationId).length === 0 && (
+                                        <p className="text-center text-slate-400 text-sm py-6">No other locations available.</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {assignError && (
+                                <p className="mt-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">{assignError}</p>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex gap-3 px-5 pb-5">
+                            <button
+                                onClick={() => setAssigningReward(null)}
+                                className="flex-1 py-2.5 rounded-xl font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAssignSave}
+                                disabled={assignLoading}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25 transition-all"
+                            >
+                                {assignLoading ? 'Saving...' : 'Save Assignments'}
                             </button>
                         </div>
                     </div>

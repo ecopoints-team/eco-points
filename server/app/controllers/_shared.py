@@ -14,7 +14,7 @@ import json as _json
 from flask import request
 from sqlalchemy import func
 
-from ..models import AdminLog, RecyclingItem, RecyclingSession, RewardRedemption, RVM, Wallet
+from ..models import AdminLog, Organization, RecyclingItem, RecyclingSession, RewardRedemption, RVM, Wallet
 from ..middleware import get_user_org_id, ROLE_HIERARCHY, ROLE_PERMISSIONS
 from .. import db
 
@@ -341,6 +341,18 @@ def _serialize_reward(r):
     else:
         dispensed = 0
 
+    # Task 29 — shared merchandise: include assigned organizations.
+    assigned_orgs = []
+    for a in (r.org_assignments or []):
+        org = getattr(a, 'organization', None)
+        if org is None:
+            try:
+                org = db.session.get(Organization, a.organization_id)
+            except Exception:
+                pass
+        if org:
+            assigned_orgs.append({'id': org.id, 'name': org.name})
+
     return {
         'id': r.id,
         'name': r.name,
@@ -356,6 +368,8 @@ def _serialize_reward(r):
         'createdAt': _dt(r.created_at),
         # Phase 3 task 8.2 — alignment-doc §11 derived field.
         'dispensed': dispensed,
+        # Task 29 — orgs this reward is shared with (beyond its owner).
+        'assignedOrganizations': assigned_orgs,
     }
 
 

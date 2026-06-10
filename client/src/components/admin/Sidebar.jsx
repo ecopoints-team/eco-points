@@ -242,13 +242,6 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
         },
         {
             type: 'item',
-            label: 'Leaderboards',
-            icon: Trophy,
-            href: '/admin/leaderboards',
-            category: 'leaderboard',
-        },
-        {
-            type: 'item',
             label: 'Analytics',
             icon: BarChart3,
             href: '/admin/analytics',
