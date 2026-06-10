@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowLeft, Leaf } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { Leaf, Trophy, ChevronDown, User, LogOut, Gift, LayoutDashboard, Menu } from "lucide-react";
+import { useAuth } from "../../src/context/AuthContext";
 import LeaderboardSkeleton from "../../src/components/shared/skeletons/LeaderboardSkeleton";
+import Footer from "../../src/components/website/Footer";
 
 const LeaderboardPodium = dynamic(
   () => import("../../src/components/pages/LeaderboardPodium"),
@@ -11,51 +15,220 @@ const LeaderboardPodium = dynamic(
 );
 
 function LeaderboardHeader() {
+  const [scrolled, setScrolled] = useState(false);
+  const { currentUser, isInitialized, logout } = useAuth();
+  const router = useRouter();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Scroll-responsive background
+  useEffect(() => {
+    let prev = false;
+    const onScroll = () => {
+      const val = window.scrollY > 50;
+      if (val !== prev) {
+        prev = val;
+        setScrolled(val);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const initials = currentUser?.name
+    ? currentUser.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+    : "U";
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/");
+      setIsDropdownOpen(false);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-[999] bg-white/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border-b border-[#10b981]/10">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center gap-4">
-
-        {/* Left: Back to Home */}
-        <div className="flex-1">
-          <Link
-            href="/"
-            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
-          >
-            <ArrowLeft size={18} className="transition-transform duration-300 group-hover:-translate-x-1" />
-            <span className="text-xs font-bold tracking-widest uppercase hidden sm:inline" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-              Back to Home
-            </span>
-          </Link>
-        </div>
-
-        {/* Center: Page Title */}
-        <div className="flex-1 flex items-center justify-center gap-2">
-          <h1 className="text-[#064e3b] text-lg sm:text-xl font-black tracking-widest uppercase" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-            Leaderboards
-          </h1>
-        </div>
-
-        {/* Right: EcoPoints Logo */}
-        <div className="flex-1 flex justify-end">
+    <nav
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-3xl w-[95%] max-w-[1200px] transition-all duration-700 ease-out ${scrolled
+        ? "bg-white/90 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-3 px-4 md:px-6"
+        : "bg-transparent py-3 px-4 md:px-6"
+        }`}
+    >
+      <div className="flex justify-between items-center">
+        {/* Left: Logo — icon-only on mobile, full mark on sm+ */}
+        <div
+          className="flex items-center cursor-pointer group flex-1"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          {/* Mobile: icon only */}
+          <img
+            src="/logo-elements.png"
+            alt="EcoPoints"
+            className="h-9 w-auto sm:hidden transition-all duration-300 ease-in-out group-hover:scale-110"
+          />
+          {/* sm+: full logo mark */}
           <img
             src="/ecopoints-logo-mark.png"
-            alt="EcoPoints"
-            className="h-7 w-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
+            alt="EcoPoints Logo"
+            className="hidden sm:block h-10 md:h-12 w-auto transition-all duration-300 ease-in-out group-hover:scale-110"
           />
         </div>
-      </div>
 
-      {/* Accent line */}
-      <div className="h-[2px] bg-gradient-to-r from-transparent via-[#10b981]/40 to-transparent" />
-    </header>
+        {/* Center: Leaderboards Title + Trophy */}
+        <div className="flex items-center gap-2 select-none">
+          <Trophy
+            size={25}
+            className="text-[#10b981]"
+            strokeWidth={2.5}
+          />
+          <span
+            className="font-black text-base sm:text-lg text-[#064e3b] tracking-wide"
+            style={{ fontFamily: "'Fredoka'", fontSize: '25px' }}
+          >
+            Leaderboards
+          </span>
+        </div>
+
+        {/* Right: Profile Button */}
+        <div className="flex-1 flex justify-end relative" ref={dropdownRef}>
+          {isInitialized && currentUser ? (
+            <div className="flex items-center gap-3">
+              {/* Mobile: hamburger icon only */}
+              <button
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                type="button"
+                className="sm:hidden flex items-center justify-center w-9 h-9 bg-white border border-slate-200/80 rounded-full hover:bg-slate-50 transition-all duration-300 cursor-pointer shadow-sm"
+              >
+                <Menu size={18} className="text-slate-600" />
+              </button>
+
+              {/* sm+: full profile button */}
+              <button
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                type="button"
+                className="hidden sm:flex items-center gap-2.5 px-3 sm:px-4 py-2 bg-white border border-slate-200/80 rounded-full hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md group"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center text-white font-black text-xs shadow-inner select-none">
+                  {initials}
+                </div>
+                <div
+                  className="text-left font-bold text-xs max-w-[120px] truncate text-slate-700"
+                  style={{ fontFamily: "'Quicksand'" }}
+                >
+                  {currentUser.name}
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`text-slate-400 transition-transform duration-300 group-hover:text-slate-600 ${isDropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-3 w-56 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] p-2 z-[1001] flex flex-col gap-1">
+                  <div className="px-3 py-2 text-left">
+                    <p
+                      className="text-xs font-black text-slate-800"
+                      style={{ fontFamily: "'Fredoka'" }}
+                    >
+                      {currentUser.name}
+                    </p>
+                    <p
+                      className="text-[10px] font-bold text-[#10b981] uppercase tracking-widest mt-0.5"
+                      style={{ fontFamily: "'Quicksand'" }}
+                    >
+                      {currentUser.role
+                        ? currentUser.role.replace("_", " ")
+                        : "User"}
+                    </p>
+                  </div>
+                  <div className="h-[1px] bg-slate-100 my-1 mx-2" />
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      router.push("/profile");
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <User size={14} className="text-slate-400" />
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      router.push("/rewards");
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <Gift size={14} className="text-slate-400" />
+                    Browse Rewards
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      router.push("/");
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <LayoutDashboard size={14} className="text-slate-400" />
+                    Home
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2.5 px-3 py-2 text-left rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors text-xs font-bold cursor-pointer border-none bg-transparent w-full"
+                    style={{ fontFamily: "'Quicksand'" }}
+                  >
+                    <LogOut size={14} />
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : isInitialized ? (
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-2.5 bg-gradient-to-r from-[#10b981] to-[#34d399] border-none rounded-full text-white font-semibold cursor-pointer transition-all duration-300 shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:-translate-y-[2px] hover:shadow-[0_8px_25px_rgba(16,185,129,0.4)] text-sm"
+              style={{ fontFamily: "'Quicksand'" }}
+            >
+              Login
+            </button>
+          ) : (
+            /* Skeleton placeholder while auth initializes */
+            <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+          )}
+        </div>
+      </div>
+    </nav>
   );
 }
 
 export default function LeaderboardPage() {
   return (
-    <>
+    <div className="footerbg" style={{ backgroundColor: "rgba(5, 148, 103, 0.2)" }}>
       <LeaderboardHeader />
-      <main className="pt-16 min-h-screen bg-slate-50 relative overflow-hidden">
+      <main className="pt-24 bg-slate-50 relative overflow-hidden">
         {/* Outer glow blobs */}
         <div className="pointer-events-none absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-emerald-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -right-32 w-[450px] h-[450px] rounded-full bg-emerald-500/10 blur-3xl" />
@@ -164,10 +337,15 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-10">
           <LeaderboardPodium />
         </div>
       </main>
-    </>
+      <Footer
+        extraResources={[
+          { name: "System Introduction", link: "/" },
+        ]}
+      />
+    </div>
   );
 }
