@@ -133,23 +133,27 @@ export default function HeroSection() {
 
             {/* Headline */}
             <h1
-              className="hero-headline-text text-[clamp(2.5rem,6vw,5.5rem)] font-black leading-[1.05] mb-6 text-[#064e3b]"
+              className="text-[clamp(2.5rem,6vw,5.5rem)] font-black leading-[1.05] mb-6"
               style={{ fontFamily: "'Fredoka'" }}
             >
-              <div className="hero-text-reveal overflow-hidden pb-1">
-                <span className="hero-headline-italic" style={{ animationDelay: "0.1s" }}>
+              <div className="hero-text-reveal overflow-hidden -ml-2 -mb-2">
+                <span className="text-[#064e3b] inline-block pl-2 pb-2" style={{ animationDelay: "0.1s" }}>
                   Scan. Drop. Earn.
                 </span>
               </div>
-              <div className="hero-text-reveal overflow-hidden pb-1">
-                <span className="hero-headline-italic" style={{ animationDelay: "0.2s" }}>
+
+              <div className="hero-text-reveal overflow-hidden -ml-2 -mr-4 -mb-4 relative z-10">
+                <span
+                  className="italic bg-gradient-to-r from-[#059669] to-[#34d399] bg-clip-text text-transparent relative inline-block pl-2 pr-4 pb-4"
+                  style={{ animationDelay: "0.3s" }}
+                >
                   Smart recycling
                 </span>
               </div>
-              <div className="hero-text-reveal overflow-hidden pb-1">
+
+              <div className="hero-text-reveal overflow-hidden -ml-2 -mr-4 -mb-4 relative z-20">
                 <span
-                  className="hero-headline-italic bg-gradient-to-r from-[#059669] to-[#34d399] bg-clip-text text-transparent hero-gradient-text relative"
-                  data-text="made rewarding."
+                  className="italic bg-gradient-to-r from-[#059669] to-[#34d399] bg-clip-text text-transparent relative inline-block pl-2 pr-4 pb-4"
                   style={{ animationDelay: "0.3s" }}
                 >
                   made rewarding.
