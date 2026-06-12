@@ -780,11 +780,6 @@
     transition: transform 250ms ease, box-shadow 250ms ease;
   }
 
-  .hero-annotation-tag:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
-
   .hero-annotation-icon {
     width: 28px;
     height: 28px;
@@ -877,29 +872,71 @@
     transform: translateY(-2px);
   }
 
-  /* Responsive: hide annotations on small screens */
-  @media (max-width: 1100px) {
+  /* Responsive: scale annotations at intermediate breakpoints */
+  @media (max-width: 1280px) {
     .hero-annotation-tag {
-      padding: 0.4rem 0.7rem;
-      font-size: 0.65rem;
+      padding: 0.4rem 0.75rem;
     }
 
-    .hero-annotation-icon {
-      width: 24px;
-      height: 24px;
+    .hero-annotation-label {
+      font-size: 0.7rem;
     }
 
     .hero-app-card {
       right: -4%;
+      min-width: 200px;
+    }
+  }
+
+  /* 125% display scale range — shrink machine */
+  @media (max-width: 1200px) {
+    .hero-machine-img {
+      max-height: 420px !important;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .hero-annotation-tag {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.6rem;
+    }
+
+    .hero-annotation-icon {
+      width: 22px;
+      height: 22px;
+    }
+
+    .hero-annotation-label {
+      font-size: 0.65rem;
+    }
+
+    .hero-app-card {
+      right: -2%;
       bottom: 0;
-      min-width: 190px;
+      min-width: 180px;
       padding: 0.75rem 1rem;
     }
   }
 
+  @media (max-width: 900px) {
+    .hero-machine-card {
+      padding: 1rem;
+    }
+
+    .hero-connector-svg {
+      display: none;
+    }
+  }
+
   @media (max-width: 768px) {
-    .hero-watermark {
-      font-size: 5rem;
+    .hero-machine-card {
+      padding: 2rem 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .hero-machine-card:hover {
+      transform: none;
     }
   }
 

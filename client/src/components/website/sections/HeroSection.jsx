@@ -85,41 +85,44 @@ export default function HeroSection() {
       {/* Hero Section */}
       <section
         id="home"
-        className="min-h-screen flex items-center pt-24 pb-16 px-4 md:px-8 relative z-10 bg-gradient-to-b from-[#f0fdf4]/80 to-white/80 overflow-hidden"
+        className="relative z-10 bg-gradient-to-b from-[#f0fdf4]/80 to-white/80"
       >
-        {/* Decorative SVG Circle */}
-        <div
-          className="absolute top-0 right-0 w-1/2 h-full bg-cover opacity-50 pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200'%3E%3Ccircle cx='600' cy='600' r='500' fill='%2310b981' opacity='0.05'/%3E%3Ccircle cx='700' cy='400' r='300' fill='%2334d399' opacity='0.05'/%3E%3C/svg%3E")`,
-          }}
-        />
+        {/* Clipped decorative BG — overflow contained here only */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Decorative SVG Circle */}
+          <div
+            className="absolute top-0 right-0 w-1/2 h-full bg-cover opacity-50 pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200'%3E%3Ccircle cx='600' cy='600' r='500' fill='%2310b981' opacity='0.05'/%3E%3Ccircle cx='700' cy='400' r='300' fill='%2334d399' opacity='0.05'/%3E%3C/svg%3E")`,
+            }}
+          />
 
-        {/* Logo watermark */}
-        <img
-          src="/ecopoints-primary-logo.png"
-          alt=""
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "clamp(1800px, 70vw, 1000px)",
-            height: "auto",
-            opacity: 0.03,
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 0,
-            objectFit: "contain",
-          }}
-        />
+          {/* Logo watermark */}
+          <img
+            src="/ecopoints-primary-logo.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "clamp(1800px, 70vw, 1000px)",
+              height: "auto",
+              opacity: 0.03,
+              pointerEvents: "none",
+              userSelect: "none",
+              zIndex: 0,
+              objectFit: "contain",
+            }}
+          />
+        </div>  {/* end clipped BG wrapper */}
 
         {/* ── Main 2-column grid ── */}
-        <div className="max-w-[1400px] mx-auto grid md:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-center relative z-10 w-full">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-start md:items-center relative z-10 w-full md:min-h-screen px-4 md:px-8 pt-20 md:pt-24 pb-16">
 
           {/* ── Z-10: Left Column — Typography & CTA ── */}
-          <div className="opacity-0 animate-[fadeInUp_1s_ease-out_0.3s_forwards] pt-4 md:pt-10">
+          <div className="opacity-0 animate-[fadeInUp_1s_ease-out_0.3s_forwards] pt-4 md:pt-10 flex flex-col justify-center min-h-[60vh] md:min-h-0">
             {/* Status badge */}
             <div className="flex mb-6 animate-[fadeInUp_0.8s_ease-out_0.2s_backwards]">
               <div
@@ -127,17 +130,17 @@ export default function HeroSection() {
                 style={{ fontFamily: "'Quicksand'" }}
               >
                 <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-                PUP Institute of Technology
+                PUP - Institute of Technology
               </div>
             </div>
 
             {/* Headline */}
             <h1
-              className="text-[clamp(2.5rem,6vw,5.5rem)] font-black leading-[1.05] mb-6"
+              className="text-[clamp(2rem,6vw,5.5rem)] font-black leading-[1.05] mb-4 md:mb-6"
               style={{ fontFamily: "'Fredoka'" }}
             >
               <div className="hero-text-reveal overflow-hidden -ml-2 -mb-2">
-                <span className="text-[#064e3b] inline-block pl-2 pb-2" style={{ animationDelay: "0.1s" }}>
+                <span className="text-[#064e3b] inline-block pl-2 pb-2 whitespace-nowrap" style={{ animationDelay: "0.1s" }}>
                   Scan. Drop. Earn.
                 </span>
               </div>
@@ -163,7 +166,7 @@ export default function HeroSection() {
 
             {/* Sub-headline */}
             <p
-              className="text-base md:text-lg text-[#064e3b]/70 max-w-[520px] mb-10 leading-relaxed animate-[fadeInUp_1s_ease-out_0.6s_backwards] font-medium"
+              className="text-[clamp(0.875rem,1.5vw,1.125rem)] text-[#064e3b]/70 max-w-[520px] mb-8 md:mb-10 leading-relaxed animate-[fadeInUp_1s_ease-out_0.6s_backwards] font-medium"
               style={{ fontFamily: "'Quicksand'" }}
             >
               EcoPoints bridges the gap between environmental action and
@@ -173,7 +176,7 @@ export default function HeroSection() {
             </p>
 
             {/* Dual CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8 animate-[fadeInUp_1s_ease-out_0.8s_backwards]">
+            <div className="flex flex-row gap-4 mb-8 animate-[fadeInUp_1s_ease-out_0.8s_backwards]">
               <button
                 onClick={handleWatchDemo}
                 className="hero-btn-primary"
@@ -195,101 +198,101 @@ export default function HeroSection() {
             ref={heroVisualRef}
             className="relative hidden md:block"
           >
-            {/* Machine card with scale hover */}
+            {/* Machine card with scale hover — only wraps the image */}
             <div className="hero-machine-card">
               <img
                 src="/Updated Machine Design.png"
                 alt="EcoPoints Smart Reverse Vending Machine"
-                className="w-full h-auto max-h-[600px] object-contain drop-shadow-[0_25px_40px_rgba(6,78,59,0.18)]"
+                className="hero-machine-img w-full h-auto max-h-[450px] object-contain drop-shadow-[0_25px_40px_rgba(6,78,59,0.18)]"
               />
+            </div>
 
-              {/* ── SVG Dashed connector lines ── */}
-              <svg
-                className="hero-connector-svg"
-                viewBox="0 0 600 650"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                {/* Line to QR Scanner tag (top) */}
-                <line
-                  x1="280" y1="80"
-                  x2="100" y2="30"
-                  stroke="#10b981"
-                  strokeWidth="1.2"
-                  strokeDasharray="6 4"
-                  strokeOpacity="0.35"
-                />
-                {/* Line to Door Access tag (right-mid) */}
-                <line
-                  x1="420" y1="300"
-                  x2="560" y2="260"
-                  stroke="#10b981"
-                  strokeWidth="1.2"
-                  strokeDasharray="6 4"
-                  strokeOpacity="0.35"
-                />
-                {/* Line to Accessible tag (bottom-left) */}
-                <line
-                  x1="180" y1="500"
-                  x2="40" y2="530"
-                  stroke="#10b981"
-                  strokeWidth="1.2"
-                  strokeDasharray="6 4"
-                  strokeOpacity="0.35"
-                />
-              </svg>
+            {/* ── SVG Dashed connector lines (outside card, unaffected by scale) ── */}
+            <svg
+              className="hero-connector-svg"
+              viewBox="0 0 600 650"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              {/* Line to QR Scanner tag (top) */}
+              <line
+                x1="280" y1="80"
+                x2="100" y2="30"
+                stroke="#10b981"
+                strokeWidth="1.2"
+                strokeDasharray="6 4"
+                strokeOpacity="0.35"
+              />
+              {/* Line to Door Access tag (right-mid) */}
+              <line
+                x1="420" y1="300"
+                x2="560" y2="260"
+                stroke="#10b981"
+                strokeWidth="1.2"
+                strokeDasharray="6 4"
+                strokeOpacity="0.35"
+              />
+              {/* Line to Accessible tag (bottom-left) */}
+              <line
+                x1="180" y1="500"
+                x2="40" y2="530"
+                stroke="#10b981"
+                strokeWidth="1.2"
+                strokeDasharray="6 4"
+                strokeOpacity="0.35"
+              />
+            </svg>
 
-              {/* ── Floating Annotation Tags ── */}
+            {/* ── Floating Annotation Tags (outside card, unaffected by scale) ── */}
 
-              {/* Tag 1: QR Scanner — top-left */}
-              <div
-                className="hero-annotation-tag"
-                style={{
-                  top: "-5%",
-                  left: "-12%",
-                  animationDelay: "0.5s",
-                }}
-              >
-                <div className="hero-annotation-icon" style={{ background: "rgba(16,185,129,0.12)" }}>
-                  <QrCode size={16} className="text-[#10b981]" />
-                </div>
-                <span className="hero-annotation-label">QR Scanner for Account Access</span>
+            {/* Tag 1: QR Scanner — top-left */}
+            <div
+              className="hero-annotation-tag hidden md:inline-flex"
+              style={{
+                top: "-5%",
+                left: "-12%",
+                animationDelay: "0.5s",
+              }}
+            >
+              <div className="hero-annotation-icon" style={{ background: "rgba(16,185,129,0.12)" }}>
+                <QrCode size={16} className="text-[#10b981]" />
               </div>
+              <span className="hero-annotation-label">QR Scanner for Account Access</span>
+            </div>
 
-              {/* Tag 2: Door Access — right-mid */}
-              <div
-                className="hero-annotation-tag"
-                style={{
-                  top: "35%",
-                  right: "-18%",
-                  animationDelay: "0.8s",
-                }}
-              >
-                <div className="hero-annotation-icon" style={{ background: "rgba(6,78,59,0.08)" }}>
-                  <DoorOpen size={16} className="text-[#064e3b]" />
-                </div>
-                <span className="hero-annotation-label">Door Accessed Bottle Disposal</span>
+            {/* Tag 2: Door Access — right-mid */}
+            <div
+              className="hero-annotation-tag hidden md:inline-flex"
+              style={{
+                top: "35%",
+                right: "-10%",
+                animationDelay: "0.8s",
+              }}
+            >
+              <div className="hero-annotation-icon" style={{ background: "rgba(6,78,59,0.08)" }}>
+                <DoorOpen size={16} className="text-[#064e3b]" />
               </div>
+              <span className="hero-annotation-label">Door Accessed Bottle Disposal</span>
+            </div>
 
-              {/* Tag 3: Accessible — bottom-left */}
-              <div
-                className="hero-annotation-tag"
-                style={{
-                  bottom: "5%",
-                  left: "-15%",
-                  animationDelay: "1.1s",
-                }}
-              >
-                <div className="hero-annotation-icon" style={{ background: "rgba(251,191,36,0.12)" }}>
-                  <Users size={16} className="text-amber-600" />
-                </div>
-                <span className="hero-annotation-label">Accessible for the Community</span>
+            {/* Tag 3: Accessible — bottom-left */}
+            <div
+              className="hero-annotation-tag hidden md:inline-flex"
+              style={{
+                bottom: "5%",
+                left: "-15%",
+                animationDelay: "1.1s",
+              }}
+            >
+              <div className="hero-annotation-icon" style={{ background: "rgba(251,191,36,0.12)" }}>
+                <Users size={16} className="text-amber-600" />
               </div>
+              <span className="hero-annotation-label">Accessible for the Community</span>
             </div>
 
             {/* ── Overlapping Notification Card ── */}
-            <div className="hero-app-card animate-[fadeInUp_0.8s_ease-out_1.4s_backwards]">
+            <div className="hero-app-card hidden md:block animate-[fadeInUp_0.8s_ease-out_1.4s_backwards]">
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5">
