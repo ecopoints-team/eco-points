@@ -139,10 +139,13 @@ def get_locations(current_user):
     """List organizations. Superadmin sees all; others see only their own."""
     try:
         loc_id = _scope_location_id(current_user)
+        # Load org + address + contacts + rvms + org_type in one query.
+        # community_groups.users.wallet is intentionally NOT joinedloaded here
+        # — loading every user+wallet for every org caused worker timeouts on
+        # the free-tier Render instance. userCount/totalPoints are now computed
+        # with cheap scalar aggregates inside _serialize_organization instead.
         query = Organization.query.options(
-            joinedload(Organization.community_groups)
-                .joinedload(CommunityGroup.users)
-                .joinedload(User.wallet),
+            joinedload(Organization.community_groups),
             joinedload(Organization.rvms),
             joinedload(Organization.address),
             joinedload(Organization.contacts),
@@ -151,7 +154,27 @@ def get_locations(current_user):
         if loc_id:
             query = query.filter_by(id=loc_id)
         orgs = query.all()
-        return jsonify({'success': True, 'locations': [_serialize_organization(o) for o in orgs]}), 200
+
+        # Single batch query for bottle counts across all orgs — avoids
+        # one DB round-trip per org inside _serialize_organization.
+        org_ids = [o.id for o in orgs]
+        if org_ids:
+            from ..models import RecyclingItem as _RI, RecyclingSession as _RS, RVM as _RVM
+            from sqlalchemy import func as _func
+            rows = db.session.query(_RVM.organization_id, _func.count(_RI.id))\
+                .join(_RS, _RI.session_id == _RS.id)\
+                .join(_RVM, _RS.rvm_id == _RVM.id)\
+                .filter(_RVM.organization_id.in_(org_ids))\
+                .group_by(_RVM.organization_id)\
+                .all()
+            bottle_counts = {r[0]: r[1] for r in rows}
+        else:
+            bottle_counts = {}
+
+        return jsonify({'success': True, 'locations': [
+            _serialize_organization(o, bottle_count=bottle_counts.get(o.id, 0))
+            for o in orgs
+        ]}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 

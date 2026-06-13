@@ -48,19 +48,9 @@ sessions_bp = Blueprint('sessions', __name__)
 # ══════════════════════════════════════════════════════════════════════════
 
 def _serialize_bulk_session(session):
-    """RecyclingSession (bulk) → frontend shape.
-
-    Phase 3 task 8.2 (per `docs/model-ui-alignment.md` §2): expose the
-    `notes` column added by migration `phase3_session_notes`. The bulk
-    create endpoint accepts a `notes` body field; if a legacy session
-    lacks the column entirely (e.g. tests against pre-migration DB),
-    `getattr` returns `None` so the UI renders the empty-state.
-
-    Enum normalization (Requirement 3.6): `status` is
-    `active | completed | timed_out | error`; the model column is
-    lowercase already. We coerce defensively.
-    """
-    wallet = db.session.get(Wallet, session.wallet_id) if session.wallet_id else None
+    """RecyclingSession (bulk) → frontend shape."""
+    # wallet and user are joinedloaded by get_bulk_sessions — no extra queries.
+    wallet = session.wallet
     user = wallet.user if wallet else None
     rvm = session.rvm
     org = rvm.organization if rvm else None
@@ -81,7 +71,6 @@ def _serialize_bulk_session(session):
         'status': status_value,
         'startTime': _dt(session.start_time),
         'endTime': _dt(session.end_time),
-        # Phase 3 task 8.2 — alignment-doc §2 derived field.
         'notes': getattr(session, 'notes', None),
     }
 
@@ -94,6 +83,7 @@ def get_bulk_sessions(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         query = RecyclingSession.query.options(
+            joinedload(RecyclingSession.wallet).joinedload(Wallet.user),
             joinedload(RecyclingSession.rvm).joinedload(RVM.organization),
         )
         if loc_id:
