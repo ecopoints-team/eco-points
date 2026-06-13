@@ -237,3 +237,11 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 - Make a helper icon for information on the import
 
   
+
+### Website Polishing Part 1
+
+## Tasks 
+
+- On the sign up side of the log in modal, the fields should be the same as the `Add User` modal on the `User Management` Menu
+
+- The fields on the signup page lost their slight radius, add some as well.

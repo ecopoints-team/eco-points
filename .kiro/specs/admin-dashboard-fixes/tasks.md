@@ -293,3 +293,12 @@
   - [x] 34.1 Client build passes
   - [x] 34.2 Backend tests pass (points config no-scope case)
   - [x] 34.3 Manual walkthrough: theme switcher (3 themes), settings load (no error), location import, bulk session import
+
+---
+
+## Website Polishing Part 1
+
+- [ ] 35. Sign Up Modal — Field Alignment & Styling Fix
+  - [ ] 35.1 `LogIn.jsx` Phase 1 — replace single `fullName` field with `firstName / middleName / lastName` (3-column grid, matching `AddRegularUserModal`)
+  - [ ] 35.2 `LogIn.jsx` — update all state, reset, save/restore, and payload references from `fullName` → `firstName/middleName/lastName`
+  - [ ] 35.3 `LogIn.jsx` `InputField` component — fix `web-web-rounded-lg` typo → `rounded-lg` to restore border radius on all signup inputs

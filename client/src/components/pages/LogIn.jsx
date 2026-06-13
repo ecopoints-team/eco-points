@@ -334,7 +334,7 @@ const InputField = ({
         onChange={onChange}
         required={required}
         placeholder={placeholder}
-        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm web-web-rounded-lg 
+        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
           block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none
           placeholder:text-gray-400
           focus:border-lime-400 focus:ring-2 focus:ring-lime-500/30 focus:bg-white focus:shadow-[0_0_0_3px_rgba(132,204,22,0.08)]
@@ -497,7 +497,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Form states
   const [loginCredential, setLoginCredential] = useState(""); // username OR email
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -572,7 +574,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Check if signup form has data
   const hasSignUpData = () => {
     return (
-      fullName ||
+      firstName ||
+      middleName ||
+      lastName ||
       signUpUsername ||
       email ||
       password ||
@@ -604,7 +608,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Reset signup form
   const resetSignUpForm = () => {
-    setFullName("");
+    setFirstName("");
+    setMiddleName("");
+    setLastName("");
     setSignUpUsername("");
     setEmail("");
     setPassword("");
@@ -627,7 +633,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Save current signup data
   const saveSignUpData = () => {
     return {
-      fullName,
+      firstName,
+      middleName,
+      lastName,
       signUpUsername,
       email,
       password,
@@ -648,7 +656,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Restore saved signup data
   const restoreSignUpData = (data) => {
-    setFullName(data.fullName || "");
+    setFirstName(data.firstName || "");
+    setMiddleName(data.middleName || "");
+    setLastName(data.lastName || "");
     setSignUpUsername(data.signUpUsername || "");
     setEmail(data.email || "");
     setPassword(data.password || "");
@@ -809,7 +819,10 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       }
 
       await authApi.register({
-        name: fullName,
+        firstName,
+        middleName: middleName || undefined,
+        lastName,
+        name: `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`.trim(),
         username: signUpUsername || undefined,
         email: email || undefined,
         phone: phone ? `+63${phone}` : undefined,
@@ -846,7 +859,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Full reset of all form fields
   const resetAllFields = () => {
     setLoginCredential("");
-    setFullName("");
+    setFirstName("");
+    setMiddleName("");
+    setLastName("");
     setSignUpUsername("");
     setEmail("");
     setPassword("");
@@ -1186,27 +1201,44 @@ export default function LogIn({ onClose, initialSignUp = false }) {
             {/* PHASE 1: Basic Credentials ONLY (Name, Email, Passwords) */}
             {signUpPhase === 1 && (
               <form onSubmit={handleSignUpPhase1} className={`w-full space-y-2.5 ${passwordMismatchShake ? "animate-shake" : ""}`}>
-                {/* Row 1: Full Name + Username side-by-side */}
+                {/* Row 1: First Name / Middle Name / Last Name */}
                 <div className="flex gap-2">
                   <InputField
                     type="text"
-                    placeholder="Full Name"
+                    placeholder="First Name"
                     icon={<User size={16} />}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
                   />
                   <InputField
                     type="text"
-                    placeholder="Username"
-                    icon={<AtSign size={16} />}
-                    value={signUpUsername}
-                    onChange={(e) => setSignUpUsername(e.target.value)}
+                    placeholder="Middle Name"
+                    icon={<User size={16} />}
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                  />
+                  <InputField
+                    type="text"
+                    placeholder="Last Name"
+                    icon={<User size={16} />}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                 </div>
 
-                {/* Row 2: Email full-width */}
+                {/* Row 2: Username full-width */}
+                <InputField
+                  type="text"
+                  placeholder="Username"
+                  icon={<AtSign size={16} />}
+                  value={signUpUsername}
+                  onChange={(e) => setSignUpUsername(e.target.value)}
+                  required
+                />
+
+                {/* Row 3: Email full-width */}
                 <InputField
                   type="email"
                   placeholder="Email"
@@ -1215,8 +1247,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-
-                {/* Row 3: Password + Confirm Password side-by-side */}
+                {/* Row 4: Password + Confirm Password side-by-side */}
                 <div className="flex gap-2">
                   <InputField
                     type="password"
