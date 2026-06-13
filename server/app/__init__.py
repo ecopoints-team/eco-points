@@ -137,7 +137,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Supabase (PgBouncer) drops idle connections. pool_pre_ping checks each
     # connection before use so stale connections are transparently recycled.
-    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
+    # pool_recycle forces connections to be replaced after 5 minutes, preventing
+    # "connection already closed" errors on long-idle Supabase pooler sessions.
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True, 'pool_recycle': 300}
 
 
 def create_app():
@@ -220,27 +222,33 @@ def create_app():
         from . import routes, models  # noqa: F401
 
         # Ensure qr_token column exists in database (Auto-Migration)
+        # Uses a lightweight catalog query instead of SQLAlchemy inspector
+        # so startup doesn't block on slow/cold Supabase pooler connections.
         try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            if 'users' in inspector.get_table_names():
-                columns = [col['name'] for col in inspector.get_columns('users')]
-                if 'qr_token' not in columns:
-                    app.logger.info("Adding 'qr_token' column to 'users' table...")
-                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN qr_token VARCHAR(100) UNIQUE"))
-                    db.session.commit()
-                    app.logger.info("'qr_token' column added successfully.")
+            result = db.session.execute(db.text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='users' AND column_name='qr_token' LIMIT 1"
+            )).fetchone()
 
-                # Backfill existing users without qr_token
-                from .models import User
-                import secrets
-                users_to_backfill = User.query.filter(User.qr_token == None).all()
-                if users_to_backfill:
-                    app.logger.info(f"Backfilling {len(users_to_backfill)} users with secure QR tokens...")
-                    for u in users_to_backfill:
-                        u.qr_token = secrets.token_hex(16)
-                    db.session.commit()
-                    app.logger.info("Backfill completed successfully.")
+            if result is None:
+                # Column missing — add it
+                app.logger.info("Adding 'qr_token' column to 'users' table...")
+                db.session.execute(db.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS qr_token VARCHAR(100) UNIQUE"
+                ))
+                db.session.commit()
+                app.logger.info("'qr_token' column added successfully.")
+
+            # Backfill existing users without qr_token
+            from .models import User
+            import secrets
+            users_to_backfill = User.query.filter(User.qr_token == None).all()
+            if users_to_backfill:
+                app.logger.info(f"Backfilling {len(users_to_backfill)} users with secure QR tokens...")
+                for u in users_to_backfill:
+                    u.qr_token = secrets.token_hex(16)
+                db.session.commit()
+                app.logger.info("Backfill completed successfully.")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Error during qr_token migration/backfill startup hook: {e}")
@@ -260,7 +268,6 @@ def create_app():
         from .controllers.machines_controller import machines_bp
         from .controllers.rewards_controller import rewards_bp
         from .controllers.logs_controller import logs_bp
-        from .controllers.leaderboard_controller import leaderboard_bp
         from .controllers.groups_controller import groups_bp
         from .controllers.analytics_controller import analytics_bp
         from .controllers.settings_controller import settings_bp
@@ -269,7 +276,7 @@ def create_app():
 
         for sub_bp in (
             dashboard_bp, users_bp, locations_bp, machines_bp, rewards_bp,
-            logs_bp, leaderboard_bp, groups_bp, analytics_bp, settings_bp,
+            logs_bp, groups_bp, analytics_bp, settings_bp,
             sessions_bp, reward_categories_bp,
         ):
             web_bp.register_blueprint(sub_bp)

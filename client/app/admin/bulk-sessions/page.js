@@ -1,32 +1,64 @@
 'use client';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi, settings as settingsApi } from '../../../src/services/api';
+import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
 import { sessionStatusLabel } from '../../../src/lib/enumLabels';
 import {
     Layers, Plus, X, Search, ChevronLeft, ChevronRight, RefreshCw,
     Package, Zap, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, Trash2,
-    Upload, FileText
+    Upload, FileText, Info, Loader2, CheckCircle2
 } from 'lucide-react';
+import { parseSpreadsheet } from '../../../src/lib/importFile';
 
-// Auto-calculate points from the org's points config (fetched from DB)
-const getAutoPoints = (condition, volumeMl, config) => {
-    if (!config || !volumeMl) return 0;
-    const vol = parseInt(volumeMl) || 0;
-    let sizeKey;
-    if (vol <= 350) sizeKey = 'small';
-    else if (vol <= 500) sizeKey = 'medium';
-    else if (vol <= 1000) sizeKey = 'large';
-    else return 0;
-    const condKey = condition === 'With Label' ? 'WithLabel' : 'NoLabel';
-    return parseInt(config[`${sizeKey}${condKey}`]) || 0;
+// ─── YOLOv8 detected classes (ERD: RECYCLING_ITEMS.detected_class) ──
+// Interim points-per-class mapping mirrors the seeder's RECYCLABLE_CLASSES.
+// NOTE: points are provisional and will be re-tuned once the final
+// points-per-YOLO-class scheme is decided.
+const YOLO_CLASSES = [
+    { value: 'coke_bottle', label: 'Coke Bottle', points: 5 },
+    { value: 'sprite_bottle', label: 'Sprite Bottle', points: 5 },
+    { value: 'water_bottle', label: 'Water Bottle', points: 3 },
+    { value: 'juice_box', label: 'Juice Box', points: 2 },
+    { value: 'aluminum_can', label: 'Aluminum Can', points: 7 },
+    { value: 'beer_bottle', label: 'Beer Bottle', points: 4 },
+    { value: 'plastic_cup', label: 'Plastic Cup', points: 2 },
+    { value: 'milk_carton', label: 'Milk Carton', points: 3 },
+    { value: 'unknown', label: 'Unknown', points: 0 },
+];
+const CLASS_POINTS = Object.fromEntries(YOLO_CLASSES.map(c => [c.value, c.points]));
+const CLASS_VALUES = YOLO_CLASSES.map(c => c.value);
+// Auto-calculate points from the detected YOLO class.
+// (Interim mapping — to be replaced by the finalized points scheme.)
+const getAutoPoints = (detectedClass) => CLASS_POINTS[detectedClass] ?? 0;
+
+// ─── Phase 33: Bulk Session Import column spec (RECYCLING_ITEMS) ─────
+const BULK_IMPORT_COLUMNS = [
+    { key: 'detectedClass', required: true, desc: "YOLO class, e.g. coke_bottle, aluminum_can, unknown" },
+];
+
+// Read a row value tolerating common header variants/casing.
+const pickRowField = (row, keys) => {
+    for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== '') return row[k];
+        // case-insensitive fallback
+        const found = Object.keys(row).find(rk => rk.toLowerCase().replace(/[\s_-]/g, '') === k.toLowerCase().replace(/[\s_-]/g, ''));
+        if (found && row[found] !== undefined && row[found] !== '') return row[found];
+    }
+    return '';
+};
+
+// Normalize a free-form detected-class value to a known YOLO class slug.
+const normalizeDetectedClass = (val) => {
+    const s = String(val ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if (CLASS_VALUES.includes(s)) return s;
+    return null;
 };
 
 function BulkSessionsPageContent() {
@@ -40,13 +72,19 @@ function BulkSessionsPageContent() {
     const [showModal, setShowModal] = useState(false);
     const [machines, setMachines] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
-    const [pointsConfig, setPointsConfig] = useState(null);
     const [selectedRvm, setSelectedRvm] = useState('');
     const [selectedAccount, setSelectedAccount] = useState('');
     const [notes, setNotes] = useState('');
     const [items, setItems] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [modalError, setModalError] = useState('');
+
+    // ─── Phase 33: Bulk Session Import state ─────────────────────────
+    const fileInputRef = useRef(null);
+    const importHelpRef = useRef(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [showImportHelp, setShowImportHelp] = useState(false);
+    const [importResult, setImportResult] = useState(null);
 
     // ── Table state ──
     const [searchQuery, setSearchQuery] = useState('');
@@ -70,13 +108,6 @@ function BulkSessionsPageContent() {
         return () => { cancelled = true; };
     }, [effectiveLocationId, refreshKey]);
 
-    // Default points config (matches seeder BOTTLE_PRICING)
-    const DEFAULT_POINTS = {
-        smallWithLabel: 5, smallNoLabel: 3,
-        mediumWithLabel: 8, mediumNoLabel: 5,
-        largeWithLabel: 10, largeNoLabel: 7,
-    };
-
     // ── Load machines & users for modal ──
     const loadModalData = useCallback(async () => {
         try {
@@ -86,13 +117,6 @@ function BulkSessionsPageContent() {
             ]);
             setMachines(m || []);
             setAllUsers(u || []);
-
-            // Points config is per-org — may fail for "All Locations" (no org), use defaults
-            let pc = null;
-            try {
-                pc = await settingsApi.getPointsConfig(effectiveLocationId);
-            } catch { /* falls back to defaults */ }
-            setPointsConfig(pc || DEFAULT_POINTS);
         } catch (err) { console.error('Failed to load modal data:', err); }
     }, [effectiveLocationId]);
 
@@ -101,33 +125,33 @@ function BulkSessionsPageContent() {
         setSelectedRvm('');
         setSelectedAccount('');
         setNotes('');
-        setItems([{ itemType: 'PET Bottle', condition: 'With Label', volumeMl: '500', pointsAwarded: 0 }]);
+        setItems([{ detectedClass: 'coke_bottle', pointsAwarded: getAutoPoints('coke_bottle') }]);
         setModalError('');
+        setImportResult(null);
+        setShowImportHelp(false);
         loadModalData();
     };
 
+    // Close the import-help popover on outside click
+    useEffect(() => {
+        const onClick = (e) => {
+            if (importHelpRef.current && !importHelpRef.current.contains(e.target)) setShowImportHelp(false);
+        };
+        document.addEventListener('mousedown', onClick);
+        return () => document.removeEventListener('mousedown', onClick);
+    }, []);
+
     // ── Items management ──
     const addItem = () => {
-        const pts = getAutoPoints('With Label', '500', pointsConfig);
-        setItems(prev => [...prev, { itemType: 'PET Bottle', condition: 'With Label', volumeMl: '500', pointsAwarded: pts }]);
+        setItems(prev => [...prev, { detectedClass: 'coke_bottle', pointsAwarded: getAutoPoints('coke_bottle') }]);
     };
-
-    // Recalculate all item points when pointsConfig arrives from API
-    useEffect(() => {
-        if (!pointsConfig || !showModal) return;
-        setItems(prev => prev.map(item => ({
-            ...item,
-            pointsAwarded: getAutoPoints(item.condition, item.volumeMl, pointsConfig),
-        })));
-    }, [pointsConfig, showModal]);
 
     const updateItem = (idx, field, value) => {
         setItems(prev => prev.map((item, i) => {
             if (i !== idx) return item;
             const updated = { ...item, [field]: value };
-            // Auto-recalculate points when condition or volume changes
-            if (field === 'condition' || field === 'volumeMl') {
-                updated.pointsAwarded = getAutoPoints(updated.condition, updated.volumeMl, pointsConfig);
+            if (field === 'detectedClass') {
+                updated.pointsAwarded = getAutoPoints(updated.detectedClass);
             }
             return updated;
         }));
@@ -135,6 +159,48 @@ function BulkSessionsPageContent() {
 
     const removeItem = (idx) => {
         setItems(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    // ─── Phase 33: Import items from CSV/XLS/XLSX ────────────────────
+    const handleImportFile = async (e) => {
+        const file = e.target.files?.[0];
+        if (e.target) e.target.value = ''; // allow re-importing the same file
+        if (!file) return;
+
+        setIsImporting(true);
+        setImportResult(null);
+        try {
+            const { rows } = await parseSpreadsheet(file);
+
+            if (rows.length > 1000) {
+                setImportResult({ error: `File contains ${rows.length} rows. Import is limited to 1000 rows at a time.` });
+                return;
+            }
+
+            const mapped = [];
+            const rowErrors = [];
+            rows.forEach((row, i) => {
+                const rowNum = i + 2; // header is row 1
+                const rawClass = pickRowField(row, ['detectedClass', 'detected_class', 'class', 'itemType', 'type']);
+
+                const detectedClass = normalizeDetectedClass(rawClass);
+                if (!detectedClass) {
+                    rowErrors.push(`Row ${rowNum}: invalid detected class "${rawClass || '(empty)'}" — use one of: ${CLASS_VALUES.join(', ')}.`);
+                    return;
+                }
+                mapped.push({
+                    detectedClass,
+                    pointsAwarded: getAutoPoints(detectedClass),
+                });
+            });
+
+            if (mapped.length) setItems(prev => [...prev, ...mapped]);
+            setImportResult({ imported: mapped.length, total: rows.length, rowErrors });
+        } catch (err) {
+            setImportResult({ error: err?.message || 'Failed to import file' });
+        } finally {
+            setIsImporting(false);
+        }
     };
 
     const totalPoints = useMemo(() => items.reduce((sum, i) => sum + (parseInt(i.pointsAwarded) || 0), 0), [items]);
@@ -152,11 +218,8 @@ function BulkSessionsPageContent() {
                 accountId: parseInt(selectedAccount),
                 notes,
                 items: items.map(i => ({
-                    itemType: i.itemType,
-                    condition: i.condition,
-                    volumeMl: parseInt(i.volumeMl) || 0,
+                    detectedClass: i.detectedClass,
                     pointsAwarded: parseInt(i.pointsAwarded) || 0,
-                    brand: null,
                 })),
             });
             setShowModal(false);
@@ -224,26 +287,32 @@ function BulkSessionsPageContent() {
             </ViewOnlyWrapper>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Layers size={24} className="text-blue-600 dark:text-blue-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Sessions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.total}</p></div>
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Layers size={24} className="text-blue-600 dark:text-blue-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Sessions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{stats.total}</p></div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Package size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Items</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalItems}</p></div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20"><Zap size={24} className="text-amber-600 dark:text-amber-400" /></div>
+                            <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Points Awarded</p><p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.totalPoints.toLocaleString()}</p></div>
+                        </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Package size={24} className="text-emerald-600 dark:text-emerald-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Items</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalItems}</p></div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20"><Zap size={24} className="text-amber-600 dark:text-amber-400" /></div>
-                        <div><p className="text-sm text-slate-500 dark:text-slate-400">Total Points Awarded</p><p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.totalPoints.toLocaleString()}</p></div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Sessions Table */}
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-xl">
@@ -419,18 +488,9 @@ function BulkSessionsPageContent() {
                                     {items.map((item, idx) => (
                                         <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-3 flex-wrap">
                                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
-                                            <div className="flex-1 min-w-[120px]">
-                                                <CustomDropdown value={item.condition} onChange={(v) => updateItem(idx, 'condition', v)}
-                                                    options={['With Label', 'No Label']} showPlaceholder={false} />
-                                            </div>
-                                            <div className="w-[140px]">
-                                                <CustomDropdown value={String(item.volumeMl)} onChange={(v) => updateItem(idx, 'volumeMl', v)}
-                                                    options={[
-                                                        { value: '350', label: '350ml (Small)' },
-                                                        { value: '500', label: '500ml (Medium)' },
-                                                        { value: '750', label: '750ml (Large)' },
-                                                        { value: '1000', label: '1000ml (Large)' },
-                                                    ]} showPlaceholder={false} />
+                                            <div className="flex-1 min-w-[150px]">
+                                                <CustomDropdown value={item.detectedClass} onChange={(v) => updateItem(idx, 'detectedClass', v)}
+                                                    options={YOLO_CLASSES.map(c => ({ value: c.value, label: c.label }))} searchable showPlaceholder={false} />
                                             </div>
                                             <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
                                                 <Zap size={12} className="text-emerald-600 dark:text-emerald-400" />
@@ -445,17 +505,85 @@ function BulkSessionsPageContent() {
                                     ))}
                                 </div>
 
-                                {/* CSV Import Placeholder */}
+                                {/* Phase 33: CSV/XLS/XLSX Import */}
                                 <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
-                                    <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/30">
-                                        <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700">
-                                            <Upload size={18} className="text-slate-400 dark:text-slate-500" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Import from CSV</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-600">Coming soon — bulk import items from a CSV file</p>
-                                        </div>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".csv,.xls,.xlsx"
+                                        onChange={handleImportFile}
+                                        className="hidden"
+                                    />
+                                    <div ref={importHelpRef} className="relative flex items-center gap-2">
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isImporting}
+                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400 text-sm font-bold transition-all disabled:opacity-50"
+                                            title="Import items from CSV/XLS/XLSX"
+                                        >
+                                            {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                            {isImporting ? 'Importing…' : 'Import from file'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowImportHelp(s => !s)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+                                            title="Import format help"
+                                            aria-label="Import format help"
+                                        >
+                                            <Info size={18} />
+                                        </button>
+                                        {showImportHelp && (
+                                            <div className="absolute left-0 bottom-full mb-2 w-80 z-50 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl text-left">
+                                                <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2"><FileText size={14} className="text-emerald-500" /> Import Format</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Upload a <code>.csv</code>, <code>.xls</code>, or <code>.xlsx</code> file. The first row must contain these column headers:</p>
+                                                <div className="space-y-1.5 mb-2">
+                                                    {BULK_IMPORT_COLUMNS.map(c => (
+                                                        <div key={c.key} className="flex items-start gap-2">
+                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 ${c.required ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{c.key}{c.required ? '*' : ''}</span>
+                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400">{c.desc}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 dark:text-slate-500"><code>status</code> accepts <code>Accepted</code> / <code>Rejected</code> (defaults to Accepted). Points are auto-calculated from the detected class; rejected items earn 0. Up to 1000 rows.</p>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {/* Import result / error feedback */}
+                                    {importResult && (
+                                        <div className={`mt-3 rounded-xl border p-3 text-sm ${importResult.error
+                                            ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10'
+                                            : (importResult.rowErrors?.length
+                                                ? 'border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
+                                                : 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10')}`}>
+                                            <div className="flex items-start gap-2">
+                                                {importResult.error ? (
+                                                    <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                                                ) : importResult.rowErrors?.length ? (
+                                                    <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
+                                                ) : (
+                                                    <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                                                )}
+                                                <div className="min-w-0">
+                                                    {importResult.error ? (
+                                                        <p className="font-medium text-red-700 dark:text-red-400">{importResult.error}</p>
+                                                    ) : (
+                                                        <>
+                                                            <p className="font-medium text-slate-700 dark:text-slate-200">
+                                                                Imported {importResult.imported} of {importResult.total} row{importResult.total !== 1 ? 's' : ''}
+                                                                {importResult.rowErrors?.length ? `, skipped ${importResult.rowErrors.length}` : ''}.
+                                                            </p>
+                                                            {importResult.rowErrors?.length > 0 && (
+                                                                <ul className="mt-1.5 space-y-0.5 max-h-32 overflow-y-auto text-xs text-amber-700 dark:text-amber-400 list-disc list-inside">
+                                                                    {importResult.rowErrors.map((er, i) => <li key={i}>{er}</li>)}
+                                                                </ul>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

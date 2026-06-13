@@ -685,8 +685,8 @@ function AnalyticsPageContent() {
                 <div className="flex items-center gap-2">
                     {/* Refresh Button */}
                     <button
-                        onClick={() => fetchAnalytics(false)}
-                        disabled={refreshing}
+                        onClick={() => fetchAnalytics(true)}
+                        disabled={loading || refreshing}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
                             bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200
                             dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:border-slate-700
@@ -694,8 +694,8 @@ function AnalyticsPageContent() {
                             disabled:opacity-50"
                         title="Refresh data"
                     >
-                        <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                        <RefreshCw size={15} className={loading || refreshing ? 'animate-spin' : ''} />
+                        <span className="hidden sm:inline">{loading || refreshing ? 'Refreshing...' : 'Refresh'}</span>
                     </button>
 
                     {/* Export Button */}

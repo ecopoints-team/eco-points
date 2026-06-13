@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Leaf, Bell, ShieldAlert, Home } from 'lucide-react';
+import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Bell, ShieldAlert, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { ROLES } from '../../data/roleConfig';
@@ -15,7 +15,7 @@ export const ViewOnlyBanner = () => {
     const { canManage } = useAuth();
     if (canManage) return null;
     return (
-        <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 system:bg-amber-500/10 system:border-amber-500/30 system:text-amber-400">
+        <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400">
             <ShieldAlert size={18} />
             <span className="text-sm font-medium">View-only mode — Your role does not have permission to make changes on this page.</span>
         </div>
@@ -38,7 +38,7 @@ export const ViewOnlyWrapper = ({ children }) => {
 // 4-Way Theme Toggle Component
 const ThemeToggle = ({ theme, setTheme }) => {
     return (
-        <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 neutral:bg-gray-600 system:bg-[#1A2E1F] border border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]">
+        <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 neutral:bg-gray-600 border border-slate-200 dark:border-slate-700">
             <button
                 onClick={() => setTheme('light')}
                 className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'light'
@@ -69,16 +69,6 @@ const ThemeToggle = ({ theme, setTheme }) => {
             >
                 <Moon size={14} />
             </button>
-            <button
-                onClick={() => setTheme('system')}
-                className={`p-1.5 rounded-full transition-all duration-300 ${theme === 'system'
-                    ? 'bg-[#0F1B11] text-[#7BA05B] shadow-md shadow-[rgba(123,160,91,0.3)]'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                    }`}
-                title="System Mode"
-            >
-                <Leaf size={14} />
-            </button>
         </div>
     );
 };
@@ -88,7 +78,7 @@ const ADMIN_ROLES = ['superadmin', 'head_admin', 'auditor', 'inventory_officer',
 
 export default function AdminLayout({ children }) {
     // Theme State from Context
-    const { theme, setTheme, isDarkMode, isNeutralMode, isSystemMode } = useTheme();
+    const { theme, setTheme, isDarkMode, isNeutralMode } = useTheme();
 
     // Get current pathname for conditional rendering
     const pathname = usePathname();
@@ -157,7 +147,6 @@ export default function AdminLayout({ children }) {
         if (path === '/admin/logs/access') return { main: 'System', sub: 'Access Logs' };
         if (path === '/admin/logs/machines') return { main: 'System', sub: 'Machine Logs' };
         if (path === '/admin/logs/rewards') return { main: 'System', sub: 'Reward Logs' };
-        if (path === '/admin/leaderboards') return { main: 'Leaderboards', sub: 'Overview' };
         if (path === '/admin/analytics') return { main: 'System', sub: 'Analytics' };
         if (path === '/admin/bulk-sessions') return { main: 'Bulk', sub: 'Sessions' };
         if (path === '/admin/settings') return { main: 'Admin', sub: 'Settings' };
@@ -203,7 +192,7 @@ export default function AdminLayout({ children }) {
     };
 
     // Determine theme class for root
-    const themeClass = theme === 'dark' ? 'dark' : theme === 'neutral' ? 'neutral dark' : theme === 'system' ? 'system dark' : '';
+    const themeClass = theme === 'dark' ? 'dark' : theme === 'neutral' ? 'neutral dark' : '';
 
     // Refs for click outside detection
     const profileRef = React.useRef(null);
@@ -294,15 +283,14 @@ export default function AdminLayout({ children }) {
             {/* GLOBAL BACKGROUND LAYER */}
             <div className={`absolute inset-0 transition-colors duration-700 -z-10 ${theme === 'light' ? 'bg-slate-100' :
                 theme === 'neutral' ? 'bg-gray-700' :
-                    theme === 'system' ? 'bg-[#0F1B11]' :
-                        'bg-[#020617]'
+                    'bg-[#020617]'
                 }`}>
                 {/* Cyber Grid Pattern */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity duration-700"
                     style={{
                         backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
                         backgroundSize: '40px 40px',
-                        color: theme === 'system' ? '#7BA05B' : '#10b981'
+                        color: '#10b981'
                     }}>
                 </div>
             </div>
@@ -313,7 +301,7 @@ export default function AdminLayout({ children }) {
                 setIsOpen={handleSidebarToggle}
                 isMobile={isMobile}
                 closeMobile={() => setSidebarOpen(false)}
-                isDarkMode={isDarkMode || isNeutralMode || isSystemMode}
+                isDarkMode={isDarkMode || isNeutralMode}
             />
 
             {/* MAIN CONTENT */}
@@ -326,8 +314,7 @@ export default function AdminLayout({ children }) {
                 <header className={`h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30
           backdrop-blur-md border-b transition-all duration-500 shadow-sm ${theme === 'light' ? 'bg-gray-50/90 border-gray-200/80' :
                         theme === 'neutral' ? 'bg-gray-600/80 border-gray-500' :
-                            theme === 'system' ? 'bg-[#1A2E1F]/80 border-[rgba(123,160,91,0.2)]' :
-                                'bg-[#0f172a]/80 border-emerald-500/20'
+                            'bg-[#0f172a]/80 border-emerald-500/20'
                     }`}
                 >
                     <div className="flex items-center gap-3">
@@ -341,7 +328,7 @@ export default function AdminLayout({ children }) {
                         )}
 
                         <h2 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white transition-colors duration-500 flex flex-col sm:block leading-tight">
-                            {pageTitle.main} <span className="text-indigo-500 dark:text-indigo-400 system:text-indigo-400 font-light text-sm sm:text-xl">{pageTitle.sub}</span>
+                            {pageTitle.main} <span className="text-indigo-500 dark:text-indigo-400 font-light text-sm sm:text-xl">{pageTitle.sub}</span>
                         </h2>
                     </div>
 
@@ -360,10 +347,9 @@ export default function AdminLayout({ children }) {
                         ) : isSuperAdmin && (
                             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm transition-colors duration-500
                 bg-lime-100 border border-lime-300
-                dark:bg-lime-500/10 dark:border-lime-500/20
-                system:bg-[rgba(123,160,91,0.15)] system:border-[rgba(123,160,91,0.3)]">
-                                <Building2 size={14} className="text-lime-600 dark:text-lime-400 system:text-[#7BA05B]" />
-                                <span className="text-xs font-bold tracking-wider text-lime-700 dark:text-lime-400 system:text-[#7BA05B]">
+                dark:bg-lime-500/10 dark:border-lime-500/20">
+                                <Building2 size={14} className="text-lime-600 dark:text-lime-400" />
+                                <span className="text-xs font-bold tracking-wider text-lime-700 dark:text-lime-400">
                                     ALL LOCATIONS
                                 </span>
                             </div>

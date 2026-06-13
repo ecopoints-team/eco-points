@@ -242,13 +242,6 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
         },
         {
             type: 'item',
-            label: 'Leaderboards',
-            icon: Trophy,
-            href: '/admin/leaderboards',
-            category: 'leaderboard',
-        },
-        {
-            type: 'item',
             label: 'Analytics',
             icon: BarChart3,
             href: '/admin/analytics',
@@ -333,9 +326,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
           border-r shadow-2xl
           ${theme === 'neutral'
                         ? 'bg-gray-800 border-gray-600'
-                        : theme === 'system'
-                            ? 'bg-[#0F1B11] border-[rgba(123,160,91,0.2)] shadow-[10px_0_30px_rgba(0,0,0,0.5)]'
-                            : 'bg-white border-slate-200 dark:bg-[#0f172a] dark:border-slate-800 dark:shadow-[10px_0_30px_rgba(0,0,0,0.5)]'
+                        : 'bg-white border-slate-200 dark:bg-[#0f172a] dark:border-slate-800 dark:shadow-[10px_0_30px_rgba(0,0,0,0.5)]'
                     }
           ${isOpen ? 'w-64 translate-x-0' : (isMobile ? '-translate-x-full' : 'w-20 translate-x-0')}
         `}
@@ -343,26 +334,18 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 {/* LOGO AREA */}
                 <div className={`h-24 flex items-center justify-center border-b relative overflow-hidden transition-colors duration-300 ${theme === 'neutral'
                     ? 'bg-gray-900 border-gray-700'
-                    : theme === 'system'
-                        ? 'bg-[#0F1B11] border-[rgba(123,160,91,0.2)]'
-                        : 'bg-white dark:bg-[#020617] border-slate-100 dark:border-slate-800/50'
+                    : 'bg-white dark:bg-[#020617] border-slate-100 dark:border-slate-800/50'
                     }`}>
                     {/* Subtle Gradient Overlay */}
-                    <div className={`absolute top-0 w-full h-full opacity-50 ${theme === 'system'
-                        ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[rgba(123,160,91,0.2)] via-[#0F1B11] to-[#0F1B11]'
-                        : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-900 dark:to-slate-900'
-                        }`}></div>
+                    <div className={`absolute top-0 w-full h-full opacity-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-900 dark:to-slate-900`}></div>
 
                     <div className="flex items-center gap-3 overflow-hidden px-4 w-full relative z-10">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/20 ${theme === 'system'
-                            ? 'bg-gradient-to-br from-[#7BA05B] to-[#5A8040] shadow-[0_0_15px_rgba(123,160,91,0.3)]'
-                            : 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-200 dark:shadow-[0_0_5px_rgba(16,185,129,0.15)] dark:border-white/10'
-                            }`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/20 bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-200 dark:shadow-[0_0_5px_rgba(16,185,129,0.15)] dark:border-white/10`}>
                             <Leaf className="text-white" size={22} />
                         </div>
                         <div className={`flex flex-col transition-all duration-300 ${!isOpen ? 'opacity-0 translate-x-4 hidden' : 'opacity-100 translate-x-0'}`}>
-                            <span className={`font-bold text-xl tracking-wide font-sans ${theme === 'system' ? 'text-[#E1E4E1]' : 'text-slate-800 dark:text-white'}`}>EcoPoints</span>
-                            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${theme === 'system' ? 'text-[#7BA05B]' : 'text-emerald-600 dark:text-emerald-400'}`}>Admin Panel</span>
+                            <span className={`font-bold text-xl tracking-wide font-sans text-slate-800 dark:text-white`}>EcoPoints</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400`}>Admin Panel</span>
                         </div>
                     </div>
                 </div>
@@ -434,17 +417,12 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                 )}
 
                 {/* FOOTER */}
-                <div className={`absolute bottom-0 left-0 w-full p-4 border-t transition-colors duration-300 ${theme === 'system'
-                    ? 'border-[rgba(123,160,91,0.2)] bg-[#0F1B11]'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]'
-                    }`}>
+                <div className={`absolute bottom-0 left-0 w-full p-4 border-t transition-colors duration-300 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617]`}>
                     <button
                         onClick={() => { logout(); router.push('/?login=true'); }}
                         className={`
                             relative flex items-center h-12 px-3 my-1.5 rounded-xl transition-all duration-300 group w-full
-                            ${theme === 'system'
-                                ? 'text-[#E1E4E1]/60 hover:bg-red-900/20 hover:text-red-400'
-                                : 'text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/10 dark:hover:text-red-400'}
+                            text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/10 dark:hover:text-red-400
                             ${!isOpen ? 'justify-center' : 'justify-start'}
                         `}
                     >
@@ -460,9 +438,9 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile, closeMobile, isDa
                         )}
 
                         {!isOpen && (
-                            <div className={`absolute left-full ml-3 px-3 py-2 text-white text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 ${theme === 'system' ? 'bg-[#1A2E1F]' : 'bg-slate-800'}`}>
+                            <div className={`absolute left-full ml-3 px-3 py-2 text-white text-sm font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 bg-slate-800`}>
                                 Sign Out
-                                <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${theme === 'system' ? 'bg-[#1A2E1F]' : 'bg-slate-800'}`}></div>
+                                <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 bg-slate-800`}></div>
                             </div>
                         )}
                     </button>

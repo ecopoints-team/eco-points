@@ -78,12 +78,7 @@ module.exports = {
         "secondary-container": "#68fcbf",
         "inverse-surface": "#00120b"
       },
-      borderRadius: {
-        "DEFAULT": "1rem",
-        "lg": "2rem",
-        "xl": "3rem",
-        "full": "9999px"
-      },
+
       fontFamily: {
         "headline": ["Fredoka"],
         "body": ["Quicksand"],

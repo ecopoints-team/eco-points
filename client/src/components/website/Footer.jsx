@@ -6,8 +6,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Mail, Facebook, Github, X, Rocket } from "lucide-react";
 
-export default function Footer() {
+export default function Footer({ extraResources = [] }) {
   const footerResources = [
+    ...extraResources,
     { name: "System Documentation", link: "#" },
     { name: "Research Paper", link: "#" },
     { name: "FAQs", link: "#" },

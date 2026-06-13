@@ -249,11 +249,23 @@ def get_notification_logs(current_user):
 @token_required
 @permission_required('settings')
 def get_points_config(current_user):
-    """Get points-per-bottle configuration for the current org."""
+    """Get points-per-bottle configuration for the current org.
+
+    When no location scope is resolvable (e.g. superadmin viewing
+    "All Locations" with no selected org), return HTTP 200 with the
+    default config instead of a 400. PUT remains strict and still
+    requires a location scope to persist.
+    """
+    # Defaults matching BOTTLE_PRICING
+    DEFAULTS = {
+        'smallWithLabel': 5, 'smallNoLabel': 3,
+        'mediumWithLabel': 8, 'mediumNoLabel': 5,
+        'largeWithLabel': 10, 'largeNoLabel': 7,
+    }
     try:
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            return jsonify({'success': True, 'config': dict(DEFAULTS)}), 200
 
         import json as _json
         setting = NotificationSetting.query.filter_by(
@@ -268,13 +280,8 @@ def get_points_config(current_user):
         else:
             config = None
 
-        # Defaults matching BOTTLE_PRICING
         if not config:
-            config = {
-                'smallWithLabel': 5, 'smallNoLabel': 3,
-                'mediumWithLabel': 8, 'mediumNoLabel': 5,
-                'largeWithLabel': 10, 'largeNoLabel': 7,
-            }
+            config = dict(DEFAULTS)
 
         return jsonify({'success': True, 'config': config}), 200
     except Exception as e:

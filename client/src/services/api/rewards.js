@@ -52,3 +52,23 @@ export async function getMyRedemptions() {
     const data = await request('GET', '/rewards/my-redemptions');
     return data.redemptions;
 }
+
+// ── Task 29: Shared Merchandise — Reward Organization Assignment ─────
+
+/** POST /api/web/rewards/:id/assign — assign reward to additional orgs (superadmin). */
+export async function assign(rewardId, organizationIds) {
+    return await request('POST', `/rewards/${rewardId}/assign`, {
+        body: { organizationIds },
+    });
+}
+
+/** DELETE /api/web/rewards/:id/assign/:orgId — remove org assignment (superadmin). */
+export async function unassign(rewardId, orgId) {
+    return await request('DELETE', `/rewards/${rewardId}/assign/${orgId}`);
+}
+
+/** GET /api/web/rewards/:id/assignments — list assigned orgs (superadmin). */
+export async function getAssignments(rewardId) {
+    const data = await request('GET', `/rewards/${rewardId}/assignments`);
+    return data;
+}

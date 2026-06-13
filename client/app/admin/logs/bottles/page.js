@@ -7,7 +7,7 @@ import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector'
 import { useAuth } from '../../../../src/context/AuthContext';
 import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/api';
-import { Search, Filter, ChevronLeft, ChevronRight, Recycle, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { formatField } from '../../../../src/lib/formatField';
 import { detectedClassLabel } from '../../../../src/lib/enumLabels';
 
@@ -69,14 +69,6 @@ function BottleLogsPageContent() {
     const detectedClasses = [...new Set(allBottleLogs.map(log => log.detectedClass).filter(Boolean))];
     const statuses = [...new Set(allBottleLogs.map(log => log.status))];
 
-    // Stats computed from logs (already server-scoped by effectiveLocationId)
-    const stats = useMemo(() => {
-        return {
-            todayTransactions: allBottleLogs.length,
-            acceptedBottles: allBottleLogs.filter(log => log.status === 'Accepted').length,
-            rejectedBottles: allBottleLogs.filter(log => log.status === 'Rejected').length
-        };
-    }, [allBottleLogs]);
 
     const filteredLogs = useMemo(() => {
         // Data is already server-scoped by effectiveLocationId — no need to re-filter by location
@@ -152,17 +144,6 @@ function BottleLogsPageContent() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20"><Recycle size={24} className="text-blue-600 dark:text-blue-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Total Transactions</p><p className="text-2xl font-black text-slate-800 dark:text-white">{allBottleLogs.length}</p></div></div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20"><Recycle size={24} className="text-emerald-600 dark:text-emerald-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Accepted Bottles</p><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.acceptedBottles}</p></div></div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4"><div className="p-3 rounded-xl bg-red-100 dark:bg-red-500/20"><Recycle size={24} className="text-red-600 dark:text-red-400" /></div><div><p className="text-sm text-slate-500 dark:text-slate-400">Rejected Bottles</p><p className="text-2xl font-black text-red-600 dark:text-red-400">{stats.rejectedBottles}</p></div></div>
-                </div>
-            </div>
 
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
                 <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 dark:bg-slate-900/50 gap-4">

@@ -6,7 +6,7 @@ import hmac
 import os
 import jwt
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, g
 from pydantic import BaseModel, ValidationError
 from .models import User
 from . import db
@@ -218,6 +218,52 @@ def csrf_required(f):
     return decorated
 
 
+# ── Session separation: dual-cookie token resolution (Task 28) ──────
+#
+# Admin logins set ``admin_token``; regular user logins set ``token``.
+# Constants defined here (middleware is the canonical source) and imported
+# by auth_controller.py to avoid circular imports.
+ADMIN_COOKIE_NAME = 'admin_token'
+USER_COOKIE_NAME = 'token'
+
+
+def _resolve_token():
+    """Resolve the JWT token from cookies or the Authorization header.
+
+    Resolution order:
+      1. ``admin_token`` cookie (admin sessions)
+      2. ``token`` cookie (regular user sessions)
+      3. ``Authorization: Bearer <jwt>`` header (API testing / transition)
+
+    Returns ``(token_string, source)`` where ``source`` is one of
+    ``'admin'``, ``'user'``, ``'bearer'``, or ``(None, None)`` when no
+    token is found. The source is stored on ``flask.g.token_source`` by
+    ``token_required`` so downstream decorators (``admin_required``,
+    ``permission_required``) can enforce source-based access control.
+    """
+    cookie_only = (
+        os.environ.get('AUTH_COOKIE_ONLY', 'false').lower() == 'true'
+    )
+
+    # 1. Admin cookie
+    admin_token = request.cookies.get(ADMIN_COOKIE_NAME)
+    if admin_token:
+        return admin_token, 'admin'
+
+    # 2. User cookie
+    user_token = request.cookies.get(USER_COOKIE_NAME)
+    if user_token:
+        return user_token, 'user'
+
+    # 3. Bearer header (only when cookie-only mode is off)
+    if not cookie_only:
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            return auth_header.split(' ', 1)[1], 'bearer'
+
+    return None, None
+
+
 def token_required(f):
     """Decorator that enforces a valid JWT on a route.
 
@@ -263,30 +309,9 @@ def token_required(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        # ── Phase 4B: cookie-first token source resolution ─────────────
-        #
-        # Read AUTH_COOKIE_ONLY *inside* the decorator (not at module
-        # import) so that tests can flip it via monkeypatch / setenv on a
-        # per-case basis. Default 'false' keeps the Bearer fallback live
-        # during the Phase 4B transition window (Requirement 4B.12).
-        cookie_only = (
-            os.environ.get('AUTH_COOKIE_ONLY', 'false').lower() == 'true'
-        )
-
-        cookie_token = request.cookies.get('token')
-        token = None
-        # If a cookie token is present, it wins — validate it. Per the
-        # task contract, we do NOT fall back to the Bearer header when
-        # the cookie is present-but-invalid; only an *absent* cookie
-        # triggers the header fallback.
-        if cookie_token:
-            token = cookie_token
-        elif not cookie_only:
-            # Cookie absent AND fallback allowed → check the header.
-            auth_header = request.headers.get('Authorization', '')
-            if auth_header.startswith('Bearer '):
-                token = auth_header.split(' ', 1)[1]
-        # else: cookie absent AND AUTH_COOKIE_ONLY == 'true' → reject below.
+        # ── Phase 4B / Task 28: dual-cookie token resolution ───────────
+        token, source = _resolve_token()
+        g.token_source = source  # downstream decorators check this
 
         if not token:
             return jsonify({'success': False, 'error': 'Authentication token is missing'}), 401
@@ -382,6 +407,17 @@ def admin_required(f):
     """
     @wraps(f)
     def decorated(current_user, *args, **kwargs):
+        # Task 28: reject if token came from the regular-user cookie.
+        # Admin routes must be accessed via admin_token cookie or Bearer.
+        source = getattr(g, 'token_source', None)
+        if source == 'user':
+            return jsonify({
+                'success': False,
+                'error': {
+                    'code': 'ADMIN_REQUIRED',
+                    'message': 'Admin session required. Please log in to the admin panel.',
+                },
+            }), 403
         denied = _require_admin_or_403(current_user)
         if denied:
             return denied
@@ -442,6 +478,16 @@ def permission_required(*categories, allow_non_admin=False):
                     'error': {
                         'code': 'ADMIN_REQUIRED',
                         'message': 'Admin access required',
+                    },
+                }), 403
+            # Task 28: reject if token came from the regular-user cookie.
+            source = getattr(g, 'token_source', None)
+            if source == 'user':
+                return jsonify({
+                    'success': False,
+                    'error': {
+                        'code': 'ADMIN_REQUIRED',
+                        'message': 'Admin session required. Please log in to the admin panel.',
                     },
                 }), 403
             role_perms = ROLE_PERMISSIONS.get(current_user.role, set())

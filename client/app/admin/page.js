@@ -7,7 +7,7 @@ import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
 import { detectedClassLabel } from '../../src/lib/enumLabels';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
-import { SkeletonCard, SkeletonChart } from '../../src/components/admin/SkeletonLoaders';
+import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
             )}
 
             {/* 1. Statistics Row - Location Filtered */}
-            {isDataLoading && !stats.totalBottles ? (
+            {isDataLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <SkeletonCard key={i} />
@@ -373,8 +373,8 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Refresh Button */}
                         <button
-                            onClick={() => fetchDashboard(effectiveLocationId, { force: true, silent: true })}
-                            disabled={isRefreshing}
+                            onClick={() => fetchDashboard(effectiveLocationId, { force: true })}
+                            disabled={isDataLoading || isRefreshing}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200
                                 bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200
                                 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:border-slate-700
@@ -456,7 +456,9 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Chart Container — only render after mount so Recharts can measure a real DOM size */}
-                {mounted ? (
+                {isDataLoading ? (
+                    <SkeletonChart height="h-80" />
+                ) : mounted ? (
                     <div className="w-full h-80 transition-all duration-300">
                         <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%">
                         {chartType === 'line' ? (
@@ -674,72 +676,78 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]
-                            bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300 system:bg-[#0F1B11] system:text-[#E1E4E1]/60">
-                            <tr>
-                                <th className="px-3 py-3">User ID</th>
-                                <th className="px-3 py-3">Username</th>
-                                <th className="px-3 py-3">Email</th>
-                                <th className="px-3 py-3">Location</th>
-                                <th className="px-3 py-3">Detected Class</th>
-                                <th className="px-3 py-3">Confidence</th>
-                                <th className="px-3 py-3">Points</th>
-                                <th className="px-3 py-3">Timestamp</th>
-                                <th className="px-3 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 system:divide-[rgba(123,160,91,0.1)]">
-                            {recentTransactions.map((log) => (
-                                <tr
-                                    key={log.id}
-                                    className={`transition-colors ${log.status === 'Rejected'
-                                        ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20 system:bg-red-900/10 system:hover:bg-red-900/20'
-                                        : 'hover:bg-slate-50 dark:hover:bg-emerald-900/10 system:hover:bg-[rgba(123,160,91,0.1)]'
-                                        }`}
-                                >
-                                    <td className="px-3 py-3">
-                                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/50">{log.userId}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-sm font-medium text-slate-800 dark:text-white system:text-[#E1E4E1]">{log.userName}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{log.userEmail}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{detectedClassLabel(log.detectedClass)}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.confidenceScore != null ? `${log.confidenceScore}%` : '—'}</span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]' : 'text-red-500'}`}>
-                                            {log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
-                                            <Clock size={12} />
-                                            {formatDate(log.timestamp)}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold
-                                            ${log.status === 'Accepted'
-                                                ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 system:bg-teal-500/15 system:text-teal-400'
-                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 system:bg-red-500/15 system:text-red-400'
-                                            }`}>
-                                            {log.status}
-                                        </span>
-                                    </td>
+                    {isDataLoading ? (
+                        <div className="p-6">
+                            <SkeletonTable rows={5} columns={9} />
+                        </div>
+                    ) : (
+                        <table className="w-full text-left">
+                            <thead className="uppercase text-xs font-bold tracking-wider border-b border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)]
+                                bg-slate-50 text-slate-600 dark:bg-slate-900/80 dark:text-slate-300 system:bg-[#0F1B11] system:text-[#E1E4E1]/60">
+                                <tr>
+                                    <th className="px-3 py-3">User ID</th>
+                                    <th className="px-3 py-3">Username</th>
+                                    <th className="px-3 py-3">Email</th>
+                                    <th className="px-3 py-3">Location</th>
+                                    <th className="px-3 py-3">Detected Class</th>
+                                    <th className="px-3 py-3">Confidence</th>
+                                    <th className="px-3 py-3">Points</th>
+                                    <th className="px-3 py-3">Timestamp</th>
+                                    <th className="px-3 py-3">Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 system:divide-[rgba(123,160,91,0.1)]">
+                                {recentTransactions.map((log) => (
+                                    <tr
+                                        key={log.id}
+                                        className={`transition-colors ${log.status === 'Rejected'
+                                            ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20 system:bg-red-900/10 system:hover:bg-red-900/20'
+                                            : 'hover:bg-slate-50 dark:hover:bg-emerald-900/10 system:hover:bg-[rgba(123,160,91,0.1)]'
+                                            }`}
+                                    >
+                                        <td className="px-3 py-3">
+                                            <span className="text-xs font-mono text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/50">{log.userId}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-sm font-medium text-slate-800 dark:text-white system:text-[#E1E4E1]">{log.userName}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60">{log.userEmail}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.locationName}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 system:text-[#E1E4E1]">{detectedClassLabel(log.detectedClass)}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-sm text-slate-600 dark:text-slate-300 system:text-[#E1E4E1]">{log.confidenceScore != null ? `${log.confidenceScore}%` : '—'}</span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className={`font-bold ${log.pointsAwarded > 0 ? 'text-emerald-600 dark:text-emerald-400 system:text-[#7BA05B]' : 'text-red-500'}`}>
+                                                {log.pointsAwarded > 0 ? `+${log.pointsAwarded}` : '0'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 system:text-[#E1E4E1]/60">
+                                                <Clock size={12} />
+                                                {formatDate(log.timestamp)}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold
+                                                ${log.status === 'Accepted'
+                                                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 system:bg-teal-500/15 system:text-teal-400'
+                                                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 system:bg-red-500/15 system:text-red-400'
+                                                }`}>
+                                                {log.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </>
