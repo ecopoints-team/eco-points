@@ -248,3 +248,57 @@
   - [x] 29.9 Frontend: add "Assign to Locations" (Share2 icon) on rewards page (superadmin only) + modal with org checklist
   - [ ] 29.10 Test: superadmin assigns reward from Org A to Org B → Org B user sees it
   - [ ] 29.11 Test: Org C user does NOT see Org A/B shared reward
+
+---
+
+## Part 6 Tasks
+
+    - [x] 30. Phase 30 — Remove "System Mode" Theme
+      - [x] 30.1 `ThemeContext.js` — remove `system` from `THEMES`, allowed-values arrays, and `isSystemMode`
+      - [x] 30.2 `ThemeContext.js` — update `cycleTheme` order to light → neutral → dark → light
+      - [x] 30.3 `ThemeContext.js` — on init, map stored `'system'` value to default `'dark'`
+      - [x] 30.4 `AdminLayout.jsx` — remove System Mode (Leaf icon) toggle button
+      - [x] 30.5 `AdminLayout.jsx` — remove `theme === 'system'` branches; fix `themeClass`
+      - [x] 30.6 `Sidebar.jsx` — remove all `theme === 'system'` styling branches
+      - [x] 30.7 `tailwind.config.js` — remove unused `system:` variant (only if no remaining refs)
+      - [x] 30.8 Verify light/neutral/dark render correctly; no console errors
+
+- [x] 31. Phase 31 — Points Config "BAD REQUEST" Fix
+  - [x] 31.1 `settings_controller.py` `get_points_config` — return 200 + defaults when no location scope (remove 400 guard)
+  - [x] 31.2 Verify `PUT /settings/points` still requires location scope (unchanged)
+  - [x] 31.3 `settings/page.js` — confirm console error gone (no code change expected)
+  - [x] 31.4 `bulk-sessions/page.js` — simplify points-config fallback comment (optional)
+  - [x] 31.5 Backend smoke/property test: GET points with no-scope context returns 200 defaults
+
+- [x] 32. Phase 32 — Location Import Feature
+  - [x] 32.1 Add `xlsx` (SheetJS) to `client/package.json`
+  - [x] 32.2 Create shared `client/src/lib/importFile.js` with `parseSpreadsheet(file)`
+  - [x] 32.3 `locations/page.js` — add Import control (button + file input, `.csv,.xls,.xlsx`)
+  - [x] 32.4 `locations/page.js` — map rows to ERD Location payload (Phase 4 mapping)
+  - [x] 32.5 `locations/page.js` — validate rows with shared `validateField`; row-level error summary
+  - [x] 32.6 `locations/page.js` — submit valid rows; refresh list on success
+  - [x] 32.7 `locations/page.js` — add `Info` helper icon describing required columns/format
+  - [x] 32.8 `locations/page.js` — user-visible error feedback for malformed file/rows
+
+- [x] 33. Phase 33 — Bulk Session Import Feature
+  - [x] 33.1 `bulk-sessions/page.js` — replace CSV placeholder with Import control (`.csv,.xls,.xlsx`)
+  - [x] 33.2 `bulk-sessions/page.js` — map rows to items (`itemType`, `condition`, `volumeMl`)
+  - [x] 33.3 `bulk-sessions/page.js` — auto-calc `pointsAwarded` via `getAutoPoints()`
+  - [x] 33.4 `bulk-sessions/page.js` — append imported items; report skipped invalid rows
+  - [x] 33.5 `bulk-sessions/page.js` — add `Info` helper icon describing accepted values
+  - [x] 33.6 `bulk-sessions/page.js` — user-visible error feedback for malformed file/rows
+  - [x] 33.7 Reuse shared `importFile.js` parser (no duplicate parsing logic)
+
+- [x] 34. Part 6 Verification
+  - [x] 34.1 Client build passes
+  - [x] 34.2 Backend tests pass (points config no-scope case)
+  - [x] 34.3 Manual walkthrough: theme switcher (3 themes), settings load (no error), location import, bulk session import
+
+---
+
+## Website Polishing Part 1
+
+- [ ] 35. Sign Up Modal — Field Alignment & Styling Fix
+  - [ ] 35.1 `LogIn.jsx` Phase 1 — replace single `fullName` field with `firstName / middleName / lastName` (3-column grid, matching `AddRegularUserModal`)
+  - [ ] 35.2 `LogIn.jsx` — update all state, reset, save/restore, and payload references from `fullName` → `firstName/middleName/lastName`
+  - [ ] 35.3 `LogIn.jsx` `InputField` component — fix `web-web-rounded-lg` typo → `rounded-lg` to restore border radius on all signup inputs

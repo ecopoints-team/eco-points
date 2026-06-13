@@ -79,16 +79,26 @@ def _serialize_org_type(ot):
     return {'id': ot.id, 'name': ot.name}
 
 
-def _serialize_organization(o):
+def _serialize_organization(o, bottle_count=None):
     """Organization → frontend LOCATIONS[] shape."""
+    from sqlalchemy import func as _func
+    from ..models import CommunityGroup as _CG, User as _User, Wallet as _Wallet
+
     machine_count = len(o.rvms) if o.rvms else 0
-    user_count = 0
-    total_points = 0
-    for cg in (o.community_groups or []):
-        for u in (cg.users or []):
-            user_count += 1
-            if u.wallet:
-                total_points += u.wallet.points_balance or 0
+
+    # Scalar aggregates — avoids loading every user+wallet into memory.
+    cg_ids = [cg.id for cg in (o.community_groups or [])]
+    if cg_ids:
+        user_count = db.session.query(_func.count(_User.id))\
+            .filter(_User.community_group_id.in_(cg_ids), _User.is_active == True)\
+            .scalar() or 0
+        total_points = db.session.query(_func.coalesce(_func.sum(_Wallet.points_balance), 0))\
+            .join(_User, _Wallet.user_id == _User.id)\
+            .filter(_User.community_group_id.in_(cg_ids))\
+            .scalar() or 0
+    else:
+        user_count = 0
+        total_points = 0
 
     addr = _serialize_address(o.address)
     contacts = [{'id': c.id, 'firstName': c.first_name, 'lastName': c.last_name,
@@ -125,11 +135,13 @@ def _serialize_organization(o):
         'machineCount': machine_count,
         'userCount': user_count,
         'totalPoints': total_points,
-        'totalBottlesCollected': db.session.query(func.count(RecyclingItem.id))
+        'totalBottlesCollected': bottle_count if bottle_count is not None else (
+            db.session.query(func.count(RecyclingItem.id))
             .join(RecyclingSession, RecyclingItem.session_id == RecyclingSession.id)
             .join(RVM, RecyclingSession.rvm_id == RVM.id)
             .filter(RVM.organization_id == o.id)
-            .scalar() or 0,
+            .scalar() or 0
+        ),
         'communityGroups': [
             {'id': cg.id, 'name': cg.name, 'abbreviation': cg.abbreviation or '',
              'groupType': cg.group_type or 'college'}

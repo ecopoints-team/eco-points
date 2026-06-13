@@ -305,11 +305,7 @@ export default function NavBar({ onLoginClick }) {
                   </div>
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
                   <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      setIsMobileMenuOpen(false);
-                      router.push("/profile");
-                    }}
+                    onClick={() => { setIsDropdownOpen(false); setIsMobileMenuOpen(false); router.push("/profile"); }}
                     className="flex items-center gap-2.5 px-3 py-2 text-left web-web-rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
                     style={{ fontFamily: "'Quicksand'" }}
                   >
@@ -317,11 +313,7 @@ export default function NavBar({ onLoginClick }) {
                     My Profile
                   </button>
                   <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      setIsMobileMenuOpen(false);
-                      router.push("/rewards");
-                    }}
+                    onClick={() => { setIsDropdownOpen(false); setIsMobileMenuOpen(false); router.push("/rewards"); }}
                     className="flex items-center gap-2.5 px-3 py-2 text-left web-web-rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
                     style={{ fontFamily: "'Quicksand'" }}
                   >
@@ -329,11 +321,7 @@ export default function NavBar({ onLoginClick }) {
                     Browse Rewards
                   </button>
                   <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      setIsMobileMenuOpen(false);
-                      router.push("/leaderboard");
-                    }}
+                    onClick={() => { setIsDropdownOpen(false); setIsMobileMenuOpen(false); router.push("/leaderboard"); }}
                     className="flex items-center gap-2.5 px-3 py-2 text-left web-web-rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
                     style={{ fontFamily: "'Quicksand'" }}
                   >
@@ -351,7 +339,11 @@ export default function NavBar({ onLoginClick }) {
                 </div>
               )}
             </div>
-          ) : isInitialized ? (
+          ) : (
+            // Show Login immediately — even before /me resolves.
+            // This prevents the button disappearing during Render cold-start.
+            // If the user IS logged in, the button briefly appears then swaps
+            // to their avatar once isInitialized flips true (~same as /me latency).
             <button
               id="navbar-login-btn"
               type="button"
@@ -361,7 +353,7 @@ export default function NavBar({ onLoginClick }) {
             >
               Login
             </button>
-          ) : null}
+          )}
         </div>
 
         {/* Mobile Hamburger */}
@@ -452,7 +444,7 @@ export default function NavBar({ onLoginClick }) {
                 Log Out
               </button>
             </div>
-          ) : isInitialized ? (
+          ) : (
             <button
               id="navbar-login-btn-mobile"
               type="button"
@@ -464,7 +456,7 @@ export default function NavBar({ onLoginClick }) {
             >
               Login
             </button>
-          ) : null}
+          )}
         </div>
       )}
     </nav>

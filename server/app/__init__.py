@@ -211,6 +211,19 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # Rate-limit storage: use Redis when available so limits are GLOBAL across
+    # all gunicorn workers (memory:// gives each worker its own counter, making
+    # the effective limit N×higher). Falls back to in-memory if Redis is down so
+    # a cache outage never rejects legitimate requests.
+    _redis_url = os.environ.get('REDIS_URL')
+    if _redis_url:
+        app.config['RATELIMIT_STORAGE_URI'] = _redis_url
+        app.config['RATELIMIT_STORAGE_OPTIONS'] = {'socket_connect_timeout': 3}
+        app.config['RATELIMIT_IN_MEMORY_FALLBACK_ENABLED'] = True
+        print('[RATELIMIT] Using Redis storage (global across workers)')
+    else:
+        print('[RATELIMIT] REDIS_URL not set — using in-memory storage (per-worker)')
     limiter.init_app(app)
 
     # Initialize Redis cache (non-fatal — app degrades gracefully if unavailable)

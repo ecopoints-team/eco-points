@@ -8,12 +8,157 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
+import { parseSpreadsheet } from '../../../src/lib/importFile';
 import { formatDateShort } from '../../../src/utils/formatDate';
 import {
     Building2, MapPin, Users, Package, Leaf, TrendingUp,
     Calendar, Phone, Mail, Edit2, Eye, Plus, Search,
-    ChevronLeft, ChevronRight, X, Coins, User, Trash2, RefreshCw, Upload, FileText
+    ChevronLeft, ChevronRight, X, Coins, User, Trash2, RefreshCw, Upload, FileText,
+    Info, Loader2, CheckCircle2, AlertTriangle
 } from 'lucide-react';
+
+// ─── Community Group import (CSV/XLS/XLSX) ──────────────────────────
+// Columns map to COMMUNITY_GROUPS: name (required), abbreviation, group_type.
+const CG_IMPORT_COLUMNS = [
+    { key: 'name', required: true, desc: 'group name, e.g. BSIT' },
+    { key: 'abbreviation', required: false, desc: 'short code, e.g. IT' },
+    { key: 'groupType', required: false, desc: 'college, shs_strand, jhs, elementary, or staff (defaults to college)' },
+];
+const CG_GROUP_TYPES = ['college', 'shs_strand', 'jhs', 'elementary', 'staff'];
+
+const cgPickField = (row, keys) => {
+    for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== '') return row[k];
+        const found = Object.keys(row).find(rk => rk.toLowerCase().replace(/[\s_-]/g, '') === k.toLowerCase().replace(/[\s_-]/g, ''));
+        if (found && row[found] !== undefined && row[found] !== '') return row[found];
+    }
+    return '';
+};
+
+const normalizeGroupType = (val) => {
+    const s = String(val ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if (s === '') return 'college';
+    if (CG_GROUP_TYPES.includes(s)) return s;
+    if (['shs', 'strand', 'senior_high', 'seniorhigh'].includes(s)) return 'shs_strand';
+    if (['junior_high', 'juniorhigh'].includes(s)) return 'jhs';
+    if (['elem'].includes(s)) return 'elementary';
+    return null;
+};
+
+// Reusable Import control for the Community Groups tab. Parses a spreadsheet
+// and hands valid {name, abbreviation, groupType} rows back via onImport.
+function CommunityGroupImport({ onImport }) {
+    const fileRef = useRef(null);
+    const helpRef = useRef(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+    const [result, setResult] = useState(null);
+
+    useEffect(() => {
+        const onClick = (e) => { if (helpRef.current && !helpRef.current.contains(e.target)) setShowHelp(false); };
+        document.addEventListener('mousedown', onClick);
+        return () => document.removeEventListener('mousedown', onClick);
+    }, []);
+
+    const handleFile = async (e) => {
+        const file = e.target.files?.[0];
+        if (e.target) e.target.value = '';
+        if (!file) return;
+        setIsImporting(true);
+        setResult(null);
+        try {
+            const { rows } = await parseSpreadsheet(file);
+            if (rows.length > 1000) {
+                setResult({ error: `File contains ${rows.length} rows. Import is limited to 1000 rows at a time.` });
+                return;
+            }
+            const mapped = [];
+            const rowErrors = [];
+            rows.forEach((row, i) => {
+                const rowNum = i + 2;
+                const name = String(cgPickField(row, ['name', 'group_name', 'group']) ?? '').trim();
+                if (!name) { rowErrors.push(`Row ${rowNum}: missing required "name".`); return; }
+                const groupType = normalizeGroupType(cgPickField(row, ['groupType', 'group_type', 'type']));
+                if (!groupType) { rowErrors.push(`Row ${rowNum}: invalid groupType — use ${CG_GROUP_TYPES.join(', ')}.`); return; }
+                mapped.push({
+                    name,
+                    abbreviation: String(cgPickField(row, ['abbreviation', 'abbr', 'code']) ?? '').trim(),
+                    groupType,
+                });
+            });
+            if (mapped.length) onImport(mapped);
+            setResult({ imported: mapped.length, total: rows.length, rowErrors });
+        } catch (err) {
+            setResult({ error: err?.message || 'Failed to import file' });
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    return (
+        <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
+            <input ref={fileRef} type="file" accept=".csv,.xls,.xlsx" onChange={handleFile} className="hidden" />
+            <div ref={helpRef} className="relative flex items-center gap-2">
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={isImporting}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400 text-sm font-bold transition-all disabled:opacity-50"
+                    title="Import community groups from CSV/XLS/XLSX">
+                    {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                    {isImporting ? 'Importing…' : 'Import groups from file'}
+                </button>
+                <button type="button" onClick={() => setShowHelp(s => !s)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
+                    title="Import format help" aria-label="Import format help">
+                    <Info size={18} />
+                </button>
+                {showHelp && (
+                    <div className="absolute left-0 bottom-full mb-2 w-80 z-50 p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl text-left">
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2"><FileText size={14} className="text-emerald-500" /> Import Format</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Upload a <code>.csv</code>, <code>.xls</code>, or <code>.xlsx</code> file. The first row must contain these column headers:</p>
+                        <div className="space-y-1.5 mb-2">
+                            {CG_IMPORT_COLUMNS.map(c => (
+                                <div key={c.key} className="flex items-start gap-2">
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 ${c.required ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{c.key}{c.required ? '*' : ''}</span>
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{c.desc}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500">Imported groups are appended to the list below. Up to 1000 rows.</p>
+                    </div>
+                )}
+            </div>
+            {result && (
+                <div className={`mt-3 rounded-xl border p-3 text-sm ${result.error
+                    ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10'
+                    : (result.rowErrors?.length
+                        ? 'border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
+                        : 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10')}`}>
+                    <div className="flex items-start gap-2">
+                        {result.error ? <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                            : result.rowErrors?.length ? <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
+                                : <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />}
+                        <div className="min-w-0">
+                            {result.error ? (
+                                <p className="font-medium text-red-700 dark:text-red-400">{result.error}</p>
+                            ) : (
+                                <>
+                                    <p className="font-medium text-slate-700 dark:text-slate-200">
+                                        Imported {result.imported} of {result.total} row{result.total !== 1 ? 's' : ''}
+                                        {result.rowErrors?.length ? `, skipped ${result.rowErrors.length}` : ''}.
+                                    </p>
+                                    {result.rowErrors?.length > 0 && (
+                                        <ul className="mt-1.5 space-y-0.5 max-h-32 overflow-y-auto text-xs text-amber-700 dark:text-amber-400 list-disc list-inside">
+                                            {result.rowErrors.map((er, i) => <li key={i}>{er}</li>)}
+                                        </ul>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ============================================================================
 // ADD LOCATION MODAL — Two-Page Tabbed Layout
@@ -287,13 +432,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
-                                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/30">
-                                    <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700"><Upload size={18} className="text-slate-400 dark:text-slate-500" /></div>
-                                    <div><p className="text-sm font-medium text-slate-400 dark:text-slate-500">Import from CSV</p>
-                                        <p className="text-xs text-slate-400 dark:text-slate-600">Coming soon — bulk import community groups from a CSV file</p></div>
-                                </div>
-                            </div>
+                            <CommunityGroupImport onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
                         </div>
                     )}
                 </form>
@@ -604,13 +743,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-700">
-                                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/30">
-                                    <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700"><Upload size={18} className="text-slate-400 dark:text-slate-500" /></div>
-                                    <div><p className="text-sm font-medium text-slate-400 dark:text-slate-500">Import from CSV</p>
-                                        <p className="text-xs text-slate-400 dark:text-slate-600">Coming soon â€” bulk import community groups from a CSV file</p></div>
-                                </div>
-                            </div>
+                            <CommunityGroupImport onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
                         </div>
                     )}
                 </form>
@@ -760,6 +893,7 @@ function LocationsPageContent() {
                         >
                             <RefreshCw size={18} className={isDataLoading ? 'animate-spin' : ''} />
                         </button>
+
                         <button
                             onClick={() => setShowAddModal(true)}
                             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
