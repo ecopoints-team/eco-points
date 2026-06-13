@@ -101,3 +101,77 @@ This spec defines fixes for bugs and issues found in the admin dashboard during 
 - 6.4 Any additional bugs found during the audit are documented and fixed.
 
 ---
+
+## Part 6 Requirements
+
+### Requirement 30 — Remove "System Mode" Theme
+
+**User Story:** As an admin, I want the theme switcher to offer only the supported themes so I am not presented with a redundant "System Mode" option.
+
+#### Context
+
+`System Mode` is a 4th custom theme value `'system'` (a green palette — NOT OS-preference detection). It is toggled via the Leaf-icon button in the admin theme switcher and has dedicated styling branches across the admin shell.
+
+#### Acceptance Criteria
+
+- 30.1 The `System Mode` toggle button (Leaf icon) is removed from the theme switcher in `AdminLayout.jsx`.
+- 30.2 The `system` value is removed from `ThemeContext.js` (`THEMES` map, allowed-values arrays, `cycleTheme` order, `isSystemMode`).
+- 30.3 The theme-cycle order no longer includes `system` (light → neutral → dark → light).
+- 30.4 If a stored `ecopoints_theme` value of `system` is read from `localStorage`, it falls back to the default theme (`dark`) instead of applying an unsupported theme.
+- 30.5 All `theme === 'system'` conditional branches in `Sidebar.jsx`, `AdminLayout.jsx`, and any other admin component are removed without breaking the remaining light/neutral/dark styling.
+- 30.6 No console errors or unstyled elements appear after removal; the three remaining themes render correctly.
+
+---
+
+### Requirement 31 — Fix Points Config "BAD REQUEST" Error
+
+**User Story:** As an admin (especially superadmin viewing "All Locations"), I want the Settings page to load the points configuration without throwing a BAD REQUEST error in the console.
+
+#### Context
+
+`GET /api/web/settings/points` returns `400 Location required` when `_scope_location_id(current_user)` resolves to `None` (superadmin with no selected org, or "All Locations" view). The frontend catches the error and falls back to defaults, but logs `Failed to load points config: ApiError: BAD REQUEST` (`client/src/services/api/client.js:211`, surfaced at `app/admin/settings/page.js:76`).
+
+#### Acceptance Criteria
+
+- 31.1 `GET /api/web/settings/points` no longer returns a 400 when no location scope is resolvable.
+- 31.2 When no location scope exists, the endpoint returns `200` with the default points config (`smallWithLabel: 5, smallNoLabel: 3, mediumWithLabel: 8, mediumNoLabel: 5, largeWithLabel: 10, largeNoLabel: 7`).
+- 31.3 The Settings page no longer logs `Failed to load points config: ApiError: BAD REQUEST`.
+- 31.4 The Bulk Sessions modal (`bulk-sessions/page.js`) no longer relies on a thrown error to fall back to defaults for the "All Locations" case.
+- 31.5 When a valid location scope exists, the endpoint continues to return that org's persisted config unchanged.
+- 31.6 `PUT /api/web/settings/points` behavior is unchanged (still requires a location scope to persist).
+
+---
+
+### Requirement 32 — Location Import Feature
+
+**User Story:** As an admin, I want to import locations from a CSV/XLS/XLSX file so I can onboard many organizations at once, with clear guidance on the expected format.
+
+#### Acceptance Criteria
+
+- 32.1 The Add Location flow (`locations/page.js`) provides a file import control accepting `.csv`, `.xls`, and `.xlsx`.
+- 32.2 Imported rows map to the ERD-aligned Location fields (see Phase 4 mapping: org `name`, `full_name`, `type_id`/type name, `status`, address fields, contact fields).
+- 32.3 A helper icon (Info) is shown next to the import control; clicking/hovering it explains the required columns and format (with a downloadable or inline template description).
+- 32.4 Parsed rows are validated using the shared validation rules before submission; invalid rows are reported with row-level errors and do not block valid rows from a clear error summary.
+- 32.5 On successful import, created locations appear in the list immediately.
+- 32.6 Import errors (malformed file, unparseable rows, missing required columns) show user-visible feedback, not just console logs.
+
+---
+
+### Requirement 33 — Bulk Session Import Feature
+
+**User Story:** As an admin, I want to import bulk session items from a CSV/XLS/XLSX file so I can populate a bulk session's item list quickly, with clear guidance on the expected format.
+
+#### Acceptance Criteria
+
+- 33.1 The Bulk Sessions Items panel (`bulk-sessions/page.js`) provides a file import control accepting `.csv`, `.xls`, and `.xlsx` (replacing the existing CSV placeholder).
+- 33.2 Imported rows map to bulk session item fields: `itemType`, `condition`, `volumeMl` (and points auto-calculated from the active points config).
+- 33.3 A helper icon (Info) is shown next to the import control explaining the required columns and accepted values (item types, conditions, volumes).
+- 33.4 Imported items are appended to the existing manual item list and have their `pointsAwarded` auto-calculated via `getAutoPoints()` using the current `pointsConfig`.
+- 33.5 Invalid rows are reported with row-level feedback and skipped; valid rows still import.
+- 33.6 Import errors show user-visible feedback, not just console logs.
+
+---
+
+### Shared Technical Requirement — File Parsing Library
+
+- A single client-side parsing dependency (e.g., SheetJS `xlsx`, which handles `.csv`, `.xls`, `.xlsx`) is added to `client/package.json` and reused by both import features (DRY).

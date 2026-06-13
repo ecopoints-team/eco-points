@@ -203,3 +203,37 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 ## Tasks
 
 - Currently, the website and the adin dashboard shares some of the same styling from the general style of ours. Now, I want you to separate the two styles. For instance, the custom dropdown of ours [text](../client/src/components/admin/CustomDropdown.jsx) the website and the admin dashboard are using the same component styling, which is good. But some of the styling affects the UI of the admin dashboard. You can see that almost all the cards on the admin dashbaord becamse radiused corner which is not good. I don't know if it came from the website or somewhere but its not supposed to be like that. 
+https://github.com/obra/superpowers/tree/main/skills/brainstorming
+
+## Admin Dashboard Fixes Part 6
+
+## Tasks
+
+### Theme Removal
+
+- Remove the `System Mode` on the dashboard's theme
+
+### Points Config Bad Request Error
+
+-  GET /admin/settings 200 in 1157ms (next.js: 1113ms, application-code: 44ms)
+[browser] Failed to load points config: ApiError: BAD REQUEST
+    at <unknown> (src/services/api/client.js:211:15)
+  209 |             dispatchUnauthorized();
+  210 |         }
+> 211 |         throw new ApiError(
+      |               ^
+  212 |             serverError.code || `HTTP_${response.status}`,
+  213 |             serverError.message || response.statusText || `Request failed (${response.status})`,
+  214 |             response.status, (app/admin/settings/page.js:76:21)
+
+### Location Import Feature
+
+- Make a csv, xls, and other available file format for importing data. 
+- Make a helper icon for information on the import
+
+### Bulk Session Import Feature
+
+- Make a csv, xls, and other available file format for importing data. 
+- Make a helper icon for information on the import
+
+  
