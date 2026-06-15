@@ -13,7 +13,7 @@ Behaviour pinned by these tests:
   5. The critical-log message NEVER contains the secret VALUE — only the
      variable NAME.
   6. The required-secret set matches the Phase 4A carve-out:
-     `{SECRET_KEY, DATABASE_URL, SMTP_PASS, TWILIO_AUTH_TOKEN}`. The
+     `{SECRET_KEY, DATABASE_URL, RESEND_API_KEY, TWILIO_AUTH_TOKEN}`. The
      `qr_hmac_secret_ref` element is intentionally absent until Phase 4A
      lands.
 """
@@ -80,7 +80,7 @@ def _set_clean_production_env(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]
         'FLASK_ENV': 'production',
         'SECRET_KEY': 'a-real-32-byte-production-secret-xyz',
         'DATABASE_URL': 'postgresql://user:pw@db.internal:5432/ecopoints',
-        'SMTP_PASS': 'real-app-specific-smtp-password',
+        'RESEND_API_KEY': 're_real_production_api_key_deadbeef',
         'TWILIO_AUTH_TOKEN': 'real-twilio-auth-token-deadbeef',
     }
     for k, v in env.items():
@@ -100,7 +100,7 @@ def test_required_set_matches_phase4a_carveout():
         'DATABASE_URL',
     }
     assert set(OPTIONAL_PRODUCTION_SECRETS) == {
-        'SMTP_PASS',
+        'RESEND_API_KEY',
         'TWILIO_AUTH_TOKEN',
     }
     # qr_hmac_secret_ref MUST NOT be present yet (Phase 4A is rpi-deferred).

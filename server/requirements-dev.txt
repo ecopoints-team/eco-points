@@ -1,0 +1,15 @@
+# Development & CI dependencies.
+#
+# Installs the full runtime dependency set (via -r requirements.txt) plus the
+# test toolchain that is NOT needed in production. CI installs this file so the
+# server and tools test suites have pytest + hypothesis available.
+#
+# Install with:
+#   python -m pip install -r server/requirements-dev.txt
+#
+# Pinned to the versions the suite is validated against (see docs/phase-status.md).
+
+-r requirements.txt
+
+pytest==9.0.3
+hypothesis==6.152.7
