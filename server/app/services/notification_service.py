@@ -5,12 +5,10 @@ Handles sending email and SMS alerts based on per-organization notification sett
 import html
 import json
 import os
-import smtplib
 import base64
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 from datetime import datetime, timezone
+
+import resend
 
 from .. import db
 from ..models import NotificationSetting, NotificationLog, Organization
@@ -190,49 +188,47 @@ def _build_email_html(subject, body, org_name=None):
 # ══════════════════════════════════════════════════════════════════════════
 
 def _send_email(to_email, subject, body, org_name=None):
-    """Send a branded HTML email via SMTP with inline logo. Returns (success: bool, error: str|None)."""
-    smtp_host = os.environ.get('SMTP_HOST', '')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_user = os.environ.get('SMTP_USER', '')
-    smtp_pass = os.environ.get('SMTP_PASS', '')
-    smtp_from = os.environ.get('SMTP_FROM', smtp_user)
+    """Send a branded HTML email via the Resend API with inline logo.
 
-    if not smtp_host or not smtp_user:
-        return False, 'SMTP not configured (SMTP_HOST and SMTP_USER required)'
+    Returns (success: bool, error: str|None).
+
+    Configuration (environment):
+      RESEND_API_KEY  — required; API key from https://resend.com/api-keys
+      EMAIL_FROM      — required; verified sender, e.g. 'EcoPoints <notifications@ecopoints.org>'
+    """
+    api_key = os.environ.get('RESEND_API_KEY', '')
+    email_from = os.environ.get('EMAIL_FROM', '')
+
+    if not api_key:
+        return False, 'Resend not configured (RESEND_API_KEY required)'
+    if not email_from:
+        return False, 'Resend sender not configured (EMAIL_FROM required)'
 
     try:
+        resend.api_key = api_key
+
         html_content = _build_email_html(subject, body, org_name)
-
-        msg = MIMEMultipart('related')
-        msg['From'] = f'EcoPoints <{smtp_from}>'
-        msg['To'] = to_email
-        msg['Subject'] = f'[EcoPoints] {subject}'
-
-        msg_alt = MIMEMultipart('alternative')
-        msg.attach(msg_alt)
-
-        # Plain text fallback
         plain_text = f"{subject}\n\n{body}\n\n— EcoPoints Notification System"
-        msg_alt.attach(MIMEText(plain_text, 'plain'))
-        msg_alt.attach(MIMEText(html_content, 'html'))
 
-        # Attach logo as inline image (CID)
+        payload = {
+            'from': email_from,
+            'to': [to_email],
+            'subject': f'[EcoPoints] {subject}',
+            'html': html_content,
+            'text': plain_text,
+        }
+
+        # Attach logo as inline image referenced by cid:ecopoints_logo in the template.
         if os.path.exists(_LOGO_PATH):
             with open(_LOGO_PATH, 'rb') as f:
-                logo_data = f.read()
-            logo_img = MIMEImage(logo_data, _subtype='png')
-            logo_img.add_header('Content-ID', '<ecopoints_logo>')
-            logo_img.add_header('Content-Disposition', 'inline', filename='ecopoints-logo.png')
-            msg.attach(logo_img)
+                logo_b64 = base64.b64encode(f.read()).decode('ascii')
+            payload['attachments'] = [{
+                'filename': 'ecopoints-logo.png',
+                'content': logo_b64,
+                'content_id': 'ecopoints_logo',
+            }]
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-            server.ehlo()
-            if smtp_port != 25:
-                server.starttls()
-                server.ehlo()
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-
+        resend.Emails.send(payload)
         return True, None
     except Exception as e:
         return False, str(e)
