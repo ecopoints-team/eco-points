@@ -40,31 +40,18 @@ rewards_bp = Blueprint('rewards', __name__, url_prefix='/rewards')
 # ══════════════════════════════════════════════════════════════════════════
 
 @rewards_bp.route('', methods=['GET'])
-def get_rewards():
-    """List rewards, scoped by location if logged in.
+@token_required
+def get_rewards(current_user):
+    """List rewards, scoped by location.
 
     Returns rewards that belong to the user's organization AND any rewards
     that have been shared with the user's organization via the
     reward_organization_assignments table (Task 29 — shared merchandise).
+
+    Requires authentication: rewards are not viewable by anonymous users.
     """
-    from flask import current_app
-    import jwt
-    from ..middleware import _resolve_token
-    from ..models import User
-
-    current_user = None
-    token, _source = _resolve_token()
-    if token:
-        try:
-            payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-            user = db.session.get(User, payload['user_id'])
-            if user and user.is_active:
-                current_user = user
-        except Exception:
-            pass
-
     try:
-        loc_id = _scope_location_id(current_user) if current_user else None
+        loc_id = _scope_location_id(current_user)
         query = Reward.query
         if loc_id:
             # Include rewards owned by this org OR assigned to this org
@@ -80,9 +67,7 @@ def get_rewards():
         rewards, pagination = _paginate(query)
         return jsonify({'success': True, 'rewards': [_serialize_reward(r) for r in rewards], 'pagination': pagination}), 200
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @rewards_bp.route('', methods=['POST'])

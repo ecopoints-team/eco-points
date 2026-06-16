@@ -37,6 +37,7 @@ from app.models import (
 # Defaults must match settings_controller.get_points_config DEFAULTS
 # and the seeder BOTTLE_PRICING (Requirement 31.2).
 EXPECTED_DEFAULTS = {
+    'extraSmallWithLabel': 3, 'extraSmallNoLabel': 2,
     'smallWithLabel': 5, 'smallNoLabel': 3,
     'mediumWithLabel': 8, 'mediumNoLabel': 5,
     'largeWithLabel': 10, 'largeNoLabel': 7,

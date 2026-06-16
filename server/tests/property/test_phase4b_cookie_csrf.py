@@ -159,7 +159,7 @@ def login_user(app):
         return {'email': email, 'password': password, 'user_id': user.id}
 
 
-def test_login_sets_token_and_csrf_cookies(app, login_user):
+def test_login_sets_token_and_csrf_cookies(app, login_user, monkeypatch):
     """Property O — login flow assertion (Requirement 4B.11).
 
     A successful ``POST /api/web/auth/login`` MUST issue:
@@ -173,7 +173,15 @@ def test_login_sets_token_and_csrf_cookies(app, login_user):
         it on ``X-CSRF-Token``.
 
     Both cookies share the same Max-Age (the active session expiry).
+
+    The ``Secure`` flag is environment-controlled (``COOKIE_SECURE``) so
+    that cookies work over plain ``http://localhost`` in local dev. This
+    test pins the PRODUCTION posture: with ``COOKIE_SECURE=true`` (which
+    production MUST set), both cookies are issued ``Secure``.
     """
+    # Pin production cookie posture for this assertion.
+    monkeypatch.setenv('COOKIE_SECURE', 'true')
+
     with app.test_client() as client:
         resp = client.post(
             '/api/web/auth/login',
