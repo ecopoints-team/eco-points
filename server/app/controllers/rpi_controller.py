@@ -390,6 +390,7 @@ def get_points_config(rvm, org_id):
 
         if not config:
             config = {
+                'extraSmallWithLabel': 3, 'extraSmallNoLabel': 2,
                 'smallWithLabel': 5, 'smallNoLabel': 3,
                 'mediumWithLabel': 8, 'mediumNoLabel': 5,
                 'largeWithLabel': 10, 'largeNoLabel': 7,

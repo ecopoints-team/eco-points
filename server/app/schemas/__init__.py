@@ -238,6 +238,8 @@ class NotificationTestSchema(_StrictModel):
 class PointsConfigUpdateSchema(_StrictModel):
     """Body for ``PUT /api/web/settings/points``."""
 
+    extraSmallWithLabel: Optional[int] = None
+    extraSmallNoLabel: Optional[int] = None
     smallWithLabel: Optional[int] = None
     smallNoLabel: Optional[int] = None
     mediumWithLabel: Optional[int] = None

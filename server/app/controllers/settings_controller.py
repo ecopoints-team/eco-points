@@ -268,9 +268,9 @@ def get_points_config(current_user):
         else:
             config = None
 
-        # Defaults matching BOTTLE_PRICING
         if not config:
             config = {
+                'extraSmallWithLabel': 3, 'extraSmallNoLabel': 2,
                 'smallWithLabel': 5, 'smallNoLabel': 3,
                 'mediumWithLabel': 8, 'mediumNoLabel': 5,
                 'largeWithLabel': 10, 'largeNoLabel': 7,
@@ -299,6 +299,8 @@ def update_points_config(current_user, payload):
 
         data = payload.model_dump(exclude_unset=True)
         config = {
+            'extraSmallWithLabel': int(data.get('extraSmallWithLabel', 3)),
+            'extraSmallNoLabel': int(data.get('extraSmallNoLabel', 2)),
             'smallWithLabel': int(data.get('smallWithLabel', 5)),
             'smallNoLabel': int(data.get('smallNoLabel', 3)),
             'mediumWithLabel': int(data.get('mediumWithLabel', 8)),

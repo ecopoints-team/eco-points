@@ -75,6 +75,7 @@ function SettingsPageContent() {
         } catch (err) {
             console.error('Failed to load points config:', err);
             setPointsConfig({
+                extraSmallWithLabel: 3, extraSmallNoLabel: 2,
                 smallWithLabel: 5, smallNoLabel: 3,
                 mediumWithLabel: 8, mediumNoLabel: 5,
                 largeWithLabel: 10, largeNoLabel: 7,
@@ -361,9 +362,10 @@ function SettingsPageContent() {
                                     </div>
                                 ) : (<>
                                     {[
+                                        { size: 'Extra Small', range: '125–289ml', withKey: 'extraSmallWithLabel', noKey: 'extraSmallNoLabel' },
                                         { size: 'Small', range: '290–350ml', withKey: 'smallWithLabel', noKey: 'smallNoLabel' },
-                                        { size: 'Medium', range: '351–500ml', withKey: 'mediumWithLabel', noKey: 'mediumNoLabel' },
-                                        { size: 'Large', range: '750–1000ml', withKey: 'largeWithLabel', noKey: 'largeNoLabel' },
+                                        { size: 'Medium', range: '351–550ml', withKey: 'mediumWithLabel', noKey: 'mediumNoLabel' },
+                                        { size: 'Large', range: '551–1000ml', withKey: 'largeWithLabel', noKey: 'largeNoLabel' },
                                     ].map(item => (
                                         <div key={item.size} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                                             <div className="flex items-center justify-between">
