@@ -54,7 +54,9 @@ def get_notification_settings(current_user):
 
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            from ..services.notification_service import get_alert_types
+            alert_types = get_alert_types()
+            return jsonify({'success': True, 'settings': [], 'alertTypes': alert_types}), 200
 
         ensure_default_settings(loc_id)
 
@@ -210,7 +212,7 @@ def get_notification_logs(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            return jsonify({'success': True, 'logs': []}), 200
 
         logs = NotificationLog.query.filter_by(
             organization_id=loc_id
@@ -369,7 +371,8 @@ def get_channel_config(current_user):
         import json as _json
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            config = {'emailRecipient': '', 'smsRecipient': '', 'emailEnabled': False, 'smsEnabled': False}
+            return jsonify({'success': True, 'config': config}), 200
 
         setting = NotificationSetting.query.filter_by(
             organization_id=loc_id, alert_key='config_channels'
@@ -463,7 +466,11 @@ def get_security_config(current_user):
         import json as _json
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            config = {
+                'twoFactorRequired': False, 'twoFactorMethod': 'email',
+                'sessionTimeoutMinutes': 1440, 'maxLoginAttempts': 5, 'lockoutDurationMinutes': 15,
+            }
+            return jsonify({'success': True, 'config': config}), 200
 
         setting = NotificationSetting.query.filter_by(
             organization_id=loc_id, alert_key='config_security'
@@ -591,7 +598,7 @@ def get_login_history(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            return jsonify({'success': True, 'history': []}), 200
 
         logs = AdminLog.query.join(
             User, AdminLog.admin_user_id == User.id

@@ -182,8 +182,9 @@ def _attach_auth_cookies(response, jwt_token, expiry_hours, is_admin=False):
     """
     import os
     max_age = int(expiry_hours * 3600)
-    samesite_policy = os.environ.get('COOKIE_SAMESITE', 'None')
-    secure_flag = True  # required for SameSite=None; localhost is exempt
+    samesite_policy = os.environ.get('COOKIE_SAMESITE', 'Lax')
+    secure_env = os.environ.get('COOKIE_SECURE', 'true' if samesite_policy.lower() == 'none' else 'false')
+    secure_flag = secure_env.lower() == 'true'
 
     cookie_name = ADMIN_COOKIE_NAME if is_admin else USER_COOKIE_NAME
     response.set_cookie(
@@ -551,10 +552,12 @@ def logout(current_user, payload):
         # regular user gets fully logged out. Attributes must match the
         # original Set-Cookie (SameSite, Secure, Path) for browser removal.
         import os as _os
-        _ss = _os.environ.get('COOKIE_SAMESITE', 'None')
-        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
-        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
-        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=True)
+        _ss = _os.environ.get('COOKIE_SAMESITE', 'Lax')
+        _sec_env = _os.environ.get('COOKIE_SECURE', 'true' if _ss.lower() == 'none' else 'false')
+        _sec = _sec_env.lower() == 'true'
+        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=_sec)
         return resp, 200
     except Exception as e:
         db.session.rollback()

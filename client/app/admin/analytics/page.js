@@ -813,7 +813,7 @@ function AnalyticsPageContent() {
             >
                 {mounted ? (
                     <div className="w-full h-96">
-                        <ResponsiveContainer key={`${trendChartType}-${trendTimeRange}`} width="100%" height="100%">
+                        <ResponsiveContainer key={`${trendChartType}-${trendTimeRange}`} width="100%" height="100%" minHeight={100} minWidth={100}>
                         {trendChartType === 'line' ? (
                             <LineChart data={trendFilteredData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.3)" />
@@ -895,7 +895,7 @@ function AnalyticsPageContent() {
                 >
                     {mounted ? (
                         <div className="w-full h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                 <BarChart data={userGrowthData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                     <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -944,7 +944,7 @@ function AnalyticsPageContent() {
                 >
                     {mounted ? (
                         <div className="w-full h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                 <BarChart data={pointsEconomyData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                     <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -965,7 +965,7 @@ function AnalyticsPageContent() {
                 <SectionCard title="Peak Hours" icon={Clock}>
                 {mounted ? (
                     <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                             <BarChart data={peakHoursData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                 <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '10px' }} tick={{ fill: '#9ca3af' }} interval={2} />
@@ -985,7 +985,7 @@ function AnalyticsPageContent() {
                 <SectionCard title="Peak Days of Week" icon={Activity}>
                 {mounted ? (
                     <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                             <BarChart data={peakDaysData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                 <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -1039,7 +1039,7 @@ function AnalyticsPageContent() {
                     <div className="space-y-4">
                         {mounted ? (
                             <div className="w-full" style={{ height: Math.max(280, filteredMachineData.length * 50 + 60) }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                 <BarChart data={filteredMachineData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                     <XAxis type="number" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -1121,7 +1121,7 @@ function AnalyticsPageContent() {
                 <SectionCard title="User Types" icon={Users}>
                     {mounted ? (
                         <div className="w-full h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                 <PieChart>
                                     <Pie
                                         data={userTypePieData}
@@ -1144,7 +1144,7 @@ function AnalyticsPageContent() {
                 <SectionCard title="Bottle Conditions" icon={Recycle}>
                     {mounted ? (
                         <div className="w-full h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                 <PieChart>
                                     <Pie
                                         data={conditionPieData}
@@ -1213,7 +1213,7 @@ function AnalyticsPageContent() {
                     <div className="space-y-6">
                         {mounted ? (
                             <div className="w-full h-96">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={100}>
                                     <BarChart data={filteredLocationData} margin={{ bottom: 20 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(200,200,200,0.2)" />
                                         <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} angle={-15} textAnchor="end" />

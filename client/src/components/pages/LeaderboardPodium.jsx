@@ -1,4 +1,4 @@
-﻿// Leaderboard Page
+// Leaderboard Page
 // LeaderboardPodium Component — Redesigned
 
 "use client";
@@ -18,7 +18,7 @@ import {
   X,
   Search,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 
 // ─────────────────────────────────────────────

@@ -460,7 +460,7 @@ export default function AdminDashboard() {
                     <SkeletonChart height="h-80" />
                 ) : mounted ? (
                     <div className="w-full h-80 transition-all duration-300">
-                        <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%">
+                        <ResponsiveContainer key={`${chartType}-${timeRange}`} width="100%" height="100%" minHeight={100} minWidth={100}>
                         {chartType === 'line' ? (
                             <LineChart data={currentData.labels.map((label, i) => ({
                                 name: label,
