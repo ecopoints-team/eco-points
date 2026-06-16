@@ -231,7 +231,11 @@ class User(db.Model):
         return ' '.join(parts)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        # Pin the algorithm explicitly so stored hashes are reproducible
+        # across Werkzeug/Python versions. scrypt is the current Werkzeug
+        # default, so this is a no-op for existing hashes (no migration
+        # needed) — it only guards against a future default change.
+        self.password_hash = generate_password_hash(password, method='scrypt')
 
     def check_password(self, password):
         if not self.password_hash:
