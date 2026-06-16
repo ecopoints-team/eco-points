@@ -13,6 +13,8 @@ erDiagram
     ORGANIZATIONS ||--o{ NOTIFICATION_SETTINGS : "configures alerts"
     ORGANIZATIONS ||--o{ NOTIFICATION_LOGS : "receives alerts"
     REWARD_CATEGORIES ||--o{ REWARDS : "classifies"
+    REWARDS ||--o{ REWARD_ORGANIZATION_ASSIGNMENTS : "shared with"
+    ORGANIZATIONS ||--o{ REWARD_ORGANIZATION_ASSIGNMENTS : "receives shared rewards"
     COMMUNITY_GROUPS ||--o{ USERS : "has members"
     USERS ||--|| WALLET: "owns"
     USERS ||--|| USER_SECURITY : "secures account"
@@ -116,6 +118,13 @@ erDiagram
         string image_url "Nullable - Variant-specific product image"
         boolean is_active
         datetime created_at
+    }
+
+    REWARD_ORGANIZATION_ASSIGNMENTS { "Newly by Tatin"
+        int id PK
+        int reward_id FK "Reference -> REWARDS (owner org's reward)"
+        int organization_id FK "Reference -> ORGANIZATIONS (org receiving access)"
+        datetime assigned_at "When superadmin shared this reward"
     }
    
     RVMS {

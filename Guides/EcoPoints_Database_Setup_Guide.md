@@ -48,7 +48,7 @@ The file contains these required variables:
 |----------|-------------|
 | `DATABASE_URL` | Supabase PostgreSQL connection string |
 | `SECRET_KEY` | Flask JWT signing key (same for all teammates) |
-| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Email notification config |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Email notification config (Resend API) |
 | `TWILIO_*` | SMS notification config (optional) |
 
 > 💡 **Reference:** See `.env.example` at the project root for the full list of variables and their format.

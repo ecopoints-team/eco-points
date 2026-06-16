@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -136,7 +136,7 @@ function HomeContent() {
               <Link
                 href="/rewards"
                 id="home-rewards-btn"
-                className="flex items-center gap-2 px-4 py-2 bg-[#66C68E]/20 text-white font-bold rounded-lg shadow hover:bg-[#66C68E]/40 hover:scale-[1.02] transition-all duration-200 border border-[#66C68E]/30 text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-[#66C68E]/20 text-white font-bold web-web-rounded-lg shadow hover:bg-[#66C68E]/40 hover:scale-[1.02] transition-all duration-200 border border-[#66C68E]/30 text-sm"
               >
                 <Gift size={15} className="text-[#66C68E]" />
                 Rewards
@@ -144,7 +144,7 @@ function HomeContent() {
               <Link
                 href="/profile"
                 id="home-profile-btn"
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white font-bold rounded-lg shadow hover:bg-white/20 hover:scale-[1.02] transition-all duration-200 border border-white/20 backdrop-blur-sm text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white font-bold web-web-rounded-lg shadow hover:bg-white/20 hover:scale-[1.02] transition-all duration-200 border border-white/20 backdrop-blur-sm text-sm"
               >
                 <User size={15} className="text-white/70" />
                 Profile
@@ -152,7 +152,7 @@ function HomeContent() {
               <Link
                 href="/leaderboard"
                 id="home-leaderboard-btn"
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-white font-bold rounded-lg shadow hover:bg-amber-500/40 hover:scale-[1.02] transition-all duration-200 border border-amber-500/30 text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-white font-bold web-web-rounded-lg shadow hover:bg-amber-500/40 hover:scale-[1.02] transition-all duration-200 border border-amber-500/30 text-sm"
               >
                 <Trophy size={15} className="text-amber-400" />
                 Leaderboard

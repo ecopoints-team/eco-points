@@ -154,50 +154,40 @@ def _log_attempt(identifier, ip, user_id=None, success=False, reason=None):
 # ── Phase 4B: Cookie + CSRF transport ─────────────────────────────────────
 #
 # Requirement 4B.11 / Task 11.1: on successful login the Server attaches the
-# JWT in an HttpOnly + Secure + SameSite=Strict cookie named ``token`` and
-# additionally issues a (non-HttpOnly) ``csrf_token`` cookie carrying a
-# ``secrets.token_urlsafe(32)`` value. The Client reads the CSRF cookie via
-# ``document.cookie`` and echoes it on the ``X-CSRF-Token`` header for every
-# state-changing request (Phase 4B.13). The legacy ``token`` field stays in
-# the JSON body during the transition window — Phase 4B.16 removes the
-# Client's reliance on it once ``AUTH_COOKIE_ONLY`` flips to ``true``.
+# JWT in an HttpOnly + Secure + SameSite cookie and additionally issues a
+# (non-HttpOnly) ``csrf_token`` cookie carrying a random value.
+#
+# Session separation (Task 28): admin logins set ``admin_token``, regular
+# user logins set ``token``. The middleware reads the appropriate cookie
+# based on the route context. This prevents admin sessions from leaking
+# into the public website and vice-versa.
 
-def _attach_auth_cookies(response, jwt_token, expiry_hours):
-    """Attach the Phase 4B authentication cookies to ``response``.
+# Cookie names — canonical source is middleware.py (avoids circular import).
+from ..middleware import ADMIN_COOKIE_NAME, USER_COOKIE_NAME
+
+
+def _attach_auth_cookies(response, jwt_token, expiry_hours, is_admin=False):
+    """Attach authentication cookies to ``response``.
 
     Sets two cookies:
-      * ``token``      — the issued JWT, HttpOnly + Secure + SameSite=Strict.
+      * ``admin_token`` or ``token`` — the issued JWT, HttpOnly + Secure.
+        Admin roles get ``admin_token``; regular users get ``token``.
+        This separation ensures admin sessions are invisible on the public
+        website and regular-user cookies cannot be used on admin routes.
       * ``csrf_token`` — a 32-byte URL-safe random token, *not* HttpOnly so
         the Client can read it via ``document.cookie`` and echo it back on
         the ``X-CSRF-Token`` header (Phase 4B.13).
 
-    Both cookies share the same ``Max-Age`` (derived from the active session
-    expiry in hours) and ``Path=/`` so they apply to every API path under
-    the same origin.
-
-    The ``Secure`` flag is set only in production (``FLASK_ENV=production``).
-    In development, ``Secure=False`` so that cookies are transmitted over
-    plain HTTP (localhost). This matches browser behavior (which exempts
-    localhost from Secure requirements) and enables the stdlib-based smoke
-    test (``urllib``'s CookieJar strictly refuses to send Secure cookies
-    over HTTP).
+    Both cookies share the same ``Max-Age`` and ``Path=/``.
     """
     import os
-    is_production = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
     max_age = int(expiry_hours * 3600)
-    # SameSite policy: when the Client (e.g. ecopoints.org on Cloudflare
-    # Pages) and the Server (e.g. onrender.com) are on DIFFERENT registrable
-    # domains, cookies MUST use SameSite=None so the browser stores and
-    # sends them cross-site.  SameSite=Strict only works when both share
-    # the exact same domain (e.g. api.ecopoints.org + www.ecopoints.org).
-    #
-    # Default: 'None' for both dev and prod (safe — Secure=True is set).
-    # Override via COOKIE_SAMESITE env var if the deployment moves to a
-    # same-site setup (e.g. custom domain on the API).
     samesite_policy = os.environ.get('COOKIE_SAMESITE', 'None')
     secure_flag = True  # required for SameSite=None; localhost is exempt
+
+    cookie_name = ADMIN_COOKIE_NAME if is_admin else USER_COOKIE_NAME
     response.set_cookie(
-        'token',
+        cookie_name,
         jwt_token,
         max_age=max_age,
         path='/',
@@ -436,7 +426,7 @@ def login(payload):
         response = make_response(jsonify({
             'success': True, 'token': token, 'user': _serialize_auth_user(user)
         }), 200)
-        return _attach_auth_cookies(response, token, session_hours)
+        return _attach_auth_cookies(response, token, session_hours, is_admin=user.is_admin)
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -504,7 +494,7 @@ def verify_otp_route(payload):
         response = make_response(jsonify({
             'success': True, 'token': token, 'user': _serialize_auth_user(user)
         }), 200)
-        return _attach_auth_cookies(response, token, session_hours)
+        return _attach_auth_cookies(response, token, session_hours, is_admin=user.is_admin)
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
@@ -526,8 +516,8 @@ def get_current_user(current_user):
 def logout(current_user, payload):
     """Log the logout action, blacklist the JWT token, and clear auth cookies."""
     try:
-        # Read token from cookie first, then Bearer header as fallback
-        token = request.cookies.get('token')
+        # Read token from admin_token or token cookie, then Bearer header
+        token = request.cookies.get(ADMIN_COOKIE_NAME) or request.cookies.get(USER_COOKIE_NAME)
         if not token:
             auth_header = request.headers.get('Authorization', '')
             if auth_header.startswith('Bearer '):
@@ -557,11 +547,13 @@ def logout(current_user, payload):
         db.session.commit()
 
         resp = jsonify({'success': True, 'message': 'Logged out successfully'})
-        # Clear auth cookies — attributes must match the original Set-Cookie
-        # (SameSite, Secure, Path) for the browser to remove them.
+        # Clear BOTH auth cookies so a user who logged in as both admin and
+        # regular user gets fully logged out. Attributes must match the
+        # original Set-Cookie (SameSite, Secure, Path) for browser removal.
         import os as _os
         _ss = _os.environ.get('COOKIE_SAMESITE', 'None')
-        resp.set_cookie('token', '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
+        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
+        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
         resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=True)
         return resp, 200
     except Exception as e:
@@ -627,6 +619,7 @@ def update_profile(current_user, payload):
 
 
 @auth_bp.route('/change-password', methods=['POST'])
+@limiter.limit("5 per minute")
 @token_required
 @validate_request(ChangePasswordSchema)
 def change_password(current_user, payload):

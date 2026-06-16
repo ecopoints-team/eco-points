@@ -13,11 +13,14 @@ from datetime import datetime, timezone
 import secrets
 from flask import Blueprint, request, jsonify
 
+from sqlalchemy import or_
+
 from ..models import (
     Reward, RewardVariant, RewardRedemption, Transaction, NotificationSetting,
+    RewardOrgAssignment, Organization,
 )
-from ..middleware import token_required, permission_required, get_user_org_id, validate_request
-from ..schemas import RewardCreateSchema, RewardUpdateSchema, RewardRedeemSchema
+from ..middleware import token_required, permission_required, superadmin_required, get_user_org_id, validate_request
+from ..schemas import RewardCreateSchema, RewardUpdateSchema, RewardRedeemSchema, RewardAssignSchema
 from ..services.notification_service import trigger_alert
 from .. import db
 from ._shared import (
@@ -39,12 +42,25 @@ rewards_bp = Blueprint('rewards', __name__, url_prefix='/rewards')
 @rewards_bp.route('', methods=['GET'])
 @token_required
 def get_rewards(current_user):
-    """List rewards, scoped by location."""
+    """List rewards, scoped by location.
+
+    Returns rewards that belong to the user's organization AND any rewards
+    that have been shared with the user's organization via the
+    reward_organization_assignments table (Task 29 — shared merchandise).
+    """
     try:
         loc_id = _scope_location_id(current_user)
         query = Reward.query
         if loc_id:
-            query = query.filter_by(organization_id=loc_id)
+            # Include rewards owned by this org OR assigned to this org
+            assigned_ids = db.session.query(RewardOrgAssignment.reward_id)\
+                .filter_by(organization_id=loc_id).subquery()
+            query = query.filter(
+                or_(
+                    Reward.organization_id == loc_id,
+                    Reward.id.in_(assigned_ids),
+                )
+            )
         query = query.order_by(Reward.id.asc())
         rewards, pagination = _paginate(query)
         return jsonify({'success': True, 'rewards': [_serialize_reward(r) for r in rewards], 'pagination': pagination}), 200
@@ -273,6 +289,111 @@ def get_my_redemptions(current_user):
         return jsonify({
             'success': True, 
             'redemptions': [_serialize_reward_log(r) for r in redemptions]
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# REWARD ORGANIZATION ASSIGNMENT (Task 29 — shared merchandise)
+# ══════════════════════════════════════════════════════════════════════════
+
+@rewards_bp.route('/<int:reward_id>/assign', methods=['POST'])
+@token_required
+@superadmin_required
+@validate_request(RewardAssignSchema)
+def assign_reward(current_user, reward_id, payload):
+    """Assign a reward to additional organizations (superadmin only).
+
+    Body: { "organizationIds": [1, 2, 3] }
+    """
+    try:
+        reward = db.session.get(Reward, reward_id)
+        if not reward:
+            return jsonify({'success': False, 'error': 'Reward not found'}), 404
+
+        added = []
+        for org_id in payload.organizationIds:
+            # Don't assign to the owning org (redundant)
+            if org_id == reward.organization_id:
+                continue
+            # Check org exists
+            if not db.session.get(Organization, org_id):
+                continue
+            # Skip duplicates
+            existing = RewardOrgAssignment.query.filter_by(
+                reward_id=reward_id, organization_id=org_id
+            ).first()
+            if existing:
+                continue
+            assignment = RewardOrgAssignment(
+                reward_id=reward_id,
+                organization_id=org_id,
+            )
+            db.session.add(assignment)
+            added.append(org_id)
+
+        _log_action(current_user, 'Reward Assigned',
+                    f'{reward.name} → orgs {added}', 'Rewards')
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Reward assigned to {len(added)} organization(s)',
+            'assignedOrganizationIds': added,
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@rewards_bp.route('/<int:reward_id>/assign/<int:org_id>', methods=['DELETE'])
+@token_required
+@superadmin_required
+def unassign_reward(current_user, reward_id, org_id):
+    """Remove an organization assignment from a reward (superadmin only)."""
+    try:
+        assignment = RewardOrgAssignment.query.filter_by(
+            reward_id=reward_id, organization_id=org_id
+        ).first()
+        if not assignment:
+            return jsonify({'success': False, 'error': 'Assignment not found'}), 404
+
+        reward = db.session.get(Reward, reward_id)
+        db.session.delete(assignment)
+        _log_action(current_user, 'Reward Unassigned',
+                    f'{reward.name if reward else reward_id} ← org {org_id}',
+                    'Rewards')
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Assignment removed'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@rewards_bp.route('/<int:reward_id>/assignments', methods=['GET'])
+@token_required
+@superadmin_required
+def get_reward_assignments(current_user, reward_id):
+    """List all organizations a reward is assigned to (superadmin only)."""
+    try:
+        reward = db.session.get(Reward, reward_id)
+        if not reward:
+            return jsonify({'success': False, 'error': 'Reward not found'}), 404
+
+        assignments = RewardOrgAssignment.query.filter_by(reward_id=reward_id).all()
+        orgs = []
+        for a in assignments:
+            org = db.session.get(Organization, a.organization_id)
+            if org:
+                orgs.append({'id': org.id, 'name': org.name, 'assignedAt': a.assigned_at.isoformat()})
+
+        return jsonify({
+            'success': True,
+            'rewardId': reward_id,
+            'ownerOrganizationId': reward.organization_id,
+            'assignedOrganizations': orgs,
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../../../src/context/AuthContext';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { SkeletonCard, SkeletonChart } from '../../../src/components/admin/SkeletonLoaders';
 import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import SlotCounter from '../../../src/components/shared/SlotCounter';
@@ -625,11 +626,29 @@ function AnalyticsPageContent() {
     // ─── Loading / Error states ──────────────────────────────────────
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
-                    <p className="text-slate-500 dark:text-slate-400 system:text-[#E1E4E1]/60 text-sm font-medium">Loading analytics...</p>
+            <div className="space-y-8">
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between">
+                    <div className="animate-pulse">
+                        <div className="h-8 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+                        <div className="h-4 w-64 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="h-10 w-28 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
+                        <div className="h-10 w-36 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
+                    </div>
                 </div>
+                {/* Stat cards skeleton */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+                {/* Chart skeletons */}
+                <SkeletonChart height="h-96" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <SkeletonChart />
+                    <SkeletonChart />
+                </div>
+                <SkeletonChart />
             </div>
         );
     }
@@ -666,8 +685,8 @@ function AnalyticsPageContent() {
                 <div className="flex items-center gap-2">
                     {/* Refresh Button */}
                     <button
-                        onClick={() => fetchAnalytics(false)}
-                        disabled={refreshing}
+                        onClick={() => fetchAnalytics(true)}
+                        disabled={loading || refreshing}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
                             bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200
                             dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:border-slate-700
@@ -675,8 +694,8 @@ function AnalyticsPageContent() {
                             disabled:opacity-50"
                         title="Refresh data"
                     >
-                        <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                        <RefreshCw size={15} className={loading || refreshing ? 'animate-spin' : ''} />
+                        <span className="hidden sm:inline">{loading || refreshing ? 'Refreshing...' : 'Refresh'}</span>
                     </button>
 
                     {/* Export Button */}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useDebounce } from "../../utils/useDebounce";
@@ -32,7 +32,7 @@ function RewardsHeader() {
         <div className="flex-1">
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
+            className="group inline-flex items-center gap-2 px-3 py-1.5 web-web-rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
           >
             <ArrowLeft size={18} className="transition-transform duration-300 group-hover:-translate-x-1" />
             <span className="text-xs font-bold tracking-widest uppercase hidden sm:inline" style={{ fontFamily: "'Quicksand', sans-serif" }}>
@@ -402,7 +402,7 @@ export default function Rewards() {
                   <div className="text-center md:text-left">
                     {isAuthLoading ? (
                       <>
-                        <div className="h-8 w-48 bg-slate-200 animate-pulse rounded-lg mb-2" />
+                        <div className="h-8 w-48 bg-slate-200 animate-pulse web-web-rounded-lg mb-2" />
                         <div className="h-4 w-32 bg-slate-100 animate-pulse rounded-md" />
                       </>
                     ) : (
@@ -442,7 +442,7 @@ export default function Rewards() {
                       </p>
                       <div className="flex items-baseline gap-2">
                         {isAuthLoading ? (
-                          <div className="h-12 w-24 bg-slate-200 animate-pulse rounded-xl" />
+                          <div className="h-12 w-24 bg-slate-200 animate-pulse web-web-rounded-xl" />
                         ) : (
                           <>
                             <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
@@ -470,7 +470,7 @@ export default function Rewards() {
                       </p>
                       <div className="flex items-baseline gap-2">
                         {isAuthLoading ? (
-                          <div className="h-10 w-20 bg-amber-200/50 animate-pulse rounded-xl" />
+                          <div className="h-10 w-20 bg-amber-200/50 animate-pulse web-web-rounded-xl" />
                         ) : (
                           <>
                             <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
@@ -486,7 +486,7 @@ export default function Rewards() {
                         {isLoggedIn ? (
                           <Link 
                             href="/redeem-history"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:from-amber-600 hover:to-orange-600 transition-all duration-300 group shadow-md shadow-orange-500/10 hover:shadow-lg hover:-translate-y-0.5"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white web-web-rounded-xl text-xs font-black uppercase tracking-wider hover:from-amber-600 hover:to-orange-600 transition-all duration-300 group shadow-md shadow-orange-500/10 hover:shadow-lg hover:-translate-y-0.5"
                             style={{ fontFamily: "'Quicksand', sans-serif" }}
                           >
                             <Ticket size={14} className="text-amber-100 transition-transform duration-300 group-hover:scale-110" />
@@ -710,10 +710,10 @@ export default function Rewards() {
               <div key={i} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 h-[420px] animate-pulse border border-white">
                 <div className="flex justify-between mb-4">
                   <div className="h-6 w-20 bg-slate-200 rounded-full" />
-                  <div className="h-8 w-16 bg-slate-200 rounded-xl" />
+                  <div className="h-8 w-16 bg-slate-200 web-web-rounded-xl" />
                 </div>
                 <div className="w-full h-44 bg-slate-100 rounded-[1.5rem] mb-6" />
-                <div className="h-8 w-3/4 bg-slate-200 rounded-lg mb-4" />
+                <div className="h-8 w-3/4 bg-slate-200 web-web-rounded-lg mb-4" />
                 <div className="h-4 w-full bg-slate-100 rounded-md mb-2" />
                 <div className="h-4 w-2/3 bg-slate-100 rounded-md" />
               </div>
@@ -851,7 +851,7 @@ export default function Rewards() {
                       <button
                         onClick={(e) => !isOutOfStock && handleDirectRedeem(product, e)}
                         disabled={isOutOfStock}
-                        className={`w-full py-3.5 rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${isShaking
+                        className={`w-full py-3.5 web-web-rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${isShaking
                           ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
                           : isOutOfStock
                             ? "bg-slate-50 text-slate-400 border-2 border-slate-100 cursor-not-allowed"
@@ -1085,7 +1085,7 @@ export default function Rewards() {
                 <button
                   onClick={handleDetailedRedeem}
                   disabled={detailedProduct.stockQuantity <= 0}
-                  className={`w-full py-4 rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${insufficientAnimId ===
+                  className={`w-full py-4 web-web-rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${insufficientAnimId ===
                     "detailed-" + detailedProduct.id
                     ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
                     : detailedProduct.stockQuantity <= 0
@@ -1167,7 +1167,7 @@ export default function Rewards() {
                 <input
                   type="text"
                   placeholder="e.g. 2020-12345-MN-0"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
+                  className="w-full bg-slate-50 border border-slate-200 web-web-rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
                   required
                 />
               </div>
@@ -1178,13 +1178,13 @@ export default function Rewards() {
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
+                  className="w-full bg-slate-50 border border-slate-200 web-web-rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#10b981] to-[#34d399] text-white font-bold font-body text-lg py-4 rounded-xl shadow-[0_10px_20px_rgba(16,185,129,0.3)] hover:-translate-y-1 transition-transform"
+                className="w-full bg-gradient-to-r from-[#10b981] to-[#34d399] text-white font-bold font-body text-lg py-4 web-web-rounded-xl shadow-[0_10px_20px_rgba(16,185,129,0.3)] hover:-translate-y-1 transition-transform"
               >
                 Sign In to Continue
               </button>
@@ -1218,7 +1218,7 @@ export default function Rewards() {
 
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="w-full bg-slate-900 text-white font-bold font-body py-4 rounded-xl hover:bg-slate-800 transition-colors relative z-10 shadow-lg"
+              className="w-full bg-slate-900 text-white font-bold font-body py-4 web-web-rounded-xl hover:bg-slate-800 transition-colors relative z-10 shadow-lg"
             >
               Got it, thanks!
             </button>

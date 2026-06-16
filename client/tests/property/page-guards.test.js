@@ -78,16 +78,16 @@ const ROLE_PERMISSIONS = {
     superadmin: new Set([
         'users', 'machines', 'rewards', 'locations', 'logs',
         'analytics', 'settings', 'groups', 'sessions',
-        'leaderboard', 'dashboard',
+        'dashboard',
     ]),
     head_admin: new Set([
         'users', 'machines', 'rewards', 'locations', 'logs',
         'analytics', 'settings', 'groups', 'sessions',
-        'leaderboard', 'dashboard',
+        'dashboard',
     ]),
     auditor: new Set([
         'logs', 'analytics', 'sessions', 'settings',
-        'leaderboard', 'dashboard',
+        'dashboard',
     ]),
     technician: new Set([
         'machines', 'logs', 'settings', 'dashboard',
@@ -104,7 +104,6 @@ const ALL_ROLES = [...ADMIN_ROLE_SET, ...NON_ADMIN_ROLES];
 const PAGES = [
     { page: 'analytics',         category: 'analytics' },
     { page: 'bulk-sessions',     category: 'sessions' },
-    { page: 'leaderboards',      category: 'leaderboard' },
     { page: 'locations',         category: 'locations' },
     { page: 'logs/access',       category: 'logs' },
     { page: 'logs/bottles',      category: 'logs' },

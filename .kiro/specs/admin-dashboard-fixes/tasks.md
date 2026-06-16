@@ -185,4 +185,120 @@
   - [x] 22.5 Backend: add CG sync + contact sync to PUT handler
   - [x] 22.6 Schema: add `CommunityGroupUpdateInlineSchema` + contact fields to `LocationUpdateSchema`
 
-  
+---
+
+## Part 5 Tasks
+
+- [x] 23. Dashboard Overview UX
+  - [x] 23.1 Move refresh button from Recycling Analytics section to page-level header
+  - [x] 23.2 Add `SkeletonChart` loading state to Recycling Analytics section
+  - [x] 23.3 Add `SkeletonTableRow` loading state to Real-Time Bottle Logs table (`<SkeletonTable rows={5} columns={9} />` at L681)
+
+- [x] 24. Leaderboards Admin Menu — Complete Removal
+  - [x] 24.1 Delete `admin/leaderboards/page.js`
+  - [x] 24.2 Remove nav item from `Sidebar.jsx` (L245-248)
+  - [x] 24.3 Remove breadcrumb from `AdminLayout.jsx` (L160)
+  - [x] 24.4 Remove `leaderboard_bp` registration from `__init__.py` (L263, L272)
+  - [x] 24.5 Keep public leaderboard files intact (api service, components, backend controller)
+
+- [x] 25. Analytics Refresh Behavior
+  - [x] 25.1 Change refresh button to call `fetchAnalytics(true)` to trigger full skeleton loading
+
+- [x] 26. Connection Pool Hardening
+  - [x] 26.1 Add `pool_recycle: 300` to `SQLALCHEMY_ENGINE_OPTIONS` in `__init__.py`
+
+### Already Complete (verified — no changes needed)
+- ✅ Locations page — skeleton at L873 (SkeletonMachineCard grid)
+- ✅ Machines page — fixed in Part 4 session (outer gate issue)
+- ✅ Users page — skeleton stat cards L439-441 + table rows L534-535
+- ✅ Rewards page — skeleton table rows L670-671
+- ✅ Bulk Sessions page — skeleton table rows L305
+- ✅ All System Logs pages — skeleton table rows (bottles, access, machines, rewards, transactions)
+- ✅ Claims Scanner — no data fetch on mount, no skeleton needed; terminal error is PgBouncer idle timeout
+
+---
+
+## Admin Functionality Fixes Part 1
+
+- [x] 27. Multi-Tenant Isolation Verification
+  - [x] 27.1 Spot-check 3 controllers (dashboard, rewards, users) as head_admin of Org A — confirm no Org B data leaks
+  - [x] 27.2 Document verification results (all 12 controllers already use `_scope_location_id`)
+
+- [x] 28. Admin/User Session Separation — Dual-Cookie
+  - [x] 28.1 Backend: update `_attach_auth_cookies()` to set `admin_token` for admin roles, `token` for regular users
+  - [x] 28.2 Backend: update `login()` and `verify_otp_route()` to pass `user.is_admin` to cookie helper
+  - [x] 28.3 Backend: update `logout()` to clear both `admin_token` and `token` cookies
+  - [x] 28.4 Backend: add `_resolve_token()` helper in `middleware.py` — reads `admin_token` → `token` → Bearer
+  - [x] 28.5 Backend: update `token_required()` to use `_resolve_token()`
+  - [x] 28.6 Backend: enforce token source in `@admin_required` / `@permission_required` — reject `token` cookie on admin routes
+  - [x] 28.7 Frontend: AuthContext.js — add ADMIN_ROLES guard in enrichUser(); admin cookies return null so public NavBar shows Login
+  - [ ] 28.8 Test: admin login sets `admin_token`, public site shows "Login" button
+  - [ ] 28.9 Test: regular user login sets `token`, `/admin` still rejected
+
+- [x] 29. Rewards — Multi-Tenant + Shared Merchandise
+  - [x] 29.1 Add `RewardOrgAssignment` junction table model in `models.py`
+  - [x] 29.2 Migration auto-runs via SQLAlchemy `create_all` on next server start
+  - [x] 29.3 Update `GET /rewards` query — return org-specific + assigned rewards via `OR` clause
+  - [x] 29.4 Add `POST /rewards/:id/assign` endpoint (superadmin only) — assign reward to multiple orgs
+  - [x] 29.5 Add `DELETE /rewards/:id/assign/:org_id` endpoint (superadmin only) — remove assignment
+  - [x] 29.6 Add `GET /rewards/:id/assignments` endpoint (superadmin only) — list current assignments
+  - [x] 29.6 Add `RewardAssignSchema` in `schemas/__init__.py`
+  - [x] 29.7 Update `_serialize_reward()` — include `assignedOrganizations` field
+  - [x] 29.8 Frontend: add `assign()` / `unassign()` / `getAssignments()` to `rewards.js` API service
+  - [x] 29.9 Frontend: add "Assign to Locations" (Share2 icon) on rewards page (superadmin only) + modal with org checklist
+  - [ ] 29.10 Test: superadmin assigns reward from Org A to Org B → Org B user sees it
+  - [ ] 29.11 Test: Org C user does NOT see Org A/B shared reward
+
+---
+
+## Part 6 Tasks
+
+    - [x] 30. Phase 30 — Remove "System Mode" Theme
+      - [x] 30.1 `ThemeContext.js` — remove `system` from `THEMES`, allowed-values arrays, and `isSystemMode`
+      - [x] 30.2 `ThemeContext.js` — update `cycleTheme` order to light → neutral → dark → light
+      - [x] 30.3 `ThemeContext.js` — on init, map stored `'system'` value to default `'dark'`
+      - [x] 30.4 `AdminLayout.jsx` — remove System Mode (Leaf icon) toggle button
+      - [x] 30.5 `AdminLayout.jsx` — remove `theme === 'system'` branches; fix `themeClass`
+      - [x] 30.6 `Sidebar.jsx` — remove all `theme === 'system'` styling branches
+      - [x] 30.7 `tailwind.config.js` — remove unused `system:` variant (only if no remaining refs)
+      - [x] 30.8 Verify light/neutral/dark render correctly; no console errors
+
+- [x] 31. Phase 31 — Points Config "BAD REQUEST" Fix
+  - [x] 31.1 `settings_controller.py` `get_points_config` — return 200 + defaults when no location scope (remove 400 guard)
+  - [x] 31.2 Verify `PUT /settings/points` still requires location scope (unchanged)
+  - [x] 31.3 `settings/page.js` — confirm console error gone (no code change expected)
+  - [x] 31.4 `bulk-sessions/page.js` — simplify points-config fallback comment (optional)
+  - [x] 31.5 Backend smoke/property test: GET points with no-scope context returns 200 defaults
+
+- [x] 32. Phase 32 — Location Import Feature
+  - [x] 32.1 Add `xlsx` (SheetJS) to `client/package.json`
+  - [x] 32.2 Create shared `client/src/lib/importFile.js` with `parseSpreadsheet(file)`
+  - [x] 32.3 `locations/page.js` — add Import control (button + file input, `.csv,.xls,.xlsx`)
+  - [x] 32.4 `locations/page.js` — map rows to ERD Location payload (Phase 4 mapping)
+  - [x] 32.5 `locations/page.js` — validate rows with shared `validateField`; row-level error summary
+  - [x] 32.6 `locations/page.js` — submit valid rows; refresh list on success
+  - [x] 32.7 `locations/page.js` — add `Info` helper icon describing required columns/format
+  - [x] 32.8 `locations/page.js` — user-visible error feedback for malformed file/rows
+
+- [x] 33. Phase 33 — Bulk Session Import Feature
+  - [x] 33.1 `bulk-sessions/page.js` — replace CSV placeholder with Import control (`.csv,.xls,.xlsx`)
+  - [x] 33.2 `bulk-sessions/page.js` — map rows to items (`itemType`, `condition`, `volumeMl`)
+  - [x] 33.3 `bulk-sessions/page.js` — auto-calc `pointsAwarded` via `getAutoPoints()`
+  - [x] 33.4 `bulk-sessions/page.js` — append imported items; report skipped invalid rows
+  - [x] 33.5 `bulk-sessions/page.js` — add `Info` helper icon describing accepted values
+  - [x] 33.6 `bulk-sessions/page.js` — user-visible error feedback for malformed file/rows
+  - [x] 33.7 Reuse shared `importFile.js` parser (no duplicate parsing logic)
+
+- [x] 34. Part 6 Verification
+  - [x] 34.1 Client build passes
+  - [x] 34.2 Backend tests pass (points config no-scope case)
+  - [x] 34.3 Manual walkthrough: theme switcher (3 themes), settings load (no error), location import, bulk session import
+
+---
+
+## Website Polishing Part 1
+
+- [x] 35. Sign Up Modal — Field Alignment & Styling Fix
+  - [x] 35.1 `LogIn.jsx` Phase 1 — replace single `fullName` field with `firstName / middleName / lastName` (3-column grid, matching `AddRegularUserModal`)
+  - [x] 35.2 `LogIn.jsx` — update all state, reset, save/restore, and payload references from `fullName` → `firstName/middleName/lastName`
+  - [x] 35.3 `LogIn.jsx` `InputField` component — fix `web-web-rounded-lg` typo → `rounded-lg` to restore border radius on all signup inputs

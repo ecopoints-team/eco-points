@@ -40,7 +40,7 @@ CRITICAL_PRODUCTION_SECRETS = (
 
 # Secrets for optional services — app starts but features degrade gracefully.
 OPTIONAL_PRODUCTION_SECRETS = (
-    'SMTP_PASS',          # SMTP password used by notification_service._send_email
+    'RESEND_API_KEY',     # Resend API key used by notification_service._send_email
     'TWILIO_AUTH_TOKEN',  # SMS provider key used by notification_service._send_sms
 )
 
@@ -62,9 +62,9 @@ KNOWN_DEV_DEFAULTS = {
         'sqlite:///:memory:',
         'changeme',
     }),
-    'SMTP_PASS': frozenset({
-        'your-smtp-password',
-        'your-app-password',
+    'RESEND_API_KEY': frozenset({
+        # Matches the placeholder in `server/.env`.
+        'your-resend-api-key',
         'changeme',
     }),
     'TWILIO_AUTH_TOKEN': frozenset({
@@ -137,7 +137,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Supabase (PgBouncer) drops idle connections. pool_pre_ping checks each
     # connection before use so stale connections are transparently recycled.
-    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
+    # pool_recycle forces connections to be replaced after 5 minutes, preventing
+    # "connection already closed" errors on long-idle Supabase pooler sessions.
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True, 'pool_recycle': 300}
 
 
 def create_app():
@@ -209,6 +211,19 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # Rate-limit storage: use Redis when available so limits are GLOBAL across
+    # all gunicorn workers (memory:// gives each worker its own counter, making
+    # the effective limit N×higher). Falls back to in-memory if Redis is down so
+    # a cache outage never rejects legitimate requests.
+    _redis_url = os.environ.get('REDIS_URL')
+    if _redis_url:
+        app.config['RATELIMIT_STORAGE_URI'] = _redis_url
+        app.config['RATELIMIT_STORAGE_OPTIONS'] = {'socket_connect_timeout': 3}
+        app.config['RATELIMIT_IN_MEMORY_FALLBACK_ENABLED'] = True
+        print('[RATELIMIT] Using Redis storage (global across workers)')
+    else:
+        print('[RATELIMIT] REDIS_URL not set — using in-memory storage (per-worker)')
     limiter.init_app(app)
 
     # Initialize Redis cache (non-fatal — app degrades gracefully if unavailable)
@@ -220,27 +235,33 @@ def create_app():
         from . import routes, models  # noqa: F401
 
         # Ensure qr_token column exists in database (Auto-Migration)
+        # Uses a lightweight catalog query instead of SQLAlchemy inspector
+        # so startup doesn't block on slow/cold Supabase pooler connections.
         try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            if 'users' in inspector.get_table_names():
-                columns = [col['name'] for col in inspector.get_columns('users')]
-                if 'qr_token' not in columns:
-                    app.logger.info("Adding 'qr_token' column to 'users' table...")
-                    db.session.execute(db.text("ALTER TABLE users ADD COLUMN qr_token VARCHAR(100) UNIQUE"))
-                    db.session.commit()
-                    app.logger.info("'qr_token' column added successfully.")
+            result = db.session.execute(db.text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='users' AND column_name='qr_token' LIMIT 1"
+            )).fetchone()
 
-                # Backfill existing users without qr_token
-                from .models import User
-                import secrets
-                users_to_backfill = User.query.filter(User.qr_token == None).all()
-                if users_to_backfill:
-                    app.logger.info(f"Backfilling {len(users_to_backfill)} users with secure QR tokens...")
-                    for u in users_to_backfill:
-                        u.qr_token = secrets.token_hex(16)
-                    db.session.commit()
-                    app.logger.info("Backfill completed successfully.")
+            if result is None:
+                # Column missing — add it
+                app.logger.info("Adding 'qr_token' column to 'users' table...")
+                db.session.execute(db.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS qr_token VARCHAR(100) UNIQUE"
+                ))
+                db.session.commit()
+                app.logger.info("'qr_token' column added successfully.")
+
+            # Backfill existing users without qr_token
+            from .models import User
+            import secrets
+            users_to_backfill = User.query.filter(User.qr_token == None).all()
+            if users_to_backfill:
+                app.logger.info(f"Backfilling {len(users_to_backfill)} users with secure QR tokens...")
+                for u in users_to_backfill:
+                    u.qr_token = secrets.token_hex(16)
+                db.session.commit()
+                app.logger.info("Backfill completed successfully.")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Error during qr_token migration/backfill startup hook: {e}")
@@ -260,12 +281,12 @@ def create_app():
         from .controllers.machines_controller import machines_bp
         from .controllers.rewards_controller import rewards_bp
         from .controllers.logs_controller import logs_bp
-        from .controllers.leaderboard_controller import leaderboard_bp
         from .controllers.groups_controller import groups_bp
         from .controllers.analytics_controller import analytics_bp
         from .controllers.settings_controller import settings_bp
         from .controllers.sessions_controller import sessions_bp
         from .controllers.reward_categories_controller import reward_categories_bp
+        from .controllers.leaderboard_controller import leaderboard_bp
 
         for sub_bp in (
             dashboard_bp, users_bp, locations_bp, machines_bp, rewards_bp,

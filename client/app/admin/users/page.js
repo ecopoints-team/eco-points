@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import RequirePermission from '../../../src/components/admin/RequirePermission';
-import { SkeletonTableRow } from '../../../src/components/admin/SkeletonLoaders';
+import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import AddRegularUserModal from '../../../src/components/admin/AddRegularUserModal';
@@ -363,52 +363,58 @@ function ManageUsersPageContent() {
                 </div>
             </ViewOnlyWrapper>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                            <User size={24} className="text-blue-600 dark:text-blue-400" />
+            {isDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/20">
+                                <User size={24} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Users</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalUsers}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Users</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalUsers}</p>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/20">
+                                <Wifi size={24} className="text-cyan-600 dark:text-cyan-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Online Now</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.onlineUsers}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                                <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Active Accounts</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.activeUsers}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
+                                <span className="text-amber-600 dark:text-amber-400 font-bold text-lg">⭐</span>
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Total Points</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalPoints.toLocaleString()}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/20">
-                            <Wifi size={24} className="text-cyan-600 dark:text-cyan-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Online Now</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.onlineUsers}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                            <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Active Accounts</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.activeUsers}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/20">
-                            <span className="text-amber-600 dark:text-amber-400 font-bold text-lg">⭐</span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Points</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalPoints.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Users Table */}
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
@@ -583,14 +589,6 @@ function ManageUsersPageContent() {
                         </tbody>
                     </table>
                 </div>
-
-                {/* Empty State */}
-                {currentUsers.length === 0 && (
-                    <div className="p-12 text-center">
-                        <User size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-                        <p className="text-slate-500 dark:text-slate-400">No users found for this location.</p>
-                    </div>
-                )}
 
                 {totalPages > 0 && (
                     <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs gap-4 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">

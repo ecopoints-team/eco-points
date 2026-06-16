@@ -14,7 +14,7 @@ import json as _json
 from flask import request
 from sqlalchemy import func
 
-from ..models import AdminLog, RecyclingItem, RecyclingSession, RewardRedemption, RVM, Wallet
+from ..models import AdminLog, Organization, RecyclingItem, RecyclingSession, RewardRedemption, RVM, Wallet
 from ..middleware import get_user_org_id, ROLE_HIERARCHY, ROLE_PERMISSIONS
 from .. import db
 
@@ -79,16 +79,26 @@ def _serialize_org_type(ot):
     return {'id': ot.id, 'name': ot.name}
 
 
-def _serialize_organization(o):
+def _serialize_organization(o, bottle_count=None):
     """Organization → frontend LOCATIONS[] shape."""
+    from sqlalchemy import func as _func
+    from ..models import CommunityGroup as _CG, User as _User, Wallet as _Wallet
+
     machine_count = len(o.rvms) if o.rvms else 0
-    user_count = 0
-    total_points = 0
-    for cg in (o.community_groups or []):
-        for u in (cg.users or []):
-            user_count += 1
-            if u.wallet:
-                total_points += u.wallet.points_balance or 0
+
+    # Scalar aggregates — avoids loading every user+wallet into memory.
+    cg_ids = [cg.id for cg in (o.community_groups or [])]
+    if cg_ids:
+        user_count = db.session.query(_func.count(_User.id))\
+            .filter(_User.community_group_id.in_(cg_ids), _User.is_active == True)\
+            .scalar() or 0
+        total_points = db.session.query(_func.coalesce(_func.sum(_Wallet.points_balance), 0))\
+            .join(_User, _Wallet.user_id == _User.id)\
+            .filter(_User.community_group_id.in_(cg_ids))\
+            .scalar() or 0
+    else:
+        user_count = 0
+        total_points = 0
 
     addr = _serialize_address(o.address)
     contacts = [{'id': c.id, 'firstName': c.first_name, 'lastName': c.last_name,
@@ -125,11 +135,13 @@ def _serialize_organization(o):
         'machineCount': machine_count,
         'userCount': user_count,
         'totalPoints': total_points,
-        'totalBottlesCollected': db.session.query(func.count(RecyclingItem.id))
+        'totalBottlesCollected': bottle_count if bottle_count is not None else (
+            db.session.query(func.count(RecyclingItem.id))
             .join(RecyclingSession, RecyclingItem.session_id == RecyclingSession.id)
             .join(RVM, RecyclingSession.rvm_id == RVM.id)
             .filter(RVM.organization_id == o.id)
-            .scalar() or 0,
+            .scalar() or 0
+        ),
         'communityGroups': [
             {'id': cg.id, 'name': cg.name, 'abbreviation': cg.abbreviation or '',
              'groupType': cg.group_type or 'college'}
@@ -341,6 +353,18 @@ def _serialize_reward(r):
     else:
         dispensed = 0
 
+    # Task 29 — shared merchandise: include assigned organizations.
+    assigned_orgs = []
+    for a in (r.org_assignments or []):
+        org = getattr(a, 'organization', None)
+        if org is None:
+            try:
+                org = db.session.get(Organization, a.organization_id)
+            except Exception:
+                pass
+        if org:
+            assigned_orgs.append({'id': org.id, 'name': org.name})
+
     return {
         'id': r.id,
         'name': r.name,
@@ -356,6 +380,8 @@ def _serialize_reward(r):
         'createdAt': _dt(r.created_at),
         # Phase 3 task 8.2 — alignment-doc §11 derived field.
         'dispensed': dispensed,
+        # Task 29 — orgs this reward is shared with (beyond its owner).
+        'assignedOrganizations': assigned_orgs,
     }
 
 

@@ -8,7 +8,12 @@ import React from 'react';
 
 export function SkeletonCard({ className = '' }) {
     return (
-        <div className={`animate-pulse rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 p-6 ${className}`}>
+        <div 
+            className={`animate-pulse rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 p-6 ${className}`}
+            aria-label="Loading content"
+            aria-busy="true"
+            role="status"
+        >
             <div className="flex items-center justify-between mb-4">
                 <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
                 <div className="h-8 w-8 bg-slate-200 dark:bg-slate-700 rounded-lg" />

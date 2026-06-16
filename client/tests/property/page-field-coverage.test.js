@@ -83,37 +83,7 @@ const PAGE_CONFIGS = [
             'status',
         ],
     },
-    {
-        page: 'admin/leaderboards/page.js',
-        endpoint: 'GET /api/web/leaderboard',
-        schemaKey: 'topUsers',
-        itemVars: ['u', 'user', 'leaderboardUsers'],
-        expectedFields: [
-            'id',
-            'name',
-            'points',
-            'streak',
-            'bottlesCollected',
-            'userType',
-            'department',
-            'groupType',
-            'locationId',
-            'locationName',
-        ],
-    },
-    {
-        page: 'admin/locations/page.js',
-        endpoint: 'GET /api/web/locations',
-        schemaKey: 'locations',
-        itemVars: ['loc', 'location', 'locations'],
-        expectedFields: [
-            'id',
-            'name',
-            'status',
-            'machineCount',
-            'userCount',
-        ],
-    },
+    // Leaderboards admin page removed — mapping omitted.
     {
         page: 'admin/logs/access/page.js',
         endpoint: 'GET /api/web/logs/access',

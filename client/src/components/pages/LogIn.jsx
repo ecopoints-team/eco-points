@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: SeedPass!23)
 // Sign in with: email + password
 // Total: 50 accounts across 2 organizations (multi-tenant)
@@ -418,7 +418,7 @@ const FloatingSearchDropdown = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => value.length > 0 && setShowDropdown(true)}
-        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
+        className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm web-web-rounded-lg 
                     focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                     block pl-10 pr-10 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
       />
@@ -431,7 +431,7 @@ const FloatingSearchDropdown = ({
         <div
           ref={dropdownRef}
           className="absolute z-50 bottom-full mb-2 left-0
-                        w-full bg-white border border-gray-200 rounded-xl shadow-2xl 
+                        w-full bg-white border border-gray-200 web-web-rounded-xl shadow-2xl 
                         max-h-[210px] overflow-y-auto"
         >
           <div
@@ -497,7 +497,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Form states
   const [loginCredential, setLoginCredential] = useState(""); // username OR email
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -572,7 +574,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Check if signup form has data
   const hasSignUpData = () => {
     return (
-      fullName ||
+      firstName ||
+      middleName ||
+      lastName ||
       signUpUsername ||
       email ||
       password ||
@@ -604,7 +608,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Reset signup form
   const resetSignUpForm = () => {
-    setFullName("");
+    setFirstName("");
+    setMiddleName("");
+    setLastName("");
     setSignUpUsername("");
     setEmail("");
     setPassword("");
@@ -627,7 +633,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Save current signup data
   const saveSignUpData = () => {
     return {
-      fullName,
+      firstName,
+      middleName,
+      lastName,
       signUpUsername,
       email,
       password,
@@ -648,7 +656,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
   // Restore saved signup data
   const restoreSignUpData = (data) => {
-    setFullName(data.fullName || "");
+    setFirstName(data.firstName || "");
+    setMiddleName(data.middleName || "");
+    setLastName(data.lastName || "");
     setSignUpUsername(data.signUpUsername || "");
     setEmail(data.email || "");
     setPassword(data.password || "");
@@ -809,7 +819,10 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       }
 
       await authApi.register({
-        name: fullName,
+        firstName,
+        middleName: middleName || undefined,
+        lastName,
+        name: `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`.trim(),
         username: signUpUsername || undefined,
         email: email || undefined,
         phone: phone ? `+63${phone}` : undefined,
@@ -846,7 +859,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Full reset of all form fields
   const resetAllFields = () => {
     setLoginCredential("");
-    setFullName("");
+    setFirstName("");
+    setMiddleName("");
+    setLastName("");
     setSignUpUsername("");
     setEmail("");
     setPassword("");
@@ -965,13 +980,13 @@ export default function LogIn({ onClose, initialSignUp = false }) {
             <div className="flex gap-3">
               <button
                 onClick={() => handleRestoreChoice(false)}
-                className="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2 px-4 bg-gray-100 text-gray-700 web-web-rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
                 Start Fresh
               </button>
               <button
                 onClick={() => handleRestoreChoice(true)}
-                className="flex-1 py-2 px-4 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
+                className="flex-1 py-2 px-4 bg-lime-600 text-white web-web-rounded-lg font-medium hover:bg-lime-700 transition-colors"
               >
                 Restore
               </button>
@@ -999,7 +1014,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
                 {/* Error message in popup */}
                 {error && !isSignUp && (
-                  <div className="mb-3 p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
+                  <div className="mb-3 p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
                     <AlertCircle size={14} />
                     <span>{error}</span>
                   </div>
@@ -1086,7 +1101,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
               {/* Error message */}
               {error && !isSignUp && !showCaptchaPopup && (
                 <div
-                  className={`p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? "animate-shake" : ""}`}
+                  className={`p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? "animate-shake" : ""}`}
                 >
                   <AlertCircle size={14} />
                   <span>{error}</span>
@@ -1095,7 +1110,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
               {/* CAPTCHA verified indicator (all devices) */}
               {captchaVerified && (
-                <div className="flex items-center justify-center gap-2 py-2 px-3 bg-lime-50 border border-lime-200 rounded-lg">
+                <div className="flex items-center justify-center gap-2 py-2 px-3 bg-lime-50 border border-lime-200 web-web-rounded-lg">
                   <CheckCircle size={16} className="text-lime-600" />
                   <span className="text-xs font-medium text-lime-700">
                     Verified
@@ -1115,7 +1130,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
               <button
                 type="submit"
                 disabled={isLoading || (showCaptcha && !captchaVerified)}
-                className="w-1/2 mx-auto py-2.5 bg-lime-600 text-white rounded-lg font-bold shadow-lg 
+                className="w-1/2 mx-auto py-2.5 bg-lime-600 text-white web-web-rounded-lg font-bold shadow-lg 
                   hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5 
                   transition-all duration-300 flex items-center justify-center gap-2
                   disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
@@ -1186,27 +1201,44 @@ export default function LogIn({ onClose, initialSignUp = false }) {
             {/* PHASE 1: Basic Credentials ONLY (Name, Email, Passwords) */}
             {signUpPhase === 1 && (
               <form onSubmit={handleSignUpPhase1} className={`w-full space-y-2.5 ${passwordMismatchShake ? "animate-shake" : ""}`}>
-                {/* Row 1: Full Name + Username side-by-side */}
+                {/* Row 1: First Name / Middle Name / Last Name */}
                 <div className="flex gap-2">
                   <InputField
                     type="text"
-                    placeholder="Full Name"
+                    placeholder="First Name"
                     icon={<User size={16} />}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
                   />
                   <InputField
                     type="text"
-                    placeholder="Username"
-                    icon={<AtSign size={16} />}
-                    value={signUpUsername}
-                    onChange={(e) => setSignUpUsername(e.target.value)}
+                    placeholder="Middle Name"
+                    icon={<User size={16} />}
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                  />
+                  <InputField
+                    type="text"
+                    placeholder="Last Name"
+                    icon={<User size={16} />}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                 </div>
 
-                {/* Row 2: Email full-width */}
+                {/* Row 2: Username full-width */}
+                <InputField
+                  type="text"
+                  placeholder="Username"
+                  icon={<AtSign size={16} />}
+                  value={signUpUsername}
+                  onChange={(e) => setSignUpUsername(e.target.value)}
+                  required
+                />
+
+                {/* Row 3: Email full-width */}
                 <InputField
                   type="email"
                   placeholder="Email"
@@ -1215,8 +1247,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-
-                {/* Row 3: Password + Confirm Password side-by-side */}
+                {/* Row 4: Password + Confirm Password side-by-side */}
                 <div className="flex gap-2">
                   <InputField
                     type="password"
@@ -1239,7 +1270,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                 </div>
 
                 {error && isSignUp && signUpPhase === 1 && (
-                  <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
+                  <div className="p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
                     <AlertCircle size={14} />
                     {error}
                   </div>
@@ -1247,7 +1278,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
                 <button
                   type="submit"
-                  className="w-1/2 mx-auto py-2.5 md:py-3 bg-lime-600 text-white rounded-lg font-bold shadow-lg 
+                  className="w-1/2 mx-auto py-2.5 md:py-3 bg-lime-600 text-white web-web-rounded-lg font-bold shadow-lg 
                                         hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5 
                                         transition-all duration-300 flex items-center justify-center gap-2 mt-2"
                 >
@@ -1269,7 +1300,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                     required
-                    className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                    className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
                                             focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                             block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
                                             ${role === "" ? "text-gray-400" : "text-gray-800"}`}
@@ -1320,12 +1351,12 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                     }}
                     onFocus={() => setShowLocationDropdown(true)}
                     onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg 
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm web-web-rounded-lg 
                                     focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                     block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
                   />
                   {showLocationDropdown && (
-                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-[210px] overflow-y-auto z-50 p-1">
+                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 web-web-rounded-xl shadow-2xl max-h-[210px] overflow-y-auto z-50 p-1">
                       <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 mb-1">
                         <Building2 size={12} />
                         Organizations
@@ -1345,7 +1376,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                               // Reset education fields when org changes
                               setEducationLevel(""); setStrand(""); setStrandSearch(""); setDepartment(""); setDepartmentSearch(""); setYearLevel("");
                             }}
-                            className="w-full text-left px-3 py-2 hover:bg-lime-50 rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-2 group"
+                            className="w-full text-left px-3 py-2 hover:bg-lime-50 web-web-rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-2 group"
                           >
                             <div className="w-7 h-7 rounded-full bg-lime-100 flex items-center justify-center text-lime-600 group-hover:bg-lime-200 transition-colors flex-shrink-0">
                               <Building2 size={14} />
@@ -1378,7 +1409,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                         value={educationLevel}
                         onChange={(e) => setEducationLevel(e.target.value)}
                         required
-                        className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                        className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
                                                     focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                                     block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
                                                     ${educationLevel === "" ? "text-gray-400" : "text-gray-800"}`}
@@ -1422,7 +1453,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                             value={yearLevel}
                             onChange={(e) => setYearLevel(e.target.value)}
                             required
-                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                            className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
                                                             focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                                             block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
                                                             ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
@@ -1468,7 +1499,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                             value={yearLevel}
                             onChange={(e) => setYearLevel(e.target.value)}
                             required
-                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                            className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
                                                             focus:ring-2 focus:ring-lime-500 focus:border-transparent 
                                                             block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
                                                             ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
@@ -1511,7 +1542,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
                 {/* Staff: No additional fields */}
                 {role === "Staff" && (
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs text-center">
+                  <div className="p-3 web-web-rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs text-center">
                     <Briefcase
                       size={20}
                       className="mx-auto mb-1 text-gray-400"
@@ -1521,7 +1552,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                 )}
 
                 {error && isSignUp && signUpPhase === 2 && (
-                  <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
+                  <div className="p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
                     <AlertCircle size={14} />
                     {error}
                   </div>
@@ -1532,7 +1563,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-2.5 bg-lime-600 text-white rounded-lg font-bold shadow-lg text-sm
+                    className="w-full py-2.5 bg-lime-600 text-white web-web-rounded-lg font-bold shadow-lg text-sm
                                             hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5
                                             transition-all duration-300 flex items-center justify-center gap-1
                                             disabled:opacity-70 disabled:cursor-not-allowed"
