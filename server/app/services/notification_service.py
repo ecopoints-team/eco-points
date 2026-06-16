@@ -1,6 +1,7 @@
 """
 Notification Service
-Handles sending email and SMS alerts based on per-organization notification settings.
+Handles sending email alerts based on per-organization notification settings.
+SMS has been removed — all notifications are email-only via the Resend API.
 """
 import html
 import json
@@ -235,32 +236,6 @@ def _send_email(to_email, subject, body, org_name=None):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# SMS SENDER
-# ══════════════════════════════════════════════════════════════════════════
-
-def _send_sms(to_phone, body):
-    """Send an SMS via Twilio. Returns (success: bool, error: str|None)."""
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
-    from_number = os.environ.get('TWILIO_FROM_NUMBER', '')
-
-    if not account_sid or not auth_token or not from_number:
-        return False, 'Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER required)'
-
-    try:
-        from twilio.rest import Client
-        client = Client(account_sid, auth_token)
-        client.messages.create(
-            body=body,
-            from_=from_number,
-            to=to_phone,
-        )
-        return True, None
-    except Exception as e:
-        return False, str(e)
-
-
-# ══════════════════════════════════════════════════════════════════════════
 # CORE DISPATCHER
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -268,7 +243,7 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     """
     Fire an alert for a given organization.
     Looks up the NotificationSetting for (org_id, alert_key) and sends
-    via all enabled channels to all configured recipients.
+    via the email channel to all configured recipients.
 
     Returns: list of NotificationLog entries created.
     """
@@ -281,7 +256,7 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     if not setting:
         return []
 
-    if not setting.email_enabled and not setting.sms_enabled:
+    if not setting.email_enabled:
         return []
 
     try:
@@ -299,38 +274,21 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     logs_created = []
 
     for recipient in recipients:
-        # Email channel
-        if setting.email_enabled and '@' in recipient:
-            success, error = _send_email(recipient, subject, body, org_name=org_name)
-            log = NotificationLog(
-                organization_id=org_id,
-                alert_key=alert_key,
-                channel='email',
-                recipient=recipient,
-                subject=subject,
-                body_preview=body[:500] if body else None,
-                status='sent' if success else 'failed',
-                error_message=error,
-            )
-            db.session.add(log)
-            logs_created.append(log)
-
-        # SMS channel
-        if setting.sms_enabled and '@' not in recipient:
-            sms_body = f"[EcoPoints] {subject}: {body[:160]}"
-            success, error = _send_sms(recipient, sms_body)
-            log = NotificationLog(
-                organization_id=org_id,
-                alert_key=alert_key,
-                channel='sms',
-                recipient=recipient,
-                subject=subject,
-                body_preview=sms_body[:500],
-                status='sent' if success else 'failed',
-                error_message=error,
-            )
-            db.session.add(log)
-            logs_created.append(log)
+        if '@' not in recipient:
+            continue  # skip non-email recipients (SMS remnants in DB)
+        success, error = _send_email(recipient, subject, body, org_name=org_name)
+        log = NotificationLog(
+            organization_id=org_id,
+            alert_key=alert_key,
+            channel='email',
+            recipient=recipient,
+            subject=subject,
+            body_preview=body[:500] if body else None,
+            status='sent' if success else 'failed',
+            error_message=error,
+        )
+        db.session.add(log)
+        logs_created.append(log)
 
     # Commit logs (caller is responsible for the outer transaction)
     try:

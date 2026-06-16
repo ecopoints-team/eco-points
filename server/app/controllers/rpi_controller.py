@@ -15,7 +15,6 @@ from flask import Blueprint, jsonify
 
 from ..models import (
     User, RecyclingSession, RecyclingItem, Transaction, Wallet,
-    NotificationSetting,
 )
 from ..middleware import rpi_auth_required, compute_qr_suffix, validate_request
 from ..schemas import (
@@ -373,29 +372,10 @@ def update_machine_status(rvm, payload):
 @rpi_bp.route('/config/points/<int:org_id>', methods=['GET'])
 @rpi_auth_required
 def get_points_config(rvm, org_id):
-    """Get point-per-item configuration for a given organization."""
-    try:
-        import json as _json
-        setting = NotificationSetting.query.filter_by(
-            organization_id=org_id, alert_key='config_points'
-        ).first()
+    """Return the fixed point-per-bottle configuration.
 
-        if setting and setting.recipients_json:
-            try:
-                config = _json.loads(setting.recipients_json)
-            except (_json.JSONDecodeError, TypeError):
-                config = None
-        else:
-            config = None
-
-        if not config:
-            config = {
-                'extraSmallWithLabel': 3, 'extraSmallNoLabel': 2,
-                'smallWithLabel': 5, 'smallNoLabel': 3,
-                'mediumWithLabel': 8, 'mediumNoLabel': 5,
-                'largeWithLabel': 10, 'largeNoLabel': 7,
-            }
-
-        return jsonify({'success': True, 'config': config}), 200
-    except Exception:
-        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+    Points are no longer configurable per-org — the values are fixed in
+    ``server/app/constants.py::BOTTLE_POINTS``.
+    """
+    from ..constants import BOTTLE_POINTS
+    return jsonify({'success': True, 'config': BOTTLE_POINTS}), 200

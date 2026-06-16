@@ -1,20 +1,17 @@
 """
-Phase 31 — Points Config "BAD REQUEST" Fix — Backend Smoke/Property Tests
-=========================================================================
+Points Config Smoke Tests
+=========================
 
-Validates Requirements 31.1, 31.2, 31.5, 31.6:
+Now that points are FIXED (not configurable), these tests verify:
 
-- GET /api/web/settings/points returns 200 + default config when no
-  location scope is resolvable (superadmin, no ?location_id).
-- The returned defaults match BOTTLE_PRICING exactly.
-- A scoped GET returns the org's persisted config unchanged.
-- PUT /api/web/settings/points still requires a location scope (400).
+- GET /api/web/settings/points always returns 200 + the fixed BOTTLE_POINTS constant.
+- The values match server/app/constants.py::BOTTLE_POINTS exactly.
+- PUT /api/web/settings/points no longer exists (405 Method Not Allowed).
 
 Run:  cd server && python -m pytest tests/smoke/test_points_config_scope.py -v --tb=short
 """
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -23,25 +20,9 @@ import pytest
 from flask import Blueprint, Flask
 
 from app import Config, db
-from app.controllers.auth_controller import auth_bp
+from app.constants import BOTTLE_POINTS
 from app.controllers.settings_controller import settings_bp
-from app.models import (
-    CommunityGroup,
-    NotificationSetting,
-    Organization,
-    OrgType,
-    User,
-)
-
-
-# Defaults must match settings_controller.get_points_config DEFAULTS
-# and the seeder BOTTLE_PRICING (Requirement 31.2).
-EXPECTED_DEFAULTS = {
-    'extraSmallWithLabel': 3, 'extraSmallNoLabel': 2,
-    'smallWithLabel': 5, 'smallNoLabel': 3,
-    'mediumWithLabel': 8, 'mediumNoLabel': 5,
-    'largeWithLabel': 10, 'largeNoLabel': 7,
-}
+from app.models import CommunityGroup, Organization, OrgType, User
 
 
 # ── App factory ───────────────────────────────────────────────────────────
@@ -60,7 +41,6 @@ def _build_app():
 
     web_bp = Blueprint('web', __name__, url_prefix='/api/web')
     web_bp.register_blueprint(settings_bp)
-    app.register_blueprint(auth_bp)
     app.register_blueprint(web_bp)
 
     with app.app_context():
@@ -73,7 +53,6 @@ def _seed(app):
         ot = OrgType(name=f'PtsUni-{uuid.uuid4().hex[:6]}')
         db.session.add(ot)
         db.session.flush()
-
         org = Organization(
             name=f'Pts-{uuid.uuid4().hex[:6]}',
             full_name='Points Test Org',
@@ -82,7 +61,6 @@ def _seed(app):
         )
         db.session.add(org)
         db.session.flush()
-
         grp = CommunityGroup(
             organization_id=org.id,
             name='Pts Group',
@@ -91,7 +69,6 @@ def _seed(app):
         )
         db.session.add(grp)
         db.session.flush()
-
         admin = User(
             community_group_id=grp.id,
             first_name='Super',
@@ -104,7 +81,6 @@ def _seed(app):
         )
         db.session.add(admin)
         db.session.commit()
-
         return {'org_id': org.id, 'admin_id': admin.id}
 
 
@@ -136,99 +112,42 @@ def ctx():
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# 31.1 / 31.2 — GET with no location scope → 200 + defaults
+# GET always returns the fixed BOTTLE_POINTS constant
 # ══════════════════════════════════════════════════════════════════════════
 
 
-class TestNoScope:
-    def test_get_no_scope_returns_200(self, ctx):
-        """Requirement 31.1: no 400 when no location scope."""
+class TestFixedPoints:
+    def test_get_returns_200(self, ctx):
+        """GET /api/web/settings/points returns 200."""
         app, ids, token = ctx
         with app.test_client() as c:
             r = c.get('/api/web/settings/points', headers=_auth(token))
         assert r.status_code == 200, r.get_data(as_text=True)[:200]
         assert r.get_json().get('success') is True
 
-    def test_get_no_scope_returns_exact_defaults(self, ctx):
-        """Requirement 31.2: returns the exact default config."""
+    def test_get_returns_fixed_bottle_points(self, ctx):
+        """GET returns exactly BOTTLE_POINTS — no per-org overrides."""
         app, ids, token = ctx
         with app.test_client() as c:
             r = c.get('/api/web/settings/points', headers=_auth(token))
         assert r.status_code == 200
-        assert r.get_json().get('config') == EXPECTED_DEFAULTS
+        assert r.get_json().get('config') == BOTTLE_POINTS
 
-
-# ══════════════════════════════════════════════════════════════════════════
-# 31.5 — Scoped GET returns the org's persisted config
-# ══════════════════════════════════════════════════════════════════════════
-
-
-class TestScopedGet:
-    def test_scoped_get_returns_persisted_config(self, ctx):
-        """Requirement 31.5: scoped GET returns the org's persisted config."""
+    def test_get_with_scope_still_returns_fixed_points(self, ctx):
+        """Scoped GET also returns the fixed constant (no DB lookup)."""
         app, ids, token = ctx
-        persisted = {
-            'smallWithLabel': 1, 'smallNoLabel': 2,
-            'mediumWithLabel': 3, 'mediumNoLabel': 4,
-            'largeWithLabel': 6, 'largeNoLabel': 9,
-        }
-        with app.app_context():
-            db.session.add(NotificationSetting(
-                organization_id=ids['org_id'],
-                alert_key='config_points',
-                email_enabled=False,
-                sms_enabled=False,
-                recipients_json=json.dumps(persisted),
-                is_active=True,
-            ))
-            db.session.commit()
-
         with app.test_client() as c:
             r = c.get('/api/web/settings/points', headers=_auth(token),
                       query_string={'location_id': ids['org_id']})
-        assert r.status_code == 200, r.get_data(as_text=True)[:200]
-        assert r.get_json().get('config') == persisted
-
-    def test_scoped_get_unconfigured_org_returns_defaults(self, ctx):
-        """A scoped org with no persisted row still gets defaults at 200."""
-        app, ids, token = ctx
-        # Fresh org with no config_points row.
-        with app.app_context():
-            ot = OrgType(name=f'PtsUni2-{uuid.uuid4().hex[:6]}')
-            db.session.add(ot)
-            db.session.flush()
-            org2 = Organization(
-                name=f'Pts2-{uuid.uuid4().hex[:6]}',
-                full_name='Points Test Org 2',
-                type_id=ot.id,
-                status='Active',
-            )
-            db.session.add(org2)
-            db.session.commit()
-            org2_id = org2.id
-
-        with app.test_client() as c:
-            r = c.get('/api/web/settings/points', headers=_auth(token),
-                      query_string={'location_id': org2_id})
         assert r.status_code == 200
-        assert r.get_json().get('config') == EXPECTED_DEFAULTS
+        assert r.get_json().get('config') == BOTTLE_POINTS
 
-
-# ══════════════════════════════════════════════════════════════════════════
-# 31.6 — PUT still requires a location scope
-# ══════════════════════════════════════════════════════════════════════════
-
-
-class TestPutStillStrict:
-    def test_put_no_scope_returns_400(self, ctx):
-        """Requirement 31.6: PUT behavior unchanged — 400 with no scope."""
+    def test_put_no_longer_exists(self, ctx):
+        """PUT /api/web/settings/points is removed — returns 405."""
         app, ids, token = ctx
         with app.test_client() as c:
-            r = c.put('/api/web/settings/points', headers=_auth(token), json={
-                'smallWithLabel': 5, 'smallNoLabel': 3,
-                'mediumWithLabel': 8, 'mediumNoLabel': 5,
-                'largeWithLabel': 10, 'largeNoLabel': 7,
-            })
-        assert r.status_code == 400, r.get_data(as_text=True)[:200]
-        body = r.get_json()
-        assert body.get('success') is False
+            r = c.put('/api/web/settings/points', headers=_auth(token), json={})
+        assert r.status_code == 405, (
+            f'PUT should be 405 Method Not Allowed; got {r.status_code}: '
+            f'{r.get_data(as_text=True)[:200]}'
+        )
