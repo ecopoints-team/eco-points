@@ -619,6 +619,7 @@ def update_profile(current_user, payload):
 
 
 @auth_bp.route('/change-password', methods=['POST'])
+@limiter.limit("5 per minute")
 @token_required
 @validate_request(ChangePasswordSchema)
 def change_password(current_user, payload):
