@@ -5,7 +5,7 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { SkeletonCard, SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { locations as locationsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
+import { locations as locationsApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import { parseSpreadsheet } from '../../../src/lib/importFile';
@@ -17,14 +17,13 @@ import {
     Info, Loader2, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
+// ─── Fixed organization types (no custom CRUD) ─────────────────────
+const FIXED_ORG_TYPES = ['University', 'Corporate', 'Community'];
+
 // ─── Community Group import (CSV/XLS/XLSX) ──────────────────────────
-// Columns map to COMMUNITY_GROUPS: name (required), abbreviation, group_type.
-const CG_IMPORT_COLUMNS = [
-    { key: 'name', required: true, desc: 'group name, e.g. BSIT' },
-    { key: 'abbreviation', required: false, desc: 'short code, e.g. IT' },
-    { key: 'groupType', required: false, desc: 'college, shs_strand, jhs, elementary, or staff (defaults to college)' },
-];
-const CG_GROUP_TYPES = ['college', 'shs_strand', 'jhs', 'elementary', 'staff'];
+// University columns:  name (required), abbreviation, educational_level
+// Corporate/Community: name (required), abbreviation
+const CG_EDUCATIONAL_LEVELS = ['Kindergarten', 'Elementary', 'JHS', 'SHS', 'College'];
 
 const cgPickField = (row, keys) => {
     for (const k of keys) {
@@ -35,24 +34,54 @@ const cgPickField = (row, keys) => {
     return '';
 };
 
-const normalizeGroupType = (val) => {
+// Map any reasonable input to a canonical educational_level. Returns
+// null on bad input, '' when the cell is empty (caller decides).
+const normalizeEducationalLevel = (val) => {
     const s = String(val ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-    if (s === '') return 'college';
-    if (CG_GROUP_TYPES.includes(s)) return s;
-    if (['shs', 'strand', 'senior_high', 'seniorhigh'].includes(s)) return 'shs_strand';
-    if (['junior_high', 'juniorhigh'].includes(s)) return 'jhs';
-    if (['elem'].includes(s)) return 'elementary';
-    return null;
+    if (s === '') return '';
+    const map = {
+        kindergarten: 'Kindergarten',
+        kinder: 'Kindergarten',
+        k: 'Kindergarten',
+        elementary: 'Elementary',
+        elem: 'Elementary',
+        jhs: 'JHS',
+        junior_high: 'JHS',
+        juniorhigh: 'JHS',
+        shs: 'SHS',
+        senior_high: 'SHS',
+        seniorhigh: 'SHS',
+        strand: 'SHS',
+        shs_strand: 'SHS',
+        college: 'College',
+        university: 'College',
+    };
+    return map[s] || null;
 };
 
+const isUniversityOrgType = (orgType) => (orgType || '').toLowerCase() === 'university';
+
 // Reusable Import control for the Community Groups tab. Parses a spreadsheet
-// and hands valid {name, abbreviation, groupType} rows back via onImport.
-function CommunityGroupImport({ onImport }) {
+// and hands valid {name, abbreviation, educationalLevel?} rows back via onImport.
+// `orgType` toggles whether educational_level is parsed and required.
+function CommunityGroupImport({ onImport, orgType }) {
     const fileRef = useRef(null);
     const helpRef = useRef(null);
     const [isImporting, setIsImporting] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [result, setResult] = useState(null);
+
+    const isUniversity = isUniversityOrgType(orgType);
+    const importColumns = isUniversity
+        ? [
+              { key: 'name', required: true, desc: 'group name, e.g. BSIT' },
+              { key: 'abbreviation', required: false, desc: 'short code, e.g. IT' },
+              { key: 'educational_level', required: false, desc: `Kindergarten, Elementary, JHS, SHS, or College` },
+          ]
+        : [
+              { key: 'name', required: true, desc: 'group name, e.g. Marketing Team' },
+              { key: 'abbreviation', required: false, desc: 'short code, e.g. MKT' },
+          ];
 
     useEffect(() => {
         const onClick = (e) => { if (helpRef.current && !helpRef.current.contains(e.target)) setShowHelp(false); };
@@ -78,13 +107,19 @@ function CommunityGroupImport({ onImport }) {
                 const rowNum = i + 2;
                 const name = String(cgPickField(row, ['name', 'group_name', 'group']) ?? '').trim();
                 if (!name) { rowErrors.push(`Row ${rowNum}: missing required "name".`); return; }
-                const groupType = normalizeGroupType(cgPickField(row, ['groupType', 'group_type', 'type']));
-                if (!groupType) { rowErrors.push(`Row ${rowNum}: invalid groupType — use ${CG_GROUP_TYPES.join(', ')}.`); return; }
-                mapped.push({
+                const out = {
                     name,
                     abbreviation: String(cgPickField(row, ['abbreviation', 'abbr', 'code']) ?? '').trim(),
-                    groupType,
-                });
+                };
+                if (isUniversity) {
+                    const lvl = normalizeEducationalLevel(cgPickField(row, ['educational_level', 'educationalLevel', 'level', 'educLevel']));
+                    if (lvl === null) {
+                        rowErrors.push(`Row ${rowNum}: invalid educational_level — use ${CG_EDUCATIONAL_LEVELS.join(', ')}.`);
+                        return;
+                    }
+                    out.educationalLevel = lvl || null;
+                }
+                mapped.push(out);
             });
             if (mapped.length) onImport(mapped);
             setResult({ imported: mapped.length, total: rows.length, rowErrors });
@@ -115,7 +150,7 @@ function CommunityGroupImport({ onImport }) {
                         <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2"><FileText size={14} className="text-emerald-500" /> Import Format</h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Upload a <code>.csv</code>, <code>.xls</code>, or <code>.xlsx</code> file. The first row must contain these column headers:</p>
                         <div className="space-y-1.5 mb-2">
-                            {CG_IMPORT_COLUMNS.map(c => (
+                            {importColumns.map(c => (
                                 <div key={c.key} className="flex items-start gap-2">
                                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 ${c.required ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{c.key}{c.required ? '*' : ''}</span>
                                     <span className="text-[11px] text-slate-500 dark:text-slate-400">{c.desc}</span>
@@ -171,66 +206,13 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
         contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active'
     });
     const [errors, setErrors] = useState({});
-    const [orgTypesList, setOrgTypesList] = useState([]);
-    const [orgTypeSearch, setOrgTypeSearch] = useState('');
-    const [showOrgTypeDropdown, setShowOrgTypeDropdown] = useState(false);
-    const [showAddOrgType, setShowAddOrgType] = useState(false);
-    const [newOrgTypeName, setNewOrgTypeName] = useState('');
-    const [isAddingOrgType, setIsAddingOrgType] = useState(false);
-    const orgTypeRef = useRef(null);
-    const [editingOrgTypeId, setEditingOrgTypeId] = useState(null);
-    const [editingOrgTypeName, setEditingOrgTypeName] = useState('');
-    const [orgTypeError, setOrgTypeError] = useState('');
     const [communityGroups, setCommunityGroups] = useState([]);
 
     useEffect(() => {
         if (isOpen) {
-            orgTypesApi.getAll().then(data => setOrgTypesList(data || [])).catch(() => {});
             setActiveTab(1); setErrors({});
         }
     }, [isOpen]);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (orgTypeRef.current && !orgTypeRef.current.contains(e.target)) {
-                setShowOrgTypeDropdown(false); setShowAddOrgType(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
-    const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
-
-    const handleAddOrgType = async () => {
-        if (!newOrgTypeName.trim()) return;
-        setIsAddingOrgType(true); setOrgTypeError('');
-        try {
-            const created = await orgTypesApi.create(newOrgTypeName.trim());
-            setOrgTypesList(prev => [...prev, created]);
-            setFormData(f => ({ ...f, orgType: String(created.id) }));
-            setNewOrgTypeName(''); setShowAddOrgType(false); setOrgTypeSearch('');
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to create'); }
-        finally { setIsAddingOrgType(false); }
-    };
-    const handleDeleteOrgType = async (id) => {
-        setOrgTypeError('');
-        try {
-            await orgTypesApi.delete(id);
-            setOrgTypesList(prev => prev.filter(t => t.id !== id));
-            if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to delete'); }
-    };
-    const handleEditOrgType = async (id) => {
-        const name = editingOrgTypeName.trim();
-        if (!name) return; setOrgTypeError('');
-        try {
-            const updated = await orgTypesApi.update(id, name);
-            setOrgTypesList(prev => prev.map(t => t.id === id ? { ...t, name: updated.name } : t));
-            setEditingOrgTypeId(null); setEditingOrgTypeName('');
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to rename'); }
-    };
 
     const handlePhoneChange = (val) => {
         let digits = val.replace(/[^\d]/g, '');
@@ -251,11 +233,17 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
         e?.preventDefault?.();
         if (activeTab === 1) { handleNext(); return; }
         if (validatePage1()) {
-            const orgTypeObj = orgTypesList.find(t => String(t.id) === String(formData.orgType));
+            const isUni = isUniversityOrgType(formData.orgType);
             onSubmit({
                 ...formData,
-                orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
-                communityGroups: communityGroups.filter(g => g.name.trim()),
+                communityGroups: communityGroups
+                    .filter(g => g.name.trim())
+                    .map(g => ({
+                        name: g.name,
+                        abbreviation: g.abbreviation,
+                        // educational_level only meaningful for University orgs
+                        educationalLevel: isUni ? (g.educationalLevel || null) : null,
+                    })),
             });
             setFormData({ name: '', fullName: '', orgType: '', streetAddress: '', barangay: '', cityMunicipality: '', province: '', region: '', zipCode: '', contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active' });
             setCommunityGroups([]); setActiveTab(1); onClose();
@@ -266,6 +254,8 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
 
     const inputCls = (field) => `w-full px-4 py-2 rounded-lg border ${errors[field] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`;
     const plainCls = 'w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500';
+
+    const isUniversity = isUniversityOrgType(formData.orgType);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -305,59 +295,23 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div ref={orgTypeRef} className="relative">
+                                <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization Type *</label>
-                                    <div className="flex gap-1">
-                                        <div className="flex-1 relative">
-                                            <input type="text" placeholder={formData.orgType ? selectedOrgTypeLabel : 'Select type...'} value={showOrgTypeDropdown ? orgTypeSearch : selectedOrgTypeLabel}
-                                                onChange={e => { setOrgTypeSearch(e.target.value); setShowOrgTypeDropdown(true); }} onFocus={() => { setShowOrgTypeDropdown(true); setOrgTypeSearch(''); }}
-                                                className={`${inputCls('orgType')} text-sm`} />
-                                            {showOrgTypeDropdown && (
-                                                <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
-                                                    {filteredOrgTypes.length > 0 ? filteredOrgTypes.map(opt => (
-                                                        <div key={opt.id} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
-                                                            {editingOrgTypeId === opt.id ? (
-                                                                <div className="flex-1 flex gap-1">
-                                                                    <input type="text" value={editingOrgTypeName} onChange={e => setEditingOrgTypeName(e.target.value)}
-                                                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEditOrgType(opt.id); } if (e.key === 'Escape') setEditingOrgTypeId(null); }}
-                                                                        className="flex-1 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-900 text-sm outline-none" autoFocus />
-                                                                    <button type="button" onClick={() => handleEditOrgType(opt.id)} className="text-emerald-600 text-xs font-medium">Save</button>
-                                                                </div>
-                                                            ) : (<>
-                                                                <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
-                                                                    className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{opt.name}</button>
-                                                                {isSuperAdmin && (
-                                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button type="button" onClick={e => { e.stopPropagation(); setEditingOrgTypeId(opt.id); setEditingOrgTypeName(opt.name); }}
-                                                                            className="p-1 rounded text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"><Edit2 size={12} /></button>
-                                                                        <button type="button" onClick={async e => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
-                                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={12} /></button>
-                                                                    </div>
-                                                                )}
-                                                            </>)}
-                                                        </div>
-                                                    )) : (<div className="px-3 py-3 text-center text-xs text-slate-400">No results</div>)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {isSuperAdmin && (
-                                            <button type="button" onClick={() => { setShowAddOrgType(!showAddOrgType); setShowOrgTypeDropdown(false); }}
-                                                className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors" title="Add new organization type">
-                                                <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    {showAddOrgType && isSuperAdmin && (
-                                        <div className="mt-2 flex gap-2">
-                                            <input type="text" value={newOrgTypeName} onChange={e => setNewOrgTypeName(e.target.value)} placeholder="New type name..."
-                                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddOrgType())}
-                                                className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
-                                            <button type="button" onClick={handleAddOrgType} disabled={isAddingOrgType || !newOrgTypeName.trim()}
-                                                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">{isAddingOrgType ? '...' : 'Add'}</button>
-                                        </div>
-                                    )}
+                                    <CustomDropdown
+                                        value={formData.orgType}
+                                        onChange={v => {
+                                            setFormData({ ...formData, orgType: v });
+                                            // Switching away from University clears any educational_level on inline groups
+                                            if (!isUniversityOrgType(v)) {
+                                                setCommunityGroups(prev => prev.map(g => ({ ...g, educationalLevel: '' })));
+                                            }
+                                        }}
+                                        options={FIXED_ORG_TYPES}
+                                        placeholder="Select type..."
+                                        showPlaceholder={!formData.orgType}
+                                        size="md"
+                                    />
                                     {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
-                                    {orgTypeError && <p className="text-red-500 text-xs mt-1">{orgTypeError}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
@@ -411,7 +365,7 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2"><div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20"><Users size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
                                     <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">Community Groups ({communityGroups.length})</h4></div>
-                                <button type="button" onClick={() => setCommunityGroups(prev => [...prev, { name: '', abbreviation: '', groupType: 'college' }])}
+                                <button type="button" onClick={() => setCommunityGroups(prev => [...prev, { name: '', abbreviation: '', educationalLevel: '' }])}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"><Plus size={14} /> Add Group</button>
                             </div>
                             {communityGroups.length === 0 && (<p className="text-xs text-slate-400 dark:text-slate-500 italic">A default &quot;Campus Staff&quot; group will be created if none are added.</p>)}
@@ -423,16 +377,23 @@ function AddLocationModal({ isOpen, onClose, onSubmit, isSuperAdmin }) {
                                             className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                                         <input type="text" placeholder="Abbr" value={g.abbreviation} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, abbreviation: e.target.value } : gr))}
                                             className="w-20 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                                        <select value={g.groupType} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, groupType: e.target.value } : gr))}
-                                            className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs outline-none">
-                                            <option value="college">College</option><option value="shs_strand">SHS Strand</option><option value="jhs">JHS</option><option value="elementary">Elementary</option><option value="staff">Staff</option>
-                                        </select>
+                                        {isUniversity && (
+                                            <select value={g.educationalLevel || ''} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, educationalLevel: e.target.value } : gr))}
+                                                className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs outline-none">
+                                                <option value="">— Level —</option>
+                                                <option value="Kindergarten">Kindergarten</option>
+                                                <option value="Elementary">Elementary</option>
+                                                <option value="JHS">JHS</option>
+                                                <option value="SHS">SHS</option>
+                                                <option value="College">College</option>
+                                            </select>
+                                        )}
                                         <button type="button" onClick={() => setCommunityGroups(prev => prev.filter((_, i) => i !== idx))}
                                             className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={14} /></button>
                                     </div>
                                 ))}
                             </div>
-                            <CommunityGroupImport onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
+                            <CommunityGroupImport orgType={formData.orgType} onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
                         </div>
                     )}
                 </form>
@@ -466,83 +427,29 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
         contactPerson: '', contactEmail: '', contactPhone: '', status: 'Active'
     });
     const [errors, setErrors] = useState({});
-    const [orgTypesList, setOrgTypesList] = useState([]);
-    const [orgTypeSearch, setOrgTypeSearch] = useState('');
-    const [showOrgTypeDropdown, setShowOrgTypeDropdown] = useState(false);
-    const [showAddOrgType, setShowAddOrgType] = useState(false);
-    const [newOrgTypeName, setNewOrgTypeName] = useState('');
-    const [isAddingOrgType, setIsAddingOrgType] = useState(false);
-    const orgTypeRef = useRef(null);
-    const [editingOrgTypeId, setEditingOrgTypeId] = useState(null);
-    const [editingOrgTypeName, setEditingOrgTypeName] = useState('');
-    const [orgTypeError, setOrgTypeError] = useState('');
     const [communityGroups, setCommunityGroups] = useState([]);
 
     useEffect(() => {
         if (isOpen && location) {
-            orgTypesApi.getAll().then(data => {
-                const list = data || [];
-                setOrgTypesList(list);
-                const matchedType = list.find(t => t.name === location.orgType);
-                setFormData({
-                    name: location.name || '', fullName: location.fullName || '',
-                    orgType: matchedType ? String(matchedType.id) : '',
-                    streetAddress: location.streetAddress || '', barangay: location.barangay || '',
-                    cityMunicipality: location.cityName || location.cityMunicipality || '',
-                    province: location.province || '', region: location.region || '',
-                    zipCode: location.zipCode || '', contactPerson: location.contactPerson || '',
-                    contactEmail: location.contactEmail || '', contactPhone: location.contactPhone || '',
-                    status: location.status || 'Active'
-                });
-            }).catch(() => {});
+            setFormData({
+                name: location.name || '', fullName: location.fullName || '',
+                orgType: location.orgType || '',
+                streetAddress: location.streetAddress || '', barangay: location.barangay || '',
+                cityMunicipality: location.cityName || location.cityMunicipality || '',
+                province: location.province || '', region: location.region || '',
+                zipCode: location.zipCode || '', contactPerson: location.contactPerson || '',
+                contactEmail: location.contactEmail || '', contactPhone: location.contactPhone || '',
+                status: location.status || 'Active'
+            });
             setCommunityGroups((location.communityGroups || []).map(g => ({
-                id: g.id, name: g.name || '', abbreviation: g.abbreviation || '', groupType: g.groupType || 'college'
+                id: g.id,
+                name: g.name || '',
+                abbreviation: g.abbreviation || '',
+                educationalLevel: g.educationalLevel || '',
             })));
             setActiveTab(1); setErrors({});
         }
     }, [isOpen, location]);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (orgTypeRef.current && !orgTypeRef.current.contains(e.target)) {
-                setShowOrgTypeDropdown(false); setShowAddOrgType(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const selectedOrgTypeLabel = orgTypesList.find(t => String(t.id) === String(formData.orgType))?.name || '';
-    const filteredOrgTypes = orgTypesList.filter(t => t.name.toLowerCase().includes(orgTypeSearch.toLowerCase()));
-
-    const handleAddOrgType = async () => {
-        if (!newOrgTypeName.trim()) return;
-        setIsAddingOrgType(true); setOrgTypeError('');
-        try {
-            const created = await orgTypesApi.create(newOrgTypeName.trim());
-            setOrgTypesList(prev => [...prev, created]);
-            setFormData(f => ({ ...f, orgType: String(created.id) }));
-            setNewOrgTypeName(''); setShowAddOrgType(false); setOrgTypeSearch('');
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to create'); }
-        finally { setIsAddingOrgType(false); }
-    };
-    const handleDeleteOrgType = async (id) => {
-        setOrgTypeError('');
-        try {
-            await orgTypesApi.delete(id);
-            setOrgTypesList(prev => prev.filter(t => t.id !== id));
-            if (String(formData.orgType) === String(id)) setFormData(f => ({ ...f, orgType: '' }));
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to delete'); }
-    };
-    const handleEditOrgType = async (id) => {
-        const name = editingOrgTypeName.trim();
-        if (!name) return; setOrgTypeError('');
-        try {
-            const updated = await orgTypesApi.update(id, name);
-            setOrgTypesList(prev => prev.map(t => t.id === id ? { ...t, name: updated.name } : t));
-            setEditingOrgTypeId(null); setEditingOrgTypeName('');
-        } catch (err) { setOrgTypeError(err?.message || 'Failed to rename'); }
-    };
 
     const handlePhoneChange = (val) => {
         let digits = val.replace(/[^\d]/g, '');
@@ -563,11 +470,17 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
         e?.preventDefault?.();
         if (activeTab === 1) { handleNext(); return; }
         if (validatePage1()) {
-            const orgTypeObj = orgTypesList.find(t => String(t.id) === String(formData.orgType));
+            const isUni = isUniversityOrgType(formData.orgType);
             onSubmit(location.id, {
                 ...formData,
-                orgType: orgTypeObj ? orgTypeObj.name : formData.orgType,
-                communityGroups: communityGroups.filter(g => g.name.trim()),
+                communityGroups: communityGroups
+                    .filter(g => g.name.trim())
+                    .map(g => ({
+                        ...(g.id ? { id: g.id } : {}),
+                        name: g.name,
+                        abbreviation: g.abbreviation,
+                        educationalLevel: isUni ? (g.educationalLevel || null) : null,
+                    })),
             });
             onClose();
         }
@@ -578,6 +491,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
     const inputCls = (field) => `w-full px-4 py-2 rounded-lg border ${errors[field] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500`;
     const plainCls = 'w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500';
 
+    const isUniversity = isUniversityOrgType(formData.orgType);
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700">
@@ -616,59 +530,23 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div ref={orgTypeRef} className="relative">
+                                <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization Type *</label>
-                                    <div className="flex gap-1">
-                                        <div className="flex-1 relative">
-                                            <input type="text" placeholder={formData.orgType ? selectedOrgTypeLabel : 'Select type...'} value={showOrgTypeDropdown ? orgTypeSearch : selectedOrgTypeLabel}
-                                                onChange={e => { setOrgTypeSearch(e.target.value); setShowOrgTypeDropdown(true); }} onFocus={() => { setShowOrgTypeDropdown(true); setOrgTypeSearch(''); }}
-                                                className={`${inputCls('orgType')} text-sm`} />
-                                            {showOrgTypeDropdown && (
-                                                <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
-                                                    {filteredOrgTypes.length > 0 ? filteredOrgTypes.map(opt => (
-                                                        <div key={opt.id} className="flex items-center justify-between px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group">
-                                                            {editingOrgTypeId === opt.id ? (
-                                                                <div className="flex-1 flex gap-1">
-                                                                    <input type="text" value={editingOrgTypeName} onChange={e => setEditingOrgTypeName(e.target.value)}
-                                                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEditOrgType(opt.id); } if (e.key === 'Escape') setEditingOrgTypeId(null); }}
-                                                                        className="flex-1 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-900 text-sm outline-none" autoFocus />
-                                                                    <button type="button" onClick={() => handleEditOrgType(opt.id)} className="text-emerald-600 text-xs font-medium">Save</button>
-                                                                </div>
-                                                            ) : (<>
-                                                                <button type="button" onClick={() => { setFormData({ ...formData, orgType: String(opt.id) }); setShowOrgTypeDropdown(false); setOrgTypeSearch(''); }}
-                                                                    className="flex-1 text-left text-sm text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{opt.name}</button>
-                                                                {isSuperAdmin && (
-                                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button type="button" onClick={e => { e.stopPropagation(); setEditingOrgTypeId(opt.id); setEditingOrgTypeName(opt.name); }}
-                                                                            className="p-1 rounded text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"><Edit2 size={12} /></button>
-                                                                        <button type="button" onClick={async e => { e.stopPropagation(); await handleDeleteOrgType(opt.id); }}
-                                                                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={12} /></button>
-                                                                    </div>
-                                                                )}
-                                                            </>)}
-                                                        </div>
-                                                    )) : (<div className="px-3 py-3 text-center text-xs text-slate-400">No results</div>)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {isSuperAdmin && (
-                                            <button type="button" onClick={() => { setShowAddOrgType(!showAddOrgType); setShowOrgTypeDropdown(false); }}
-                                                className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/10 transition-colors" title="Add new organization type">
-                                                <Plus size={16} className="text-emerald-600 dark:text-emerald-400" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    {showAddOrgType && isSuperAdmin && (
-                                        <div className="mt-2 flex gap-2">
-                                            <input type="text" value={newOrgTypeName} onChange={e => setNewOrgTypeName(e.target.value)} placeholder="New type name..."
-                                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddOrgType())}
-                                                className="flex-1 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" autoFocus />
-                                            <button type="button" onClick={handleAddOrgType} disabled={isAddingOrgType || !newOrgTypeName.trim()}
-                                                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 transition-colors">{isAddingOrgType ? '...' : 'Add'}</button>
-                                        </div>
-                                    )}
+                                    <CustomDropdown
+                                        value={formData.orgType}
+                                        onChange={v => {
+                                            setFormData({ ...formData, orgType: v });
+                                            // Switching away from University clears any educational_level on inline groups
+                                            if (!isUniversityOrgType(v)) {
+                                                setCommunityGroups(prev => prev.map(g => ({ ...g, educationalLevel: '' })));
+                                            }
+                                        }}
+                                        options={FIXED_ORG_TYPES}
+                                        placeholder="Select type..."
+                                        showPlaceholder={!formData.orgType}
+                                        size="md"
+                                    />
                                     {errors.orgType && <p className="text-red-500 text-xs mt-1">{errors.orgType}</p>}
-                                    {orgTypeError && <p className="text-red-500 text-xs mt-1">{orgTypeError}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City/Municipality *</label>
@@ -722,7 +600,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2"><div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20"><Users size={16} className="text-blue-600 dark:text-blue-400" /></div>
                                     <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">Community Groups ({communityGroups.length})</h4></div>
-                                <button type="button" onClick={() => setCommunityGroups(prev => [...prev, { name: '', abbreviation: '', groupType: 'college' }])}
+                                <button type="button" onClick={() => setCommunityGroups(prev => [...prev, { name: '', abbreviation: '', educationalLevel: '' }])}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"><Plus size={14} /> Add Group</button>
                             </div>
                             {communityGroups.length === 0 && (<p className="text-xs text-slate-400 dark:text-slate-500 italic">No community groups. Add at least one group.</p>)}
@@ -734,16 +612,23 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
                                             className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                                         <input type="text" placeholder="Abbr" value={g.abbreviation} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, abbreviation: e.target.value } : gr))}
                                             className="w-20 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-                                        <select value={g.groupType} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, groupType: e.target.value } : gr))}
-                                            className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs outline-none">
-                                            <option value="college">College</option><option value="shs_strand">SHS Strand</option><option value="jhs">JHS</option><option value="elementary">Elementary</option><option value="staff">Staff</option>
-                                        </select>
+                                        {isUniversity && (
+                                            <select value={g.educationalLevel || ''} onChange={e => setCommunityGroups(prev => prev.map((gr, i) => i === idx ? { ...gr, educationalLevel: e.target.value } : gr))}
+                                                className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs outline-none">
+                                                <option value="">— Level —</option>
+                                                <option value="Kindergarten">Kindergarten</option>
+                                                <option value="Elementary">Elementary</option>
+                                                <option value="JHS">JHS</option>
+                                                <option value="SHS">SHS</option>
+                                                <option value="College">College</option>
+                                            </select>
+                                        )}
                                         <button type="button" onClick={() => setCommunityGroups(prev => prev.filter((_, i) => i !== idx))}
                                             className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={14} /></button>
                                     </div>
                                 ))}
                             </div>
-                            <CommunityGroupImport onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
+                            <CommunityGroupImport orgType={formData.orgType} onImport={groups => setCommunityGroups(prev => [...prev, ...groups])} />
                         </div>
                     )}
                 </form>
