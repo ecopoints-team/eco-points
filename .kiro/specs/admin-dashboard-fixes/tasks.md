@@ -302,3 +302,35 @@
   - [x] 35.1 `LogIn.jsx` Phase 1 — replace single `fullName` field with `firstName / middleName / lastName` (3-column grid, matching `AddRegularUserModal`)
   - [x] 35.2 `LogIn.jsx` — update all state, reset, save/restore, and payload references from `fullName` → `firstName/middleName/lastName`
   - [x] 35.3 `LogIn.jsx` `InputField` component — fix `web-web-rounded-lg` typo → `rounded-lg` to restore border radius on all signup inputs
+
+---
+
+## ERD Field Relocation + User-Form Simplification (Option B)
+
+Plan: `docs/superpowers/plans/2026-06-18-erd-field-relocation-and-form-simplification.md`
+
+- [x] 36. Phase 1–3 Backend (merged to dev as `cleanup/erd-field-relocation`)
+  - [x] 36.1 Models: `educational_level` moved to `community_groups`; `group_type` dropped; `year_level` kept on `users`
+  - [x] 36.2 Migration `d15021ae149c_erd_field_relocation.py` applied to Supabase
+  - [x] 36.3 Schemas: `educationalLevel` on group schemas; dropped from user/register schemas
+  - [x] 36.4 Controllers: groups/locations/users/auth — replace `groupType`→`educationalLevel`; non-student auto-assign on the backend
+  - [x] 36.5 Locations controller: removed `POST/PUT/DELETE /org-types` endpoints (org types locked to 3 fixed values)
+  - [x] 36.6 Seeders + 12 test fixture files swept of `group_type=`
+  - [x] 36.7 Server suite: 223 passed
+  - [x] 36.8 ERD.md updated
+
+- [x] 37. Phase 4 Frontend (`feat/erd-field-relocation-frontend`)
+  - [x] 37.1 `client/src/lib/validateField.js` — group rule renamed `groupType` → `educationalLevel`
+  - [x] 37.2 `client/src/lib/enumLabels.js` — added `educationalLevelLabel`; kept `groupTypeLabel` as backward-compat alias
+  - [x] 37.3 `AddRegularUserModal.jsx` — full rewrite. New cascade: Location → User Type → Community Group (+ student-only Year Level derived from `selectedGroup.educationalLevel`). University + alumni/faculty/staff hide group/year (backend auto-assigns). Org types limited to University/Corporate/Community.
+  - [x] 37.4 Edit User modal in `app/admin/users/page.js` — same simplification: dropped `editFormData.educationalLevel`, removed legacy `editIsSchoolOrg`/`GROUP_TYPE_MAP`/`editShowEduc`/`editGroupLabel`. Year level derives from selected group.
+  - [x] 37.5 `app/admin/locations/page.js`:
+    - Locked org types to 3 fixed values (`FIXED_ORG_TYPES = ['University', 'Corporate', 'Community']`)
+    - Removed `orgTypesApi` import + all custom CRUD state/handlers (add/edit/delete)
+    - Replaced custom org-type dropdown UI with simple `CustomDropdown` (both Add and Edit modals)
+    - Inline community-groups table: `groupType` `<select>` → `educationalLevel` dropdown (Kindergarten/Elementary/JHS/SHS/College) shown ONLY when org type is University
+    - `CommunityGroupImport` component: accepts `orgType` prop. University template = `name, abbreviation, educational_level`. Corporate/Community template = `name, abbreviation`.
+  - [x] 37.6 `LogIn.jsx` signup — dropped `SHS_STRANDS`, `COLLEGE_DEPARTMENTS` constants, `educationLevel`/`strand`/`department`/`departmentSearch`/`strandSearch` state. New cascade: User Type (Student/Faculty/Staff) → Community Group (student only) → Year Level (derived from selected group's `educationalLevel`). Faculty/Staff hide group; backend auto-assigns. Removed unused `GraduationCap` import.
+  - [x] 37.7 Client build passes ✅
+  - [ ] 37.8 Push branch + merge to dev (after manual smoke)
+  - [ ] 37.9 Manual smoke: create University location with College community group → add Student user → confirm cascade. Add Faculty user → confirm no group field. Confirm org-type field has no add button.
