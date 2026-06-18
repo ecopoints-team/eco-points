@@ -137,7 +137,6 @@ class RegisterSchema(_StrictModel):
         'resident', 'community_official', 'community_worker', 'business_owner',
         'employee', 'manager', 'executive', 'contractor', 'guest',
     ]] = None
-    educationalLevel: Optional[str] = None
     yearLevel: Optional[str] = None
     locationId: Optional[int] = None
     groupId: Optional[int] = None
@@ -162,7 +161,6 @@ class UserCreateSchema(_StrictModel):
     password: Optional[str] = None
     role: Optional[str] = None
     userType: Optional[str] = None
-    educationalLevel: Optional[str] = None
     yearLevel: Optional[str] = None
     communityGroupId: Optional[int] = None
     isActive: Optional[bool] = None
@@ -184,7 +182,6 @@ class UserUpdateSchema(_StrictModel):
     password: Optional[str] = None
     role: Optional[str] = None
     userType: Optional[str] = None
-    educationalLevel: Optional[str] = None
     yearLevel: Optional[str] = None
     communityGroupId: Optional[int] = None
     isActive: Optional[bool] = None
@@ -330,7 +327,7 @@ class CommunityGroupInlineSchema(_StrictModel):
 
     name: str
     abbreviation: Optional[str] = None
-    groupType: Optional[str] = None
+    educationalLevel: Optional[str] = None
 
 
 class LocationCreateSchema(_StrictModel):
@@ -359,7 +356,7 @@ class CommunityGroupUpdateInlineSchema(_StrictModel):
     id: Optional[int] = None
     name: str
     abbreviation: Optional[str] = None
-    groupType: Optional[str] = None
+    educationalLevel: Optional[str] = None
 
 
 class LocationUpdateSchema(_StrictModel):
@@ -503,7 +500,7 @@ class GroupCreateSchema(_StrictModel):
 
     name: Optional[str] = None
     abbreviation: Optional[str] = None
-    groupType: Optional[str] = None
+    educationalLevel: Optional[str] = None
     organizationId: Optional[int] = None
 
 
@@ -512,7 +509,7 @@ class GroupUpdateSchema(_StrictModel):
 
     name: Optional[str] = None
     abbreviation: Optional[str] = None
-    groupType: Optional[str] = None
+    educationalLevel: Optional[str] = None
 
 
 # ══════════════════════════════════════════════════════════════════════════
