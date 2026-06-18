@@ -142,8 +142,14 @@ class OrgContact(db.Model):
 
 class CommunityGroup(db.Model):
     """
-    Dynamic sub-groups for leaderboards and user classification.
-    group_type values: 'shs_strand', 'college', 'staff', or NULL.
+    Dynamic sub-groups for user classification (e.g. BSIT, STEM, IT Dept).
+
+    A group carries its educational_level so the user form does not need to
+    ask for it — selecting the group implies the level. year_level lives on
+    the User (it changes yearly).
+
+    educational_level values (University org type only):
+      Kindergarten, Elementary, JHS, SHS, College. NULL for Corporate/Community.
     """
     __tablename__ = 'community_groups'
     id = db.Column(db.Integer, primary_key=True)
@@ -151,7 +157,7 @@ class CommunityGroup(db.Model):
                                 nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     abbreviation = db.Column(db.String(50))
-    group_type = db.Column(db.String(50), nullable=True)          # Nullable per ERD
+    educational_level = db.Column(db.String(30), nullable=True)   # Kindergarten, Elementary, JHS, SHS, College
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -189,9 +195,8 @@ class User(db.Model):
 
     # Role & Classification
     role = db.Column(db.String(30), default='user', nullable=False, index=True)
-    user_type = db.Column(db.String(30), nullable=True)           # Org-type dependent: student, alumni, faculty, staff, resident, employee, etc.
-    educational_level = db.Column(db.String(30), nullable=True)   # Kindergarten, Elementary, JHS, SHS, College
-    year_level = db.Column(db.String(30), nullable=True)          # e.g. Grade 11, 3rd Year
+    user_type = db.Column(db.String(30), nullable=True)           # student, alumni, faculty, staff, resident, employee, etc.
+    year_level = db.Column(db.String(30), nullable=True)          # e.g. Grade 11, 3rd Year (student-only)
 
     # Status
     is_active = db.Column(db.Boolean, default=True)
