@@ -65,7 +65,6 @@
   {"method": "GET",    "rule": "/api/web/settings/notifications/logs",                   "endpoint": "web.settings.get_notification_logs",    "decorators": ["token_required", "permission_required"]},
   {"method": "POST",   "rule": "/api/web/settings/notifications/test",                   "endpoint": "web.settings.test_notification",        "decorators": ["token_required", "permission_required"]},
   {"method": "GET",    "rule": "/api/web/settings/points",                               "endpoint": "web.settings.get_points_config",        "decorators": ["token_required", "permission_required"]},
-  {"method": "PUT",    "rule": "/api/web/settings/points",                               "endpoint": "web.settings.update_points_config",     "decorators": ["token_required", "permission_required"]},
   {"method": "GET",    "rule": "/api/web/settings/security",                             "endpoint": "web.settings.get_security_config",      "decorators": ["token_required", "permission_required"]},
   {"method": "PUT",    "rule": "/api/web/settings/security",                             "endpoint": "web.settings.update_security_config",   "decorators": ["token_required", "permission_required"]},
   {"method": "POST",   "rule": "/api/web/settings/security/force-logout",                "endpoint": "web.settings.force_logout_all",         "decorators": ["token_required", "permission_required"]},

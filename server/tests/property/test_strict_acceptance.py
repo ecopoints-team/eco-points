@@ -135,14 +135,6 @@ def _settings_notifications_update_body(org_id, group_id):
     return {'settings': [{'alertKey': 'machine_offline', 'emailEnabled': True}]}
 
 
-def _settings_points_update_body(org_id, group_id):
-    return {
-        'smallWithLabel': 5, 'smallNoLabel': 3,
-        'mediumWithLabel': 8, 'mediumNoLabel': 5,
-        'largeWithLabel': 10, 'largeNoLabel': 7,
-    }
-
-
 def _settings_channels_update_body(org_id, group_id):
     return {'emailRecipient': 'test@example.com', 'emailEnabled': True,
             'smsRecipient': '', 'smsEnabled': False}
@@ -286,15 +278,6 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         'PUT',
         frozenset({'settings'}),
         _settings_notifications_update_body,
-    ),
-    (
-        '/api/web/settings/points',
-        'PUT',
-        frozenset({
-            'smallWithLabel', 'smallNoLabel', 'mediumWithLabel',
-            'mediumNoLabel', 'largeWithLabel', 'largeNoLabel',
-        }),
-        _settings_points_update_body,
     ),
     (
         '/api/web/settings/channels',

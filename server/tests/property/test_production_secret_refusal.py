@@ -70,7 +70,6 @@ def test_required_set_matches_phase4a_carveout():
     }
     assert set(OPTIONAL_PRODUCTION_SECRETS) == {
         'RESEND_API_KEY',
-        'TWILIO_AUTH_TOKEN',
     }
 
 
@@ -136,7 +135,6 @@ _CLEAN_PROD_ENV: dict[str, str] = {
     'SECRET_KEY': 'a-real-32-byte-production-secret-xyz',
     'DATABASE_URL': 'postgresql://user:pw@db.internal:5432/ecopoints',
     'RESEND_API_KEY': 're_real_production_api_key_deadbeef',
-    'TWILIO_AUTH_TOKEN': 'real-twilio-auth-token-deadbeef',
 }
 
 # Sanity at import time — ensures the baseline can never itself trip

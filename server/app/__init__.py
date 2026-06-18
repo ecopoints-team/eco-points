@@ -41,7 +41,6 @@ CRITICAL_PRODUCTION_SECRETS = (
 # Secrets for optional services — app starts but features degrade gracefully.
 OPTIONAL_PRODUCTION_SECRETS = (
     'RESEND_API_KEY',     # Resend API key used by notification_service._send_email
-    'TWILIO_AUTH_TOKEN',  # SMS provider key used by notification_service._send_sms
 )
 
 # Per-variable known development-default values that MUST NOT be present
@@ -65,11 +64,6 @@ KNOWN_DEV_DEFAULTS = {
     'RESEND_API_KEY': frozenset({
         # Matches the placeholder in `server/.env`.
         'your-resend-api-key',
-        'changeme',
-    }),
-    'TWILIO_AUTH_TOKEN': frozenset({
-        # Matches the placeholder in `server/.env`.
-        'your-auth-token',
         'changeme',
     }),
 }

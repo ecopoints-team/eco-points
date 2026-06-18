@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 
 from .. import db
 from ..models import OtpCode
-from ..services.notification_service import _send_email, _send_sms
+from ..services.notification_service import _send_email
 
 
 OTP_LENGTH = 6
@@ -74,7 +74,10 @@ def revoke_otp(user_id):
 
 
 def send_otp(user, method='email'):
-    """Generate and send an OTP to the user via email or SMS.
+    """Generate and send an OTP to the user via email.
+
+    The ``method`` parameter is kept for API compatibility but SMS has been
+    removed — all OTPs are sent by email regardless of the value passed.
     Returns (code, success, error)
     """
     code = generate_otp(user.id)
@@ -99,20 +102,13 @@ def send_otp(user, method='email'):
         f'</div>'
     )
 
-    if method == 'sms' and user.phone:
-        sms_body = f'[EcoPoints] Your login code: {code}. Expires in 5 minutes.'
-        success, error = _send_sms(user.phone, sms_body)
-        if otp:
-            otp.sent_to = user.phone
-            otp.channel = 'sms'
-            db.session.commit()
-    elif user.email:
+    if user.email:
         success, error = _send_email(user.email, subject, body)
         if otp:
             otp.sent_to = user.email
             otp.channel = 'email'
             db.session.commit()
     else:
-        return code, False, 'No contact method available for this user'
+        return code, False, 'No email address available for this user'
 
     return code, success, error
