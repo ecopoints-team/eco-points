@@ -118,7 +118,7 @@ def _seed_org(app: Flask) -> Tuple[int, int]:
             organization_id=org.id,
             name='Default Group',
             abbreviation='DEF',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.commit()

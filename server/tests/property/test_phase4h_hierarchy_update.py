@@ -134,7 +134,7 @@ def hierarchy_app():
             organization_id=org.id,
             name='Default Group',
             abbreviation='DEF',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.flush()

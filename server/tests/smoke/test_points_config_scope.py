@@ -65,7 +65,7 @@ def _seed(app):
             organization_id=org.id,
             name='Pts Group',
             abbreviation='PTS',
-            group_type='college',
+            
         )
         db.session.add(grp)
         db.session.flush()

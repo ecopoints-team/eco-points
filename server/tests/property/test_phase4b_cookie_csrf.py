@@ -137,7 +137,7 @@ def login_user(app):
             organization_id=org.id,
             name='Login Group',
             abbreviation='LOG',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.flush()

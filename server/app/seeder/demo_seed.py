@@ -289,7 +289,7 @@ def run_demo_seed() -> None:
     if not cg_bsit:
         cg_bsit = CommunityGroup(
             organization_id=org_eptu.id, name='BSIT',
-            abbreviation='BSIT', group_type='college',
+            abbreviation='BSIT', educational_level='College',
         )
         db.session.add(cg_bsit)
         db.session.flush()
@@ -300,7 +300,7 @@ def run_demo_seed() -> None:
     if not cg_bscs:
         cg_bscs = CommunityGroup(
             organization_id=org_eptu.id, name='BSCS',
-            abbreviation='BSCS', group_type='college',
+            abbreviation='BSCS', educational_level='College',
         )
         db.session.add(cg_bscs)
         db.session.flush()
@@ -311,7 +311,7 @@ def run_demo_seed() -> None:
     if not cg_it:
         cg_it = CommunityGroup(
             organization_id=org_gcs.id, name='IT Department',
-            abbreviation='IT', group_type='staff',
+            abbreviation='IT', educational_level=None,
         )
         db.session.add(cg_it)
         db.session.flush()
@@ -322,7 +322,7 @@ def run_demo_seed() -> None:
     if not cg_hr:
         cg_hr = CommunityGroup(
             organization_id=org_gcs.id, name='HR Department',
-            abbreviation='HR', group_type='staff',
+            abbreviation='HR', educational_level=None,
         )
         db.session.add(cg_hr)
         db.session.flush()

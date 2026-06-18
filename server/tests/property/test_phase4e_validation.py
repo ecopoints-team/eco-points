@@ -320,7 +320,7 @@ def phase4e_context(app):
             organization_id=org.id,
             name='Staff',
             abbreviation='STF',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.flush()
