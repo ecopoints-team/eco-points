@@ -245,3 +245,28 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 - On the sign up side of the log in modal, the fields should be the same as the `Add User` modal on the `User Management` Menu
 
 - The fields on the signup page lost their slight radius, add some as well.
+
+
+### Admin Dashboard Fixes Part 7
+
+## Tasks
+
+### ERD Field and Admin Dashboard Re-polishing
+
+- On the `Locations Menu`, on its community group field, we will transfer the  string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | Newly Added", string year_level "Nullable - e.g. Grade 11, 3rd Year | Newly Added" column from the ERD to the community group and remove on the users table. Also remove the string group_type "Nullable - e.g. College Dept, SHS Strand" because its necesarry anymore. Here's the new field on the community group:
+
+  - Name field, Abbrev field, Educ Level field, and year level
+
+- Now, since we transfered the column and the field on the commuity group add location modal those columns, we will removing them on the users table and the Add User modal as well as the sign up side of the log in page. Meaning the Add User and Sign up side should look like this now:
+
+  - When the location is selected by the user, the field that will show up next should be user type and community group only now. No educ level and year level anymore.
+
+- We will be updating the import and the helper on the add location import on the community group side on the locations menu. 
+
+- HUGE NOTE: This is ONLY if the user's user type is a student, okay? Other user type should be the same
+
+- If the organization type is university, the user type alumni, faculty, and staff should be automatically included on the default community group. The community group field on the add user and sign up should now show anymore if the user type are these three.
+
+- We will stick into 3 organization type only. University, Corporate, and Community. We will remove the add button beside the organization type field.
+
+- For other organization type, the community group field should stay: Name field and Abrev field only along with its import. Meaning, the import and helper icon  and template for university is different from the Corporate and Community Organization type.
