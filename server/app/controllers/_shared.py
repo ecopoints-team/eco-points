@@ -144,7 +144,7 @@ def _serialize_organization(o, bottle_count=None):
         ),
         'communityGroups': [
             {'id': cg.id, 'name': cg.name, 'abbreviation': cg.abbreviation or '',
-             'groupType': cg.group_type or 'college'}
+             'educationalLevel': cg.educational_level or None}
             for cg in (o.community_groups or [])
         ],
     }
@@ -220,7 +220,6 @@ def _serialize_user(u):
         'phone': u.phone,
         'role': role_value,
         'userType': u.user_type,
-        'educationalLevel': u.educational_level,
         'yearLevel': u.year_level,
         'communityGroupId': u.community_group_id,
         'isActive': u.is_active,

@@ -179,8 +179,8 @@ def create_user(current_user, payload):
         group_id = data.get('groupId')
         if not group_id:
             default_group = CommunityGroup.query.filter_by(
-                organization_id=location_id, group_type='staff'
-            ).first()
+                organization_id=location_id
+            ).order_by(CommunityGroup.id.asc()).first()
             if not default_group:
                 default_group = CommunityGroup.query.filter_by(organization_id=location_id).first()
             if not default_group:
@@ -201,7 +201,6 @@ def create_user(current_user, payload):
             phone=data.get('phone'),
             role=role,
             user_type=data.get('userType'),
-            educational_level=data.get('educationalLevel'),
             year_level=data.get('yearLevel'),
             is_active=True,
         )
@@ -328,7 +327,7 @@ def update_user(current_user, user_id, payload):
             ('firstName', 'first_name'), ('lastName', 'last_name'), ('middleName', 'middle_name'),
             ('username', 'username'), ('email', 'email'),
             ('phone', 'phone'), ('role', 'role'), ('userType', 'user_type'),
-            ('educationalLevel', 'educational_level'), ('yearLevel', 'year_level'),
+            ('yearLevel', 'year_level'),
             ('isActive', 'is_active'),
         ]:
             if front in data:

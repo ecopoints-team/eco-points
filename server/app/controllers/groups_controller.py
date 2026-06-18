@@ -35,12 +35,12 @@ def get_groups(current_user):
         query = CommunityGroup.query
         if loc_id:
             query = query.filter_by(organization_id=loc_id)
-        groups = query.order_by(CommunityGroup.group_type, CommunityGroup.name).all()
+        groups = query.order_by(CommunityGroup.educational_level, CommunityGroup.name).all()
         result = [{
             'id': g.id,
             'name': g.name,
             'abbreviation': g.abbreviation,
-            'groupType': g.group_type,
+            'educationalLevel': g.educational_level,
             'organizationId': g.organization_id,
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
@@ -55,14 +55,14 @@ def get_groups(current_user):
 def create_group(current_user, payload):
     """Create a new community group.
 
-    Body: { name, abbreviation?, groupType, organizationId? }
+    Body: { name, abbreviation?, educationalLevel, organizationId? }
     """
     try:
         name = (payload.name or '').strip()
         if not name:
             return jsonify({'success': False, 'error': 'Group name is required'}), 400
 
-        group_type = payload.groupType or 'college'
+        educational_level = payload.educationalLevel
         org_id = payload.organizationId
 
         if current_user.role != 'superadmin':
@@ -82,7 +82,7 @@ def create_group(current_user, payload):
             organization_id=org_id,
             name=name,
             abbreviation=(payload.abbreviation or '').strip() or None,
-            group_type=group_type,
+            educational_level=educational_level,
         )
         db.session.add(group)
         _log_action(current_user, 'Group Created', name, 'Groups')
@@ -91,7 +91,7 @@ def create_group(current_user, payload):
             'id': group.id,
             'name': group.name,
             'abbreviation': group.abbreviation,
-            'groupType': group.group_type,
+            'educationalLevel': group.educational_level,
             'organizationId': group.organization_id,
         }}), 201
     except Exception as e:
@@ -118,8 +118,8 @@ def update_group(current_user, group_id, payload):
             group.name = (data['name'] or '').strip()
         if 'abbreviation' in data:
             group.abbreviation = (data['abbreviation'] or '').strip() or None
-        if 'groupType' in data:
-            group.group_type = data['groupType']
+        if 'educationalLevel' in data:
+            group.educational_level = data['educationalLevel']
 
         _log_action(current_user, 'Group Updated', group.name, 'Groups')
         db.session.commit()
@@ -127,7 +127,7 @@ def update_group(current_user, group_id, payload):
             'id': group.id,
             'name': group.name,
             'abbreviation': group.abbreviation,
-            'groupType': group.group_type,
+            'educationalLevel': group.educational_level,
             'organizationId': group.organization_id,
         }}), 200
     except Exception as e:

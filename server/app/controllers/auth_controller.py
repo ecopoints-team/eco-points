@@ -706,8 +706,8 @@ def register(payload):
         # Resolve community group
         if not group_id:
             default_group = CommunityGroup.query.filter_by(
-                organization_id=location_id, group_type='staff'
-            ).first()
+                organization_id=location_id
+            ).order_by(CommunityGroup.id.asc()).first()
             if not default_group:
                 default_group = CommunityGroup.query.filter_by(organization_id=location_id).first()
             if not default_group:
@@ -783,12 +783,12 @@ def public_groups():
         if not loc_id:
             return jsonify({'success': True, 'groups': []}), 200
         groups = CommunityGroup.query.filter_by(organization_id=loc_id)\
-            .order_by(CommunityGroup.group_type, CommunityGroup.name).all()
+            .order_by(CommunityGroup.educational_level, CommunityGroup.name).all()
         result = [{
             'id': g.id,
             'name': g.name,
             'abbreviation': g.abbreviation,
-            'groupType': g.group_type,
+            'educationalLevel': g.educational_level,
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
     except Exception as e:
