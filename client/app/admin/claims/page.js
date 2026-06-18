@@ -192,7 +192,7 @@ export default function ClaimScannerPage() {
                                 {
                                     fps: 10,
                                     qrbox: (width, height) => {
-                                        const size = Math.min(width, height) * 0.7;
+                                        const size = Math.max(50, Math.min(width, height) * 0.7);
                                         return { width: size, height: size };
                                     }
                                 },

@@ -109,14 +109,19 @@ export function userTypeLabel(type) {
     return USER_TYPE_LABELS[type] || type;
 }
 
-// ─── Community-group type (free-form server enum) ────────────────────
+// ─── Community-group educational level (free-form server enum) ───────
 //
-// `groupType` is currently a free-form string on the server (e.g., "College",
-// "Department"). This helper passes it through and applies the standard
-// empty-state, so pages do not have to special-case missing values inline.
-export function groupTypeLabel(type) {
-    return formatField(type);
+// `educationalLevel` is a free-form string on the server (e.g., "College",
+// "SHS", "Elementary"). This helper passes it through and applies the
+// standard empty-state, so pages do not have to special-case missing
+// values inline.
+export function educationalLevelLabel(level) {
+    return formatField(level);
 }
+
+// Backward-compat alias — old call sites that use `groupTypeLabel(...)`
+// will keep working until they're migrated.
+export const groupTypeLabel = educationalLevelLabel;
 
 // ─── Recycling-session status ────────────────────────────────────────
 const SESSION_STATUS_LABELS = {

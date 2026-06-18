@@ -34,7 +34,7 @@ erDiagram
 
     ORG_TYPES {
         int id PK
-        string name "e.g. University, Corporation, HOA"
+        string name "Fixed: University, Corporate, Community"
         datetime created_at
     }
 
@@ -75,7 +75,7 @@ erDiagram
         int organization_id FK "Reference -> ORGANIZATIONS"
         string name "e.g. BSIT, STEM, IT Dept"
         string abbreviation "Short display name"
-        string group_type "Nullable - e.g. College Dept, SHS Strand"
+        string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | University org type only"
         datetime created_at
     }
 
@@ -177,9 +177,8 @@ erDiagram
         string phone UK "Nullable"
         string password_hash "Required - for Account Access"
         string role "e.g. admin roles and user"
-        string user_type "Org-type dependent - see user_type_config | Newly Added: alumni, resident, community_official, community_worker, business_owner, employee, manager, executive, contractor, guest"
-        string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | Newly Added"
-        string year_level "Nullable - e.g. Grade 11, 3rd Year | Newly Added"
+        string user_type "Org-type dependent | student, alumni, faculty, staff, resident, community_official, community_worker, business_owner, employee, manager, executive, contractor, guest"
+        string year_level "Nullable - e.g. Grade 11, 3rd Year | Student user_type only"
         boolean is_active
         datetime last_login "Log in Tracking"
         datetime deactivated_at "Nullable - When account was disabled"

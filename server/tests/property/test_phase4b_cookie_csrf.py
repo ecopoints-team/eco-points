@@ -137,7 +137,7 @@ def login_user(app):
             organization_id=org.id,
             name='Login Group',
             abbreviation='LOG',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.flush()
@@ -159,19 +159,29 @@ def login_user(app):
         return {'email': email, 'password': password, 'user_id': user.id}
 
 
-def test_login_sets_token_and_csrf_cookies(app, login_user):
+def test_login_sets_token_and_csrf_cookies(app, login_user, monkeypatch):
     """Property O — login flow assertion (Requirement 4B.11).
 
     A successful ``POST /api/web/auth/login`` MUST issue:
 
-      * ``Set-Cookie: token=<jwt>; HttpOnly; Secure; SameSite=Strict;
+      * ``Set-Cookie: admin_token=<jwt>; HttpOnly; Secure; SameSite=Strict;
         Path=/; Max-Age=<n>`` — the JWT itself, locked away from JS.
+        Named 'admin_token' (not 'token') to keep the admin session
+        separate from the regular user session cookie.
       * ``Set-Cookie: csrf_token=<random>; Secure; SameSite=Strict;
         Path=/; Max-Age=<n>`` — readable by JS so the Client can echo
         it on ``X-CSRF-Token``.
 
     Both cookies share the same Max-Age (the active session expiry).
+
+    The ``Secure`` flag is environment-controlled (``COOKIE_SECURE``) so
+    that cookies work over plain ``http://localhost`` in local dev. This
+    test pins the PRODUCTION posture: with ``COOKIE_SECURE=true`` (which
+    production MUST set), both cookies are issued ``Secure``.
     """
+    # Pin production cookie posture for this assertion.
+    monkeypatch.setenv('COOKIE_SECURE', 'true')
+
     with app.test_client() as client:
         resp = client.post(
             '/api/web/auth/login',
@@ -185,10 +195,12 @@ def test_login_sets_token_and_csrf_cookies(app, login_user):
     body = resp.get_json()
     assert body is not None and body.get('success') is True, body
 
-    # ── token cookie ──────────────────────────────────────────────
-    token_cookies = _set_cookies_by_name(resp, 'token')
+    # ── admin_token cookie ───────────────────────────────────────────
+    # The JWT is set as 'admin_token' (not 'token') to keep the admin
+    # session separate from the regular user session cookie.
+    token_cookies = _set_cookies_by_name(resp, 'admin_token')
     assert len(token_cookies) == 1, (
-        'Expected exactly one Set-Cookie: token=... header; got '
+        'Expected exactly one Set-Cookie: admin_token=... header; got '
         f'{len(token_cookies)} from {resp.headers.getlist("Set-Cookie")!r}'
     )
     token_value, token_attrs = token_cookies[0]

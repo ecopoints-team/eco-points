@@ -108,7 +108,6 @@ import {
   ArrowRight,
   Leaf,
   Search,
-  GraduationCap,
   BookOpen,
   Briefcase,
   AlertCircle,
@@ -132,124 +131,6 @@ const ADMIN_ROLES = new Set([
   "technician",
   "inventory_officer",
 ]);
-
-// ============================================================================
-// EDUCATIONAL DATA - Strands & Departments
-// ============================================================================
-const SHS_STRANDS = [
-  {
-    id: "STEM",
-    name: "STEM",
-    fullName: "Science, Technology, Engineering, and Mathematics",
-  },
-  { id: "ABM", name: "ABM", fullName: "Accountancy, Business, and Management" },
-  { id: "HUMSS", name: "HUMSS", fullName: "Humanities and Social Sciences" },
-  { id: "GAS", name: "GAS", fullName: "General Academic Strand" },
-  { id: "HE", name: "H.E", fullName: "Home Economics" },
-  { id: "ICT", name: "ICT", fullName: "Information Communication Technology" },
-  { id: "IA", name: "I.A", fullName: "Industrial Arts" },
-];
-
-const COLLEGE_DEPARTMENTS = [
-  { id: "BSN", name: "Bachelor of Science in Nursing", abbreviation: "BSN" },
-  {
-    id: "BEED",
-    name: "Bachelor of Elementary Education Major in General Education",
-    abbreviation: "BEED",
-  },
-  {
-    id: "BEED-SPED",
-    name: "Bachelor of Elementary Education (SPED)",
-    abbreviation: "BEED-SPED",
-  },
-  { id: "BPED", name: "Bachelor of Physical Education", abbreviation: "BPEd" },
-  {
-    id: "BSED-ENG",
-    name: "Bachelor of Secondary Education - Major in English",
-    abbreviation: "BSEd-English",
-  },
-  {
-    id: "BSED-MATH",
-    name: "Bachelor of Secondary Education - Major in Mathematics",
-    abbreviation: "BSEd-Math",
-  },
-  {
-    id: "BSED-FIL",
-    name: "Bachelor of Secondary Education - Major in Filipino",
-    abbreviation: "BSEd-Filipino",
-  },
-  {
-    id: "BSED-SCI",
-    name: "Bachelor of Secondary Education - Major in Science",
-    abbreviation: "BSEd-Science",
-  },
-  {
-    id: "BSED-SS",
-    name: "Bachelor of Secondary Education - Major in Social Studies",
-    abbreviation: "BSEd-SocStud",
-  },
-  {
-    id: "BSED-VE",
-    name: "Bachelor of Secondary Education - Major in Values Education",
-    abbreviation: "BSEd-ValEd",
-  },
-  {
-    id: "BSBA-MM",
-    name: "Bachelor of Science in Business Administration - Major in Marketing Management",
-    abbreviation: "BSBA-MM",
-  },
-  {
-    id: "BSBA-FM",
-    name: "Bachelor of Science in Business Administration - Major in Financial Management",
-    abbreviation: "BSBA-FM",
-  },
-  {
-    id: "BSAIS",
-    name: "Bachelor of Science in Accounting Information System",
-    abbreviation: "BSAIS",
-  },
-  {
-    id: "BSIT",
-    name: "Bachelor of Science in Information Technology",
-    abbreviation: "BSIT",
-  },
-  {
-    id: "BSCS",
-    name: "Bachelor of Science in Computer Science",
-    abbreviation: "BSCS",
-  },
-  {
-    id: "BSHM",
-    name: "Bachelor of Science in Hospitality Management",
-    abbreviation: "BSHM",
-  },
-  {
-    id: "BSTM",
-    name: "Bachelor of Science in Tourism Management",
-    abbreviation: "BSTM",
-  },
-  {
-    id: "BSCrim",
-    name: "Bachelor of Science in Criminology",
-    abbreviation: "BSCrim",
-  },
-  {
-    id: "AB-EL",
-    name: "Bachelor of Arts in English Language",
-    abbreviation: "AB-EL",
-  },
-  {
-    id: "AB-Psych",
-    name: "Bachelor of Arts in Psychology",
-    abbreviation: "AB-Psych",
-  },
-  {
-    id: "AB-PolSci",
-    name: "Bachelor of Arts in Political Science",
-    abbreviation: "AB-PolSci",
-  },
-  { id: "DM", name: "Diploma in Midwifery", abbreviation: "DM" },
-];
 
 // ============================================================================
 // Elastic Float Input — Sign In fields only
@@ -512,11 +393,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   const [locationsList, setLocationsList] = useState([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [communityGroups, setCommunityGroups] = useState([]);
-  const [educationLevel, setEducationLevel] = useState("");
-  const [strand, setStrand] = useState("");
-  const [strandSearch, setStrandSearch] = useState("");
-  const [department, setDepartment] = useState("");
-  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [communityGroupId, setCommunityGroupId] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
   const [yearLevel, setYearLevel] = useState("");
   const [error, setError] = useState("");
 
@@ -584,9 +462,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       role ||
       phone ||
       locationId ||
-      educationLevel ||
-      strand ||
-      department ||
+      communityGroupId ||
       yearLevel
     );
   };
@@ -621,11 +497,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setLocationSearch("");
     setShowLocationDropdown(false);
     setCommunityGroups([]);
-    setEducationLevel("");
-    setStrand("");
-    setStrandSearch("");
-    setDepartment("");
-    setDepartmentSearch("");
+    setCommunityGroupId("");
+    setGroupSearch("");
     setYearLevel("");
     setSignUpPhase(1);
   };
@@ -644,11 +517,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       phone,
       locationId,
       locationSearch,
-      educationLevel,
-      strand,
-      strandSearch,
-      department,
-      departmentSearch,
+      communityGroupId,
+      groupSearch,
       yearLevel,
       signUpPhase,
     };
@@ -667,11 +537,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setPhone(data.phone || "");
     setLocationId(data.locationId || "");
     setLocationSearch(data.locationSearch || "");
-    setEducationLevel(data.educationLevel || "");
-    setStrand(data.strand || "");
-    setStrandSearch(data.strandSearch || "");
-    setDepartment(data.department || "");
-    setDepartmentSearch(data.departmentSearch || "");
+    setCommunityGroupId(data.communityGroupId || "");
+    setGroupSearch(data.groupSearch || "");
     setYearLevel(data.yearLevel || "");
     setSignUpPhase(data.signUpPhase || 1);
   };
@@ -805,19 +672,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setError("");
 
     try {
-      // Resolve groupId from strand/department selection via communityGroups
-      let groupId = null;
-      if (role === "Student" && educationLevel === "shs" && strand) {
-        const match = communityGroups.find(g => g.groupType === "shs_strand" && g.abbreviation === strand);
-        if (match) groupId = match.id;
-      } else if ((role === "Student" && educationLevel === "college" && department) || (role === "Faculty" && department)) {
-        const match = communityGroups.find(g => g.groupType === "college" && g.abbreviation === department);
-        if (match) groupId = match.id;
-      } else if (role === "Staff") {
-        const match = communityGroups.find(g => g.groupType === "staff");
-        if (match) groupId = match.id;
-      }
-
+      // Backend auto-assigns default group for university non-students
+      // (alumni/faculty/staff). Students send the selected group.
       await authApi.register({
         firstName,
         middleName: middleName || undefined,
@@ -827,9 +683,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
         email: email || undefined,
         phone: phone ? `+63${phone}` : undefined,
         password,
-        userType: role.toLowerCase(),
+        userType: role.toLowerCase().replace(/ /g, '_'),
         locationId: parseInt(locationId),
-        groupId: groupId || undefined,
+        communityGroupId: communityGroupId ? parseInt(communityGroupId) : undefined,
         yearLevel: yearLevel || undefined,
       });
 
@@ -873,34 +729,24 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setLocationSearch("");
     setShowLocationDropdown(false);
     setCommunityGroups([]);
-    setEducationLevel("");
-    setStrand("");
-    setStrandSearch("");
-    setDepartment("");
-    setDepartmentSearch("");
+    setCommunityGroupId("");
+    setGroupSearch("");
     setYearLevel("");
     setError("");
     setSignUpPhase(1);
   };
 
-  // Reset department/strand when education level changes
+  // Reset group + year when role changes (cascade root)
   useEffect(() => {
-    setStrand("");
-    setStrandSearch("");
-    setDepartment("");
-    setDepartmentSearch("");
-    setYearLevel("");
-  }, [educationLevel]);
-
-  // Reset education fields when role changes
-  useEffect(() => {
-    setEducationLevel("");
-    setStrand("");
-    setStrandSearch("");
-    setDepartment("");
-    setDepartmentSearch("");
+    setCommunityGroupId("");
+    setGroupSearch("");
     setYearLevel("");
   }, [role]);
+
+  // Reset year level when the selected group changes
+  useEffect(() => {
+    setYearLevel("");
+  }, [communityGroupId]);
 
 
 
@@ -1373,8 +1219,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                               setLocationId(String(loc.id));
                               setLocationSearch(loc.fullName || loc.name);
                               setShowLocationDropdown(false);
-                              // Reset education fields when org changes
-                              setEducationLevel(""); setStrand(""); setStrandSearch(""); setDepartment(""); setDepartmentSearch(""); setYearLevel("");
+                              // Reset cascade fields when org changes
+                              setRole(""); setCommunityGroupId(""); setGroupSearch(""); setYearLevel("");
                             }}
                             className="w-full text-left px-3 py-2 hover:bg-lime-50 web-web-rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-2 group"
                           >
@@ -1397,54 +1243,49 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                   )}
                 </div>
 
-                {/* CONDITIONAL FIELDS BASED ON ROLE */}
-                {role === "Student" && locationId && (
-                  <>
-                    {/* Educational Level */}
-                    <div className="relative w-full group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
-                        <GraduationCap size={18} />
-                      </div>
-                      <select
-                        value={educationLevel}
-                        onChange={(e) => setEducationLevel(e.target.value)}
-                        required
-                        className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
-                                                    focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                                    block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
-                                                    ${educationLevel === "" ? "text-gray-400" : "text-gray-800"}`}
-                      >
-                        <option value="" disabled>
-                          Select Educational Level
-                        </option>
-                        <option value="shs">Senior High School</option>
-                        <option value="college">College</option>
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <ChevronDown size={16} />
-                      </div>
-                    </div>
+                {/* CONDITIONAL FIELDS BASED ON ROLE
+                    Cascade simplified per ERD relocation: educational_level lives on
+                    the community_group. Students pick a group; year-level options derive
+                    from the selected group's educationalLevel. Faculty/Staff are
+                    auto-assigned to the org's default group on the backend. */}
+                {role === "Student" && locationId && (() => {
+                  // Year-level options keyed by the selected group's educational_level.
+                  const YEAR_LEVELS_BY_LEVEL = {
+                    Kindergarten: [],
+                    Elementary: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"],
+                    JHS: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"],
+                    SHS: ["Grade 11", "Grade 12"],
+                    College: ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"],
+                  };
+                  const selectedGroup = communityGroups.find(g => String(g.id) === String(communityGroupId)) || null;
+                  const yearOptions = (selectedGroup && selectedGroup.educationalLevel)
+                    ? (YEAR_LEVELS_BY_LEVEL[selectedGroup.educationalLevel] || [])
+                    : [];
+                  return (
+                    <>
+                      <FloatingSearchDropdown
+                        placeholder="Select Community Group"
+                        icon={<BookOpen size={18} />}
+                        value={groupSearch}
+                        onChange={setGroupSearch}
+                        options={communityGroups.map(g => ({
+                          id: String(g.id),
+                          name: g.abbreviation
+                            ? `${g.abbreviation} — ${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ""}`
+                            : `${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ""}`,
+                          fullName: g.name,
+                        }))}
+                        onSelect={(option) => {
+                          setCommunityGroupId(option.id);
+                          setGroupSearch(option.name);
+                        }}
+                        searchKey="name"
+                        displayKey="name"
+                        subtitleKey="fullName"
+                        emptyMessage="No group found"
+                      />
 
-                    {/* SHS Strand Dropdown - Use community groups from API */}
-                    {educationLevel === "shs" && (
-                      <>
-                        <FloatingSearchDropdown
-                          placeholder="Select Strand"
-                          icon={<BookOpen size={18} />}
-                          value={strandSearch}
-                          onChange={setStrandSearch}
-                          options={communityGroups.filter(g => g.groupType === 'shs_strand').map(g => ({ id: g.abbreviation || g.name, name: g.abbreviation || g.name, fullName: g.name }))}
-                          onSelect={(option) => {
-                            setStrand(option.id);
-                            setStrandSearch(option.name);
-                          }}
-                          searchKey="name"
-                          displayKey="name"
-                          subtitleKey="fullName"
-                          emptyMessage="No strand found"
-                        />
-
-                        {/* Year Level (for Senior High School) */}
+                      {yearOptions.length > 0 && (
                         <div className="relative w-full group">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
                             <Zap size={18} />
@@ -1453,96 +1294,30 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                             value={yearLevel}
                             onChange={(e) => setYearLevel(e.target.value)}
                             required
-                            className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
-                                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                                            block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
-                                                            ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
+                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
+                                          focus:ring-2 focus:ring-lime-500 focus:border-transparent 
+                                          block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
+                                          ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
                           >
                             <option value="" disabled>
                               Select Year Level
                             </option>
-                            <option value="11">Grade 11</option>
-                            <option value="12">Grade 12</option>
+                            {yearOptions.map(y => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
                           </select>
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                             <ChevronDown size={16} />
                           </div>
                         </div>
-                      </>
-                    )}
+                      )}
+                    </>
+                  );
+                })()}
 
-                    {/* College Department Dropdown - Use community groups from API */}
-                    {educationLevel === "college" && (
-                      <>
-                        <FloatingSearchDropdown
-                          placeholder="Search Department"
-                          icon={<Building2 size={18} />}
-                          value={departmentSearch}
-                          onChange={setDepartmentSearch}
-                          options={communityGroups.filter(g => g.groupType === 'college').map(g => ({ id: g.abbreviation || g.name, name: g.name, abbreviation: g.abbreviation || g.name }))}
-                          onSelect={(option) => {
-                            setDepartment(option.id);
-                            setDepartmentSearch(option.abbreviation);
-                          }}
-                          searchKey="name"
-                          displayKey="name"
-                          subtitleKey="abbreviation"
-                          emptyMessage="No department found"
-                        />
-
-                        {/* Year Level (Only for College) */}
-                        <div className="relative w-full group">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
-                            <Zap size={18} />
-                          </div>
-                          <select
-                            value={yearLevel}
-                            onChange={(e) => setYearLevel(e.target.value)}
-                            required
-                            className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
-                                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                                            block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
-                                                            ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
-                          >
-                            <option value="" disabled>
-                              Select Year Level
-                            </option>
-                            <option value="1">1st Year</option>
-                            <option value="2">2nd Year</option>
-                            <option value="3">3rd Year</option>
-                            <option value="4">4th Year</option>
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <ChevronDown size={16} />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-
-                {/* Faculty: Department Search - Use community groups from API */}
-                {role === "Faculty" && locationId && (
-                  <FloatingSearchDropdown
-                    placeholder="Search Department"
-                    icon={<Building2 size={18} />}
-                    value={departmentSearch}
-                    onChange={setDepartmentSearch}
-                    options={communityGroups.filter(g => g.groupType === 'college').map(g => ({ id: g.abbreviation || g.name, name: g.name, abbreviation: g.abbreviation || g.name }))}
-                    onSelect={(option) => {
-                      setDepartment(option.id);
-                      setDepartmentSearch(option.abbreviation);
-                    }}
-                    searchKey="name"
-                    displayKey="name"
-                    subtitleKey="abbreviation"
-                    emptyMessage="No department found"
-                  />
-                )}
-
-                {/* Staff: No additional fields */}
-                {role === "Staff" && (
-                  <div className="p-3 web-web-rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs text-center">
+                {/* Faculty / Staff: backend auto-assigns to the org's default group */}
+                {(role === "Faculty" || role === "Staff") && locationId && (
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs text-center">
                     <Briefcase
                       size={20}
                       className="mx-auto mb-1 text-gray-400"

@@ -27,7 +27,6 @@ from ..middleware import token_required, permission_required, validate_request
 from ..schemas import (
     NotificationSettingsUpdateSchema,
     NotificationTestSchema,
-    PointsConfigUpdateSchema,
     ChannelConfigUpdateSchema,
     SecurityConfigUpdateSchema,
     ForceLogoutSchema,
@@ -54,7 +53,9 @@ def get_notification_settings(current_user):
 
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            from ..services.notification_service import get_alert_types
+            alert_types = get_alert_types()
+            return jsonify({'success': True, 'settings': [], 'alertTypes': alert_types}), 200
 
         ensure_default_settings(loc_id)
 
@@ -151,14 +152,14 @@ def update_notification_settings(current_user, payload):
 @permission_required('settings')
 @validate_request(NotificationTestSchema)
 def test_notification(current_user, payload):
-    """Send a test notification.
+    """Send a test email notification.
 
-    Body: { channel: "email"|"sms", recipient: "..." }
+    Body: { channel: "email", recipient: "..." }
+    Only the email channel is supported.
     """
     try:
-        from ..services.notification_service import _send_email, _send_sms
+        from ..services.notification_service import _send_email
 
-        channel = payload.channel or 'email'
         recipient = payload.recipient or ''
 
         if not recipient:
@@ -172,18 +173,13 @@ def test_notification(current_user, payload):
         org = db.session.get(Organization, loc_id) if loc_id else None
         org_name = org.name if org else None
 
-        if channel == 'email':
-            success, error = _send_email(recipient, subject, body, org_name=org_name)
-        elif channel == 'sms':
-            success, error = _send_sms(recipient, f'[EcoPoints] {body}')
-        else:
-            return jsonify({'success': False, 'error': 'Channel must be "email" or "sms"'}), 400
+        success, error = _send_email(recipient, subject, body, org_name=org_name)
 
         if loc_id:
             log = NotificationLog(
                 organization_id=loc_id,
                 alert_key='test',
-                channel=channel,
+                channel='email',
                 recipient=recipient,
                 subject=subject,
                 body_preview=body[:500],
@@ -194,7 +190,7 @@ def test_notification(current_user, payload):
             db.session.commit()
 
         if success:
-            return jsonify({'success': True, 'message': f'Test {channel} sent to {recipient}'}), 200
+            return jsonify({'success': True, 'message': f'Test email sent to {recipient}'}), 200
         else:
             return jsonify({'success': False, 'error': f'Failed to send: {error}'}), 500
     except Exception as e:
@@ -210,7 +206,7 @@ def get_notification_logs(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            return jsonify({'success': True, 'logs': []}), 200
 
         logs = NotificationLog.query.filter_by(
             organization_id=loc_id
@@ -234,123 +230,20 @@ def get_notification_logs(current_user):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# SETTINGS: POINTS CONFIGURATION
+# SETTINGS: POINTS CONFIGURATION (read-only — values are fixed)
 # ══════════════════════════════════════════════════════════════════════════
-
-# Points configuration is stored in a special NotificationSetting-like
-# mechanism using the Organization table's contact_email field as a JSON
-# store would be over-engineered. Instead, we use a simple JSON file or
-# env-based approach. For simplicity, we store bottle pricing in a
-# dedicated settings row. But to keep things simple and avoid schema
-# bloat, we use a key-value approach in notification_settings with
-# a special alert_key prefix of 'config_'.
 
 @settings_bp.route('/points', methods=['GET'])
 @token_required
 @permission_required('settings')
 def get_points_config(current_user):
-    """Get points-per-bottle configuration for the current org.
+    """Return the fixed points-per-bottle configuration.
 
-    When no location scope is resolvable (e.g. superadmin viewing
-    "All Locations" with no selected org), return HTTP 200 with the
-    default config instead of a 400. PUT remains strict and still
-    requires a location scope to persist.
+    Points are no longer configurable — they are defined centrally in
+    ``server/app/constants.py::BOTTLE_POINTS``.
     """
-    # Defaults matching BOTTLE_PRICING
-    DEFAULTS = {
-        'smallWithLabel': 5, 'smallNoLabel': 3,
-        'mediumWithLabel': 8, 'mediumNoLabel': 5,
-        'largeWithLabel': 10, 'largeNoLabel': 7,
-    }
-    try:
-        loc_id = _scope_location_id(current_user)
-        if not loc_id:
-            return jsonify({'success': True, 'config': dict(DEFAULTS)}), 200
-
-        import json as _json
-        setting = NotificationSetting.query.filter_by(
-            organization_id=loc_id, alert_key='config_points'
-        ).first()
-
-        if setting and setting.recipients_json:
-            try:
-                config = _json.loads(setting.recipients_json)
-            except (_json.JSONDecodeError, TypeError):
-                config = None
-        else:
-            config = None
-
-        if not config:
-            config = dict(DEFAULTS)
-
-        return jsonify({'success': True, 'config': config}), 200
-    except Exception as e:
-        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
-
-
-@settings_bp.route('/points', methods=['PUT'])
-@token_required
-@permission_required('settings')
-@validate_request(PointsConfigUpdateSchema)
-def update_points_config(current_user, payload):
-    """Update points-per-bottle configuration.
-
-    Body: { smallWithLabel, smallNoLabel, mediumWithLabel, mediumNoLabel, largeWithLabel, largeNoLabel }
-    """
-    try:
-        import json as _json
-
-        loc_id = _scope_location_id(current_user)
-        if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
-
-        data = payload.model_dump(exclude_unset=True)
-        config = {
-            'smallWithLabel': int(data.get('smallWithLabel', 5)),
-            'smallNoLabel': int(data.get('smallNoLabel', 3)),
-            'mediumWithLabel': int(data.get('mediumWithLabel', 8)),
-            'mediumNoLabel': int(data.get('mediumNoLabel', 5)),
-            'largeWithLabel': int(data.get('largeWithLabel', 10)),
-            'largeNoLabel': int(data.get('largeNoLabel', 7)),
-        }
-
-        setting = NotificationSetting.query.filter_by(
-            organization_id=loc_id, alert_key='config_points'
-        ).first()
-
-        before_config = None
-        if setting and setting.recipients_json:
-            try:
-                before_config = _json.loads(setting.recipients_json)
-            except (_json.JSONDecodeError, TypeError):
-                before_config = None
-
-        if not setting:
-            setting = NotificationSetting(
-                organization_id=loc_id,
-                alert_key='config_points',
-                email_enabled=False,
-                sms_enabled=False,
-                recipients_json=_json.dumps(config),
-                is_active=True,
-            )
-            db.session.add(setting)
-        else:
-            setting.recipients_json = _json.dumps(config)
-
-        log_action(
-            current_user,
-            'settings.points.update',
-            target=f'org#{loc_id}',
-            before=before_config,
-            after=config,
-            category='settings',
-        )
-        db.session.commit()
-        return jsonify({'success': True, 'config': config, 'message': 'Points configuration updated'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+    from ..constants import BOTTLE_POINTS
+    return jsonify({'success': True, 'config': BOTTLE_POINTS}), 200
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -366,7 +259,8 @@ def get_channel_config(current_user):
         import json as _json
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            config = {'emailRecipient': '', 'smsRecipient': '', 'emailEnabled': False, 'smsEnabled': False}
+            return jsonify({'success': True, 'config': config}), 200
 
         setting = NotificationSetting.query.filter_by(
             organization_id=loc_id, alert_key='config_channels'
@@ -460,7 +354,11 @@ def get_security_config(current_user):
         import json as _json
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            config = {
+                'twoFactorRequired': False, 'twoFactorMethod': 'email',
+                'sessionTimeoutMinutes': 1440, 'maxLoginAttempts': 5, 'lockoutDurationMinutes': 15,
+            }
+            return jsonify({'success': True, 'config': config}), 200
 
         setting = NotificationSetting.query.filter_by(
             organization_id=loc_id, alert_key='config_security'
@@ -588,7 +486,7 @@ def get_login_history(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         if not loc_id:
-            return jsonify({'success': False, 'error': 'Location required'}), 400
+            return jsonify({'success': True, 'history': []}), 200
 
         logs = AdminLog.query.join(
             User, AdminLog.admin_user_id == User.id

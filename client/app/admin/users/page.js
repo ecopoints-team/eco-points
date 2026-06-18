@@ -37,7 +37,7 @@ function ManageUsersPageContent() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
         firstName: '', middleName: '', lastName: '', username: '', email: '', phone: '',
-        userType: '', educationalLevel: '', yearLevel: '', communityGroupId: '', isActive: true
+        userType: '', yearLevel: '', communityGroupId: '', isActive: true
     });
 
     // Edit modal cascading state
@@ -61,7 +61,6 @@ function ManageUsersPageContent() {
             email: user.email || '',
             phone: user.phone || '',
             userType: user.userType || '',
-            educationalLevel: user.educationalLevel || '',
             yearLevel: user.yearLevel || '',
             communityGroupId: user.communityGroupId ? String(user.communityGroupId) : '',
             isActive: user.isActive !== undefined ? user.isActive : true
@@ -83,13 +82,11 @@ function ManageUsersPageContent() {
             const next = { ...prev, [field]: value };
             // Reset dependent fields on cascade change
             if (field === 'userType') {
-                next.educationalLevel = '';
                 next.yearLevel = '';
                 next.communityGroupId = '';
             }
-            if (field === 'educationalLevel') {
+            if (field === 'communityGroupId') {
                 next.yearLevel = '';
-                next.communityGroupId = '';
             }
             return next;
         });
@@ -106,7 +103,6 @@ function ManageUsersPageContent() {
                     email: editFormData.email,
                     phone: editFormData.phone,
                     userType: editFormData.userType,
-                    educationalLevel: editFormData.educationalLevel || null,
                     yearLevel: editFormData.yearLevel || null,
                     communityGroupId: editFormData.communityGroupId ? parseInt(editFormData.communityGroupId) : null,
                     isActive: editFormData.isActive,
@@ -633,12 +629,11 @@ function ManageUsersPageContent() {
                     const loc = allLocations?.find(l => String(l.id) === String(locId));
                     return loc?.orgType || null;
                 })();
-                const editIsSchoolOrg = editOrgType && ['university', 'school'].includes(editOrgType.toLowerCase());
+                const editIsUniversity = editOrgType && editOrgType.toLowerCase() === 'university';
                 const editUserTypes = (() => {
                     if (!editOrgType) return ['Staff'];
                     const USER_TYPES_MAP = {
                         University: ['Student', 'Alumni', 'Faculty', 'Staff'],
-                        School:     ['Student', 'Alumni', 'Faculty', 'Staff'],
                         Community:  ['Resident', 'Community Official', 'Community Worker', 'Business Owner'],
                         Corporate:  ['Employee', 'Manager', 'Executive', 'Contractor', 'Guest'],
                     };
@@ -646,14 +641,7 @@ function ManageUsersPageContent() {
                     return key ? USER_TYPES_MAP[key] : ['Staff'];
                 })();
                 const editIsStudent = editFormData.userType === 'student';
-                const editShowEduc = editIsSchoolOrg && editIsStudent;
-                const EDUC_LEVELS = [
-                    { value: 'Kindergarten', label: 'Kindergarten' },
-                    { value: 'Elementary', label: 'Elementary School' },
-                    { value: 'JHS', label: 'Junior High School (JHS)' },
-                    { value: 'SHS', label: 'Senior High School (SHS)' },
-                    { value: 'College', label: 'College' },
-                ];
+                const NON_STUDENT_AUTO = new Set(['alumni', 'faculty', 'staff']);
                 const YEAR_MAP = {
                     Kindergarten: [],
                     Elementary: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
@@ -661,35 +649,20 @@ function ManageUsersPageContent() {
                     SHS: ['Grade 11', 'Grade 12'],
                     College: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
                 };
-                const GROUP_TYPE_MAP = { Elementary: 'elementary', JHS: 'jhs', SHS: 'shs_strand', College: 'college' };
-                const editYearOptions = editFormData.educationalLevel ? (YEAR_MAP[editFormData.educationalLevel] || []) : [];
-                const editFilteredGroups = (() => {
-                    if (editShowEduc && editFormData.educationalLevel) {
-                        const gType = GROUP_TYPE_MAP[editFormData.educationalLevel];
-                        return gType ? editGroups.filter(g => g.groupType === gType) : [];
-                    }
-                    if (editFormData.userType === 'faculty') return editGroups.filter(g => g.groupType === 'college');
-                    if (editFormData.userType === 'staff') return editGroups.filter(g => g.groupType === 'staff' || !g.groupType);
-                    if (!editIsSchoolOrg) return editGroups;
-                    return [];
-                })();
+                // Show community-group picker for everyone EXCEPT University
+                // alumni/faculty/staff (those auto-assign on the backend).
                 const editShowGroup = (() => {
                     if (!editFormData.userType) return false;
-                    if (editShowEduc) {
-                        if (editFormData.educationalLevel === 'Kindergarten') return false;
-                        return !!editFormData.educationalLevel;
-                    }
+                    if (editIsUniversity && NON_STUDENT_AUTO.has(editFormData.userType)) return false;
                     return true;
                 })();
-                const editGroupLabel = (() => {
-                    if (editShowEduc) {
-                        if (editFormData.educationalLevel === 'SHS') return 'SHS Strand';
-                        if (editFormData.educationalLevel === 'College') return 'College Department';
-                        return 'Section';
-                    }
-                    if (editFormData.userType === 'faculty') return 'College Department';
-                    return 'Community Group';
-                })();
+                // Year-level options derive from the SELECTED group's
+                // educational_level. Only shown for university students.
+                const editSelectedGroup = editGroups.find(g => String(g.id) === String(editFormData.communityGroupId)) || null;
+                const editYearOptions = (editIsUniversity && editIsStudent && editSelectedGroup?.educationalLevel)
+                    ? (YEAR_MAP[editSelectedGroup.educationalLevel] || [])
+                    : [];
+                const editShowYearLevel = editYearOptions.length > 0;
                 const typeToValue = (t) => t.toLowerCase().replace(/ /g, '_');
                 const editAvatarInitial = editFormData.firstName ? editFormData.firstName.charAt(0).toUpperCase() : (selectedUser.name || '?').charAt(0).toUpperCase();
 
@@ -765,20 +738,28 @@ function ManageUsersPageContent() {
                                 </div>
                             </div>
 
-                            {/* Cascading: Educational Level + Year Level (school org + student only) */}
-                            {editShowEduc && (
-                                <div className="grid grid-cols-2 gap-4">
+                            {/* Cascading: Community Group + Year Level
+                                - Group hidden for University alumni/faculty/staff (auto-assigned)
+                                - Year Level shown only for University students whose group has educational_level */}
+                            {editShowGroup && (
+                                <div className={editShowYearLevel ? 'grid grid-cols-2 gap-4' : ''}>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Educational Level <span className="text-red-500">*</span></label>
+                                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Community Group <span className="text-red-500">*</span></label>
                                         <CustomDropdown
-                                            value={editFormData.educationalLevel}
-                                            onChange={(v) => handleEditChange('educationalLevel', v)}
-                                            options={EDUC_LEVELS}
-                                            placeholder="Select level"
+                                            value={editFormData.communityGroupId}
+                                            onChange={(v) => handleEditChange('communityGroupId', v)}
+                                            options={editGroups.map(g => ({
+                                                value: String(g.id),
+                                                label: g.abbreviation
+                                                    ? `${g.abbreviation} — ${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ''}`
+                                                    : `${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ''}`,
+                                            }))}
+                                            placeholder={editGroupsLoading ? 'Loading...' : 'Select community group'}
+                                            searchable
                                             showPlaceholder={false}
                                         />
                                     </div>
-                                    {editYearOptions.length > 0 && (
+                                    {editShowYearLevel && (
                                         <div>
                                             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Year / Grade Level</label>
                                             <CustomDropdown
@@ -790,21 +771,6 @@ function ManageUsersPageContent() {
                                             />
                                         </div>
                                     )}
-                                </div>
-                            )}
-
-                            {/* Cascading: Community Group */}
-                            {editShowGroup && (
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{editGroupLabel}</label>
-                                    <CustomDropdown
-                                        value={editFormData.communityGroupId}
-                                        onChange={(v) => handleEditChange('communityGroupId', v)}
-                                        options={editFilteredGroups.map(g => ({ value: String(g.id), label: g.name }))}
-                                        placeholder={editGroupsLoading ? 'Loading...' : `Select ${editGroupLabel.toLowerCase()}`}
-                                        searchable
-                                        showPlaceholder={false}
-                                    />
                                 </div>
                             )}
 

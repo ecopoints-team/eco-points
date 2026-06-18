@@ -38,10 +38,6 @@ function SettingsPageContent() {
     const [saving, setSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState(null);
 
-    // ── Points config (API-backed) ──
-    const [pointsConfig, setPointsConfig] = useState(null);
-    const [pointsLoading, setPointsLoading] = useState(false);
-
     // ── Notification settings (API-backed) ──
     const [notifSettings, setNotifSettings] = useState([]);
     const [notifLoading, setNotifLoading] = useState(false);
@@ -65,23 +61,6 @@ function SettingsPageContent() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [forceLogoutLoading, setForceLogoutLoading] = useState(false);
-
-    // ═══ LOAD POINTS CONFIG ═══
-    const loadPointsConfig = useCallback(async () => {
-        setPointsLoading(true);
-        try {
-            const config = await settingsApi.getPointsConfig(effectiveLocationId);
-            setPointsConfig(config);
-        } catch (err) {
-            console.error('Failed to load points config:', err);
-            setPointsConfig({
-                smallWithLabel: 5, smallNoLabel: 3,
-                mediumWithLabel: 8, mediumNoLabel: 5,
-                largeWithLabel: 10, largeNoLabel: 7,
-            });
-        }
-        setPointsLoading(false);
-    }, [effectiveLocationId]);
 
     // ═══ LOAD NOTIFICATION SETTINGS ═══
     const loadNotifSettings = useCallback(async () => {
@@ -134,28 +113,14 @@ function SettingsPageContent() {
 
     // Auto-load when tab changes
     useEffect(() => {
-        if (activeSection === 'points' && !pointsConfig) loadPointsConfig();
         if (activeSection === 'notifications' && notifSettings.length === 0) loadNotifSettings();
         if (activeSection === 'security' && !securityConfig) loadSecurityConfig();
-    }, [activeSection, pointsConfig, notifSettings.length, securityConfig, loadPointsConfig, loadNotifSettings, loadSecurityConfig]);
+    }, [activeSection, notifSettings.length, securityConfig, loadNotifSettings, loadSecurityConfig]);
 
     // ═══ SAVE HANDLERS ═══
     const flashSave = (msg, isError = false) => {
         setSaveMessage({ text: msg, isError });
         setTimeout(() => setSaveMessage(null), 3000);
-    };
-
-    const handleSavePoints = async () => {
-        if (!pointsConfig) return;
-        setSaving(true);
-        try {
-            await settingsApi.updatePointsConfig(pointsConfig, effectiveLocationId);
-            flashSave('Points configuration saved!');
-            setHasChanges(false);
-        } catch (err) {
-            flashSave(err.message || 'Failed to save points config', true);
-        }
-        setSaving(false);
     };
 
     const handleSaveNotifications = async () => {
@@ -202,8 +167,7 @@ function SettingsPageContent() {
     };
 
     const handleSave = () => {
-        if (activeSection === 'points') handleSavePoints();
-        else if (activeSection === 'notifications') handleSaveNotifications();
+        if (activeSection === 'notifications') handleSaveNotifications();
         else if (activeSection === 'security') handleSaveSecurity();
         else { setHasChanges(false); flashSave('Settings saved!'); }
     };
@@ -248,12 +212,6 @@ function SettingsPageContent() {
         setHasChanges(true);
     };
 
-    // ═══ POINTS HELPERS ═══
-    const updatePointsField = (key, value) => {
-        setPointsConfig(prev => ({ ...prev, [key]: parseInt(value) || 0 }));
-        setHasChanges(true);
-    };
-
     const updateSecurityField = (key, value) => {
         setSecurityConfig(prev => ({ ...prev, [key]: value }));
         setHasChanges(true);
@@ -270,7 +228,6 @@ function SettingsPageContent() {
 
     const sections = [
         { id: 'appearance', label: 'Appearance', icon: Palette },
-        { id: 'points', label: 'Points Config', icon: Zap },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
     ];
@@ -345,56 +302,6 @@ function SettingsPageContent() {
                                     Appearance styles such as Retro, Eco, and more will be available in a future update.
                                     For theme mode (Light, Neutral, Dark, System), use the toggle at the top of the dashboard.
                                 </p>
-                            </div>
-                        </>)}
-
-                        {/* ═══ POINTS CONFIG ═══ */}
-                        {activeSection === 'points' && (<>
-                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Points Configuration</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Points per bottle by size and condition — saved per organization</p>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                {pointsLoading || !pointsConfig ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <RefreshCw size={24} className="animate-spin text-emerald-500" />
-                                    </div>
-                                ) : (<>
-                                    {[
-                                        { size: 'Small', range: '290–350ml', withKey: 'smallWithLabel', noKey: 'smallNoLabel' },
-                                        { size: 'Medium', range: '351–500ml', withKey: 'mediumWithLabel', noKey: 'mediumNoLabel' },
-                                        { size: 'Large', range: '750–1000ml', withKey: 'largeWithLabel', noKey: 'largeNoLabel' },
-                                    ].map(item => (
-                                        <div key={item.size} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Recycle size={18} className="text-emerald-600 dark:text-emerald-400" />
-                                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{item.size}</span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">({item.range})</span>
-                                                </div>
-                                                <div className="flex items-center gap-6">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-slate-600 dark:text-slate-400">With Label</span>
-                                                        <input type="number" min="0" value={pointsConfig[item.withKey]}
-                                                            onChange={(e) => updatePointsField(item.withKey, e.target.value)}
-                                                            className="w-16 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-center font-bold text-emerald-600 dark:text-emerald-400 outline-none" />
-                                                        <span className="text-sm text-slate-500 dark:text-slate-400">pts</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-slate-600 dark:text-slate-400">No Label</span>
-                                                        <input type="number" min="0" value={pointsConfig[item.noKey]}
-                                                            onChange={(e) => updatePointsField(item.noKey, e.target.value)}
-                                                            className="w-16 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-center font-bold text-amber-600 dark:text-amber-400 outline-none" />
-                                                        <span className="text-sm text-slate-500 dark:text-slate-400">pts</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 text-sm text-red-600 dark:text-red-400">
-                                        <strong>Invalid (1001ml+):</strong> Always rejected — 0 points
-                                    </div>
-                                </>)}
                             </div>
                         </>)}
 

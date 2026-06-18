@@ -50,21 +50,6 @@ export async function getNotificationLogs(locationId = null) {
     return data.logs;
 }
 
-// ── Points configuration ──────────────────────────────────────────────────
-
-/** GET /api/web/settings/points — fetch points-per-bottle config. */
-export async function getPointsConfig(locationId = null) {
-    const data = await request('GET', withQuery('/settings/points', { location_id: locationId }));
-    return data.config;
-}
-
-/** PUT /api/web/settings/points — update points-per-bottle config. */
-export async function updatePointsConfig(config, locationId = null) {
-    return await request('PUT', withQuery('/settings/points', { location_id: locationId }), {
-        body: config,
-    });
-}
-
 // ── Channel configuration (email + SMS) ───────────────────────────────────
 
 /** GET /api/web/settings/channels — fetch email/SMS channel config. */

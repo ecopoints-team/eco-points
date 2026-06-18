@@ -230,23 +230,23 @@ def create_location(current_user, payload):
                 if hasattr(gd, 'name'):
                     gname = gd.name
                     gabbr = gd.abbreviation or ''
-                    gtype = gd.groupType or 'college'
+                    geduc = gd.educationalLevel
                 else:
                     gname = gd.get('name', '')
                     gabbr = gd.get('abbreviation', '')
-                    gtype = gd.get('groupType', 'college')
+                    geduc = gd.get('educationalLevel')
                 if gname and gname.strip():
                     cg = CommunityGroup(
                         organization_id=org.id,
                         name=gname.strip(),
                         abbreviation=gabbr.strip() or None,
-                        group_type=gtype,
+                        educational_level=geduc,
                     )
                     db.session.add(cg)
         else:
             # Default: create a single "Campus Staff" group
-            for gtype, gname, abbr in [('staff', 'Campus Staff', 'Staff')]:
-                cg = CommunityGroup(organization_id=org.id, name=gname, abbreviation=abbr, group_type=gtype)
+            for gname, abbr in [('Campus Staff', 'Staff')]:
+                cg = CommunityGroup(organization_id=org.id, name=gname, abbreviation=abbr, educational_level=None)
                 db.session.add(cg)
 
         _log_action(current_user, 'Location Created', org.name, 'Locations')
@@ -318,12 +318,12 @@ def update_location(current_user, loc_id, payload):
                 if hasattr(gd, 'name'):
                     gid, gname = getattr(gd, 'id', None), gd.name
                     gabbr = gd.abbreviation or ''
-                    gtype = gd.groupType or 'college'
+                    geduc = getattr(gd, 'educationalLevel', None)
                 else:
                     gid = gd.get('id')
                     gname = gd.get('name', '')
                     gabbr = gd.get('abbreviation', '')
-                    gtype = gd.get('groupType', 'college')
+                    geduc = gd.get('educationalLevel')
                 if not gname or not gname.strip():
                     continue
                 if gid and gid in existing_ids:
@@ -332,7 +332,7 @@ def update_location(current_user, loc_id, payload):
                     if cg:
                         cg.name = gname.strip()
                         cg.abbreviation = gabbr.strip() or None
-                        cg.group_type = gtype
+                        cg.educational_level = geduc
                         incoming_ids.add(gid)
                 else:
                     # Create new
@@ -340,7 +340,7 @@ def update_location(current_user, loc_id, payload):
                         organization_id=org.id,
                         name=gname.strip(),
                         abbreviation=gabbr.strip() or None,
-                        group_type=gtype,
+                        educational_level=geduc,
                     )
                     db.session.add(cg)
             # Remove groups not in incoming list

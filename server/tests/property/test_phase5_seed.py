@@ -208,7 +208,7 @@ def _apply_starting_state(
             organization_id=org.id,
             name=COMMUNITY_GROUP_NAME,
             abbreviation=COMMUNITY_GROUP_ABBR,
-            group_type='staff',
+            
         )
         db.session.add(cg)
         db.session.flush()

@@ -112,7 +112,7 @@ def _org_types_create_body(org_id, group_id):
 
 def _groups_create_body(org_id, group_id):
     uniq = uuid.uuid4().hex[:6]
-    return {'name': f'TestGroup-{uniq}', 'groupType': 'college', 'organizationId': org_id}
+    return {'name': f'TestGroup-{uniq}', 'educationalLevel': 'College', 'organizationId': org_id}
 
 
 def _groups_update_body(org_id, group_id):
@@ -133,14 +133,6 @@ def _bulk_deposits_create_body(org_id, group_id):
 
 def _settings_notifications_update_body(org_id, group_id):
     return {'settings': [{'alertKey': 'machine_offline', 'emailEnabled': True}]}
-
-
-def _settings_points_update_body(org_id, group_id):
-    return {
-        'smallWithLabel': 5, 'smallNoLabel': 3,
-        'mediumWithLabel': 8, 'mediumNoLabel': 5,
-        'largeWithLabel': 10, 'largeNoLabel': 7,
-    }
 
 
 def _settings_channels_update_body(org_id, group_id):
@@ -173,7 +165,7 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         frozenset({
             'firstName', 'lastName', 'middleName', 'username', 'email',
             'phone', 'password', 'role', 'userType', 'locationId', 'groupId',
-            'name', 'educationalLevel', 'yearLevel', 'communityGroupId',
+            'name', 'yearLevel', 'communityGroupId',
         }),
         _users_create_body,
     ),
@@ -183,7 +175,7 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         frozenset({
             'firstName', 'lastName', 'middleName', 'username', 'email',
             'phone', 'role', 'userType', 'isActive', 'password', 'name',
-            'educationalLevel', 'yearLevel', 'communityGroupId',
+            'yearLevel', 'communityGroupId',
         }),
         _users_update_body,
     ),
@@ -258,13 +250,13 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
     (
         '/api/web/groups',
         'POST',
-        frozenset({'name', 'abbreviation', 'groupType', 'organizationId'}),
+        frozenset({'name', 'abbreviation', 'educationalLevel', 'organizationId'}),
         _groups_create_body,
     ),
     (
         '/api/web/groups/{id}',
         'PUT',
-        frozenset({'name', 'abbreviation', 'groupType'}),
+        frozenset({'name', 'abbreviation', 'educationalLevel'}),
         _groups_update_body,
     ),
     # ── Sessions ───────────────────────────────────────────────────────
@@ -286,15 +278,6 @@ MUTATING_ENDPOINTS: list[tuple[str, str, frozenset[str], Any]] = [
         'PUT',
         frozenset({'settings'}),
         _settings_notifications_update_body,
-    ),
-    (
-        '/api/web/settings/points',
-        'PUT',
-        frozenset({
-            'smallWithLabel', 'smallNoLabel', 'mediumWithLabel',
-            'mediumNoLabel', 'largeWithLabel', 'largeNoLabel',
-        }),
-        _settings_points_update_body,
     ),
     (
         '/api/web/settings/channels',
@@ -391,7 +374,7 @@ def superadmin_context(strict_app):
             organization_id=org.id,
             name='Staff',
             abbreviation='STF',
-            group_type='staff',
+            
         )
         db.session.add(group)
         db.session.flush()

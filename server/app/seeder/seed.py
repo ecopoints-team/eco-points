@@ -153,7 +153,7 @@ def _get_or_create_community_group(
         organization_id=organization_id,
         name=name,
         abbreviation=abbreviation,
-        group_type='staff',
+        educational_level=None,
     )
     db.session.add(cg)
     db.session.flush()

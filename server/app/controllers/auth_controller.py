@@ -182,8 +182,9 @@ def _attach_auth_cookies(response, jwt_token, expiry_hours, is_admin=False):
     """
     import os
     max_age = int(expiry_hours * 3600)
-    samesite_policy = os.environ.get('COOKIE_SAMESITE', 'None')
-    secure_flag = True  # required for SameSite=None; localhost is exempt
+    samesite_policy = os.environ.get('COOKIE_SAMESITE', 'Lax')
+    secure_env = os.environ.get('COOKIE_SECURE', 'true' if samesite_policy.lower() == 'none' else 'false')
+    secure_flag = secure_env.lower() == 'true'
 
     cookie_name = ADMIN_COOKIE_NAME if is_admin else USER_COOKIE_NAME
     response.set_cookie(
@@ -551,10 +552,12 @@ def logout(current_user, payload):
         # regular user gets fully logged out. Attributes must match the
         # original Set-Cookie (SameSite, Secure, Path) for browser removal.
         import os as _os
-        _ss = _os.environ.get('COOKIE_SAMESITE', 'None')
-        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
-        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=True, httponly=True)
-        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=True)
+        _ss = _os.environ.get('COOKIE_SAMESITE', 'Lax')
+        _sec_env = _os.environ.get('COOKIE_SECURE', 'true' if _ss.lower() == 'none' else 'false')
+        _sec = _sec_env.lower() == 'true'
+        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=_sec)
         return resp, 200
     except Exception as e:
         db.session.rollback()
@@ -619,6 +622,7 @@ def update_profile(current_user, payload):
 
 
 @auth_bp.route('/change-password', methods=['POST'])
+@limiter.limit("5 per minute")
 @token_required
 @validate_request(ChangePasswordSchema)
 def change_password(current_user, payload):
@@ -702,8 +706,8 @@ def register(payload):
         # Resolve community group
         if not group_id:
             default_group = CommunityGroup.query.filter_by(
-                organization_id=location_id, group_type='staff'
-            ).first()
+                organization_id=location_id
+            ).order_by(CommunityGroup.id.asc()).first()
             if not default_group:
                 default_group = CommunityGroup.query.filter_by(organization_id=location_id).first()
             if not default_group:
@@ -779,12 +783,12 @@ def public_groups():
         if not loc_id:
             return jsonify({'success': True, 'groups': []}), 200
         groups = CommunityGroup.query.filter_by(organization_id=loc_id)\
-            .order_by(CommunityGroup.group_type, CommunityGroup.name).all()
+            .order_by(CommunityGroup.educational_level, CommunityGroup.name).all()
         result = [{
             'id': g.id,
             'name': g.name,
             'abbreviation': g.abbreviation,
-            'groupType': g.group_type,
+            'educationalLevel': g.educational_level,
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
     except Exception as e:

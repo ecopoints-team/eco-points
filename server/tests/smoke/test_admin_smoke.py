@@ -100,7 +100,7 @@ def _seed_full(app):
             organization_id=org.id,
             name='Smoke Group',
             abbreviation='SMK',
-            group_type='college',
+            
         )
         db.session.add(grp)
         db.session.flush()
@@ -275,7 +275,7 @@ class TestResponseShapes:
         groups = body.get('groups', body if isinstance(body, list) else [])
         if groups:
             g = groups[0]
-            for key in ('id', 'name', 'groupType'):
+            for key in ('id', 'name', 'educationalLevel'):
                 assert key in g, f'group record missing key: {key}'
 
     def test_machine_record_has_canonical_keys(self, smoke_ctx):
@@ -309,7 +309,7 @@ class TestGroupCRUD:
             r = c.post('/api/web/groups', headers=headers, json={
                 'name': 'CRUD Test Group',
                 'abbreviation': 'CTG',
-                'groupType': 'staff',
+                'educationalLevel': 'College',
                 'organizationId': ids['org_id'],
             })
             assert r.status_code in (200, 201), f'create: {r.get_data(as_text=True)[:200]}'

@@ -47,6 +47,8 @@ def get_rewards(current_user):
     Returns rewards that belong to the user's organization AND any rewards
     that have been shared with the user's organization via the
     reward_organization_assignments table (Task 29 — shared merchandise).
+
+    Requires authentication: rewards are not viewable by anonymous users.
     """
     try:
         loc_id = _scope_location_id(current_user)

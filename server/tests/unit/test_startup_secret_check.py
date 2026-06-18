@@ -13,7 +13,7 @@ Behaviour pinned by these tests:
   5. The critical-log message NEVER contains the secret VALUE — only the
      variable NAME.
   6. The required-secret set matches the Phase 4A carve-out:
-     `{SECRET_KEY, DATABASE_URL, SMTP_PASS, TWILIO_AUTH_TOKEN}`. The
+     `{SECRET_KEY, DATABASE_URL, RESEND_API_KEY, TWILIO_AUTH_TOKEN}`. The
      `qr_hmac_secret_ref` element is intentionally absent until Phase 4A
      lands.
 """
@@ -80,8 +80,7 @@ def _set_clean_production_env(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]
         'FLASK_ENV': 'production',
         'SECRET_KEY': 'a-real-32-byte-production-secret-xyz',
         'DATABASE_URL': 'postgresql://user:pw@db.internal:5432/ecopoints',
-        'SMTP_PASS': 'real-app-specific-smtp-password',
-        'TWILIO_AUTH_TOKEN': 'real-twilio-auth-token-deadbeef',
+        'RESEND_API_KEY': 're_real_production_api_key_deadbeef',
     }
     for k, v in env.items():
         monkeypatch.setenv(k, v)
@@ -100,8 +99,7 @@ def test_required_set_matches_phase4a_carveout():
         'DATABASE_URL',
     }
     assert set(OPTIONAL_PRODUCTION_SECRETS) == {
-        'SMTP_PASS',
-        'TWILIO_AUTH_TOKEN',
+        'RESEND_API_KEY',
     }
     # qr_hmac_secret_ref MUST NOT be present yet (Phase 4A is rpi-deferred).
     assert 'qr_hmac_secret_ref' not in CRITICAL_PRODUCTION_SECRETS
@@ -116,7 +114,7 @@ def test_known_dev_defaults_cover_repo_placeholders():
     fallback in `Config.SECRET_KEY`.
     """
     assert 'dev-key-DO-NOT-USE-IN-PRODUCTION' in KNOWN_DEV_DEFAULTS['SECRET_KEY']
-    assert 'your-auth-token' in KNOWN_DEV_DEFAULTS['TWILIO_AUTH_TOKEN']
+    assert 'your-resend-api-key' in KNOWN_DEV_DEFAULTS['RESEND_API_KEY']
 
 
 # ── No-op in non-production ──────────────────────────────────────────────

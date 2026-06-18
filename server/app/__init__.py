@@ -40,8 +40,7 @@ CRITICAL_PRODUCTION_SECRETS = (
 
 # Secrets for optional services — app starts but features degrade gracefully.
 OPTIONAL_PRODUCTION_SECRETS = (
-    'SMTP_PASS',          # SMTP password used by notification_service._send_email
-    'TWILIO_AUTH_TOKEN',  # SMS provider key used by notification_service._send_sms
+    'RESEND_API_KEY',     # Resend API key used by notification_service._send_email
 )
 
 # Per-variable known development-default values that MUST NOT be present
@@ -62,14 +61,9 @@ KNOWN_DEV_DEFAULTS = {
         'sqlite:///:memory:',
         'changeme',
     }),
-    'SMTP_PASS': frozenset({
-        'your-smtp-password',
-        'your-app-password',
-        'changeme',
-    }),
-    'TWILIO_AUTH_TOKEN': frozenset({
+    'RESEND_API_KEY': frozenset({
         # Matches the placeholder in `server/.env`.
-        'your-auth-token',
+        'your-resend-api-key',
         'changeme',
     }),
 }
@@ -286,10 +280,11 @@ def create_app():
         from .controllers.settings_controller import settings_bp
         from .controllers.sessions_controller import sessions_bp
         from .controllers.reward_categories_controller import reward_categories_bp
+        from .controllers.leaderboard_controller import leaderboard_bp
 
         for sub_bp in (
             dashboard_bp, users_bp, locations_bp, machines_bp, rewards_bp,
-            logs_bp, groups_bp, analytics_bp, settings_bp,
+            logs_bp, leaderboard_bp, groups_bp, analytics_bp, settings_bp,
             sessions_bp, reward_categories_bp,
         ):
             web_bp.register_blueprint(sub_bp)

@@ -1,16 +1,15 @@
 """
 Notification Service
-Handles sending email and SMS alerts based on per-organization notification settings.
+Handles sending email alerts based on per-organization notification settings.
+SMS has been removed — all notifications are email-only via the Resend API.
 """
 import html
 import json
 import os
-import smtplib
 import base64
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 from datetime import datetime, timezone
+
+import resend
 
 from .. import db
 from ..models import NotificationSetting, NotificationLog, Organization
@@ -190,75 +189,47 @@ def _build_email_html(subject, body, org_name=None):
 # ══════════════════════════════════════════════════════════════════════════
 
 def _send_email(to_email, subject, body, org_name=None):
-    """Send a branded HTML email via SMTP with inline logo. Returns (success: bool, error: str|None)."""
-    smtp_host = os.environ.get('SMTP_HOST', '')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_user = os.environ.get('SMTP_USER', '')
-    smtp_pass = os.environ.get('SMTP_PASS', '')
-    smtp_from = os.environ.get('SMTP_FROM', smtp_user)
+    """Send a branded HTML email via the Resend API with inline logo.
 
-    if not smtp_host or not smtp_user:
-        return False, 'SMTP not configured (SMTP_HOST and SMTP_USER required)'
+    Returns (success: bool, error: str|None).
+
+    Configuration (environment):
+      RESEND_API_KEY  — required; API key from https://resend.com/api-keys
+      EMAIL_FROM      — required; verified sender, e.g. 'EcoPoints <notifications@ecopoints.org>'
+    """
+    api_key = os.environ.get('RESEND_API_KEY', '')
+    email_from = os.environ.get('EMAIL_FROM', '')
+
+    if not api_key:
+        return False, 'Resend not configured (RESEND_API_KEY required)'
+    if not email_from:
+        return False, 'Resend sender not configured (EMAIL_FROM required)'
 
     try:
+        resend.api_key = api_key
+
         html_content = _build_email_html(subject, body, org_name)
-
-        msg = MIMEMultipart('related')
-        msg['From'] = f'EcoPoints <{smtp_from}>'
-        msg['To'] = to_email
-        msg['Subject'] = f'[EcoPoints] {subject}'
-
-        msg_alt = MIMEMultipart('alternative')
-        msg.attach(msg_alt)
-
-        # Plain text fallback
         plain_text = f"{subject}\n\n{body}\n\n— EcoPoints Notification System"
-        msg_alt.attach(MIMEText(plain_text, 'plain'))
-        msg_alt.attach(MIMEText(html_content, 'html'))
 
-        # Attach logo as inline image (CID)
+        payload = {
+            'from': email_from,
+            'to': [to_email],
+            'subject': f'[EcoPoints] {subject}',
+            'html': html_content,
+            'text': plain_text,
+        }
+
+        # Attach logo as inline image referenced by cid:ecopoints_logo in the template.
         if os.path.exists(_LOGO_PATH):
             with open(_LOGO_PATH, 'rb') as f:
-                logo_data = f.read()
-            logo_img = MIMEImage(logo_data, _subtype='png')
-            logo_img.add_header('Content-ID', '<ecopoints_logo>')
-            logo_img.add_header('Content-Disposition', 'inline', filename='ecopoints-logo.png')
-            msg.attach(logo_img)
+                logo_b64 = base64.b64encode(f.read()).decode('ascii')
+            payload['attachments'] = [{
+                'filename': 'ecopoints-logo.png',
+                'content': logo_b64,
+                'content_id': 'ecopoints_logo',
+            }]
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-            server.ehlo()
-            if smtp_port != 25:
-                server.starttls()
-                server.ehlo()
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-
-        return True, None
-    except Exception as e:
-        return False, str(e)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SMS SENDER
-# ══════════════════════════════════════════════════════════════════════════
-
-def _send_sms(to_phone, body):
-    """Send an SMS via Twilio. Returns (success: bool, error: str|None)."""
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
-    from_number = os.environ.get('TWILIO_FROM_NUMBER', '')
-
-    if not account_sid or not auth_token or not from_number:
-        return False, 'Twilio not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER required)'
-
-    try:
-        from twilio.rest import Client
-        client = Client(account_sid, auth_token)
-        client.messages.create(
-            body=body,
-            from_=from_number,
-            to=to_phone,
-        )
+        resend.Emails.send(payload)
         return True, None
     except Exception as e:
         return False, str(e)
@@ -272,7 +243,7 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     """
     Fire an alert for a given organization.
     Looks up the NotificationSetting for (org_id, alert_key) and sends
-    via all enabled channels to all configured recipients.
+    via the email channel to all configured recipients.
 
     Returns: list of NotificationLog entries created.
     """
@@ -285,7 +256,7 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     if not setting:
         return []
 
-    if not setting.email_enabled and not setting.sms_enabled:
+    if not setting.email_enabled:
         return []
 
     try:
@@ -303,38 +274,21 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     logs_created = []
 
     for recipient in recipients:
-        # Email channel
-        if setting.email_enabled and '@' in recipient:
-            success, error = _send_email(recipient, subject, body, org_name=org_name)
-            log = NotificationLog(
-                organization_id=org_id,
-                alert_key=alert_key,
-                channel='email',
-                recipient=recipient,
-                subject=subject,
-                body_preview=body[:500] if body else None,
-                status='sent' if success else 'failed',
-                error_message=error,
-            )
-            db.session.add(log)
-            logs_created.append(log)
-
-        # SMS channel
-        if setting.sms_enabled and '@' not in recipient:
-            sms_body = f"[EcoPoints] {subject}: {body[:160]}"
-            success, error = _send_sms(recipient, sms_body)
-            log = NotificationLog(
-                organization_id=org_id,
-                alert_key=alert_key,
-                channel='sms',
-                recipient=recipient,
-                subject=subject,
-                body_preview=sms_body[:500],
-                status='sent' if success else 'failed',
-                error_message=error,
-            )
-            db.session.add(log)
-            logs_created.append(log)
+        if '@' not in recipient:
+            continue  # skip non-email recipients (SMS remnants in DB)
+        success, error = _send_email(recipient, subject, body, org_name=org_name)
+        log = NotificationLog(
+            organization_id=org_id,
+            alert_key=alert_key,
+            channel='email',
+            recipient=recipient,
+            subject=subject,
+            body_preview=body[:500] if body else None,
+            status='sent' if success else 'failed',
+            error_message=error,
+        )
+        db.session.add(log)
+        logs_created.append(log)
 
     # Commit logs (caller is responsible for the outer transaction)
     try:
