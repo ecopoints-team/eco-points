@@ -270,3 +270,7 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 - We will stick into 3 organization type only. University, Corporate, and Community. We will remove the add button beside the organization type field.
 
 - For other organization type, the community group field should stay: Name field and Abrev field only along with its import. Meaning, the import and helper icon  and template for university is different from the Corporate and Community Organization type.
+
+
+### User Session Fixes Part 1
+
