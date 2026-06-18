@@ -332,5 +332,12 @@ Plan: `docs/superpowers/plans/2026-06-18-erd-field-relocation-and-form-simplific
     - `CommunityGroupImport` component: accepts `orgType` prop. University template = `name, abbreviation, educational_level`. Corporate/Community template = `name, abbreviation`.
   - [x] 37.6 `LogIn.jsx` signup — dropped `SHS_STRANDS`, `COLLEGE_DEPARTMENTS` constants, `educationLevel`/`strand`/`department`/`departmentSearch`/`strandSearch` state. New cascade: User Type (Student/Faculty/Staff) → Community Group (student only) → Year Level (derived from selected group's `educationalLevel`). Faculty/Staff hide group; backend auto-assigns. Removed unused `GraduationCap` import.
   - [x] 37.7 Client build passes ✅
-  - [ ] 37.8 Push branch + merge to dev (after manual smoke)
+  - [x] 37.8 Push branch + merge to dev (after manual smoke)
   - [ ] 37.9 Manual smoke: create University location with College community group → add Student user → confirm cascade. Add Faculty user → confirm no group field. Confirm org-type field has no add button.
+
+- [x] 38. Phase 5 — Verification
+  - [x] 38.1 ERD.md updated (done in backend Phase 1-3 merge to dev)
+  - [x] 38.2 Server suite: 223 passed, 0 failures (`python -m pytest -m "not integration" -q`)
+  - [x] 38.3 Client build passes (`npm run build` — Compiled successfully in 13.1s, 25 pages)
+  - [x] 38.4 API service files clean — no stale `groupType` references in `client/src/services/api/`
+  - [x] 38.5 Branch `feat/erd-field-relocation-frontend` pushed to origin
