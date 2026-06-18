@@ -118,8 +118,8 @@ export const VALIDATION_RULES = {
     },
 
     group: {
-        name:          { required: true, maxLength: 200, label: 'Group Name' },
-        abbreviation:  { maxLength: 20, label: 'Abbreviation' },
-        groupType:     { maxLength: 50, label: 'Group Type' },
+        name:              { required: true, maxLength: 200, label: 'Group Name' },
+        abbreviation:      { maxLength: 20, label: 'Abbreviation' },
+        educationalLevel:  { maxLength: 50, label: 'Educational Level' },
     },
 };

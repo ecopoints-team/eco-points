@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, Phone, AtSign } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
 import { users as usersApi, groups as groupsApi } from '../../services/api';
@@ -40,10 +40,9 @@ const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange
     );
 };
 
-// ── Org-type → User-type mapping ─────────────────────────────────────────
+// ── Org-type → User-type mapping (locked to 3 fixed org types) ───────────
 const USER_TYPES_BY_ORG = {
     University: ['Student', 'Alumni', 'Faculty', 'Staff'],
-    School:     ['Student', 'Alumni', 'Faculty', 'Staff'],
     Community:  ['Resident', 'Community Official', 'Community Worker', 'Business Owner'],
     Corporate:  ['Employee', 'Manager', 'Executive', 'Contractor', 'Guest'],
 };
@@ -51,22 +50,11 @@ const DEFAULT_USER_TYPES = ['Staff'];
 
 // Normalize user type label → value (e.g. "Community Official" → "community_official")
 const typeToValue = (t) => t.toLowerCase().replace(/ /g, '_');
-const valueToLabel = (v) => {
-    const map = {};
-    Object.values(USER_TYPES_BY_ORG).flat().forEach(t => { map[typeToValue(t)] = t; });
-    return map[v] || v;
-};
 
-// ── Educational level mapping ─────────────────────────────────────────────
-const EDUCATION_LEVELS = [
-    { value: 'Kindergarten', label: 'Kindergarten' },
-    { value: 'Elementary', label: 'Elementary School' },
-    { value: 'JHS', label: 'Junior High School (JHS)' },
-    { value: 'SHS', label: 'Senior High School (SHS)' },
-    { value: 'College', label: 'College' },
-];
-
-const YEAR_LEVELS = {
+// ── Year level options keyed by the selected community group's
+// `educationalLevel` (carried on the group, NOT on the user). The user
+// just inherits the level from the group they belong to.
+const YEAR_LEVELS_BY_LEVEL = {
     Kindergarten: [],
     Elementary: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
     JHS: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
@@ -74,19 +62,13 @@ const YEAR_LEVELS = {
     College: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
 };
 
-const GROUP_TYPE_MAP = {
-    Elementary: 'elementary',
-    JHS: 'jhs',
-    SHS: 'shs_strand',
-    College: 'college',
-};
+// User types that bypass the community-group picker entirely. The backend
+// auto-assigns these to the org's default community group on create.
+const NON_STUDENT_AUTO_GROUP_TYPES = new Set(['alumni', 'faculty', 'staff']);
 
-// Helper: is this org type an educational institution?
-const isSchoolOrg = (orgType) => {
-    if (!orgType) return false;
-    const lower = orgType.toLowerCase();
-    return lower === 'university' || lower === 'school';
-};
+// Helper: is this org type University? (Only University uses educational
+// levels and student year levels.)
+const isUniversity = (orgType) => (orgType || '').toLowerCase() === 'university';
 
 export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const { allLocations, isSuperAdmin, currentLocation } = useAuth();
@@ -102,12 +84,11 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordShake, setPasswordShake] = useState(false);
 
-    // Cascading fields
+    // Cascading fields (educational_level lives on the group now, not the user)
     const [locationId, setLocationId] = useState(currentLocation?.id || '');
     const [userType, setUserType] = useState('');
-    const [educLevel, setEducLevel] = useState('');
-    const [yearLevel, setYearLevel] = useState('');
     const [communityGroupId, setCommunityGroupId] = useState('');
+    const [yearLevel, setYearLevel] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -129,16 +110,26 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     // Get available user types based on org type
     const availableUserTypes = useMemo(() => {
         if (!selectedOrgType) return DEFAULT_USER_TYPES;
-        // Match against known org types (case-insensitive)
         const key = Object.keys(USER_TYPES_BY_ORG).find(
             k => k.toLowerCase() === selectedOrgType.toLowerCase()
         );
         return key ? USER_TYPES_BY_ORG[key] : DEFAULT_USER_TYPES;
     }, [selectedOrgType]);
 
-    // Student-specific: whether to show education level fields
     const isStudent = userType === 'student';
-    const showEducFields = isSchoolOrg(selectedOrgType) && isStudent;
+
+    // Whether the community-group picker is shown for the current
+    // (orgType, userType) combination.
+    //   - University + Student → show picker (then year level)
+    //   - University + Alumni/Faculty/Staff → HIDE picker (backend auto-assigns)
+    //   - Corporate / Community → show picker (no year level)
+    const showGroupField = useMemo(() => {
+        if (!userType) return false;
+        if (isUniversity(selectedOrgType) && NON_STUDENT_AUTO_GROUP_TYPES.has(userType)) {
+            return false;
+        }
+        return true;
+    }, [selectedOrgType, userType]);
 
     // Fetch groups when modal opens or location changes
     useEffect(() => {
@@ -153,45 +144,19 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         }
     }, [isOpen, effectiveLocationId]);
 
-    // Filter groups by education level / role
-    const filteredGroups = useMemo(() => {
-        if (showEducFields && educLevel) {
-            const gType = GROUP_TYPE_MAP[educLevel];
-            return gType ? availableGroups.filter(g => g.groupType === gType) : [];
-        }
-        if (userType === 'faculty') return availableGroups.filter(g => g.groupType === 'college');
-        if (userType === 'staff') return availableGroups.filter(g => g.groupType === 'staff' || !g.groupType);
-        // For non-school orgs, show all groups
-        if (!isSchoolOrg(selectedOrgType)) return availableGroups;
-        return [];
-    }, [availableGroups, userType, educLevel, showEducFields, selectedOrgType]);
-
-    // Determine whether to show community group selector
-    const showGroupField = useMemo(() => {
-        if (!userType) return false;
-        if (showEducFields) {
-            // Kindergarten has no group
-            if (educLevel === 'Kindergarten') return false;
-            // Other ed levels need a group
-            return !!educLevel;
-        }
-        // Non-school orgs always show group
-        return true;
-    }, [userType, showEducFields, educLevel]);
-
-    // Year level options based on education level
-    const yearLevelOptions = educLevel ? (YEAR_LEVELS[educLevel] || []) : [];
-
-    // Group label based on context
-    const groupLabel = useMemo(() => {
-        if (showEducFields) {
-            if (educLevel === 'SHS') return 'SHS Strand';
-            if (educLevel === 'College') return 'College Department';
-            return 'Section';
-        }
-        if (userType === 'faculty') return 'College Department';
-        return 'Community Group';
-    }, [showEducFields, educLevel, userType]);
+    // Selected group → its educational_level → year-level options.
+    // Year level is shown ONLY for students at a University whose chosen
+    // group has an educational_level on it.
+    const selectedGroup = useMemo(
+        () => availableGroups.find(g => String(g.id) === String(communityGroupId)) || null,
+        [availableGroups, communityGroupId],
+    );
+    const yearLevelOptions = useMemo(() => {
+        if (!isUniversity(selectedOrgType) || !isStudent) return [];
+        const lvl = selectedGroup?.educationalLevel;
+        return lvl ? (YEAR_LEVELS_BY_LEVEL[lvl] || []) : [];
+    }, [isStudent, selectedOrgType, selectedGroup]);
+    const showYearLevel = yearLevelOptions.length > 0;
 
     if (!isOpen) return null;
 
@@ -214,6 +179,9 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
             fieldErrors.push('Passwords do not match');
         }
         if (isSuperAdmin && !locationId) fieldErrors.push('Please select a location');
+        if (showGroupField && !communityGroupId) {
+            fieldErrors.push('Please select a community group');
+        }
         if (fieldErrors.length > 0) {
             setError(fieldErrors[0]);
             return;
@@ -230,9 +198,10 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                 phone: phone || undefined,
                 password,
                 userType,
-                educationalLevel: showEducFields ? educLevel : undefined,
-                yearLevel: showEducFields && yearLevel ? yearLevel : undefined,
-                communityGroupId: communityGroupId || undefined,
+                // year_level only for university students with a level on their group
+                yearLevel: showYearLevel && yearLevel ? yearLevel : undefined,
+                // group: omit when non-student-auto so backend assigns default
+                communityGroupId: showGroupField && communityGroupId ? communityGroupId : undefined,
                 locationId: effectiveLocationId,
                 isAdmin: false,
             };
@@ -266,7 +235,6 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
         setPassword('');
         setConfirmPassword('');
         setUserType('');
-        setEducLevel('');
         setCommunityGroupId('');
         setYearLevel('');
         setPasswordShake(false);
@@ -328,7 +296,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Location *</label>
                                 <CustomDropdown
                                     value={locationId}
-                                    onChange={(v) => { setLocationId(v); setUserType(''); setEducLevel(''); setYearLevel(''); setCommunityGroupId(''); }}
+                                    onChange={(v) => { setLocationId(v); setUserType(''); setCommunityGroupId(''); setYearLevel(''); }}
                                     options={allLocations.map(loc => ({ value: loc.id, label: loc.name }))}
                                     placeholder="Select a location..."
                                     searchable
@@ -346,7 +314,7 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">User Type *</label>
                                 <CustomDropdown
                                     value={userType}
-                                    onChange={(v) => { setUserType(v); setEducLevel(''); setYearLevel(''); setCommunityGroupId(''); }}
+                                    onChange={(v) => { setUserType(v); setCommunityGroupId(''); setYearLevel(''); }}
                                     options={availableUserTypes.map(t => ({ value: typeToValue(t), label: t }))}
                                     placeholder="Select user type..."
                                     icon={Users}
@@ -356,22 +324,39 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                         </div>
                     )}
 
-                    {/* Educational Level + Year Level (Student at School/University only) */}
-                    {showEducFields && userType && (
+                    {/* Community Group — shown for all userTypes EXCEPT University
+                        alumni/faculty/staff (those auto-assign on the backend). */}
+                    {showGroupField && (
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Educational Level</label>
-                                <CustomDropdown
-                                    value={educLevel}
-                                    onChange={(v) => { setEducLevel(v); setCommunityGroupId(''); setYearLevel(''); }}
-                                    options={EDUCATION_LEVELS}
-                                    placeholder="Select level..."
-                                    icon={GraduationCap}
-                                    size="md"
-                                />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Community Group *</label>
+                                {groupsLoading ? (
+                                    <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                                        <Loader2 size={16} className="animate-spin" /> Loading groups...
+                                    </div>
+                                ) : availableGroups.length === 0 ? (
+                                    <p className="text-slate-400 text-sm py-2">No groups configured for this location</p>
+                                ) : (
+                                    <CustomDropdown
+                                        value={communityGroupId}
+                                        onChange={(v) => { setCommunityGroupId(v); setYearLevel(''); }}
+                                        options={availableGroups.map(g => ({
+                                            value: String(g.id),
+                                            label: g.abbreviation
+                                                ? `${g.abbreviation} — ${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ''}`
+                                                : `${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ''}`,
+                                        }))}
+                                        placeholder="Search community group..."
+                                        searchable
+                                        icon={BookOpen}
+                                        size="md"
+                                    />
+                                )}
                             </div>
 
-                            {educLevel && yearLevelOptions.length > 0 && (
+                            {/* Year Level — only for University students whose
+                                selected group has an educational_level. */}
+                            {showYearLevel && (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year Level</label>
                                     <CustomDropdown
@@ -383,30 +368,6 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                                         size="md"
                                     />
                                 </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Community Group */}
-                    {showGroupField && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{groupLabel}</label>
-                            {groupsLoading ? (
-                                <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
-                                    <Loader2 size={16} className="animate-spin" /> Loading groups...
-                                </div>
-                            ) : filteredGroups.length === 0 ? (
-                                <p className="text-slate-400 text-sm py-2">No groups configured for this location</p>
-                            ) : (
-                                <CustomDropdown
-                                    value={communityGroupId}
-                                    onChange={(v) => setCommunityGroupId(v)}
-                                    options={filteredGroups.map(g => ({ value: String(g.id), label: g.abbreviation ? `${g.abbreviation} — ${g.name}` : g.name }))}
-                                    placeholder={`Search ${groupLabel.toLowerCase()}...`}
-                                    searchable
-                                    icon={BookOpen}
-                                    size="md"
-                                />
                             )}
                         </div>
                     )}
