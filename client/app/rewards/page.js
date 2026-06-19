@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import RewardsSkeleton from "../../src/components/shared/skeletons/RewardsSkeleton";
+import RequireAuth from "../../src/components/auth/RequireAuth";
 
 const Rewards = dynamic(
   () => import("../../src/components/pages/Rewards"),
@@ -8,5 +9,9 @@ const Rewards = dynamic(
 );
 
 export default function RewardsPage() {
-  return <Rewards />;
+  return (
+    <RequireAuth>
+      <Rewards />
+    </RequireAuth>
+  );
 }

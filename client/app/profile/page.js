@@ -7,6 +7,7 @@ import { useAuth } from "../../src/context/AuthContext";
 import AdminLayoutComponent from "../../src/components/admin/AdminLayout";
 import ProfileSection from "../../src/components/pages/ProfileSection";
 import AdminProfile from "../../src/components/admin/AdminProfile";
+import RequireAuth from "../../src/components/auth/RequireAuth";
 
 function ProfileHeader() {
   return (
@@ -60,11 +61,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
-      <ProfileHeader />
-      <main className="pt-16 min-h-screen bg-slate-50">
-        <ProfileSection />
-      </main>
-    </>
+    <RequireAuth>
+      <>
+        <ProfileHeader />
+        <main className="pt-16 min-h-screen bg-slate-50">
+          <ProfileSection />
+        </main>
+      </>
+    </RequireAuth>
   );
 }

@@ -8,6 +8,7 @@ import { Leaf, Trophy, ChevronDown, User, LogOut, Gift, LayoutDashboard, Menu } 
 import { useAuth } from "../../src/context/AuthContext";
 import LeaderboardSkeleton from "../../src/components/shared/skeletons/LeaderboardSkeleton";
 import Footer from "../../src/components/website/Footer";
+import RequireAuth from "../../src/components/auth/RequireAuth";
 
 const LeaderboardPodium = dynamic(
   () => import("../../src/components/pages/LeaderboardPodium"),
@@ -226,7 +227,8 @@ function LeaderboardHeader() {
 
 export default function LeaderboardPage() {
   return (
-    <div className="footerbg" style={{ backgroundColor: "rgba(5, 148, 103, 0.2)" }}>
+    <RequireAuth>
+      <div className="footerbg" style={{ backgroundColor: "rgba(5, 148, 103, 0.2)" }}>
       <LeaderboardHeader />
       <main className="pt-24 bg-slate-50 relative overflow-hidden">
         {/* Outer glow blobs */}
@@ -347,5 +349,6 @@ export default function LeaderboardPage() {
         ]}
       />
     </div>
+    </RequireAuth>
   );
 }

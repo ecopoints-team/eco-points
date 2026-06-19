@@ -274,3 +274,23 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 ### User Session Fixes Part 1
 
+## Tasks
+
+- This is a serious security and session issue. I will list all the bugs that I hve found.
+
+    - First, `URL` bug. As a non-user or a user with no account, I can access the profile, rewards, and leaderboards on the URL. This is not a win because the non-user should not able to navigate those pages not even access. Add a security layer just like on the /admin url that we have right now and enhance them even more.
+
+
+### Email Configuration Part 1
+
+## Tasks
+
+- I have updated the env with our resend API. Let's continue configuring it and try testing using the settings on the admin dashboard.
+
+
+### User Session Fixes Part 2
+
+- When I log in an admin account, for instance, the superadmin account then I change the url from /admin to /profile the super admin account shows an activity on the website which is not a win. We planed before that we will separate the admin accounts to user accounts, right? Here's what's going to happen:
+
+  - We will be planning some session fixes for the following:
+    - When an admin account logs in for the admin dashboard (superadmin, admin, auditor, inventory officer, technician), when they change the URL to return to the website's page like the /profile, and /rewards, their account should unauthorized. If the admin wanted a normal account too, they should make another one. That will enhance our RBAC security and limitations. Meaning, the session of the admin acccounts should expire or force log out whenever they change the URL into website's URL. 
