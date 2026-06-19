@@ -631,7 +631,23 @@ def update_profile(current_user, payload):
                 current_user.username = new_username
                 current_user.last_username_change = datetime.now(timezone.utc)
 
+        # Avatar clear: passing avatar=None or avatar="" removes the current avatar.
+        if 'avatar' in data and (data['avatar'] is None or data['avatar'] == ''):
+            if current_user.avatar_url:
+                import os as _os
+                old_path = _os.path.join(
+                    _os.path.dirname(_os.path.abspath(__file__)), '..', 'uploads',
+                    current_user.avatar_url.lstrip('/')
+                )
+                try:
+                    if _os.path.isfile(old_path):
+                        _os.remove(old_path)
+                except OSError:
+                    pass
+            current_user.avatar_url = None
+
         db.session.commit()
+
 
         log = AdminLog(
             admin_user_id=current_user.id,

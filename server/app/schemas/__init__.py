@@ -112,6 +112,8 @@ class ProfileUpdateSchema(_StrictModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     username: Optional[str] = None
+    # Pass empty string or null to clear the avatar.
+    avatar: Optional[str] = None
 
 
 class ChangePasswordSchema(_StrictModel):
