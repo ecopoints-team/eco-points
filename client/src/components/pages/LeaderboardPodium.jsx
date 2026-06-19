@@ -352,7 +352,6 @@ export default function LeaderboardPodium() {
       list = list.filter(
         (u) =>
           u.name.toLowerCase().includes(q) ||
-          u.organization.toLowerCase().includes(q) ||
           u.username.toLowerCase().includes(q)
       );
     }
@@ -518,7 +517,7 @@ export default function LeaderboardPodium() {
               className="flex md:hidden justify-center mb-3"
               style={fonts.body}
             >
-              <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-yellow-950 px-3 py-1.5 web-web-rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest ring-2 ring-white/50">
+              <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-yellow-950 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-black uppercase tracking-widest ring-2 ring-white/50">
                 <Crown size={13} fill="currentColor" className="text-yellow-950" />
                 <span>Top 100 Only</span>
               </div>
@@ -661,7 +660,7 @@ export default function LeaderboardPodium() {
 
           {/* Top 100 badge — desktop only (mobile badge is above title) */}
           <div
-            className="absolute bottom-6 right-8 z-20 hidden md:flex items-center gap-2 bg-yellow-400 text-yellow-950 px-4 py-2 web-web-rounded-xl shadow-md text-xs font-black uppercase tracking-widest ring-4 ring-yellow-400/20"
+            className="absolute bottom-6 right-8 z-20 hidden md:flex items-center gap-2 bg-yellow-400 text-yellow-950 px-4 py-2 rounded-lg shadow-md text-xs font-black uppercase tracking-widest ring-4 ring-yellow-400/20"
             style={fonts.body}
           >
             <Crown size={16} fill="currentColor" className="text-yellow-950" />
@@ -674,7 +673,7 @@ export default function LeaderboardPodium() {
           {/* Search + Org (org hidden on mobile) */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Search */}
-            <div className="flex items-center gap-2 bg-white border border-emerald-200 web-web-rounded-xl px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
+            <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
               <Search size={14} className="text-emerald-500 flex-shrink-0" />
               <input
                 type="text"
@@ -700,7 +699,7 @@ export default function LeaderboardPodium() {
                 onClick={() => setOrgDropdownOpen((p) => !p)}
                 className={`w-full flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 py-1.5 sm:py-2 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
                   ? "rounded-t-lg rounded-b-none border-b-white z-[51] relative shadow-none"
-                  : "web-web-rounded-lg shadow-sm hover:border-emerald-400"
+                  : "rounded-lg shadow-sm hover:border-emerald-400"
                   }`}
                 style={fonts.body}
               >
@@ -741,7 +740,7 @@ export default function LeaderboardPodium() {
           </div>
 
           {/* Time toggle — on mobile sits inline after search; on sm+ right-aligned */}
-          <div className="flex items-center space-x-0.5 bg-white border border-emerald-200 p-0.5 web-web-rounded-xl shadow-sm shrink-0 flex-nowrap">
+          <div className="flex items-center space-x-0.5 bg-white border border-emerald-200 p-0.5 rounded-lg shadow-sm shrink-0 flex-nowrap">
             {[
               { key: "all", label: "All Time" },
               { key: "month", label: "This Month" },
@@ -750,7 +749,7 @@ export default function LeaderboardPodium() {
               <button
                 key={t.key}
                 onClick={() => setTimeFilter(t.key)}
-                className={`whitespace-nowrap px-2 sm:px-4 py-1 sm:py-1.5 web-web-rounded-lg text-[10px] sm:text-sm font-bold transition-colors ${timeFilter === t.key
+                className={`whitespace-nowrap px-2 sm:px-4 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-sm font-bold transition-colors ${timeFilter === t.key
                   ? "bg-emerald-100 text-emerald-800 shadow-sm"
                   : "text-slate-500 hover:bg-slate-50"
                   }`}
@@ -769,13 +768,13 @@ export default function LeaderboardPodium() {
         >
           {/* Column headers */}
           <div
-            className="grid grid-cols-3 md:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-8 py-5 bg-emerald-50/50 border-b border-emerald-100 text-[10px] sm:text-xs font-black text-emerald-800 uppercase tracking-widest items-center"
+            className="grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-5 bg-emerald-50/50 border-b border-emerald-100 text-[10px] sm:text-xs font-black text-emerald-800 uppercase tracking-widest items-center"
             style={fonts.body}
           >
             <div className="col-span-1 md:col-span-2 text-left">Rank</div>
             <div className="col-span-1 md:col-span-4 text-left">User</div>
             <div className="hidden md:block md:col-span-3">Organization</div>
-            <div className="col-span-1 md:col-span-2 text-right">Points</div>
+            <div className="col-span-1 md:col-span-2 text-center">Points</div>
             <div className="hidden md:block md:col-span-1 text-center">Rewards</div>
           </div>
 
@@ -788,7 +787,7 @@ export default function LeaderboardPodium() {
                   return (
                     <div
                       key={user.id}
-                      className={`grid grid-cols-3 md:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
+                      className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
                         ? "bg-emerald-50/80 relative"
                         : "hover:bg-slate-50"
                         }`}
@@ -853,7 +852,7 @@ export default function LeaderboardPodium() {
                             className="font-bold text-[10px] text-slate-500 truncate"
                             style={fonts.body}
                           >
-                            @{getRedactedUsername(user.username)}
+                            @{user.username}
                           </p>
                         </div>
                       </div>
@@ -869,19 +868,19 @@ export default function LeaderboardPodium() {
                       </div>
 
                       {/* Points — col 3 on mobile */}
-                      <div className="col-span-1 md:col-span-2 text-right">
+                      <div className="col-span-1 md:col-span-2 text-center">
                         <p
-                          className={`font-black text-sm ${isMe ? "text-emerald-700" : "text-slate-700"
+                          className={`font-black text-sm inline-flex items-baseline gap-1 ${isMe ? "text-emerald-700" : "text-slate-700"
                             }`}
                           style={fonts.data}
                         >
                           {getDisplayValue(user).toLocaleString()}
-                        </p>
-                        <p
-                          className="font-bold text-[10px] text-slate-400 uppercase tracking-widest mt-0.5"
-                          style={fonts.body}
-                        >
-                          {displayUnit}
+                          <span
+                            className="font-bold text-[10px] text-slate-400 uppercase tracking-widest"
+                            style={fonts.body}
+                          >
+                            {displayUnit}
+                          </span>
                         </p>
                       </div>
 
@@ -911,7 +910,7 @@ export default function LeaderboardPodium() {
 
             {/* ── Floating Modal for Current User ── */}
             <AnimatePresence>
-              {!isUserIncluded && isTableVisible && !isFooterVisible && (
+              {!isUserIncluded && isTableVisible && !isFooterVisible && currentUser && (
                 <div
                   className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
                   ref={constraintsRef}
@@ -1029,7 +1028,7 @@ export default function LeaderboardPodium() {
                   className="text-4xl sm:text-5xl lg:text-5xl font-black leading-none text-white tracking-tighter"
                   style={fonts.data}
                 >
-                  #{currentUser.rank}
+                  #{currentUser?.rank ?? "—"}
                 </span>
                 <span
                   className="text-emerald-200 font-bold text-sm mb-1"
@@ -1060,7 +1059,7 @@ export default function LeaderboardPodium() {
                 className="text-2xl sm:text-3xl font-black mt-1 text-white tracking-tight"
                 style={fonts.data}
               >
-                {currentUser.currentPoints.toLocaleString()}
+                {(currentUser?.currentPoints ?? 0).toLocaleString()}
               </p>
               <p
                 className="text-[9px] font-bold text-emerald-200/70 mt-1 uppercase tracking-wider"
@@ -1073,7 +1072,7 @@ export default function LeaderboardPodium() {
 
           {/* ── Accumulated / Filtered Points ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-emerald-100 lg:border-t-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
-            <div className="w-10 h-10 bg-sky-100 web-web-rounded-xl flex items-center justify-center mb-4">
+            <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center mb-4">
               <Recycle className="text-sky-500 w-6 h-6" />
             </div>
             <p
@@ -1090,7 +1089,7 @@ export default function LeaderboardPodium() {
               className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight"
               style={fonts.data}
             >
-              {currentUser.displayPoints.toLocaleString()}
+              {(currentUser?.displayPoints ?? 0).toLocaleString()}
             </p>
             <p
               className="text-xs font-bold text-slate-500 leading-relaxed"
@@ -1103,7 +1102,7 @@ export default function LeaderboardPodium() {
 
           {/* ── Rewards Claimed ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-l border-emerald-100 lg:border-t-0 lg:border-l-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
-            <div className="w-10 h-10 bg-amber-100 web-web-rounded-xl flex items-center justify-center mb-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
               <Gift className="text-amber-500 w-6 h-6" />
             </div>
             <p
@@ -1116,7 +1115,7 @@ export default function LeaderboardPodium() {
               className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight"
               style={fonts.data}
             >
-              {currentUser.rewardsClaimed}
+              {currentUser?.rewardsClaimed ?? 0}
             </p>
             <p
               className="text-xs font-bold text-slate-500 leading-relaxed"
