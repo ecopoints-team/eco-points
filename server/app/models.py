@@ -203,6 +203,7 @@ class User(db.Model):
     last_login = db.Column(db.DateTime, nullable=True)
     deactivated_at = db.Column(db.DateTime, nullable=True)        # When account was disabled
     avatar_url = db.Column(db.String(500), nullable=True)         # Profile avatar image
+    last_username_change = db.Column(db.DateTime, nullable=True)  # 30-day cooldown enforcement
 
     # Consent
     terms_accepted_at = db.Column(db.DateTime, nullable=True)

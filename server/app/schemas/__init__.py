@@ -111,6 +111,7 @@ class ProfileUpdateSchema(_StrictModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    username: Optional[str] = None
 
 
 class ChangePasswordSchema(_StrictModel):

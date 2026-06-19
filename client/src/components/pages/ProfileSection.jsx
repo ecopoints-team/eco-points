@@ -1,34 +1,36 @@
-﻿// user client
+// user client
 // Profile section
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import {
-  Award,
   AwardIcon,
   FlameIcon,
-  MedalIcon,
   PencilIcon,
   QrCodeIcon,
-  University,
   UniversityIcon,
   UserIcon,
   XIcon,
   DownloadIcon,
-  MailIcon,
   Lock,
   Eye,
   EyeOff,
   Loader2,
-  Ticket,
   Phone,
+  Edit2,
+  Hash,
+  Building2,
+  Users,
+  Mail,
+  Info,
+  AlertTriangle,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
 import { auth as authApi } from "../../services/api";
-import Link from "next/link";
+
 
 // ─────────────────────────────────────────────
 // Font styles (consistent across all pages)
@@ -88,25 +90,44 @@ export default function ProfileSection() {
   const { currentUser, refreshUser } = useAuth();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Derive display values from server-supplied currentUser fields (Requirement 3.3).
-  // Fall back to placeholder when the field is absent (Requirement 3.4).
+  // Derive display values from server-supplied currentUser fields.
   const userTagId = currentUser?.displayId ?? PLACEHOLDER;
-  // Phase 4A will supply a signed `qrPayload`; until then fall back to the
-  // unsigned `USER:<displayId>` format (alignment doc §15).
   const qrPayload = currentUser?.qrPayload ?? (currentUser?.displayId ? `USER:${currentUser.displayId}` : 'USER:UNKNOWN');
 
-  const userName = currentUser?.name || "Eco User";
+  const displayName = [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(' ') || currentUser?.name || "Eco User";
   const userHandle = currentUser?.username 
     ? `@${currentUser.username}` 
     : (currentUser?.email ? `@${currentUser.email.split("@")[0]}` : "@ecouser");
-  const initials = userName
+  const userName = displayName;
+  const initials = displayName
     .split(/\s+/)
     .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
     .toUpperCase() || "EU";
+
+  // Avatar URL resolution
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+  const avatarSrc = currentUser?.avatarUrl ? `${apiUrl}${currentUser.avatarUrl}` : null;
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    try {
+      await authApi.uploadAvatar(file);
+      await refreshUser();
+    } catch (err) {
+      alert(err.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const downloadQR = async () => {
     const qrCanvas = document.getElementById("user-qr-code");
@@ -232,17 +253,16 @@ export default function ProfileSection() {
   };
   // EDIT STATE
   const [isEditing, setIsEditing] = useState(false);
+  const [showUsernameConfirm, setShowUsernameConfirm] = useState(false);
 
   // FOCUS STATE (INPUT)
   const [isFocused, setIsFocused] = useState(null);
 
-  // Role State
-  const [selectedRole, setSelectedRole] = useState("");
-
-  // Form input states
-  const [editName, setEditName] = useState("");
+  // Form input states — split name
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editMiddleName, setEditMiddleName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editUsername, setEditUsername] = useState("");
-  const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
 
   // Password change states
@@ -260,13 +280,11 @@ export default function ProfileSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpenEditModal = () => {
-    setEditName(currentUser?.name || "");
+    setEditFirstName(currentUser?.firstName || "");
+    setEditMiddleName(currentUser?.middleName || "");
+    setEditLastName(currentUser?.lastName || "");
     setEditUsername(currentUser?.username || "");
-    setEditEmail(currentUser?.email || "");
     setEditPhone(currentUser?.phone || "");
-    setSelectedRole(currentUser?.userType 
-      ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1) 
-      : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Student"));
     
     // Reset change password state
     setIsChangingPassword(false);
@@ -279,6 +297,7 @@ export default function ProfileSection() {
     setErrorMsg("");
     setSuccessMsg("");
     setIsSubmitting(false);
+    setShowUsernameConfirm(false);
 
     setIsEditing(true);
   };
@@ -287,6 +306,14 @@ export default function ProfileSection() {
     if (e) e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
+
+    // If username changed, intercept and show confirmation first
+    const usernameChanged = editUsername !== (currentUser?.username || "");
+    if (usernameChanged && !showUsernameConfirm) {
+      setShowUsernameConfirm(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -294,15 +321,18 @@ export default function ProfileSection() {
       let passwordChanged = false;
 
       // 1. Profile fields updates
-      const nameChanged = editName !== (currentUser?.name || "");
-      const emailChanged = editEmail !== (currentUser?.email || "");
+      const firstNameChanged = editFirstName !== (currentUser?.firstName || "");
+      const middleNameChanged = editMiddleName !== (currentUser?.middleName || "");
+      const lastNameChanged = editLastName !== (currentUser?.lastName || "");
       const phoneChanged = editPhone !== (currentUser?.phone || "");
 
-      if (nameChanged || emailChanged || phoneChanged) {
+      if (firstNameChanged || middleNameChanged || lastNameChanged || phoneChanged || usernameChanged) {
         await authApi.updateProfile({
-          name: editName,
-          email: editEmail,
-          phone: editPhone
+          firstName: editFirstName,
+          middleName: editMiddleName || null,
+          lastName: editLastName,
+          phone: editPhone,
+          ...(usernameChanged ? { username: editUsername } : {}),
         });
         profileUpdated = true;
       }
@@ -334,7 +364,7 @@ export default function ProfileSection() {
 
       // 3. Success feedback
       if (profileUpdated || passwordChanged) {
-        await refreshUser(); // sync context
+        await refreshUser();
         setSuccessMsg(
           [
             profileUpdated && "Profile updated successfully.",
@@ -343,13 +373,12 @@ export default function ProfileSection() {
             .filter(Boolean)
             .join(" ")
         );
-        // Clear password fields
         setCurrentPassword("");
         setNewPassword("");
         setConfirmNewPassword("");
         setIsChangingPassword(false);
+        setShowUsernameConfirm(false);
 
-        // Auto close modal after brief delay to let user see success state
         setTimeout(() => {
           setIsEditing(false);
         }, 1500);
@@ -357,6 +386,7 @@ export default function ProfileSection() {
         setIsEditing(false);
       }
     } catch (err) {
+      setShowUsernameConfirm(false);
       setErrorMsg(err.message || "An error occurred while saving.");
     } finally {
       setIsSubmitting(false);
@@ -367,124 +397,238 @@ export default function ProfileSection() {
     <section className="min-h-screen p-4 sm:p-6">
       {/* ROOT DIV */}
       <div className="max-w-[1600px] mx-auto grid grid-cols-4 gap-6 items-start">
-        {/* USER INFORMATION (CREDENTIALS) SECTION */}
+        {/* ═══ SIDEBAR — 3 stacked cards ═══ */}
         <div className="lg:col-span-1 grid gap-3 h-fit">
+
+          {/* ───── 1A. MAIN PROFILE IDENTITY CARD ───── */}
           <div className="bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-xl shadow-black/5 overflow-hidden">
-            {/* USERNAME & ICON*/}
-            <div className="justify-self-center p-6 pb-2">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <span className="text-3xl font-black text-white select-none" style={fonts.data}>{initials}</span>
-              </div>
-            </div>
-            {/* USER DETAILS */}
-            <div className="text-center px-4 pb-3">
-              <div className="my-1">
-                <div className="text-xl lg:text-2xl font-black" style={{ ...fonts.heading, color: "#064E3B" }}>
-                  {userName}
+            {/* Top Section: Avatar + Name */}
+            <div className="flex flex-col items-center p-6 pb-3">
+              {/* Avatar with edit overlay */}
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden">
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-black text-white select-none" style={fonts.data}>{initials}</span>
+                  )}
                 </div>
-                <div className="text-xs lg:text-sm font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
+                {/* Edit avatar button — overlaps bottom-right */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border-2 border-emerald-200 flex items-center justify-center shadow-md hover:bg-emerald-50 transition-all cursor-pointer disabled:opacity-50"
+                  title="Upload profile photo"
+                >
+                  {isUploadingAvatar
+                    ? <Loader2 size={14} className="text-emerald-600 animate-spin" />
+                    : <Edit2 size={14} className="text-emerald-600" />}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+              {/* Display Name + Handle */}
+              <div className="text-center mt-3">
+                <div className="text-xl lg:text-2xl font-black" style={{ ...fonts.heading, color: "#064E3B" }}>
+                  {displayName}
+                </div>
+                <div className="text-xs lg:text-sm font-bold tracking-wider" style={{ ...fonts.data, color: "#6B7280" }}>
                   {userHandle}
                 </div>
               </div>
             </div>
 
-            {/* USER INFO */}
-            <div className="px-5 pb-4 space-y-2">
+            {/* Divider */}
+            <div className="mx-5 border-t border-stone-100" />
+
+            {/* Middle Section: User info rows */}
+            <div className="px-5 py-3 space-y-2">
+              {/* User ID */}
               <div className="flex items-center gap-2.5">
-                <UserIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
-                  {currentUser?.userType 
-                    ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1) 
-                    : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Student")}
+                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <Hash size={13} className="text-emerald-500" />
+                </div>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.data, color: "#374151" }}>
+                  {fmt(currentUser?.displayId)}
                 </span>
               </div>
+              {/* Organization */}
               <div className="flex items-center gap-2.5">
-                <UniversityIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
-                  {currentUser?.organization?.fullName || currentUser?.organization?.name || "Polytechnic University of the Philippines"}
+                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <Building2 size={13} className="text-emerald-500" />
+                </div>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                  {currentUser?.organization?.fullName || currentUser?.organization?.name || PLACEHOLDER}
                 </span>
               </div>
+              {/* User Type */}
               <div className="flex items-center gap-2.5">
-                <MailIcon size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
-                  {currentUser?.email || "juandelacruz@gmail.com"}
+                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <UserIcon size={13} className="text-emerald-500" />
+                </div>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                  {currentUser?.userType
+                    ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1)
+                    : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : PLACEHOLDER)}
                 </span>
               </div>
+              {/* Community Group */}
               <div className="flex items-center gap-2.5">
-                <Phone size={14} className="text-stone-400 flex-shrink-0" />
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#6B7280" }}>
-                  {currentUser?.phone || "No Phone Number"}
+                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <Users size={13} className="text-emerald-500" />
+                </div>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                  {currentUser?.communityGroup?.name || PLACEHOLDER}
                 </span>
               </div>
+              {/* Email */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <Mail size={13} className="text-emerald-500" />
+                </div>
+                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                  {fmt(currentUser?.email)}
+                </span>
+              </div>
+              {/* Phone — hidden when null/empty */}
+              {currentUser?.phone && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Phone size={13} className="text-emerald-500" />
+                  </div>
+                  <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                    {currentUser.phone}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Divider */}
-            <div className="mx-4 border-t border-stone-100" />
+            <div className="mx-5 border-t border-stone-100" />
 
-            {/* EDIT PROFILE & QR BUTTONS */}
-            <div className="px-4 py-4 space-y-2">
+            {/* Bottom Section: Action Buttons */}
+            <div className="px-4 py-4 flex gap-2">
               <button
                 onClick={handleOpenEditModal}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-50 border border-emerald-200 web-web-rounded-xl hover:bg-emerald-100 transition-all duration-300 shadow-sm"
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2.5 bg-white border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-all duration-300 shadow-sm cursor-pointer"
               >
                 <PencilIcon size={14} className="text-emerald-600" />
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#064E3B" }}>
-                  Edit Profile
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#059669" }}>
+                  Edit Info
                 </span>
               </button>
               <button
                 onClick={() => setIsQrModalOpen(true)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 web-web-rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2.5 rounded-xl hover:opacity-90 transition-all duration-300 shadow-sm cursor-pointer"
+                style={{ backgroundColor: "#102027" }}
               >
-                <QrCodeIcon size={14} className="text-stone-500" />
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
-                  Show Personal QR
+                <QrCodeIcon size={14} className="text-white" />
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#ffffff" }}>
+                  Show QR
                 </span>
               </button>
-              <Link
-                href="/redeem-history"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-stone-50 border border-stone-200 web-web-rounded-xl hover:bg-stone-100 transition-all duration-300 shadow-sm"
-              >
-                <Ticket size={14} className="text-stone-500" />
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#6B7280" }}>
-                  Redeem History
-                </span>
-              </Link>
             </div>
           </div>
 
-          {/* CAMPUS RANK & STREAK */}
-          <div className="space-y-2">
-            {/* CAMPUS RANK */}
-            <div className="relative group p-4 rounded-2xl grid gap-0.5 overflow-hidden text-white shadow-md"
-              style={{ background: "linear-gradient(135deg, #059669 0%, #064E3B 100%)" }}>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#34D399" }}>
-                Campus Rank
-              </p>
-              <div className="flex items-baseline gap-1">
-                <p className="text-2xl font-black" style={fonts.data}>
-                  {currentUser?.campusRank != null ? `TOP #${currentUser.campusRank}` : PLACEHOLDER}
-                </p>
-                {currentUser?.organizationUserCount != null && (
-                  <p className="text-[10px] font-black" style={fonts.data}>/ {currentUser.organizationUserCount.toLocaleString()}</p>
-                )}
+          {/* ───── 1B. ACTIVE STREAK CARD ───── */}
+          <div
+            className="relative p-4 rounded-2xl overflow-hidden shadow-md"
+            style={{
+              background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a33 100%)",
+              boxShadow: "0 0 40px rgba(251,191,36,0.15), 0 4px 14px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              {/* Left: Flame + Text */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(135deg, #f97316, #ea580c)",
+                    boxShadow: "0 0 20px rgba(249,115,22,0.4), 0 0 40px rgba(249,115,22,0.15)",
+                    animation: "streakPulse 2s ease-in-out infinite",
+                  }}
+                >
+                  <FlameIcon size={24} className="text-white drop-shadow-lg" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#9CA3AF" }}>
+                    Active Streak
+                  </p>
+                  <p className="text-2xl font-black" style={{ ...fonts.data, color: "#059669" }}>
+                    {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
+                  </p>
+                </div>
               </div>
-              <p className="text-[9px] font-bold" style={{ ...fonts.body, color: "#34D399" }}>
-                {currentUser?.campusRank != null ? `Highest: TOP #${currentUser.campusRank}` : PLACEHOLDER}
-              </p>
-              <AwardIcon className="absolute text-amber-400/10 -right-3 -top-3 w-12 h-12 group-hover:scale-110 transition-transform" />
             </div>
 
-            {/* STREAK */}
-            <div className="relative group p-4 rounded-2xl overflow-hidden text-white shadow-md"
-              style={{ background: "linear-gradient(135deg, #059669 0%, #064E3B 100%)" }}>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#34D399" }}>
-                All Time Streak
+            {/* Streak pulse animation */}
+            <style jsx>{`
+              @keyframes streakPulse {
+                0%, 100% { box-shadow: 0 0 20px rgba(249,115,22,0.4), 0 0 40px rgba(249,115,22,0.15); transform: scale(1); }
+                50% { box-shadow: 0 0 30px rgba(249,115,22,0.6), 0 0 60px rgba(249,115,22,0.25); transform: scale(1.05); }
+              }
+            `}</style>
+          </div>
+
+          {/* ───── 1C. ORGANIZATION RANK CARD ───── */}
+          <div className="bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-xl shadow-black/5 overflow-hidden p-4">
+            {/* Rank Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <AwardIcon size={18} className="text-amber-500" />
+              <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#6B7280" }}>
+                Organization Rank
               </p>
-              <p className="text-2xl font-black" style={fonts.data}>
-                {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
+            </div>
+
+            {/* Rank Display */}
+            <div className="flex items-baseline gap-1.5 mb-3">
+              <p className="text-3xl font-black" style={{ ...fonts.data, color: "#064E3B" }}>
+                {currentUser?.campusRank != null ? `#${currentUser.campusRank}` : PLACEHOLDER}
               </p>
-              <FlameIcon className="absolute text-amber-500/10 -right-2 -top-4 w-12 h-12 group-hover:scale-110 transition-transform" />
+              {currentUser?.organizationUserCount != null && (
+                <p className="text-sm font-bold" style={{ ...fonts.data, color: "#9CA3AF" }}>
+                  / {currentUser.organizationUserCount.toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {/* Progress Bar */}
+            {currentUser?.campusRank != null && currentUser?.organizationUserCount != null && currentUser.organizationUserCount > 0 && (
+              <div className="mb-4">
+                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${Math.max(5, Math.round(((currentUser.organizationUserCount - currentUser.campusRank) / currentUser.organizationUserCount) * 100))}%`,
+                      background: "linear-gradient(90deg, #10b981, #34d399)",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] font-bold mt-1.5" style={{ ...fonts.body, color: "#9CA3AF" }}>
+                  Top {Math.round((currentUser.campusRank / currentUser.organizationUserCount) * 100)}% of your organization
+                </p>
+              </div>
+            )}
+
+            {/* Motivation Callout Box */}
+            <div
+              className="rounded-xl p-3"
+              style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}
+            >
+              <p className="text-xs font-bold leading-relaxed" style={{ ...fonts.body, color: "#92400E" }}>
+                {currentUser?.campusRank != null
+                  ? currentUser.campusRank <= 3
+                    ? "🏆 You're in the top 3! Keep up the amazing work!"
+                    : `🔥 You're ranked #${currentUser.campusRank}! Keep recycling to climb higher!`
+                  : "Start recycling to earn your rank! 🌱"}
+              </p>
             </div>
           </div>
         </div>
@@ -507,7 +651,7 @@ export default function ProfileSection() {
 
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsEditing(false)}
+            onClick={() => { setIsEditing(false); setShowUsernameConfirm(false); }}
           />
 
           <div className="relative bg-white rounded-3xl w-full max-w-3xl p-6 sm:p-8 shadow-2xl border border-stone-100 max-h-[85vh] overflow-y-auto z-10"
@@ -515,7 +659,7 @@ export default function ProfileSection() {
 
             {/* Close button */}
             <button
-              onClick={() => setIsEditing(false)}
+              onClick={() => { setIsEditing(false); setShowUsernameConfirm(false); }}
               className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors z-20"
             >
               <XIcon size={18} />
@@ -528,103 +672,193 @@ export default function ProfileSection() {
             <div className="space-y-6">
               {/* Profile Image Preview */}
               <div className="flex justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-black text-white" style={fonts.data}>{initials}</span>
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-lg overflow-hidden">
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-black text-white" style={fonts.data}>{initials}</span>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* FULL NAME */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Full Name</label>
-                  <input
-                    onFocus={() => setIsFocused("name")}
-                    onBlur={() => setIsFocused(null)}
-                    type="text"
-                    placeholder="Full Name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
-                    style={fonts.body}
-                  />
-                </div>
+              {/* ─── EDITABLE FIELDS ─── */}
+              <div>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] mb-3 px-1" style={fonts.body}>Editable Fields</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* FIRST NAME */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>First Name</label>
+                    <input
+                      onFocus={() => setIsFocused("firstName")}
+                      onBlur={() => setIsFocused(null)}
+                      type="text"
+                      placeholder="First Name"
+                      value={editFirstName}
+                      onChange={(e) => setEditFirstName(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
+                    />
+                  </div>
 
-                {/* USERNAME */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Username</label>
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    value={editUsername}
-                    disabled={true}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
-                    style={fonts.body}
-                  />
-                </div>
+                  {/* MIDDLE NAME */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Middle Name <span className="text-slate-300">(Optional)</span></label>
+                    <input
+                      onFocus={() => setIsFocused("middleName")}
+                      onBlur={() => setIsFocused(null)}
+                      type="text"
+                      placeholder="Middle Name"
+                      value={editMiddleName}
+                      onChange={(e) => setEditMiddleName(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
+                    />
+                  </div>
 
-                {/* EMAIL */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Email Address</label>
-                  <input
-                    onFocus={() => setIsFocused("email")}
-                    onBlur={() => setIsFocused(null)}
-                    type="email"
-                    placeholder="Email Address"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
-                    style={fonts.body}
-                  />
-                </div>
+                  {/* LAST NAME */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Last Name</label>
+                    <input
+                      onFocus={() => setIsFocused("lastName")}
+                      onBlur={() => setIsFocused(null)}
+                      type="text"
+                      placeholder="Last Name"
+                      value={editLastName}
+                      onChange={(e) => setEditLastName(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
+                    />
+                  </div>
 
-                {/* PHONE NUMBER */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Phone Number</label>
-                  <input
-                    onFocus={() => setIsFocused("phone")}
-                    onBlur={() => setIsFocused(null)}
-                    type="text"
-                    placeholder="Phone Number (e.g. +639123456789)"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
-                    style={fonts.body}
-                  />
-                </div>
+                  {/* USERNAME — editable */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Username</label>
+                    <input
+                      onFocus={() => setIsFocused("username")}
+                      onBlur={() => setIsFocused(null)}
+                      type="text"
+                      placeholder="Username"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
+                    />
+                  </div>
 
-                {/* INSTITUTION */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Institution</label>
-                  <input
-                    type="text"
-                    placeholder="Institution"
-                    value={currentUser?.organization?.fullName || currentUser?.organization?.name || "Polytechnic University of the Philippines"}
-                    disabled={true}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
-                    style={fonts.body}
-                  />
+                  {/* PHONE NUMBER */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Phone Number</label>
+                    <input
+                      onFocus={() => setIsFocused("phone")}
+                      onBlur={() => setIsFocused(null)}
+                      type="text"
+                      placeholder="Phone Number (e.g. +639123456789)"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-300 ease-in focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800"
+                      style={fonts.body}
+                    />
+                  </div>
                 </div>
+              </div>
 
-                {/* ROLE */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Role</label>
-                  <input
-                    type="text"
-                    placeholder="Role"
-                    value={selectedRole}
-                    disabled={true}
-                    className="w-full p-3 web-web-rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
-                    style={fonts.body}
-                  />
+              {/* ─── READ-ONLY FIELDS ─── */}
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 px-1" style={fonts.body}>Locked Fields</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* USER TYPE */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>User Type</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={currentUser?.userType
+                          ? currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1)
+                          : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : "—")}
+                        disabled={true}
+                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                        style={fonts.body}
+                      />
+                      <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
+
+                  {/* COMMUNITY GROUP */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Community Group</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={currentUser?.communityGroup?.name || "—"}
+                        disabled={true}
+                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                        style={fonts.body}
+                      />
+                      <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
+
+                  {/* ORGANIZATION */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Organization</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={currentUser?.organization?.fullName || currentUser?.organization?.name || "—"}
+                        disabled={true}
+                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                        style={fonts.body}
+                      />
+                      <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
+
+                  {/* USER ID */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>User ID</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={currentUser?.displayId || "—"}
+                        disabled={true}
+                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                        style={fonts.data}
+                      />
+                      <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
+
+                  {/* EMAIL */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Email Address</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={currentUser?.email || "—"}
+                        disabled={true}
+                        className="w-full p-3 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed text-sm font-semibold"
+                        style={fonts.body}
+                      />
+                      <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* ─── DISCLAIMER ─── */}
+              <div className="rounded-xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                <Info size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold leading-relaxed" style={{ ...fonts.body, color: "#92400E" }}>
+                  User Type, Community Group, and Email are locked to your institutional record. To change these, please contact the administrator.
+                </p>
               </div>
 
               {/* CHANGE PASSWORD TOGGLE BUTTON */}
-              <div className="mt-6 border-t border-slate-100 pt-6">
+              <div className="border-t border-slate-100 pt-6">
                 <button
                   type="button"
                   onClick={() => setIsChangingPassword(!isChangingPassword)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 web-web-rounded-xl hover:bg-slate-100 hover:border-slate-300 text-slate-700 transition-all duration-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 text-slate-700 transition-all duration-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
                   style={fonts.body}
                 >
                   <Lock size={14} className={isChangingPassword ? "text-emerald-500 animate-pulse" : "text-slate-500"} />
@@ -650,7 +884,7 @@ export default function ProfileSection() {
                         placeholder="Current Password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -669,7 +903,7 @@ export default function ProfileSection() {
                         placeholder="New Password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -688,7 +922,7 @@ export default function ProfileSection() {
                         placeholder="Confirm New Password"
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        className="w-full p-3 pr-10 text-sm font-semibold web-web-rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
                         style={fonts.body}
                       />
                       <button
@@ -711,12 +945,12 @@ export default function ProfileSection() {
             {/* ERROR & SUCCESS NOTIFICATIONS */}
             <div className="mt-6 space-y-3">
               {errorMsg && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold web-web-rounded-xl flex items-center gap-2 animate-bounce" style={fonts.body}>
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2 animate-bounce" style={fonts.body}>
                   <span>⚠️ {errorMsg}</span>
                 </div>
               )}
               {successMsg && (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold web-web-rounded-xl flex items-center gap-2" style={fonts.body}>
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2" style={fonts.body}>
                   <span>✅ {successMsg}</span>
                 </div>
               )}
@@ -725,9 +959,9 @@ export default function ProfileSection() {
             {/* ACTIONS */}
             <div className="flex justify-end gap-3 mt-6">
               <button
-                onClick={() => setIsEditing(false)}
+                onClick={() => { setIsEditing(false); setShowUsernameConfirm(false); }}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 web-web-rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={fonts.body}
               >
                 Cancel
@@ -736,7 +970,7 @@ export default function ProfileSection() {
               <button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 web-web-rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm transition-all transform active:scale-95 hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 style={fonts.body}
               >
                 {isSubmitting && <Loader2 size={16} className="animate-spin" />}
@@ -744,6 +978,41 @@ export default function ProfileSection() {
               </button>
             </div>
           </div>
+
+          {/* USERNAME CHANGE CONFIRMATION SUB-MODAL */}
+          {showUsernameConfirm && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowUsernameConfirm(false)} />
+              <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl z-10 text-center"
+                style={{ animation: "scaleIn 0.2s ease-out forwards" }}>
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle size={24} className="text-amber-600" />
+                </div>
+                <h3 className="text-lg font-black mb-2" style={{ ...fonts.heading, color: "#064E3B" }}>Change Username?</h3>
+                <p className="text-sm font-semibold mb-6 leading-relaxed" style={{ ...fonts.body, color: "#6B7280" }}>
+                  Are you sure you want to change your username? You will not be able to change it again for <strong className="text-slate-800">30 days</strong>.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowUsernameConfirm(false)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer"
+                    style={fonts.body}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={fonts.body}
+                  >
+                    {isSubmitting && <Loader2 size={14} className="animate-spin" />}
+                    I Understand
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -785,7 +1054,7 @@ export default function ProfileSection() {
               />
             </div>
 
-            <p className="text-xs bg-slate-100 px-3 py-1 rounded-md mb-6 tracking-widest" style={{ ...fonts.data, color: "#6B7280" }}>
+            <p className="text-xs bg-slate-100 px-4 py-1.5 rounded-full mb-6 tracking-widest" style={{ ...fonts.data, color: "#6B7280" }}>
               ID: {userTagId !== PLACEHOLDER ? userTagId : '—'}
             </p>
 
