@@ -76,26 +76,9 @@ export async function updateProfile(profileData) {
 
 /** POST /api/web/auth/avatar — upload avatar image (FormData, not JSON). */
 export async function uploadAvatar(file) {
-    const { apiBase, readCsrfCookie } = await import('./client');
     const formData = new FormData();
     formData.append('avatar', file);
-
-    const headers = { Accept: 'application/json' };
-    const csrf = readCsrfCookie();
-    if (csrf) headers['X-CSRF-Token'] = csrf;
-
-    const response = await fetch(`${apiBase}/auth/avatar`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: formData,
-    });
-
-    const data = await response.json();
-    if (!response.ok || data.success === false) {
-        throw new Error(data.error || 'Avatar upload failed');
-    }
-    return data;
+    return await request('POST', '/auth/avatar', { body: formData });
 }
 
 /** POST /api/web/auth/change-password — change own password. */

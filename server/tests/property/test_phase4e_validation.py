@@ -97,6 +97,13 @@ CONTROLLER_FILES = (
 
 _MUTATING_METHODS = {'POST', 'PUT', 'PATCH'}
 
+# Routes that accept multipart/form-data (file uploads) instead of JSON.
+# These legitimately cannot use @validate_request because the middleware
+# calls request.get_json() which fails on multipart bodies.  Manual
+# validation is performed inside the handler itself.
+_MULTIPART_EXEMPT_ROUTES = {
+    'upload_avatar',  # auth_controller: POST /avatar — file upload
+}
 
 # ════════════════════════════════════════════════════════════════════════
 # Test 1: Static — every mutating route has @validate_request(StrictSchema)
@@ -219,6 +226,8 @@ def test_property_s_static_every_mutating_route_has_strict_validate_request():
                     validate_decorator = dec
                     break
             if validate_decorator is None:
+                if func.name in _MULTIPART_EXEMPT_ROUTES:
+                    continue  # file-upload route — validated manually
                 violations.append(
                     f'{path.name}:{func.lineno} {func.name}: '
                     f'mutating route is missing @validate_request decorator'

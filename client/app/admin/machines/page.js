@@ -257,6 +257,7 @@ const StatusBadge = ({ status }) => {
 
 // Maintenance Log Modal
 const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
+    const { effectiveLocationId } = useAuth();
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingLog, setEditingLog] = useState(null);
     const [newLog, setNewLog] = useState({
@@ -272,12 +273,13 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
     useEffect(() => {
         if (!isOpen || !machine) return;
         let cancelled = false;
+        const locationId = machine.locationId || effectiveLocationId;
         (async () => {
             try {
                 const { logs: logsApi, users: usersApi } = await import('../../../src/services/api');
                 const [logData, userData] = await Promise.all([
-                    logsApi.getMachines(machine.locationId),
-                    usersApi.getAll({ locationId: machine.locationId, role: 'technician' }),
+                    logsApi.getMachines(locationId),
+                    usersApi.getAll({ locationId, role: 'technician' }),
                 ]);
                 if (cancelled) return;
                 setLogs((logData || []).filter(l => l.rvmId === machine.id || String(l.rvmId) === String(machine.id)));
@@ -287,7 +289,7 @@ const MaintenanceModal = ({ machine, isOpen, onClose, onAddLog }) => {
             }
         })();
         return () => { cancelled = true; };
-    }, [isOpen, machine]);
+    }, [isOpen, machine, effectiveLocationId]);
 
     if (!isOpen || !machine) return null;
 
@@ -679,11 +681,11 @@ function MachinesPageContent() {
         try {
             const updated = await machinesApi.update(machineId, updatedData);
             setMachines(prev => prev.map(m => m.id === String(machineId) ? { ...m, ...updated, id: String(updated.id || machineId) } : m));
+            setShowEditModal(false);
+            setEditingMachine(null);
         } catch (err) {
-            console.error('Failed to update machine:', err);
+            alert(err.message || 'Failed to update machine');
         }
-        setShowEditModal(false);
-        setEditingMachine(null);
     };
 
     // Refresh handler
@@ -695,13 +697,14 @@ function MachinesPageContent() {
         try {
             await logs.createMachineLog({
                 rvmId: machineId,
+                technicianId: newLog.technicianId || currentUser?.id || null,
                 actionType: newLog.actionType || newLog.action_type || newLog.type,
                 resolved: newLog.resolved || false,
                 notes: newLog.notes || '',
             });
             setRefreshKey(k => k + 1);
         } catch (err) {
-            console.error('Failed to create maintenance log:', err);
+            alert(err.message || 'Failed to create maintenance log');
         }
     };
 
@@ -944,7 +947,7 @@ function MachinesPageContent() {
                     onClose={() => { setShowEditModal(false); setEditingMachine(null); }}
                     onSubmit={handleEditMachine}
                     machine={editingMachine}
-                    locations={allLocations}
+                    locations={allLocations?.length > 0 ? allLocations : [{ id: effectiveLocationId, name: currentLocation?.name || 'Current Location' }]}
                 />
             )}
         </>

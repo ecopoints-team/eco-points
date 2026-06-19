@@ -180,10 +180,11 @@ const RoleCard = ({ role, isSelected, onClick, users }) => {
 };
 
 const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
-    const { currentUser, isSuperAdmin, allLocations } = useAuth();
+    const { currentUser, isSuperAdmin, hasPermission, allLocations } = useAuth();
 
-    // Check if current logged in user has permission to edit users
-    const canEditUsers = isSuperAdmin || currentUser?.permissions?.users?.edit;
+    // Permission-gated actions
+    const canEditUsers = hasPermission('users', 'edit');
+    const canDeleteUsers = hasPermission('users', 'delete');
 
     const roleColors = {
         head_admin: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
@@ -247,12 +248,16 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
             </td>
             <td className="px-3 py-3">
                 <div className="flex justify-end gap-1">
-                    <button onClick={() => onEdit && onEdit(user)} className="p-1.5 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all" title="Edit Permissions">
-                        <Edit2 size={14} />
-                    </button>
-                    <button onClick={() => onDelete && onDelete(user)} className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all" title="Delete Admin">
-                        <Trash2 size={14} />
-                    </button>
+                    {canEditUsers && (
+                        <button onClick={() => onEdit && onEdit(user)} className="p-1.5 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all" title="Edit Permissions">
+                            <Edit2 size={14} />
+                        </button>
+                    )}
+                    {canDeleteUsers && (
+                        <button onClick={() => onDelete && onDelete(user)} className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all" title="Delete Admin">
+                            <Trash2 size={14} />
+                        </button>
+                    )}
                 </div>
             </td>
         </tr>

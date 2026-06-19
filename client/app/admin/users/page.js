@@ -108,14 +108,17 @@ function ManageUsersPageContent() {
                     isActive: editFormData.isActive,
                 };
                 const updated = await usersApi.update(selectedUser.id, payload);
+                const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
                 setUsers(prev => prev.map(u =>
-                    u.id === selectedUser.id ? { ...u, ...updated, id: String(updated.id) } : u
+                    u.id === selectedUser.id
+                        ? { ...u, ...updated, id: String(updated.id), name: updatedName, userType: editFormData.userType, isActive: editFormData.isActive }
+                        : u
                 ));
+                setIsEditModalOpen(false);
+                setSelectedUser(null);
             } catch (err) {
-                console.error('Failed to update user:', err);
+                alert(err.message || 'Failed to update user');
             }
-            setIsEditModalOpen(false);
-            setSelectedUser(null);
         }
     };
 

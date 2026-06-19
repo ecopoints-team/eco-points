@@ -235,7 +235,8 @@ function RewardsLogsPageContent() {
                 (log.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.userEmail || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (log.rewardName || '').toLowerCase().includes(searchQuery.toLowerCase());
+                (log.rewardName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.redemptionCode || '').toLowerCase().includes(searchQuery.toLowerCase());
 
             const statusMatch = filterStatus === '' || log.status === filterStatus;
 
@@ -501,6 +502,17 @@ function RewardsLogsPageContent() {
                                     </td>
                                 </tr>
                             ))}
+                            {!isDataLoading && currentLogs.length === 0 && (
+                                <tr>
+                                    <td colSpan={99} className="px-6 py-16 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="text-3xl">🎁</span>
+                                            <p className="text-sm font-medium text-slate-400 dark:text-slate-500">No rewards logs found</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-600">Try adjusting your filters or check back later</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

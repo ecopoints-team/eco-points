@@ -303,6 +303,17 @@ function BottleLogsPageContent() {
                                     <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(log.status)}`}>{log.status}</span></td>
                                 </tr>
                             ))}
+                            {!isDataLoading && currentLogs.length === 0 && (
+                                <tr>
+                                    <td colSpan={99} className="px-6 py-16 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="text-3xl">📦</span>
+                                            <p className="text-sm font-medium text-slate-400 dark:text-slate-500">No bottle logs found</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-600">Try adjusting your filters or check back later</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

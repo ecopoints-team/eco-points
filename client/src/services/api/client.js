@@ -178,10 +178,16 @@ export async function request(method, path, { body, headers } = {}) {
 
     const hasBody = body !== undefined && body !== null;
     if (hasBody && httpMethod !== 'GET' && httpMethod !== 'HEAD') {
-        if (!finalHeaders['Content-Type'] && !finalHeaders['content-type']) {
-            finalHeaders['Content-Type'] = 'application/json';
+        const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+        if (isFormData) {
+            // Let the browser set Content-Type with the multipart boundary.
+            init.body = body;
+        } else {
+            if (!finalHeaders['Content-Type'] && !finalHeaders['content-type']) {
+                finalHeaders['Content-Type'] = 'application/json';
+            }
+            init.body = JSON.stringify(body);
         }
-        init.body = JSON.stringify(body);
     }
 
     const response = await fetch(url, init);
