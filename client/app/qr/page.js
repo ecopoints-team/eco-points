@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import RequireAuth from '../../src/components/auth/RequireAuth';
 // import { QRCodeCanvas } from 'qrcode.react'; // Module not found workaround
 
 const QRPage = () => {
@@ -28,6 +29,7 @@ const QRPage = () => {
     };
 
     return (
+        <RequireAuth>
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 font-sans text-slate-900">
             <div className="max-w-5xl w-full">
                 <header className="mb-12 text-center">
@@ -126,6 +128,7 @@ const QRPage = () => {
                 </footer>
             </div>
         </div>
+        </RequireAuth>
     );
 };
 

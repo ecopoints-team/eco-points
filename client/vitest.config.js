@@ -17,9 +17,31 @@
  */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { transformWithEsbuild } from 'vite';
+
+// The App Router pages under `app/**` are authored as `.js` files that contain
+// JSX. `@vitejs/plugin-react` defers the JSX transform to esbuild, but Vite's
+// esbuild step only treats `.jsx`/`.tsx` as JSX — plain `.js` modules with JSX
+// therefore fail to parse when imported by a test. This `enforce: 'pre'` plugin
+// pre-transforms JSX in source `.js` files using esbuild's automatic runtime
+// (these pages do not import React explicitly) before the rest of the pipeline
+// runs. Limited to project source `.js` files; `node_modules` is left alone.
+const jsxInJsPlugin = {
+    name: 'ecopoints:jsx-in-js',
+    enforce: 'pre',
+    async transform(code, id) {
+        const [filepath] = id.split('?');
+        if (filepath.includes('/node_modules/')) return null;
+        if (!filepath.endsWith('.js')) return null;
+        return transformWithEsbuild(code, id, {
+            loader: 'jsx',
+            jsx: 'automatic',
+        });
+    },
+};
 
 export default defineConfig({
-    plugins: [react({ include: /\.(jsx|js|tsx|ts)$/ })],
+    plugins: [jsxInJsPlugin, react({ include: /\.(jsx|js|tsx|ts)$/ })],
     test: {
         environment: 'node',
         environmentMatchGlobs: [
