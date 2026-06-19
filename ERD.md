@@ -183,6 +183,7 @@ erDiagram
         datetime last_login "Log in Tracking"
         datetime deactivated_at "Nullable - When account was disabled"
         string avatar_url "Nullable - Profile avatar image"
+        datetime last_username_change "Nullable - 30-day cooldown enforcement"
         datetime updated_at "Edited Details"
         datetime terms_accepted_at "Data Privacy Act consent timestamp"
         datetime created_at

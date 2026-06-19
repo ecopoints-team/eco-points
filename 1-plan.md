@@ -1,39 +1,41 @@
-Role: You are an expert UI/UX Designer specializing in modern, high-converting, "Editorial Tech" landing pages (similar to Apple product pages or premium hardware brands).
+---
+description: 
+globs: 
+alwaysApply: false
+---
 
-Task: Design a web Hero Section using a light-mode "Eco-Tech" aesthetic. The layout must use an "Annotated UI" concept where digital elements overlap a physical 3D product.
+You are a world-class software engineer with decades of experience. You are given a task that is related to the current project. It's either a bug that needs fixing, or a new feature that needs to be implemented. Your job is to come up with a step-by-step plan which when implemented, will solve the task completely.
 
-Color Palette & Vibe:
-*   Background: Clean, off-white/light-slate.
-*   Typography: Deep Forest Green for primary text. Use a thick, bold, modern sans-serif font for the headline. 
-*   Accents: Vibrant Emerald Green for primary buttons, highlights, and glowing elements.
-*   Vibe: Crisp, physical-meets-digital, premium, accessible.
+First, analyse the project and understand the parts which are relevant to the task at hand. Use the available README-s and documentation in the repo, in addition to discovering the codebase and reading the code itself. Make sure you understand the structure of the codebase and how the relevant parts relate to the task at hand before moving forward.
 
-Layout Structure (2-Column Grid):
-1.  Background Depth (Z-index 0): 
-    *   Place a massive, ultra-low opacity (e.g., 3%) text watermark in the dead center background.
-    *   Add very soft, highly blurred, large ambient light circles (one emerald, one soft amber) in the far corners to give the flat background a slight 3D depth.
-    *   Use ![alt text](client/public/ecopoints-primary-logo.png)
+Then, come up with a step-by-step plan for implementing the solution to the task. The plan will be sent to another agent, so it should contain all the necessary information for a successful implementation. Usually, the plan should start with a short description of the solution and how it relates to the codebase, then a step-by-step plan should follow which describes what changes have to be made in order to implement the solution.
 
-2.  Left Column - Typography & CTA (Z-index 10):
-    *   Small "Badge" at the top: A small, pill-shaped tag with an emerald outline and text indicating a status (e.g., [Status Tag]).
-    *   Headline: Massive, bold, left-aligned, stacked text with very tight line-height. Make one of the words feature an Emerald Green gradient. (Placeholder: [Stacked Headline 3 Lines])
-    *   Sub-headline: A clean, medium-weight paragraph below the headline. (Placeholder: [Paragraph Text])
-    *   Buttons: Two buttons side-by-side. The primary button is solid Deep Forest Green with a hover shadow. The secondary button is outlined/ghost style.
+Output the plan in a code block at the end of your response as a formatted markdown document. Do not implement any changes. Another agent will take over from there.
 
-3.  Right Column - Product Showcase & Annotations (Z-index 20):
-    *   Centerpiece: A large 3D render of a smart tech machine/kiosk slightly angled. ![alt text](<client/public/Updated Machine Design.png>)
-    *   Floating Annotations (Crucial): Surround the machine with 3 floating "tags". These tags must use Glassmorphism (frosted glass background, slight blur, subtle white border). Each tag should contain a small colored icon connected with the short descriptive text beside it. Connect these tags to the machine with very subtle dashed lines.
-    *   Overlapping App Snippet (Crucial): In the bottom right corner of this column, overlapping the machine slightly, place a floating "UI Card". This card should look like a snippet from a mobile app (e.g., showing a recent digital transaction or stat). Give it a clean white background and a distinct drop shadow to create a sense of layered depth over the physical machine.
+This is the task that needs to be solved:
 
-## Content
-### Catchphrase
-- Scan. Drop. Earn. Smart recycling made rewarding.
-### Body Text
-- EcoPoints bridges the gap between environmental action and immediate gratification. Help keep the campus clean by feeding our AI-powered bin, and earn digital points for every bottle you recycle!
-### Annotations
-- QR Scanner for Account Access
-- Door Accessed Bottle Disposal
-- Accessible for the Community
+# Pre-task
+- Always make an implementation plan on an artifact first, so the developer can review the plan first.
+- We will be focusing on the profile page only. Other pages should not be affected on the codebase.
 
-### Attachment
-- Attached with this plan is a sample and inspo you can use in creating the hero page.
+# Main Task
+1. Profile Sidebook / Containers
+Stack these three cards vertically in a sidebar column:
+Main Profile Card: A clean card showing a user avatar placeholder, Name, Username, Role (User Type), Mobile Number, and Organization. Highlight "Total Points" prominently in large, bold green text. Include two action buttons side-by-side at the bottom (e.g., 'Edit Info' and 'Show QR' with soft background hovers).
+Active Streak Card: A compact horizontal card with an ambient yellow glow background effect.
+Left side: A circular container with an animated, glowing orange flame icon, horizontally next to stacked text: "ACTIVE STREAK" (tiny, gray, uppercase) over "X Days" (large, bold green).
+Right side: Stacked text aligned to the right: "Best: X" (bold orange) over "RECORD" (tiny, gray, uppercase).
+Organization Rank Card: A card showing the user's current rank. Include a progress bar indicating the points needed to reach the next rank. Below it, add a call-out "motivation box" with a soft orange background and text like "You are X points away from overtaking @username! Keep recycling!".
+2. Recent Activity Log
+A structured list view of the user's recent transactions.
+Layout: A white card container.
+List Items: Each row should feature:
+An icon on the left (e.g., recycle bin, bottle) centered in a soft, colored circular background.
+the middle: The activity description (dark bold text) and the date/time below it (small gray text).
+On the right: The point delta, styled positively (e.g., +50 EP, bold emerald text) or negatively (e.g., -20 EP, bold gray/red text).
+Pagination: Include a simple, modern pagination footer at the bottom of the list (Previous/Next buttons).
+Please provide the complete, modular code for these components. Ensure there are no redacted usernames in the data.
+3. Same Header with the Leaderboards
+Apply the same changes of the leaderboards header for the profile page.
+4. Retain Heatmap feature
+Do not change anything on the heatmap. Do not remove or alter design. Keep it as is.

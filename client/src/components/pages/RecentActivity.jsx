@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // Recent Activity
 // User Profile
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -234,27 +234,43 @@ export default function RecentActivity() {
             <div
               key={activity.id}
               onClick={() => setSelectedActivity(activity)}
-              className="group flex items-center gap-4 p-3 web-web-rounded-xl hover:bg-emerald-50 cursor-pointer transition-all duration-300 border border-transparent hover:border-emerald-100 shadow-sm"
+              className="group flex items-center gap-4 p-3.5 rounded-xl hover:bg-emerald-50/60 cursor-pointer transition-all duration-300 border border-transparent hover:border-emerald-100"
             >
-              <div className={`p-2.5 web-web-rounded-lg ${
+              {/* Left: Icon in colored circle */}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                 activity.type === "earn" ? "bg-emerald-100 text-emerald-600" :
                 activity.type === "redeem_confirm" ? "bg-emerald-100 text-emerald-600" :
                 "bg-amber-100 text-amber-600"
               }`}>
-                {activity.type === "earn" ? <ArrowDownLeft size={18} /> :
+                {activity.type === "earn" ? <Recycle size={18} /> :
                  activity.type === "redeem_confirm" ? <Check size={18} /> :
                  <ArrowUpRight size={18} />}
               </div>
+
+              {/* Middle: Description + Date/Time */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-emerald-900 text-sm sm:text-base truncate" style={fonts.heading}>{activity.description}</h3>
-                <p className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5" style={fonts.body}>
-                  {formatDate(activity.date)}
+                <h3 className="font-bold text-slate-800 text-sm truncate" style={fonts.heading}>{activity.description}</h3>
+                <p className="text-[10px] sm:text-xs text-stone-400 font-semibold mt-0.5" style={fonts.body}>
+                  {formatDate(activity.date)} · {formatTime(activity.date)}
                 </p>
               </div>
-              <div className={`font-black text-sm sm:text-lg ${
-                activity.type === "earn" || activity.type === "redeem_confirm" ? "text-emerald-600" : "text-amber-600"
-              }`} style={fonts.data}>
-                {activity.amount > 0 ? "+" : ""}{activity.amount}
+
+              {/* Right: Point delta with EP suffix */}
+              <div className="flex items-baseline gap-1 flex-shrink-0">
+                <span className={`font-black text-sm sm:text-base ${
+                  activity.type === "earn" || activity.type === "redeem_confirm"
+                    ? "text-emerald-600"
+                    : "text-red-500"
+                }`} style={fonts.data}>
+                  {activity.amount > 0 ? "+" : ""}{activity.amount}
+                </span>
+                <span className={`text-[10px] font-bold ${
+                  activity.type === "earn" || activity.type === "redeem_confirm"
+                    ? "text-emerald-400"
+                    : "text-red-300"
+                }`} style={fonts.body}>
+                  EP
+                </span>
               </div>
             </div>
           ))

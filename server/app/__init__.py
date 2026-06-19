@@ -260,6 +260,23 @@ def create_app():
             db.session.rollback()
             app.logger.error(f"Error during qr_token migration/backfill startup hook: {e}")
 
+        # Auto-migrate: ensure last_username_change column exists
+        try:
+            result = db.session.execute(db.text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='users' AND column_name='last_username_change' LIMIT 1"
+            )).fetchone()
+            if result is None:
+                app.logger.info("Adding 'last_username_change' column to 'users' table...")
+                db.session.execute(db.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_username_change TIMESTAMP"
+                ))
+                db.session.commit()
+                app.logger.info("'last_username_change' column added successfully.")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error during last_username_change migration: {e}")
+
         # Register blueprints
         from .controllers.auth_controller import auth_bp
         from .controllers.web_controller import web_bp
@@ -292,6 +309,14 @@ def create_app():
         app.register_blueprint(auth_bp)
         app.register_blueprint(web_bp)
         app.register_blueprint(rpi_bp)
+
+        # Serve uploaded files (avatars, etc.)
+        from flask import send_from_directory
+        uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+        @app.route('/uploads/<path:filename>')
+        def serve_upload(filename):
+            return send_from_directory(uploads_dir, filename)
 
     # Register CLI commands
     from .seeder import seed_cmd, demo_seed_cmd

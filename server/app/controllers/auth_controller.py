@@ -311,6 +311,15 @@ def _serialize_auth_user(u):
     role_value = (u.role or '').lower() or None
     user_type_value = (u.user_type or '').lower() or None
 
+    # Community group info
+    community_group_data = None
+    if u.community_group:
+        community_group_data = {
+            'id': u.community_group.id,
+            'name': u.community_group.name,
+            'abbreviation': u.community_group.abbreviation,
+        }
+
     return {
         'id': u.id, 'name': u.name, 'firstName': u.first_name,
         'middleName': u.middle_name, 'lastName': u.last_name,
@@ -321,13 +330,15 @@ def _serialize_auth_user(u):
         'isActive': u.is_active, 'locationId': location_id,
         'locationName': (org['name'] if org else None),
         'organization': org,
-        'displayId': u.display_id,
+        'communityGroup': community_group_data,
         'qrToken': u.qr_token,
+        'avatarUrl': u.avatar_url,
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
+        'lastUsernameChange': u.last_username_change.isoformat() if u.last_username_change else None,
         'otpEnabled': two_fa_enabled, 'otpMethod': two_fa_method,
         # Phase 3 task 8.2 — alignment-doc §15 derived fields.
         'qrPayload': qr_payload,
@@ -600,6 +611,26 @@ def update_profile(current_user, payload):
         if 'phone' in data:
             current_user.phone = data['phone'].strip() if data['phone'] else None
 
+        # Username (with 30-day cooldown)
+        if 'username' in data and data['username']:
+            new_username = data['username'].strip()
+            if new_username != current_user.username:
+                # Enforce 30-day cooldown
+                if current_user.last_username_change:
+                    days_since = (datetime.now(timezone.utc) - current_user.last_username_change).days
+                    if days_since < 30:
+                        remaining = 30 - days_since
+                        return jsonify({
+                            'success': False,
+                            'error': f'You can change your username again in {remaining} day(s).'
+                        }), 400
+                # Check uniqueness
+                existing = User.query.filter(User.username == new_username, User.id != current_user.id).first()
+                if existing:
+                    return jsonify({'success': False, 'error': 'Username already taken'}), 409
+                current_user.username = new_username
+                current_user.last_username_change = datetime.now(timezone.utc)
+
         db.session.commit()
 
         log = AdminLog(
@@ -615,6 +646,69 @@ def update_profile(current_user, payload):
             'success': True,
             'user': _serialize_auth_user(current_user),
             'message': 'Profile updated successfully',
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@auth_bp.route('/avatar', methods=['POST'])
+@token_required
+def upload_avatar(current_user):
+    """Upload a profile avatar image.
+
+    Accepts multipart/form-data with a single 'avatar' file field.
+    Saves to server/uploads/avatars/ and updates user.avatar_url.
+    """
+    import os
+    import uuid as _uuid
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'error': 'No avatar file provided'}), 400
+
+        file = request.files['avatar']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext not in allowed_extensions:
+            return jsonify({'success': False, 'error': 'File type not allowed. Use PNG, JPG, GIF, or WebP.'}), 400
+
+        # Validate file size (max 5MB)
+        file.seek(0, 2)
+        size = file.tell()
+        file.seek(0)
+        if size > 5 * 1024 * 1024:
+            return jsonify({'success': False, 'error': 'File too large. Maximum 5MB.'}), 400
+
+        # Save file
+        upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'uploads', 'avatars')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Delete old avatar file if exists
+        if current_user.avatar_url:
+            old_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), current_user.avatar_url.lstrip('/'))
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except OSError:
+                    pass
+
+        filename = f'{current_user.id}_{_uuid.uuid4().hex[:8]}.{ext}'
+        filepath = os.path.join(upload_dir, filename)
+        file.save(filepath)
+
+        # Update user record
+        current_user.avatar_url = f'/uploads/avatars/{filename}'
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'user': _serialize_auth_user(current_user),
+            'avatarUrl': current_user.avatar_url,
+            'message': 'Avatar uploaded successfully',
         }), 200
     except Exception as e:
         db.session.rollback()
