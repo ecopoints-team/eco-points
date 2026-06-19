@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: SeedPass!23)
 // Sign in with: email + password
 // Total: 50 accounts across 2 organizations (multi-tenant)
@@ -630,13 +630,16 @@ export default function LogIn({ onClose, initialSignUp = false }) {
 
       const role = data?.user?.role;
 
+      // Close the modal before navigating — it's rendered globally
+      // via UIContext, so route changes alone won't unmount it.
+      if (onClose) onClose();
+
       if (ADMIN_ROLES.has(role)) {
         router.push("/admin");
       } else {
         router.push("/rewards");
       }
     } catch (err) {
-      setIsLoading(false);
       setFailedAttempts((prev) => prev + 1);
       setError("Invalid credentials. Please try again.");
 
@@ -645,6 +648,8 @@ export default function LogIn({ onClose, initialSignUp = false }) {
         recaptchaRef.current.reset();
       }
       setCaptchaVerified(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 

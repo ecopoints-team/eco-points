@@ -65,7 +65,11 @@ vi.mock('../../src/context/AuthContext', () => ({
         setViewAsLocation: () => {},
         canManage: false,
     }),
+    ADMIN_ROLES: new Set([
+        'superadmin', 'head_admin', 'auditor', 'technician', 'inventory_officer',
+    ]),
 }));
+
 
 // UIContext stub — RequireAuth no longer uses it, but other page components may.
 vi.mock('../../src/context/UIContext', () => ({
