@@ -44,9 +44,9 @@ def upgrade():
 
     # 4. Fix qr_token index style (unique constraint -> unique index) and
     #    drop educational_level from users (year_level stays)
+    op.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_qr_token_key")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_qr_token ON users (qr_token)")
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.drop_constraint(batch_op.f('users_qr_token_key'), type_='unique')
-        batch_op.create_index(batch_op.f('ix_users_qr_token'), ['qr_token'], unique=True)
         batch_op.drop_column('educational_level')
 
 

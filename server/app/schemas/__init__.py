@@ -575,6 +575,15 @@ class RpiMachineStatusSchema(_StrictModel):
     isCapacityFull: Optional[bool] = None
 
 
+class RpiMachineLogCreateSchema(_StrictModel):
+    """Body for ``POST /api/rpi/logs/machines``."""
+    machineUuid: str
+    actionType: str
+    status: Optional[str] = 'Pending'
+    notes: Optional[str] = ''
+    performedById: int
+
+
 class RotateApiKeySchema(_StrictModel):
     """Body for ``POST /api/web/machines/<id>/rotate-api-key``.
 
@@ -641,5 +650,6 @@ __all__ = [
     'RpiDepositSchema',
     'RpiSessionEndSchema',
     'RpiMachineStatusSchema',
+    'RpiMachineLogCreateSchema',
     'RotateApiKeySchema',
 ]

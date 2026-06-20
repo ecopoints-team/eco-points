@@ -14,13 +14,13 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify
 
 from ..models import (
-    User, RecyclingSession, RecyclingItem, Transaction, Wallet,
+    User, RecyclingSession, RecyclingItem, Transaction, Wallet, MaintenanceLog,
 )
 from ..middleware import rpi_auth_required, compute_qr_suffix, validate_request
 from ..schemas import (
     RpiMachineIdentifySchema, RpiHeartbeatSchema, RpiAuthenticateSchema,
     RpiSessionStartSchema, RpiDepositSchema, RpiSessionEndSchema,
-    RpiMachineStatusSchema,
+    RpiMachineStatusSchema, RpiMachineLogCreateSchema,
 )
 from .. import db
 from ..cache import cache_invalidate
@@ -159,6 +159,7 @@ def authenticate_user(rvm, payload):
                 'displayId': user.display_id,
                 'pointsBalance': wallet.points_balance,
                 'streak': wallet.streak,
+                'role': user.role,
             },
             'walletId': wallet.id,
         }), 200
@@ -360,6 +361,37 @@ def update_machine_status(rvm, payload):
             pass
 
         return jsonify({'success': True, 'message': 'Machine status updated'}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@rpi_bp.route('/logs/machines', methods=['POST'])
+@rpi_auth_required
+@validate_request(RpiMachineLogCreateSchema)
+def create_machine_log(rvm, payload):
+    """Create a new maintenance log entry from the RVM."""
+    try:
+        log = MaintenanceLog(
+            rvm_id=rvm.id,
+            performed_by_id=payload.performedById,
+            action_type=payload.actionType,
+            status=payload.status or 'Pending',
+            notes=payload.notes or '',
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        # Notification hook
+        try:
+            from ..services.notification_service import trigger_alert
+            trigger_alert(rvm.organization_id, 'machine_maintenance_due',
+                          f'Maintenance logged: {rvm.name}',
+                          f'A new maintenance issue has been reported for "{rvm.name}": {payload.actionType}')
+        except Exception:
+            pass
+
+        return jsonify({'success': True}), 201
     except Exception:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
