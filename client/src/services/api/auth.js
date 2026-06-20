@@ -107,3 +107,24 @@ export async function getPublicGroups(locationId) {
     const data = await request('GET', `/auth/groups${qs}`);
     return data.groups;
 }
+
+/** POST /api/web/auth/forgot-password — send a password-reset OTP. */
+export async function forgotPassword(email) {
+    return await request('POST', '/auth/forgot-password', {
+        body: { email },
+    });
+}
+
+/** POST /api/web/auth/verify-reset-otp — verify OTP and get reset token. */
+export async function verifyResetOtp(email, code) {
+    return await request('POST', '/auth/verify-reset-otp', {
+        body: { email, code },
+    });
+}
+
+/** POST /api/web/auth/reset-password — set new password with reset token. */
+export async function resetPassword(resetToken, newPassword) {
+    return await request('POST', '/auth/reset-password', {
+        body: { resetToken, newPassword },
+    });
+}

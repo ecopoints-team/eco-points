@@ -584,6 +584,30 @@ class RotateApiKeySchema(_StrictModel):
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Password Reset (Forgot Password flow)
+# ──────────────────────────────────────────────────────────────────────────
+
+class ForgotPasswordSchema(_StrictModel):
+    """Body for ``POST /api/web/auth/forgot-password``."""
+
+    email: str
+
+
+class VerifyResetOtpSchema(_StrictModel):
+    """Body for ``POST /api/web/auth/verify-reset-otp``."""
+
+    email: str
+    code: str
+
+
+class ResetPasswordSchema(_StrictModel):
+    """Body for ``POST /api/web/auth/reset-password``."""
+
+    resetToken: str
+    newPassword: str
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Public re-exports
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -642,4 +666,8 @@ __all__ = [
     'RpiSessionEndSchema',
     'RpiMachineStatusSchema',
     'RotateApiKeySchema',
+    # auth_controller — password reset
+    'ForgotPasswordSchema',
+    'VerifyResetOtpSchema',
+    'ResetPasswordSchema',
 ]
