@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import {
   Crown,
   Medal,
@@ -205,6 +205,9 @@ export default function LeaderboardPodium() {
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const orgDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all"); // all | month | week
+  const timeSegRef = useRef(null);
+  const [sliderRect, setSliderRect] = useState(null);
 
   // API state
   const [rawUsers, setRawUsers] = useState([]);
@@ -231,7 +234,10 @@ export default function LeaderboardPodium() {
           organization: u.locationName || u.department || "—",
           department: u.department || "—",
           pointsAllTime: u.lifetimePoints || 0,
+          pointsThisMonth: u.pointsThisMonth || 0,
+          pointsThisWeek: u.pointsThisWeek || 0,
           currentPoints: u.points || 0,
+          rewardsClaimed: u.rewardsClaimed || 0,
           bottles: u.bottlesCollected || 0,
           streak: u.streak || 0,
         }));
@@ -269,13 +275,30 @@ export default function LeaderboardPodium() {
   // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [orgFilter, searchQuery]);
+  }, [orgFilter, searchQuery, timeFilter]);
+
+  // Measure active time-filter button for the sliding indicator
+  useLayoutEffect(() => {
+    if (!timeSegRef.current) return;
+    const btns = timeSegRef.current.querySelectorAll("button[data-seg]");
+    const TIME_KEYS = ["all", "month", "week"];
+    const idx = TIME_KEYS.indexOf(timeFilter);
+    if (btns[idx]) {
+      setSliderRect({ left: btns[idx].offsetLeft, width: btns[idx].offsetWidth });
+    }
+  }, [timeFilter]);
 
   // ── Filter, search, sort ──
   const filteredList = useMemo(() => {
     let list = rawUsers.filter(
       (u) => orgFilter === "All Organizations" || u.organization === orgFilter
-    );
+    ).map((u) => ({
+      ...u,
+      displayPoints:
+        timeFilter === "month" ? u.pointsThisMonth
+          : timeFilter === "week" ? u.pointsThisWeek
+            : u.pointsAllTime,
+    }));
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -286,11 +309,10 @@ export default function LeaderboardPodium() {
       );
     }
 
-    // Already sorted by lifetimePoints desc from backend, but re-sort to be safe
-    list = [...list].sort((a, b) => b.pointsAllTime - a.pointsAllTime);
+    list = [...list].sort((a, b) => b.displayPoints - a.displayPoints);
 
     return list.map((u, idx) => ({ ...u, rank: idx + 1 }));
-  }, [rawUsers, orgFilter, searchQuery]);
+  }, [rawUsers, orgFilter, searchQuery, timeFilter]);
 
   // Identify current user by ID
   const currentUser = useMemo(() => {
@@ -309,8 +331,25 @@ export default function LeaderboardPodium() {
 
   const isUserIncluded = currentUser ? currentList.some((u) => u.rank === CURRENT_USER_RANK) : false;
 
+  // Podium list — org + time filter, never affected by search
+  const podiumList = useMemo(() => {
+    const list = rawUsers
+      .filter((u) => orgFilter === "All Organizations" || u.organization === orgFilter)
+      .map((u) => ({
+        ...u,
+        displayPoints:
+          timeFilter === "month" ? u.pointsThisMonth
+            : timeFilter === "week" ? u.pointsThisWeek
+              : u.pointsAllTime,
+      }));
+    return [...list]
+      .sort((a, b) => b.displayPoints - a.displayPoints)
+      .slice(0, 3)
+      .map((u, idx) => ({ ...u, rank: idx + 1 }));
+  }, [rawUsers, orgFilter, timeFilter]);
+
   // Podium order: 2nd | 1st | 3rd
-  const topThree = [filteredList[1], filteredList[0], filteredList[2]].filter(Boolean);
+  const topThree = [podiumList[1], podiumList[0], podiumList[2]].filter(Boolean);
 
   // ── Floating modal + scroll state ──
   const [isTableVisible, setIsTableVisible] = useState(false);
@@ -429,7 +468,9 @@ export default function LeaderboardPodium() {
               Top Recyclers
             </h2>
             <p className="text-emerald-700/80 font-bold text-sm mt-1" style={fonts.body}>
-              Based on Accumulated Points
+              {timeFilter === "month" ? "Based on Points This Month"
+                : timeFilter === "week" ? "Based on Points This Week"
+                  : "Based on Accumulated Points"}
             </p>
           </div>
 
@@ -453,7 +494,7 @@ export default function LeaderboardPodium() {
                 {loading ? "—" : (topThree[0]?.name || "")}
               </p>
               <p className="text-emerald-600 font-bold text-xs group-hover:text-sky-500 transition-colors" style={fonts.data}>
-                {loading ? "—" : `${(topThree[0]?.pointsAllTime || 0).toLocaleString()} EP`}
+                {loading ? "—" : `${(topThree[0]?.displayPoints || 0).toLocaleString()} EP`}
               </p>
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-28 group-hover:h-32 transition-all duration-300 ease-out bg-gradient-to-b from-sky-100 to-sky-200 border-t-8 border-sky-400 rounded-t-2xl shadow-inner relative flex justify-center pt-4">
@@ -484,7 +525,7 @@ export default function LeaderboardPodium() {
                 {loading ? "—" : (topThree[1]?.name || "")}
               </p>
               <p className="text-emerald-600 font-bold text-sm group-hover:text-amber-500 transition-colors" style={fonts.data}>
-                {loading ? "—" : `${(topThree[1]?.pointsAllTime || 0).toLocaleString()} EP`}
+                {loading ? "—" : `${(topThree[1]?.displayPoints || 0).toLocaleString()} EP`}
               </p>
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-40 group-hover:h-44 transition-all duration-300 ease-out bg-gradient-to-b from-yellow-100 to-amber-100 border-t-8 border-yellow-400 rounded-t-2xl shadow-inner relative flex justify-center pt-4">
@@ -511,7 +552,7 @@ export default function LeaderboardPodium() {
                 {loading ? "—" : (topThree[2]?.name || "")}
               </p>
               <p className="text-emerald-600 font-bold text-xs group-hover:text-orange-500 transition-colors" style={fonts.data}>
-                {loading ? "—" : `${(topThree[2]?.pointsAllTime || 0).toLocaleString()} EP`}
+                {loading ? "—" : `${(topThree[2]?.displayPoints || 0).toLocaleString()} EP`}
               </p>
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-20 group-hover:h-24 transition-all duration-300 ease-out bg-gradient-to-b from-orange-50 to-orange-100 border-t-8 border-orange-400 rounded-t-2xl shadow-inner relative flex justify-center pt-3">
@@ -532,10 +573,11 @@ export default function LeaderboardPodium() {
         </div>
 
         {/* ── Filters ── */}
-        <div className="flex flex-row items-center justify-between gap-2 mt-2 w-full flex-wrap">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Search */}
-            <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 w-full flex-wrap">
+          {/* Row 1: Search + Org */}
+          <div className="flex items-center gap-2 w-full sm:flex-1 min-w-0">
+            {/* Search — wider */}
+            <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 sm:py-2 flex-1 sm:min-w-[240px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
               <Search size={14} className="text-emerald-500 flex-shrink-0" />
               <input
                 type="text"
@@ -552,19 +594,33 @@ export default function LeaderboardPodium() {
               )}
             </div>
 
-            {/* Org filter */}
+            {/* Org filter — fixed width = widest option via phantom sizer */}
             {orgList.length > 0 && (
-              <div className="relative min-w-[190px] hidden sm:block" ref={orgDropdownRef}>
+              <div className="relative hidden sm:block shrink-0" ref={orgDropdownRef}>
+                {/* Phantom sizer: invisible, sets container width to widest option */}
+                <div
+                  className="invisible pointer-events-none flex items-center gap-2 px-3 py-2 text-[10px] sm:text-sm font-bold whitespace-nowrap"
+                  style={fonts.body}
+                  aria-hidden
+                >
+                  <span>
+                    {["All Organizations", ...orgList].reduce((a, b) =>
+                      a.length > b.length ? a : b, "All Organizations"
+                    )}
+                  </span>
+                  <ChevronDown size={14} className="flex-shrink-0" />
+                </div>
+                {/* Actual button: absolutely fills phantom's footprint */}
                 <button
                   type="button"
                   onClick={() => setOrgDropdownOpen((p) => !p)}
-                  className={`w-full flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 py-1.5 sm:py-2 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
-                    ? "rounded-t-lg rounded-b-none border-b-white z-[51] relative shadow-none"
+                  className={`absolute inset-0 flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
+                    ? "rounded-t-lg rounded-b-none border-b-white z-[51] shadow-none"
                     : "rounded-lg shadow-sm hover:border-emerald-400"
                     }`}
                   style={fonts.body}
                 >
-                  <span className="truncate">{orgFilter}</span>
+                  <span>{orgFilter}</span>
                   <ChevronDown
                     size={14}
                     className={`text-emerald-500 transition-transform duration-200 flex-shrink-0 ${orgDropdownOpen ? "rotate-180" : ""}`}
@@ -585,7 +641,7 @@ export default function LeaderboardPodium() {
                           key={org}
                           type="button"
                           onClick={() => { setOrgFilter(org); setOrgDropdownOpen(false); }}
-                          className={`w-full text-left px-4 py-2 text-[10px] sm:text-sm font-bold transition-colors whitespace-nowrap ${orgFilter === org
+                          className={`w-full text-left px-4 py-2.5 text-[10px] sm:text-sm font-bold transition-colors whitespace-nowrap ${orgFilter === org
                             ? "bg-emerald-50 text-emerald-800"
                             : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
                             }`}
@@ -600,6 +656,42 @@ export default function LeaderboardPodium() {
               </div>
             )}
           </div>
+
+          {/* Time filter — segmented control with measured sliding indicator */}
+          {(() => {
+            const TIME_OPTIONS = [
+              { key: "all", label: "All Time" },
+              { key: "month", label: "This Month" },
+              { key: "week", label: "This Week" },
+            ];
+            return (
+              <div
+                ref={timeSegRef}
+                className="relative flex bg-white border border-emerald-200 rounded-lg p-[3px] shrink-0"
+                style={{ height: "38px" }}
+              >
+                {/* Sliding background — sized to the active button */}
+                {sliderRect && (
+                  <div
+                    className="absolute top-[3px] bottom-[3px] rounded-md bg-emerald-600 shadow-sm transition-all duration-200 ease-out"
+                    style={{ left: sliderRect.left, width: sliderRect.width }}
+                  />
+                )}
+                {TIME_OPTIONS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    data-seg
+                    onClick={() => setTimeFilter(key)}
+                    className={`relative z-10 px-4 text-[10px] sm:text-xs font-black uppercase tracking-wide transition-colors duration-200 whitespace-nowrap ${timeFilter === key ? "text-white" : "text-emerald-700 hover:text-emerald-900"
+                      }`}
+                    style={fonts.body}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Table ── */}
@@ -609,13 +701,14 @@ export default function LeaderboardPodium() {
         >
           {/* Column headers */}
           <div
-            className="grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-5 bg-emerald-50/50 border-b border-emerald-100 text-[10px] sm:text-xs font-black text-emerald-800 uppercase tracking-widest items-center"
+            className="grid grid-cols-[auto_1fr_auto_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-5 bg-emerald-50/50 border-b border-emerald-100 text-[10px] sm:text-xs font-black text-emerald-800 uppercase tracking-widest items-center"
             style={fonts.body}
           >
             <div className="col-span-1 md:col-span-2 text-left">Rank</div>
             <div className="col-span-1 md:col-span-4 text-left">User</div>
-            <div className="hidden md:block md:col-span-3">Organization</div>
-            <div className="col-span-1 md:col-span-3 text-center">Points</div>
+            <div className="hidden md:block md:col-span-3 text-left">Organization</div>
+            <div className="col-span-1 md:col-span-2 text-center">Points</div>
+            <div className="col-span-1 md:col-span-1 text-center">Rewards</div>
           </div>
 
           {/* Rows */}
@@ -657,7 +750,7 @@ export default function LeaderboardPodium() {
                 return (
                   <div
                     key={user.id}
-                    className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
+                    className={`grid grid-cols-[auto_1fr_auto_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
                       ? "bg-emerald-50/80 relative"
                       : "hover:bg-slate-50"
                       }`}
@@ -732,16 +825,29 @@ export default function LeaderboardPodium() {
                     </div>
 
                     {/* Points */}
-                    <div className="col-span-1 md:col-span-3 text-center">
+                    <div className="col-span-1 md:col-span-2 text-right">
                       <p
                         className={`font-black text-sm inline-flex items-baseline gap-1 ${isMe ? "text-emerald-700" : "text-slate-700"}`}
                         style={fonts.data}
                       >
-                        {user.pointsAllTime.toLocaleString()}
+                        {user.displayPoints.toLocaleString()}
                         <span className="font-bold text-[10px] text-slate-400 uppercase tracking-widest" style={fonts.body}>
                           EP
                         </span>
                       </p>
+                    </div>
+
+                    {/* Rewards */}
+                    <div className="col-span-1 md:col-span-1 text-right">
+                      <span
+                        className={`inline-flex items-center gap-1 font-black text-sm ${isMe ? "text-emerald-700" : "text-slate-700"
+                          }`}
+                        style={fonts.data}
+                        title="Rewards redeemed"
+                      >
+                        <Gift size={13} className="text-emerald-500 flex-shrink-0" />
+                        {user.rewardsClaimed ?? 0}
+                      </span>
                     </div>
                   </div>
                 );
