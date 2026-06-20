@@ -305,6 +305,7 @@ class Wallet(db.Model):
     points_balance = db.Column(db.Integer, default=0)
     lifetime_points = db.Column(db.Integer, default=0)            # Total ever earned
     streak = db.Column(db.Integer, default=0)                     # Consecutive recycling days
+    best_streak = db.Column(db.Integer, default=0)               # All-time highest streak
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

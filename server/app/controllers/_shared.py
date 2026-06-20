@@ -226,6 +226,7 @@ def _serialize_user(u):
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,
+        'bestStreak': getattr(u.wallet, 'best_streak', 0) if u.wallet else 0,
         'walletId': u.wallet.id if u.wallet else None,
         'locationId': org_id,
         'locationName': org_name,

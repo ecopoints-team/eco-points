@@ -90,3 +90,31 @@ export async function getLoginHistory(locationId = null) {
     const data = await request('GET', withQuery('/settings/security/login-history', { location_id: locationId }));
     return data.history;
 }
+
+// ── Backup & Restore ──────────────────────────────────────────────────────
+
+/** GET /api/web/settings/backup — download JSON backup. */
+export async function downloadBackup() {
+    return await request('GET', '/settings/backup');
+}
+
+/** POST /api/web/settings/restore — restore from JSON backup. */
+export async function restoreBackup(backupData) {
+    return await request('POST', '/settings/restore', {
+        body: backupData,
+    });
+}
+
+// ── Test Data (Seed / Truncate) ───────────────────────────────────────────
+
+/** POST /api/web/settings/seed — start seeding or truncating. */
+export async function startSeed(mode = 'demo') {
+    return await request('POST', '/settings/seed', {
+        body: { mode },
+    });
+}
+
+/** GET /api/web/settings/seed/status — poll seed progress. */
+export async function getSeedStatus() {
+    return await request('GET', '/settings/seed/status');
+}

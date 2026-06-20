@@ -9,9 +9,10 @@ import { formatField } from '../../../src/lib/formatField';
 import { notificationChannelLabel } from '../../../src/lib/enumLabels';
 import {
     Settings, Bell, Shield, Save, ToggleLeft, ToggleRight,
-    Zap, Recycle, Palette, Plus, X, Send, Mail, Smartphone, Phone,
+    Zap, Recycle, Palette, Plus, X, Send, Mail,
     Clock, RefreshCw, CheckCircle, AlertTriangle, ChevronDown, ChevronUp,
-    LogOut, History, Lock, ShieldCheck, Info
+    LogOut, History, Lock, ShieldCheck, Info,
+    HardDrive, FlaskConical, Download, Upload, Trash2, Database, Loader2, FileJson, AlertCircle
 } from 'lucide-react';
 
 const ToggleSwitch = ({ enabled, onChange, label, description }) => (
@@ -61,6 +62,21 @@ function SettingsPageContent() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [forceLogoutLoading, setForceLogoutLoading] = useState(false);
+
+    // ── Backup & Restore ──
+    const [backupLoading, setBackupLoading] = useState(false);
+    const [restoreLoading, setRestoreLoading] = useState(false);
+    const [restoreFile, setRestoreFile] = useState(null);
+    const [restoreFileName, setRestoreFileName] = useState('');
+    const [backupMessage, setBackupMessage] = useState(null);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+    // ── Test Data (Seed) ──
+    const [seedLoading, setSeedLoading] = useState(false);
+    const [seedStatus, setSeedStatus] = useState({ status: 'idle', message: '', percent: 0 });
+    const [showTruncateConfirm, setShowTruncateConfirm] = useState(false);
+    const [truncateLoading, setTruncateLoading] = useState(false);
+    const [seedMessage, setSeedMessage] = useState(null);
 
     // ═══ LOAD NOTIFICATION SETTINGS ═══
     const loadNotifSettings = useCallback(async () => {
@@ -226,10 +242,107 @@ function SettingsPageContent() {
         security: { label: 'Security', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
     };
 
+    // ═══ BACKUP & RESTORE HANDLERS ═══
+    const handleBackupDownload = async () => {
+        setBackupLoading(true);
+        setBackupMessage(null);
+        try {
+            const data = await settingsApi.downloadBackup();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ecopoints-backup-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setBackupMessage({ type: 'success', text: `Backup created (${data.meta?.total_rows || 0} rows)` });
+        } catch (err) {
+            setBackupMessage({ type: 'error', text: err.message || 'Backup failed' });
+        }
+        setBackupLoading(false);
+    };
+
+    const handleRestoreFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setRestoreFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const parsed = JSON.parse(ev.target.result);
+                if (!parsed.meta || !parsed.tables) throw new Error('Invalid format');
+                setRestoreFile(parsed);
+                setBackupMessage(null);
+            } catch {
+                setBackupMessage({ type: 'error', text: 'Invalid backup file format' });
+                setRestoreFile(null);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleRestore = async () => {
+        if (!restoreFile) return;
+        setRestoreLoading(true);
+        setShowRestoreConfirm(false);
+        setBackupMessage(null);
+        try {
+            const result = await settingsApi.restoreBackup(restoreFile);
+            setBackupMessage({ type: 'success', text: result.message || 'Restored successfully' });
+            setRestoreFile(null);
+            setRestoreFileName('');
+        } catch (err) {
+            setBackupMessage({ type: 'error', text: err.message || 'Restore failed' });
+        }
+        setRestoreLoading(false);
+    };
+
+    // ═══ TEST DATA (SEED) HANDLERS ═══
+    const handleGenerateSeed = async () => {
+        setSeedLoading(true);
+        setSeedMessage(null);
+        try {
+            await settingsApi.startSeed('demo');
+            setSeedStatus({ status: 'running', message: 'Starting demo seed...', percent: 10 });
+            // Poll status
+            const poll = setInterval(async () => {
+                try {
+                    const s = await settingsApi.getSeedStatus();
+                    setSeedStatus({ status: s.status, message: s.message, percent: s.percent });
+                    if (s.status === 'done' || s.status === 'error') {
+                        clearInterval(poll);
+                        setSeedLoading(false);
+                        setSeedMessage({ type: s.status === 'done' ? 'success' : 'error', text: s.message });
+                    }
+                } catch { clearInterval(poll); setSeedLoading(false); }
+            }, 2000);
+        } catch (err) {
+            setSeedMessage({ type: 'error', text: err.message || 'Failed to start seeding' });
+            setSeedLoading(false);
+        }
+    };
+
+    const handleTruncate = async () => {
+        setTruncateLoading(true);
+        setShowTruncateConfirm(false);
+        setSeedMessage(null);
+        try {
+            const result = await settingsApi.startSeed('truncate');
+            setSeedMessage({ type: 'success', text: result.message || 'All tables truncated' });
+        } catch (err) {
+            setSeedMessage({ type: 'error', text: err.message || 'Truncate failed' });
+        }
+        setTruncateLoading(false);
+    };
+
     const sections = [
         { id: 'appearance', label: 'Appearance', icon: Palette },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
+        { id: 'backup', label: 'Backup & Restore', icon: HardDrive },
+        { id: 'testdata', label: 'Test Data', icon: FlaskConical },
     ];
 
     return (
@@ -309,7 +422,7 @@ function SettingsPageContent() {
                         {activeSection === 'notifications' && (<>
                             <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Notification Alerts</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure which alerts are sent and via which channels</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure which alerts are sent and via email</p>
                             </div>
                             <div className="p-6 space-y-6">
                                 {notifLoading ? (
@@ -317,17 +430,6 @@ function SettingsPageContent() {
                                         <RefreshCw size={24} className="animate-spin text-emerald-500" />
                                     </div>
                                 ) : (<>
-                                    {/* SMTP/Twilio Config Notice */}
-                                    <div className="flex items-start gap-3 p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/30">
-                                        <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Email & SMS Credentials Required</p>
-                                            <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">
-                                                To send notifications, configure your SMTP (email) or Twilio (SMS) credentials in the server <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/30 rounded text-[11px]">.env</code> file. See <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/30 rounded text-[11px]">.env.example</code> for setup instructions.
-                                            </p>
-                                        </div>
-                                    </div>
-
                                     {/* Alert Matrix */}
                                     <div className="space-y-3">
                                         {notifSettings.filter(s => !s.alertKey.startsWith('config_')).map(setting => {
@@ -355,30 +457,10 @@ function SettingsPageContent() {
                                                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{setting.description}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-4 shrink-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <button onClick={() => updateNotifSetting(setting.alertKey, 'emailEnabled', !setting.emailEnabled)}
-                                                                    disabled={!setting.isActive} type="button"
-                                                                    className={`p-1.5 rounded-lg transition-colors ${setting.emailEnabled && setting.isActive
-                                                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
-                                                                        : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                                                                        } disabled:opacity-40`} title="Email">
-                                                                    <Mail size={16} />
-                                                                </button>
-                                                                <button onClick={() => updateNotifSetting(setting.alertKey, 'smsEnabled', !setting.smsEnabled)}
-                                                                    disabled={!setting.isActive} type="button"
-                                                                    className={`p-1.5 rounded-lg transition-colors ${setting.smsEnabled && setting.isActive
-                                                                        ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400'
-                                                                        : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                                                                        } disabled:opacity-40`} title="SMS">
-                                                                    <Smartphone size={16} />
-                                                                </button>
-                                                            </div>
-                                                            <button onClick={() => setEditingAlertKey(isExpanded ? null : setting.alertKey)} type="button"
-                                                                className="p-1 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
-                                                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                                            </button>
-                                                        </div>
+                                                        <button onClick={() => setEditingAlertKey(isExpanded ? null : setting.alertKey)} type="button"
+                                                            className="p-1 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
+                                                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                        </button>
                                                     </div>
 
                                                     {isExpanded && (
@@ -403,7 +485,7 @@ function SettingsPageContent() {
                                                                 <div className="flex flex-wrap gap-2 mb-2">
                                                                     {setting.recipients.map((r, i) => (
                                                                         <span key={i} className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium">
-                                                                            {r.includes('@') ? <Mail size={12} /> : <Smartphone size={12} />}
+                                                                            <Mail size={12} />
                                                                             {r}
                                                                             <button onClick={() => removeRecipientFromAlert(setting.alertKey, r)} type="button"
                                                                                 className="hover:text-red-500 ml-1"><X size={12} /></button>
@@ -414,7 +496,7 @@ function SettingsPageContent() {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex gap-2">
-                                                                    <input type="text" placeholder="Email or phone number" value={newRecipient}
+                                                                    <input type="text" placeholder="Email address" value={newRecipient}
                                                                         onChange={(e) => setNewRecipient(e.target.value)}
                                                                         onKeyDown={(e) => e.key === 'Enter' && addRecipientToAlert(setting.alertKey)}
                                                                         className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500" />
@@ -439,29 +521,10 @@ function SettingsPageContent() {
                                         </h4>
                                         <div className="flex gap-3 items-end">
                                             <div className="flex-1">
-                                                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-                                                    {testChannel === 'sms' ? 'Phone Number (PH)' : 'Email Address'}
-                                                </label>
-                                                {testChannel === 'sms' ? (
-                                                    <>
-                                                        <input type="tel" placeholder="09171234567" value={testRecipient}
-                                                            onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 11); setTestRecipient(v); }}
-                                                            maxLength={11}
-                                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm outline-none text-slate-700 dark:text-slate-200 focus:border-emerald-500" />
-                                                        {testRecipient && testRecipient.length > 0 && (!testRecipient.startsWith('09') || testRecipient.length !== 11) && (
-                                                            <p className="text-xs text-amber-500 mt-1 flex items-center gap-1"><AlertTriangle size={12} /> Must be 11 digits starting with 09</p>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <input type="email" placeholder="admin@example.com" value={testRecipient}
-                                                        onChange={(e) => setTestRecipient(e.target.value)}
-                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm outline-none text-slate-700 dark:text-slate-200 focus:border-emerald-500" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">Channel</label>
-                                                <CustomDropdown value={testChannel} onChange={(v) => { setTestChannel(v); setTestRecipient(''); }}
-                                                    options={[{ value: 'email', label: 'Email' }, { value: 'sms', label: 'SMS' }]} showPlaceholder={false} />
+                                                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">Email Address</label>
+                                                <input type="email" placeholder="admin@example.com" value={testRecipient}
+                                                    onChange={(e) => setTestRecipient(e.target.value)}
+                                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm outline-none text-slate-700 dark:text-slate-200 focus:border-emerald-500" />
                                             </div>
                                             <button onClick={handleTestNotification} disabled={testSending || !testRecipient}
                                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2">
@@ -655,6 +718,207 @@ function SettingsPageContent() {
                                 </div>
                             </div>
                             )}
+                        </>)}
+
+
+                        {/* ═══ BACKUP & RESTORE ═══ */}
+                        {activeSection === 'backup' && (<>
+                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Backup & Restore</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Download a full backup or restore from a previous one</p>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* Status messages */}
+                                {backupMessage && (
+                                    <div className={`p-3 rounded-xl flex items-center gap-2 text-sm font-medium ${
+                                        backupMessage.type === 'success'
+                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                                    }`}>
+                                        {backupMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                                        {backupMessage.text}
+                                    </div>
+                                )}
+
+                                {/* Create Backup */}
+                                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                            <Download size={20} className="text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-white">Create Backup</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Download a full JSON backup of all database tables</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={handleBackupDownload} disabled={backupLoading}
+                                        className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2 transition-all">
+                                        {backupLoading ? <><Loader2 size={16} className="animate-spin" /> Creating Backup...</> : <><Database size={16} /> Download Backup</>}
+                                    </button>
+                                </div>
+
+                                {/* Restore from Backup */}
+                                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                                            <Upload size={20} className="text-amber-600 dark:text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-white">Restore from Backup</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Upload a JSON backup file to restore all data</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 p-3 mb-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-200/50 dark:border-red-800/30">
+                                        <AlertTriangle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                                            WARNING: Restoring will permanently REPLACE all existing data with the backup contents. This action cannot be undone.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-600">
+                                            <FileJson size={16} /> {restoreFileName || 'Choose .json file'}
+                                            <input type="file" accept=".json" onChange={handleRestoreFileSelect} className="hidden" />
+                                        </label>
+                                        <button onClick={() => setShowRestoreConfirm(true)} disabled={!restoreFile || restoreLoading}
+                                            className="px-4 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-500 disabled:opacity-50 flex items-center gap-2 transition-all">
+                                            {restoreLoading ? <><Loader2 size={16} className="animate-spin" /> Restoring...</> : <><Upload size={16} /> Restore Backup</>}
+                                        </button>
+                                    </div>
+                                    {restoreFile && (
+                                        <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                                            <span className="font-medium">File:</span> {restoreFileName} • <span className="font-medium">Tables:</span> {restoreFile.meta?.table_count || '?'} • <span className="font-medium">Rows:</span> {restoreFile.meta?.total_rows?.toLocaleString() || '?'} • <span className="font-medium">Created:</span> {restoreFile.meta?.created_at ? new Date(restoreFile.meta.created_at).toLocaleString() : '?'}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Restore Confirmation Modal */}
+                                {showRestoreConfirm && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                                            <div className="text-center mb-4">
+                                                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                                                    <AlertTriangle size={24} className="text-red-500" />
+                                                </div>
+                                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Confirm Restore</h3>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                                                    This will <span className="font-bold text-red-600">permanently replace</span> all existing data with the backup. Are you sure?
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={() => setShowRestoreConfirm(false)}
+                                                    className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                                                    Cancel
+                                                </button>
+                                                <button onClick={handleRestore}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-500 transition-all">
+                                                    Yes, Restore
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </>)}
+
+
+                        {/* ═══ TEST DATA ═══ */}
+                        {activeSection === 'testdata' && (<>
+                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Test Data</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Generate demo data for testing or clear all tables</p>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* Status messages */}
+                                {seedMessage && (
+                                    <div className={`p-3 rounded-xl flex items-center gap-2 text-sm font-medium ${
+                                        seedMessage.type === 'success'
+                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                                    }`}>
+                                        {seedMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                                        {seedMessage.text}
+                                    </div>
+                                )}
+
+                                {/* Generate Test Data */}
+                                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                                            <Database size={20} className="text-emerald-600 dark:text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-white">Generate Demo Data</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Creates 50 users with 2020-2026 activity data (sessions, transactions, rewards)</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Progress bar */}
+                                    {seedLoading && (
+                                        <div className="mb-4 space-y-2">
+                                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                                                <span className="flex items-center gap-1">
+                                                    <Loader2 size={12} className="animate-spin" />
+                                                    {seedStatus.message || 'Generating...'}
+                                                </span>
+                                                <span>{seedStatus.percent}%</span>
+                                            </div>
+                                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                                                <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500 ease-out"
+                                                    style={{ width: `${seedStatus.percent}%` }} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button onClick={handleGenerateSeed} disabled={seedLoading}
+                                        className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-500 disabled:opacity-50 flex items-center gap-2 transition-all">
+                                        {seedLoading ? <><Loader2 size={16} className="animate-spin" /> Generating...</> : <><FlaskConical size={16} /> Generate Demo Data</>}
+                                    </button>
+                                </div>
+
+                                {/* Truncate All Tables */}
+                                <div className="border border-red-200 dark:border-red-800/50 rounded-xl p-5 bg-red-50/30 dark:bg-red-900/5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20">
+                                            <Trash2 size={20} className="text-red-600 dark:text-red-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-red-700 dark:text-red-400">Clear All Data</h4>
+                                            <p className="text-xs text-red-600/70 dark:text-red-400/70">Truncate ALL database tables. This permanently deletes all data.</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowTruncateConfirm(true)} disabled={truncateLoading || seedLoading}
+                                        className="px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-500 disabled:opacity-50 flex items-center gap-2 transition-all">
+                                        {truncateLoading ? <><Loader2 size={16} className="animate-spin" /> Truncating...</> : <><Trash2 size={16} /> Truncate All Tables</>}
+                                    </button>
+                                </div>
+
+                                {/* Truncate Confirmation Modal */}
+                                {showTruncateConfirm && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                                            <div className="text-center mb-4">
+                                                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                                                    <Trash2 size={24} className="text-red-500" />
+                                                </div>
+                                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Confirm Truncate</h3>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                                                    This will <span className="font-bold text-red-600">permanently delete ALL data</span> from every table. This cannot be undone.
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={() => setShowTruncateConfirm(false)}
+                                                    className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                                                    Cancel
+                                                </button>
+                                                <button onClick={handleTruncate}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-500 transition-all">
+                                                    Yes, Delete All
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </>)}
                     </div>
                 </div>
