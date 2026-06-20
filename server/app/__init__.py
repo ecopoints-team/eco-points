@@ -277,6 +277,27 @@ def create_app():
             db.session.rollback()
             app.logger.error(f"Error during last_username_change migration: {e}")
 
+        # Auto-migrate: ensure best_streak column exists on wallet table
+        try:
+            result = db.session.execute(db.text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='wallet' AND column_name='best_streak' LIMIT 1"
+            )).fetchone()
+            if result is None:
+                app.logger.info("Adding 'best_streak' column to 'wallet' table...")
+                db.session.execute(db.text(
+                    "ALTER TABLE wallet ADD COLUMN IF NOT EXISTS best_streak INTEGER DEFAULT 0"
+                ))
+                # Backfill: set best_streak = streak for existing rows
+                db.session.execute(db.text(
+                    "UPDATE wallet SET best_streak = streak WHERE best_streak IS NULL OR best_streak = 0"
+                ))
+                db.session.commit()
+                app.logger.info("'best_streak' column added and backfilled successfully.")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error during best_streak migration: {e}")
+
         # Register blueprints
         from .controllers.auth_controller import auth_bp
         from .controllers.web_controller import web_bp

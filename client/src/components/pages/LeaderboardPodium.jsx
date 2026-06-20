@@ -1,5 +1,5 @@
 // Leaderboard Page
-// LeaderboardPodium Component — Redesigned
+// LeaderboardPodium Component — Real API Data
 
 "use client";
 
@@ -17,9 +17,11 @@ import {
   AlertCircle,
   X,
   Search,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
 
 // ─────────────────────────────────────────────
 // Font styles
@@ -31,129 +33,10 @@ const fonts = {
 };
 
 // ─────────────────────────────────────────────
-// Mock data — base entries + extended
-// ─────────────────────────────────────────────
-const BASE_ENTRIES = [
-  { name: "Maria Santos", org: "College of Engineering", basePoints: 2850, bottles: 285 },
-  { name: "Juan dela Cruz", org: "College of Science", basePoints: 2680, bottles: 312 },
-  { name: "Ana Reyes", org: "College of Arts", basePoints: 2450, bottles: 245 },
-  { name: "Carlos Mendoza", org: "College of Engineering", basePoints: 2310, bottles: 231 },
-  { name: "Lea Villanueva", org: "College of Business", basePoints: 2190, bottles: 270 },
-  { name: "Rico Bautista", org: "College of Science", basePoints: 2080, bottles: 208 },
-  { name: "Grace Castillo", org: "College of Education", basePoints: 1970, bottles: 197 },
-  { name: "Miguel Torres", org: "College of Engineering", basePoints: 1860, bottles: 186 },
-  { name: "Donna Aquino", org: "College of Arts", basePoints: 1750, bottles: 175 },
-  { name: "Francis Lim", org: "College of Science", basePoints: 1640, bottles: 164 },
-  { name: "Jenny Ramos", org: "College of Business", basePoints: 1530, bottles: 153 },
-  { name: "Andrei Cruz", org: "College of Engineering", basePoints: 1420, bottles: 142 },
-  { name: "Sophia Navarro", org: "College of Arts", basePoints: 1310, bottles: 131 },
-  { name: "Paolo Fernandez", org: "College of Science", basePoints: 1200, bottles: 120 },
-  { name: "Kristine Garcia", org: "College of Education", basePoints: 1095, bottles: 110 },
-  { name: "Renz Padilla", org: "College of Engineering", basePoints: 980, bottles: 98 },
-  { name: "Marites Ocampo", org: "College of Business", basePoints: 860, bottles: 86 },
-  { name: "Juliet Soriano", org: "College of Arts", basePoints: 750, bottles: 75 },
-  { name: "Elmer Diaz", org: "College of Science", basePoints: 640, bottles: 64 },
-  { name: "Carla Espinoza", org: "College of Education", basePoints: 530, bottles: 53 },
-  { name: "Nathan Rivera", org: "College of Engineering", basePoints: 490, bottles: 49 },
-  { name: "Liezel Santos", org: "College of Business", basePoints: 450, bottles: 45 },
-  { name: "Gilberto Flores", org: "College of Science", basePoints: 410, bottles: 41 },
-  { name: "Rhea Gonzales", org: "College of Arts", basePoints: 370, bottles: 37 },
-  { name: "Edward Dela Rosa", org: "College of Education", basePoints: 340, bottles: 34 },
-  { name: "Trisha Mercado", org: "College of Engineering", basePoints: 310, bottles: 31 },
-  { name: "Joseph Aguilar", org: "College of Science", basePoints: 275, bottles: 28 },
-  { name: "Maricel Reyes", org: "College of Business", basePoints: 240, bottles: 24 },
-  { name: "Daniel Manalo", org: "College of Arts", basePoints: 210, bottles: 21 },
-  { name: "Sunshine Pascual", org: "College of Education", basePoints: 185, bottles: 19 },
-  // Extended entries
-  { name: "Rafael Gomez", org: "College of Engineering", basePoints: 175, bottles: 18 },
-  { name: "Bianca Salazar", org: "College of Science", basePoints: 168, bottles: 17 },
-  { name: "Marco Villanueva", org: "College of Arts", basePoints: 162, bottles: 16 },
-  { name: "Christine Lim", org: "College of Business", basePoints: 155, bottles: 16 },
-  { name: "Jerome Santos", org: "College of Education", basePoints: 150, bottles: 15 },
-  { name: "Patricia Cruz", org: "College of Engineering", basePoints: 145, bottles: 15 },
-  { name: "Kevin Reyes", org: "College of Science", basePoints: 140, bottles: 14 },
-  { name: "Angela Mendoza", org: "College of Arts", basePoints: 135, bottles: 14 },
-  { name: "Ryan Bautista", org: "College of Business", basePoints: 130, bottles: 13 },
-  { name: "Michelle Torres", org: "College of Education", basePoints: 128, bottles: 13 },
-  { name: "Derek Aquino", org: "College of Engineering", basePoints: 125, bottles: 13 },
-  { name: "Samantha Ramos", org: "College of Science", basePoints: 122, bottles: 12 },
-  { name: "Adrian Fernandez", org: "College of Arts", basePoints: 120, bottles: 12 },
-  { name: "Nicole Garcia", org: "College of Business", basePoints: 118, bottles: 12 },
-  { name: "Brandon Padilla", org: "College of Education", basePoints: 115, bottles: 12 },
-  { name: "Jasmine Ocampo", org: "College of Engineering", basePoints: 112, bottles: 11 },
-  { name: "Vincent Soriano", org: "College of Science", basePoints: 110, bottles: 11 },
-  { name: "Camille Diaz", org: "College of Arts", basePoints: 108, bottles: 11 },
-  { name: "Patrick Espinoza", org: "College of Business", basePoints: 106, bottles: 11 },
-  { name: "Denise Flores", org: "College of Education", basePoints: 104, bottles: 10 },
-  { name: "Raymond Gonzales", org: "College of Engineering", basePoints: 102, bottles: 10 },
-  { name: "Katrina Dela Rosa", org: "College of Science", basePoints: 100, bottles: 10 },
-  { name: "Christian Mercado", org: "College of Arts", basePoints: 98, bottles: 10 },
-  { name: "April Aguilar", org: "College of Business", basePoints: 96, bottles: 10 },
-  { name: "Jason Manalo", org: "College of Education", basePoints: 94, bottles: 9 },
-  { name: "Stephanie Pascual", org: "College of Engineering", basePoints: 92, bottles: 9 },
-  { name: "Mark Navarro", org: "College of Science", basePoints: 90, bottles: 9 },
-  { name: "Diana Castillo", org: "College of Arts", basePoints: 88, bottles: 9 },
-  { name: "Robert Villanueva", org: "College of Business", basePoints: 86, bottles: 9 },
-  { name: "Hannah Cruz", org: "College of Education", basePoints: 84, bottles: 8 },
-  { name: "Gabriel Reyes", org: "College of Engineering", basePoints: 82, bottles: 8 },
-  { name: "Isabelle Santos", org: "College of Science", basePoints: 80, bottles: 8 },
-  { name: "Timothy Mendoza", org: "College of Arts", basePoints: 78, bottles: 8 },
-  { name: "Victoria Bautista", org: "College of Business", basePoints: 76, bottles: 8 },
-  { name: "Dennis Torres", org: "College of Education", basePoints: 74, bottles: 7 },
-  { name: "Rebecca Aquino", org: "College of Engineering", basePoints: 72, bottles: 7 },
-  { name: "Philip Ramos", org: "College of Science", basePoints: 70, bottles: 7 },
-  { name: "Melissa Fernandez", org: "College of Arts", basePoints: 68, bottles: 7 },
-  { name: "Oscar Garcia", org: "College of Business", basePoints: 66, bottles: 7 },
-  { name: "Teresa Padilla", org: "College of Education", basePoints: 64, bottles: 6 },
-  { name: "Martin Ocampo", org: "College of Engineering", basePoints: 62, bottles: 6 },
-  { name: "Catherine Soriano", org: "College of Science", basePoints: 60, bottles: 6 },
-  { name: "Andrew Diaz", org: "College of Arts", basePoints: 58, bottles: 6 },
-  { name: "Monica Espinoza", org: "College of Business", basePoints: 56, bottles: 6 },
-  { name: "Steven Flores", org: "College of Education", basePoints: 54, bottles: 5 },
-  { name: "Pauline Gonzales", org: "College of Engineering", basePoints: 52, bottles: 5 },
-  { name: "Jeffrey Dela Rosa", org: "College of Science", basePoints: 50, bottles: 5 },
-  { name: "Charlene Mercado", org: "College of Arts", basePoints: 48, bottles: 5 },
-  { name: "Darwin Aguilar", org: "College of Business", basePoints: 46, bottles: 5 },
-  { name: "Rosalie Manalo", org: "College of Education", basePoints: 44, bottles: 4 },
-];
-
-const ORGANIZATIONS = [
-  "College of Engineering",
-  "College of Science",
-  "College of Arts",
-  "College of Business",
-  "College of Education",
-];
-
-// Build full user objects with derived fields
-const RAW_USERS = BASE_ENTRIES.map((entry, idx) => {
-  const rand1 = ((idx * 17) % 100) / 100;
-  const rand2 = ((idx * 31) % 100) / 100;
-
-  return {
-    id: `usr_${idx}`,
-    name: entry.name,
-    username: entry.name.toLowerCase().replace(/\s/g, ""),
-    organization: entry.org,
-    pointsAllTime: entry.basePoints,
-    pointsThisMonth: Math.floor(entry.basePoints * (0.1 + rand1 * 0.4)),
-    pointsThisWeek: Math.floor(entry.basePoints * (0.01 + rand2 * 0.1)),
-    currentPoints: Math.floor(entry.basePoints * 0.4),
-    rewardsClaimed: Math.floor(entry.basePoints / 1000) + Math.floor(rand1 * 5),
-    bottles: entry.bottles,
-  };
-});
-
-// ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-function getRedactedUsername(username) {
-  if (username.length <= 2) return username;
-  return `${username[0]}${"*".repeat(username.length - 2)}${username[username.length - 1]}`;
-}
-
 function Initials({ name, className }) {
-  const initials = name
+  const initials = (name || "?")
     .split(" ")
     .slice(0, 2)
     .map((n) => n[0])
@@ -175,7 +58,6 @@ function Pagination({ currentPage, totalPages, setCurrentPage }) {
     const range = generateRange(start, end);
     return (
       <div className="flex items-center h-10">
-        {/* Collapsed dots — click to expand */}
         {!expanded && (
           <button
             onClick={() => setExpanded(true)}
@@ -192,7 +74,6 @@ function Pagination({ currentPage, totalPages, setCurrentPage }) {
             </div>
           </button>
         )}
-        {/* Expanded page buttons */}
         {expanded && (
           <div className="flex items-center gap-1.5 px-1 flex-wrap justify-center">
             {range.map((p) => (
@@ -295,101 +176,84 @@ function TrophyIcon(props) {
 }
 
 // ─────────────────────────────────────────────
+// Skeleton row
+// ─────────────────────────────────────────────
+function SkeletonRow() {
+  return (
+    <div className="grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 animate-pulse">
+      <div className="col-span-1 md:col-span-2"><div className="h-8 w-8 rounded-full bg-slate-100" /></div>
+      <div className="col-span-1 md:col-span-4 flex items-center gap-2">
+        <div className="hidden sm:block h-9 w-9 rounded-full bg-slate-100 shrink-0" />
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="h-3.5 w-28 rounded bg-slate-100" />
+          <div className="h-2.5 w-20 rounded bg-slate-100" />
+        </div>
+      </div>
+      <div className="hidden md:block md:col-span-3"><div className="h-6 w-28 rounded-md bg-slate-100" /></div>
+      <div className="col-span-1 md:col-span-2 flex justify-center"><div className="h-4 w-16 rounded bg-slate-100" /></div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 export default function LeaderboardPodium() {
   const { currentUser: authUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [timeFilter, setTimeFilter] = useState("all");
   const [orgFilter, setOrgFilter] = useState("All Organizations");
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const orgDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // API state
+  const [rawUsers, setRawUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const itemsPerPage = 10;
   const maxItems = 100;
 
-  // Derive CURRENT_USER_ID from auth user name, fallback to "usr_22"
-  // If no mock match, synthesize an entry so name is consistent with the navbar
-  const CURRENT_USER_ID = "usr_current";
+  // ── Fetch leaderboard from API ──
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-  // Build the effective user list: inject auth user if not already present
-  const effectiveUsers = useMemo(() => {
-    if (!authUser?.name) return RAW_USERS;
-    const username = authUser.name.toLowerCase().replace(/\s/g, "");
-    const alreadyIn = RAW_USERS.some((u) => u.username === username);
-    if (alreadyIn) return RAW_USERS;
-    // Graft auth user name onto usr_22's stats (placeholder until real API)
-    const placeholder = RAW_USERS.find((u) => u.id === "usr_22") || RAW_USERS[22];
-    return [
-      ...RAW_USERS.filter((u) => u.id !== "usr_22"),
-      {
-        ...placeholder,
-        id: "usr_current",
-        name: authUser.name,
-        username,
-      },
-    ];
-  }, [authUser]);
+    api.leaderboard.get()
+      .then(({ topUsers }) => {
+        if (cancelled) return;
+        // Map API shape → internal shape
+        const mapped = (topUsers || []).map((u) => ({
+          id: u.id,
+          name: u.name || "Unknown",
+          username: u.username || u.name?.toLowerCase().replace(/\s+/g, "") || "",
+          organization: u.locationName || u.department || "—",
+          department: u.department || "—",
+          pointsAllTime: u.lifetimePoints || 0,
+          currentPoints: u.points || 0,
+          bottles: u.bottlesCollected || 0,
+          streak: u.streak || 0,
+        }));
+        setRawUsers(mapped);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message || "Failed to load leaderboard.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  // ── Filter, search, sort ──
-  const filteredList = useMemo(() => {
-    let list = effectiveUsers.filter(
-      (u) => orgFilter === "All Organizations" || u.organization === orgFilter
-    ).map((u) => ({
-      ...u,
-      displayPoints:
-        timeFilter === "all"
-          ? u.pointsAllTime
-          : timeFilter === "month"
-            ? u.pointsThisMonth
-            : u.pointsThisWeek,
-    }));
+    return () => { cancelled = true; };
+  }, []);
 
-    // Search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (u) =>
-          u.name.toLowerCase().includes(q) ||
-          u.username.toLowerCase().includes(q)
-      );
-    }
-
-    // Sort always by points
-    list.sort((a, b) => b.displayPoints - a.displayPoints);
-
-    return list.map((u, idx) => ({ ...u, rank: idx + 1 }));
-  }, [effectiveUsers, timeFilter, orgFilter, searchQuery]);
-
-  const currentUser =
-    filteredList.find((u) => u.id === CURRENT_USER_ID) ||
-    (authUser ? filteredList.find((u) => u.name === authUser.name) : null) ||
-    filteredList[22] ||
-    filteredList[0];
-  const CURRENT_USER_RANK = currentUser?.rank || 1;
-
-  const TABLE_LEADERBOARD = filteredList.slice(0, maxItems);
-  const totalPages = Math.ceil(TABLE_LEADERBOARD.length / itemsPerPage);
-  const currentList = TABLE_LEADERBOARD.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const isUserIncluded = currentList.some((u) => u.rank === CURRENT_USER_RANK);
-
-  // Podium order: 2nd | 1st | 3rd
-  const topThree = [filteredList[1], filteredList[0], filteredList[2]].filter(
-    Boolean
-  );
-
-  // ── Floating modal + scroll state ──
-  const [isTableVisible, setIsTableVisible] = useState(false);
-  const [isFooterVisible, setIsFooterVisible] = useState(false);
-  const [showRankModal, setShowRankModal] = useState(false);
-  const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
-  const tableRef = useRef(null);
-  const constraintsRef = useRef(null);
+  // Derive org list dynamically
+  const orgList = useMemo(() => {
+    const seen = new Set();
+    rawUsers.forEach((u) => { if (u.organization && u.organization !== "—") seen.add(u.organization); });
+    return Array.from(seen).sort();
+  }, [rawUsers]);
 
   // Close org dropdown on outside click
   useEffect(() => {
@@ -405,7 +269,56 @@ export default function LeaderboardPodium() {
   // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [timeFilter, orgFilter, searchQuery]);
+  }, [orgFilter, searchQuery]);
+
+  // ── Filter, search, sort ──
+  const filteredList = useMemo(() => {
+    let list = rawUsers.filter(
+      (u) => orgFilter === "All Organizations" || u.organization === orgFilter
+    );
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q)
+      );
+    }
+
+    // Already sorted by lifetimePoints desc from backend, but re-sort to be safe
+    list = [...list].sort((a, b) => b.pointsAllTime - a.pointsAllTime);
+
+    return list.map((u, idx) => ({ ...u, rank: idx + 1 }));
+  }, [rawUsers, orgFilter, searchQuery]);
+
+  // Identify current user by ID
+  const currentUser = useMemo(() => {
+    if (!authUser?.id) return filteredList[0] || null;
+    return filteredList.find((u) => String(u.id) === String(authUser.id)) || null;
+  }, [filteredList, authUser]);
+
+  const CURRENT_USER_RANK = currentUser?.rank || null;
+
+  const TABLE_LEADERBOARD = filteredList.slice(0, maxItems);
+  const totalPages = Math.max(1, Math.ceil(TABLE_LEADERBOARD.length / itemsPerPage));
+  const currentList = TABLE_LEADERBOARD.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const isUserIncluded = currentUser ? currentList.some((u) => u.rank === CURRENT_USER_RANK) : false;
+
+  // Podium order: 2nd | 1st | 3rd
+  const topThree = [filteredList[1], filteredList[0], filteredList[2]].filter(Boolean);
+
+  // ── Floating modal + scroll state ──
+  const [isTableVisible, setIsTableVisible] = useState(false);
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+  const [showRankModal, setShowRankModal] = useState(false);
+  const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
+  const tableRef = useRef(null);
+  const constraintsRef = useRef(null);
 
   // Drag-end: snap to nearest corner
   const handleDragEnd = () => {
@@ -469,18 +382,16 @@ export default function LeaderboardPodium() {
     };
   }, []);
 
-  // Scroll table into view, clearing the fixed nav (~88px)
   const scrollToTable = () => {
     if (tableRef.current) {
       const rect = tableRef.current.getBoundingClientRect();
-      const navHeight = 96; // fixed nav top-4 (~16px) + nav body (~64px) + gap
+      const navHeight = 96;
       window.scrollTo({ top: rect.top + window.scrollY - navHeight, behavior: "smooth" });
     }
   };
 
-  // Navigate to current user's page
   const handleSeeStats = () => {
-    if (CURRENT_USER_RANK <= maxItems) {
+    if (CURRENT_USER_RANK && CURRENT_USER_RANK <= maxItems) {
       const targetPage = Math.ceil(CURRENT_USER_RANK / itemsPerPage);
       setCurrentPage(targetPage);
       setTimeout(scrollToTable, 50);
@@ -488,7 +399,7 @@ export default function LeaderboardPodium() {
   };
 
   const handleViewStanding = () => {
-    if (CURRENT_USER_RANK > maxItems) {
+    if (!CURRENT_USER_RANK || CURRENT_USER_RANK > maxItems) {
       setShowRankModal(true);
     } else {
       const targetPage = Math.ceil(CURRENT_USER_RANK / itemsPerPage);
@@ -496,10 +407,6 @@ export default function LeaderboardPodium() {
       setTimeout(scrollToTable, 50);
     }
   };
-
-  // Display value helper — always points
-  const getDisplayValue = (user) => user.displayPoints;
-  const displayUnit = "EP";
 
   // ── Render ──
   return (
@@ -510,33 +417,19 @@ export default function LeaderboardPodium() {
       <div className="lg:col-span-3 flex flex-col gap-8 order-2 lg:order-1">
         {/* ── Podium Stage ── */}
         <div className="bg-emerald-50 rounded-[24px] sm:rounded-[40px] px-3 sm:px-12 pt-8 sm:pt-10 pb-0 overflow-hidden shadow-sm border border-emerald-100 relative flex flex-col items-center">
-          {/* Title + Top 100 badge (mobile: stacked to avoid overlap) */}
+          {/* Title */}
           <div className="text-center mb-8 sm:mb-12 relative z-20 w-full px-2">
-            {/* Mobile Top 100 badge — sits above title */}
-            <div
-              className="flex md:hidden justify-center mb-3"
-              style={fonts.body}
-            >
+            <div className="flex md:hidden justify-center mb-3" style={fonts.body}>
               <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-yellow-950 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-black uppercase tracking-widest ring-2 ring-white/50">
                 <Crown size={13} fill="currentColor" className="text-yellow-950" />
                 <span>Top 100 Only</span>
               </div>
             </div>
-            <h2
-              className="text-3xl sm:text-4xl font-black text-emerald-950 uppercase tracking-tighter drop-shadow-sm"
-              style={fonts.heading}
-            >
+            <h2 className="text-3xl sm:text-4xl font-black text-emerald-950 uppercase tracking-tighter drop-shadow-sm" style={fonts.heading}>
               Top Recyclers
             </h2>
-            <p
-              className="text-emerald-700/80 font-bold text-sm mt-1"
-              style={fonts.body}
-            >
-              {timeFilter === "all"
-                ? "Based on Accumulated Points"
-                : timeFilter === "month"
-                  ? "Based on Monthly Points"
-                  : "Based on Weekly Points"}
+            <p className="text-emerald-700/80 font-bold text-sm mt-1" style={fonts.body}>
+              Based on Accumulated Points
             </p>
           </div>
 
@@ -552,26 +445,16 @@ export default function LeaderboardPodium() {
                 </div>
                 <div className="absolute -bottom-3 right-0 left-0 flex justify-center z-20 group-hover:scale-110 transition-transform duration-300">
                   <div className="bg-slate-300 text-slate-800 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-                    <span className="font-black text-sm" style={fonts.data}>
-                      2
-                    </span>
+                    <span className="font-black text-sm" style={fonts.data}>2</span>
                   </div>
                 </div>
               </div>
-              <p
-                className="text-emerald-950 font-black text-sm mt-2 truncate w-full text-center group-hover:text-sky-600 transition-colors"
-                style={fonts.heading}
-              >
-                {topThree[0]?.name || ""}
+              <p className="text-emerald-950 font-black text-sm mt-2 truncate w-full text-center group-hover:text-sky-600 transition-colors" style={fonts.heading}>
+                {loading ? "—" : (topThree[0]?.name || "")}
               </p>
-              <p
-                className="text-emerald-600 font-bold text-xs group-hover:text-sky-500 transition-colors"
-                style={fonts.data}
-              >
-                {getDisplayValue(topThree[0] || { displayPoints: 0, bottles: 0 }).toLocaleString()}{" "}
-                {displayUnit}
+              <p className="text-emerald-600 font-bold text-xs group-hover:text-sky-500 transition-colors" style={fonts.data}>
+                {loading ? "—" : `${(topThree[0]?.pointsAllTime || 0).toLocaleString()} EP`}
               </p>
-              {/* Platform */}
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-28 group-hover:h-32 transition-all duration-300 ease-out bg-gradient-to-b from-sky-100 to-sky-200 border-t-8 border-sky-400 rounded-t-2xl shadow-inner relative flex justify-center pt-4">
                   <Medal className="text-sky-400/50 w-12 h-12" />
@@ -593,26 +476,16 @@ export default function LeaderboardPodium() {
                 </div>
                 <div className="absolute -bottom-4 right-0 left-0 flex justify-center z-20 group-hover:scale-110 transition-transform duration-300">
                   <div className="bg-yellow-400 text-orange-900 w-10 h-10 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                    <span className="font-black text-lg" style={fonts.data}>
-                      1
-                    </span>
+                    <span className="font-black text-lg" style={fonts.data}>1</span>
                   </div>
                 </div>
               </div>
-              <p
-                className="text-emerald-950 font-black text-base mt-2 truncate w-full text-center group-hover:text-amber-600 transition-colors"
-                style={fonts.heading}
-              >
-                {topThree[1]?.name || ""}
+              <p className="text-emerald-950 font-black text-base mt-2 truncate w-full text-center group-hover:text-amber-600 transition-colors" style={fonts.heading}>
+                {loading ? "—" : (topThree[1]?.name || "")}
               </p>
-              <p
-                className="text-emerald-600 font-bold text-sm group-hover:text-amber-500 transition-colors"
-                style={fonts.data}
-              >
-                {getDisplayValue(topThree[1] || { displayPoints: 0, bottles: 0 }).toLocaleString()}{" "}
-                {displayUnit}
+              <p className="text-emerald-600 font-bold text-sm group-hover:text-amber-500 transition-colors" style={fonts.data}>
+                {loading ? "—" : `${(topThree[1]?.pointsAllTime || 0).toLocaleString()} EP`}
               </p>
-              {/* Platform */}
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-40 group-hover:h-44 transition-all duration-300 ease-out bg-gradient-to-b from-yellow-100 to-amber-100 border-t-8 border-yellow-400 rounded-t-2xl shadow-inner relative flex justify-center pt-4">
                   <TrophyIcon className="text-yellow-400/50 w-16 h-16" />
@@ -630,26 +503,16 @@ export default function LeaderboardPodium() {
                 </div>
                 <div className="absolute -bottom-3 right-0 left-0 flex justify-center z-20 group-hover:scale-110 transition-transform duration-300">
                   <div className="bg-orange-800 text-white w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-                    <span className="font-black text-sm" style={fonts.data}>
-                      3
-                    </span>
+                    <span className="font-black text-sm" style={fonts.data}>3</span>
                   </div>
                 </div>
               </div>
-              <p
-                className="text-emerald-950 font-black text-sm mt-2 truncate w-full text-center group-hover:text-orange-600 transition-colors"
-                style={fonts.heading}
-              >
-                {topThree[2]?.name || ""}
+              <p className="text-emerald-950 font-black text-sm mt-2 truncate w-full text-center group-hover:text-orange-600 transition-colors" style={fonts.heading}>
+                {loading ? "—" : (topThree[2]?.name || "")}
               </p>
-              <p
-                className="text-emerald-600 font-bold text-xs group-hover:text-orange-500 transition-colors"
-                style={fonts.data}
-              >
-                {getDisplayValue(topThree[2] || { displayPoints: 0, bottles: 0 }).toLocaleString()}{" "}
-                {displayUnit}
+              <p className="text-emerald-600 font-bold text-xs group-hover:text-orange-500 transition-colors" style={fonts.data}>
+                {loading ? "—" : `${(topThree[2]?.pointsAllTime || 0).toLocaleString()} EP`}
               </p>
-              {/* Platform */}
               <div className="w-full mt-4 flex flex-col items-center">
                 <div className="w-full h-20 group-hover:h-24 transition-all duration-300 ease-out bg-gradient-to-b from-orange-50 to-orange-100 border-t-8 border-orange-400 rounded-t-2xl shadow-inner relative flex justify-center pt-3">
                   <Medal className="text-orange-400/50 w-10 h-10" />
@@ -658,7 +521,7 @@ export default function LeaderboardPodium() {
             </div>
           </div>
 
-          {/* Top 100 badge — desktop only (mobile badge is above title) */}
+          {/* Top 100 badge — desktop */}
           <div
             className="absolute bottom-6 right-8 z-20 hidden md:flex items-center gap-2 bg-yellow-400 text-yellow-950 px-4 py-2 rounded-lg shadow-md text-xs font-black uppercase tracking-widest ring-4 ring-yellow-400/20"
             style={fonts.body}
@@ -670,7 +533,6 @@ export default function LeaderboardPodium() {
 
         {/* ── Filters ── */}
         <div className="flex flex-row items-center justify-between gap-2 mt-2 w-full flex-wrap">
-          {/* Search + Org (org hidden on mobile) */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Search */}
             <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 sm:py-2 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] shadow-sm focus-within:ring-2 focus-within:ring-emerald-400 focus-within:border-emerald-400 transition-all">
@@ -684,80 +546,59 @@ export default function LeaderboardPodium() {
                 style={{ ...fonts.body, color: "#064E3B" }}
               />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-slate-400 hover:text-emerald-500 transition-colors"
-                >
+                <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-emerald-500 transition-colors">
                   <X size={12} />
                 </button>
               )}
             </div>
-            {/* Org filter — hidden on mobile (org column hidden anyway) */}
-            <div className="relative min-w-[190px] hidden sm:block" ref={orgDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setOrgDropdownOpen((p) => !p)}
-                className={`w-full flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 py-1.5 sm:py-2 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
-                  ? "rounded-t-lg rounded-b-none border-b-white z-[51] relative shadow-none"
-                  : "rounded-lg shadow-sm hover:border-emerald-400"
-                  }`}
-                style={fonts.body}
-              >
-                <span>{orgFilter}</span>
-                <ChevronDown
-                  size={14}
-                  className={`text-emerald-500 transition-transform duration-200 ${orgDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              <AnimatePresence>
-                {orgDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scaleY: 0.92 }}
-                    animate={{ opacity: 1, scaleY: 1 }}
-                    exit={{ opacity: 0, scaleY: 0.92 }}
-                    transition={{ duration: 0.14, ease: "easeOut" }}
-                    style={{ transformOrigin: "top" }}
-                    className="absolute left-0 top-[calc(100%-1px)] z-50 bg-white border border-emerald-200 border-t-0 rounded-b-lg shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-hidden min-w-full"
-                  >
-                    {["All Organizations", ...ORGANIZATIONS].map((org) => (
-                      <button
-                        key={org}
-                        type="button"
-                        onClick={() => { setOrgFilter(org); setOrgDropdownOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-[10px] sm:text-sm font-bold transition-colors whitespace-nowrap ${orgFilter === org
-                          ? "bg-emerald-50 text-emerald-800"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
-                          }`}
-                        style={fonts.body}
-                      >
-                        {org}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
 
-          {/* Time toggle — on mobile sits inline after search; on sm+ right-aligned */}
-          <div className="flex items-center space-x-0.5 bg-white border border-emerald-200 p-0.5 rounded-lg shadow-sm shrink-0 flex-nowrap">
-            {[
-              { key: "all", label: "All Time" },
-              { key: "month", label: "This Month" },
-              { key: "week", label: "This Week" },
-            ].map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTimeFilter(t.key)}
-                className={`whitespace-nowrap px-2 sm:px-4 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-sm font-bold transition-colors ${timeFilter === t.key
-                  ? "bg-emerald-100 text-emerald-800 shadow-sm"
-                  : "text-slate-500 hover:bg-slate-50"
-                  }`}
-                style={fonts.body}
-              >
-                {t.label}
-              </button>
-            ))}
+            {/* Org filter */}
+            {orgList.length > 0 && (
+              <div className="relative min-w-[190px] hidden sm:block" ref={orgDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setOrgDropdownOpen((p) => !p)}
+                  className={`w-full flex items-center justify-between gap-2 bg-white border border-emerald-200 px-3 py-1.5 sm:py-2 transition-all text-[10px] sm:text-sm font-bold text-emerald-900 whitespace-nowrap ${orgDropdownOpen
+                    ? "rounded-t-lg rounded-b-none border-b-white z-[51] relative shadow-none"
+                    : "rounded-lg shadow-sm hover:border-emerald-400"
+                    }`}
+                  style={fonts.body}
+                >
+                  <span className="truncate">{orgFilter}</span>
+                  <ChevronDown
+                    size={14}
+                    className={`text-emerald-500 transition-transform duration-200 flex-shrink-0 ${orgDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {orgDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scaleY: 0.92 }}
+                      animate={{ opacity: 1, scaleY: 1 }}
+                      exit={{ opacity: 0, scaleY: 0.92 }}
+                      transition={{ duration: 0.14, ease: "easeOut" }}
+                      style={{ transformOrigin: "top" }}
+                      className="absolute left-0 top-[calc(100%-1px)] z-50 bg-white border border-emerald-200 border-t-0 rounded-b-lg shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-hidden min-w-full"
+                    >
+                      {["All Organizations", ...orgList].map((org) => (
+                        <button
+                          key={org}
+                          type="button"
+                          onClick={() => { setOrgFilter(org); setOrgDropdownOpen(false); }}
+                          className={`w-full text-left px-4 py-2 text-[10px] sm:text-sm font-bold transition-colors whitespace-nowrap ${orgFilter === org
+                            ? "bg-emerald-50 text-emerald-800"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
+                            }`}
+                          style={fonts.body}
+                        >
+                          {org}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
 
@@ -774,138 +615,137 @@ export default function LeaderboardPodium() {
             <div className="col-span-1 md:col-span-2 text-left">Rank</div>
             <div className="col-span-1 md:col-span-4 text-left">User</div>
             <div className="hidden md:block md:col-span-3">Organization</div>
-            <div className="col-span-1 md:col-span-2 text-center">Points</div>
-            <div className="hidden md:block md:col-span-1 text-center">Rewards</div>
+            <div className="col-span-1 md:col-span-3 text-center">Points</div>
           </div>
 
           {/* Rows */}
           <div className="relative flex flex-col">
             <div className="flex flex-col relative z-20 pb-4">
-              {currentList.length > 0 ? (
-                currentList.map((user) => {
-                  const isMe = user.rank === CURRENT_USER_RANK;
-                  return (
-                    <div
-                      key={user.id}
-                      className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
-                        ? "bg-emerald-50/80 relative"
-                        : "hover:bg-slate-50"
-                        }`}
-                    >
-                      {/* "You" left bar */}
-                      {isMe && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 rounded-r-md" />
-                      )}
+              {/* Loading state */}
+              {loading && (
+                Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+              )}
 
-                      {/* Rank — col 1 */}
-                      <div className="col-span-1 md:col-span-2 flex justify-start items-center">
-                        {user.rank <= 3 ? (
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${user.rank === 1
-                              ? "bg-yellow-400 text-orange-900 shadow-sm"
-                              : user.rank === 2
-                                ? "bg-sky-200 text-sky-800 shadow-sm"
-                                : "bg-orange-200 text-orange-900 shadow-sm"
-                              }`}
-                            style={fonts.data}
-                          >
-                            {user.rank}
-                          </div>
-                        ) : (
-                          <span
-                            className={`font-black text-base ${isMe ? "text-emerald-600" : "text-slate-400"
-                              }`}
-                            style={fonts.data}
-                          >
-                            #{user.rank}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* User — col 2 */}
-                      <div className="col-span-1 md:col-span-4 flex items-center gap-2 min-w-0">
-                        <div
-                          className="hidden sm:flex w-9 h-9 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full items-center justify-center font-black text-emerald-700 text-sm border border-emerald-200 shrink-0"
-                          style={fonts.data}
-                        >
-                          <Initials name={user.name} className="" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p
-                              className={`font-black text-sm truncate ${isMe ? "text-emerald-900" : "text-slate-800"
-                                }`}
-                              style={fonts.heading}
-                            >
-                              {user.name}
-                            </p>
-                            {isMe && (
-                              <span
-                                className="hidden sm:inline-block bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                                style={fonts.body}
-                              >
-                                You
-                              </span>
-                            )}
-                          </div>
-                          <p
-                            className="font-bold text-[10px] text-slate-500 truncate"
-                            style={fonts.body}
-                          >
-                            @{user.username}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Organization — hidden on mobile */}
-                      <div className="col-span-3 hidden md:flex items-center truncate">
-                        <div
-                          className="bg-emerald-50 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-md border border-emerald-100 truncate"
-                          style={fonts.body}
-                        >
-                          {user.organization}
-                        </div>
-                      </div>
-
-                      {/* Points — col 3 on mobile */}
-                      <div className="col-span-1 md:col-span-2 text-center">
-                        <p
-                          className={`font-black text-sm inline-flex items-baseline gap-1 ${isMe ? "text-emerald-700" : "text-slate-700"
-                            }`}
-                          style={fonts.data}
-                        >
-                          {getDisplayValue(user).toLocaleString()}
-                          <span
-                            className="font-bold text-[10px] text-slate-400 uppercase tracking-widest"
-                            style={fonts.body}
-                          >
-                            {displayUnit}
-                          </span>
-                        </p>
-                      </div>
-
-                      {/* Rewards — hidden on mobile */}
-                      <div
-                        className="hidden md:flex col-span-1 justify-center items-center font-black text-slate-700 text-sm gap-1.5"
-                        style={fonts.data}
-                      >
-                        <Gift className="w-4 h-4 text-emerald-400 shrink-0" />
-                        {user.rewardsClaimed}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Search size={28} className="text-stone-300 mb-3" />
-                  <p
-                    className="text-stone-400 font-bold text-sm"
+              {/* Error state */}
+              {!loading && error && (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+                  <AlertCircle size={28} className="text-red-300" />
+                  <p className="text-slate-500 font-bold text-sm" style={fonts.body}>{error}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors"
                     style={fonts.body}
                   >
-                    No results for &ldquo;{searchQuery}&rdquo;
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!loading && !error && currentList.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Search size={28} className="text-stone-300 mb-3" />
+                  <p className="text-stone-400 font-bold text-sm" style={fonts.body}>
+                    {searchQuery ? `No results for "${searchQuery}"` : "No users found."}
                   </p>
                 </div>
               )}
+
+              {/* Data rows */}
+              {!loading && !error && currentList.map((user) => {
+                const isMe = CURRENT_USER_RANK && user.rank === CURRENT_USER_RANK;
+                return (
+                  <div
+                    key={user.id}
+                    className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
+                      ? "bg-emerald-50/80 relative"
+                      : "hover:bg-slate-50"
+                      }`}
+                  >
+                    {isMe && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 rounded-r-md" />
+                    )}
+
+                    {/* Rank */}
+                    <div className="col-span-1 md:col-span-2 flex justify-start items-center">
+                      {user.rank <= 3 ? (
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${user.rank === 1
+                            ? "bg-yellow-400 text-orange-900 shadow-sm"
+                            : user.rank === 2
+                              ? "bg-sky-200 text-sky-800 shadow-sm"
+                              : "bg-orange-200 text-orange-900 shadow-sm"
+                            }`}
+                          style={fonts.data}
+                        >
+                          {user.rank}
+                        </div>
+                      ) : (
+                        <span
+                          className={`font-black text-base ${isMe ? "text-emerald-600" : "text-slate-400"}`}
+                          style={fonts.data}
+                        >
+                          #{user.rank}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* User */}
+                    <div className="col-span-1 md:col-span-4 flex items-center gap-2 min-w-0">
+                      <div
+                        className="hidden sm:flex w-9 h-9 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full items-center justify-center font-black text-emerald-700 text-sm border border-emerald-200 shrink-0"
+                        style={fonts.data}
+                      >
+                        <Initials name={user.name} className="" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p
+                            className={`font-black text-sm truncate ${isMe ? "text-emerald-900" : "text-slate-800"}`}
+                            style={fonts.heading}
+                          >
+                            {user.name}
+                          </p>
+                          {isMe && (
+                            <span
+                              className="hidden sm:inline-block bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
+                              style={fonts.body}
+                            >
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-bold text-[10px] text-slate-500 truncate" style={fonts.body}>
+                          @{user.username}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Organization */}
+                    <div className="col-span-3 hidden md:flex items-center truncate">
+                      <div
+                        className="bg-emerald-50 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-md border border-emerald-100 truncate"
+                        style={fonts.body}
+                      >
+                        {user.organization}
+                      </div>
+                    </div>
+
+                    {/* Points */}
+                    <div className="col-span-1 md:col-span-3 text-center">
+                      <p
+                        className={`font-black text-sm inline-flex items-baseline gap-1 ${isMe ? "text-emerald-700" : "text-slate-700"}`}
+                        style={fonts.data}
+                      >
+                        {user.pointsAllTime.toLocaleString()}
+                        <span className="font-bold text-[10px] text-slate-400 uppercase tracking-widest" style={fonts.body}>
+                          EP
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── Floating Modal for Current User ── */}
@@ -922,41 +762,23 @@ export default function LeaderboardPodium() {
                     dragMomentum={false}
                     onDragEnd={handleDragEnd}
                     initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{
-                      opacity: 1,
-                      x: modalPos.x,
-                      y: modalPos.y,
-                      scale: 1,
-                    }}
+                    animate={{ opacity: 1, x: modalPos.x, y: modalPos.y, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{
-                      duration: 0.4,
-                      type: "spring",
-                      bounce: 0.2,
-                    }}
+                    transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
                     className="absolute inset-x-4 sm:inset-x-auto sm:right-6 md:right-8 bottom-6 sm:bottom-8 pointer-events-auto"
                   >
                     <div className="bg-white border-4 border-emerald-400 shadow-[0_16px_40px_rgb(16,185,129,0.35)] rounded-[20px] py-1.5 px-2.5 flex items-center gap-2 pr-2 w-full sm:w-[340px] md:w-[360px] cursor-grab active:cursor-grabbing hover:border-emerald-300 transition-colors">
                       <div className="bg-emerald-100 text-emerald-700 w-11 h-11 sm:w-12 sm:h-12 rounded-[14px] flex items-center justify-center flex-shrink-0 font-black relative overflow-hidden border border-emerald-200 pointer-events-none">
                         <div className="absolute inset-x-0 bottom-0 top-1/2 bg-emerald-200/50" />
-                        <span
-                          className="relative z-10 text-base sm:text-lg"
-                          style={fonts.data}
-                        >
+                        <span className="relative z-10 text-base sm:text-lg" style={fonts.data}>
                           #{currentUser.rank}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1 pl-1 pointer-events-none">
-                        <p
-                          className="font-black text-emerald-950 text-sm sm:text-base truncate"
-                          style={fonts.heading}
-                        >
+                        <p className="font-black text-emerald-950 text-sm sm:text-base truncate" style={fonts.heading}>
                           {currentUser.name}
                         </p>
-                        <p
-                          className="font-bold text-emerald-600 text-[10px] uppercase tracking-widest truncate mt-0.5"
-                          style={fonts.body}
-                        >
+                        <p className="font-bold text-emerald-600 text-[10px] uppercase tracking-widest truncate mt-0.5" style={fonts.body}>
                           Your Position
                         </p>
                       </div>
@@ -1003,125 +825,82 @@ export default function LeaderboardPodium() {
 
             <div>
               <div className="flex items-center gap-1.5 mb-6 relative z-10">
-                <p
-                  className="text-emerald-100 font-bold text-[10px] uppercase tracking-widest"
-                  style={fonts.body}
-                >
+                <p className="text-emerald-100 font-bold text-[10px] uppercase tracking-widest" style={fonts.body}>
                   Your Standing
                 </p>
-                {!isTableVisible && (
+                {!isTableVisible && currentUser && (
                   <button
                     onClick={handleViewStanding}
                     className="bg-emerald-600/30 hover:bg-emerald-500 text-white p-1 text-xs rounded-full transition-colors backdrop-blur-sm border border-emerald-400/20 flex items-center justify-center group -mt-0.5"
                     title="View in table"
                   >
-                    <Eye
-                      size={12}
-                      className="text-emerald-100 group-hover:text-white"
-                    />
+                    <Eye size={12} className="text-emerald-100 group-hover:text-white" />
                   </button>
                 )}
               </div>
 
               <div className="flex items-end gap-3 mb-2 relative z-10">
-                <span
-                  className="text-4xl sm:text-5xl lg:text-5xl font-black leading-none text-white tracking-tighter"
-                  style={fonts.data}
-                >
-                  #{currentUser?.rank ?? "—"}
+                <span className="text-4xl sm:text-5xl lg:text-5xl font-black leading-none text-white tracking-tighter" style={fonts.data}>
+                  {loading ? (
+                    <Loader2 size={36} className="animate-spin text-emerald-200" />
+                  ) : (
+                    currentUser ? `#${currentUser.rank}` : "—"
+                  )}
                 </span>
-                <span
-                  className="text-emerald-200 font-bold text-sm mb-1"
-                  style={fonts.body}
-                >
+                <span className="text-emerald-200 font-bold text-sm mb-1" style={fonts.body}>
                   Overall
                 </span>
               </div>
-              <p
-                className="text-emerald-100 font-medium text-xs mb-4"
-                style={fonts.body}
-              >
+              <p className="text-emerald-100 font-medium text-xs mb-4" style={fonts.body}>
                 Out of {filteredList.length} active recyclers.
               </p>
             </div>
 
             <div className="bg-emerald-900/40 rounded-[20px] p-4 backdrop-blur-sm border border-emerald-400/30 w-full mt-auto">
               <div className="flex items-center justify-between">
-                <p
-                  className="text-[10px] font-black uppercase tracking-widest text-emerald-200"
-                  style={fonts.body}
-                >
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200" style={fonts.body}>
                   Current Points
                 </p>
                 <Zap size={14} className="text-yellow-400 fill-yellow-400" />
               </div>
-              <p
-                className="text-2xl sm:text-3xl font-black mt-1 text-white tracking-tight"
-                style={fonts.data}
-              >
-                {(currentUser?.currentPoints ?? 0).toLocaleString()}
+              <p className="text-2xl sm:text-3xl font-black mt-1 text-white tracking-tight" style={fonts.data}>
+                {loading ? "—" : (currentUser?.currentPoints ?? 0).toLocaleString()}
               </p>
-              <p
-                className="text-[9px] font-bold text-emerald-200/70 mt-1 uppercase tracking-wider"
-                style={fonts.body}
-              >
+              <p className="text-[9px] font-bold text-emerald-200/70 mt-1 uppercase tracking-wider" style={fonts.body}>
                 Available to Spend
               </p>
             </div>
           </div>
 
-          {/* ── Accumulated / Filtered Points ── */}
+          {/* ── Accumulated Points ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-emerald-100 lg:border-t-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
             <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center mb-4">
               <Recycle className="text-sky-500 w-6 h-6" />
             </div>
-            <p
-              className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"
-              style={fonts.body}
-            >
-              {timeFilter === "all"
-                ? "Accumulated Points"
-                : timeFilter === "month"
-                  ? "Points This Month"
-                  : "Points This Week"}
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1" style={fonts.body}>
+              Accumulated Points
             </p>
-            <p
-              className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight"
-              style={fonts.data}
-            >
-              {(currentUser?.displayPoints ?? 0).toLocaleString()}
+            <p className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight" style={fonts.data}>
+              {loading ? "—" : (currentUser?.pointsAllTime ?? 0).toLocaleString()}
             </p>
-            <p
-              className="text-xs font-bold text-slate-500 leading-relaxed"
-              style={fonts.body}
-            >
-              These points determine your leaderboard rank. Keep recycling to go
-              up!
+            <p className="text-xs font-bold text-slate-500 leading-relaxed" style={fonts.body}>
+              These points determine your leaderboard rank. Keep recycling to go up!
             </p>
           </div>
 
-          {/* ── Rewards Claimed ── */}
+          {/* ── Bottles Collected ── */}
           <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-l border-emerald-100 lg:border-t-0 lg:border-l-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
               <Gift className="text-amber-500 w-6 h-6" />
             </div>
-            <p
-              className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"
-              style={fonts.body}
-            >
-              Items / Rewards
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1" style={fonts.body}>
+              Bottles Collected
             </p>
-            <p
-              className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight"
-              style={fonts.data}
-            >
-              {currentUser?.rewardsClaimed ?? 0}
+            <p className="text-3xl font-black text-emerald-950 mb-2 leading-tight tracking-tight" style={fonts.data}>
+              {loading ? "—" : (currentUser?.bottles ?? 0).toLocaleString()}
             </p>
-            <p
-              className="text-xs font-bold text-slate-500 leading-relaxed"
-              style={fonts.body}
-            >
-              Successfully claimed across your recycling activity.
+            <p className="text-xs font-bold text-slate-500 leading-relaxed" style={fonts.body}>
+              Total bottles recycled across all your sessions.
             </p>
           </div>
         </div>
@@ -1148,18 +927,11 @@ export default function LeaderboardPodium() {
                 <X size={20} />
               </button>
             </div>
-            <h3
-              className="font-black text-2xl text-slate-800 mb-3 tracking-tight"
-              style={fonts.heading}
-            >
+            <h3 className="font-black text-2xl text-slate-800 mb-3 tracking-tight" style={fonts.heading}>
               Rank Not Displayed
             </h3>
-            <p
-              className="text-slate-600 text-sm font-medium leading-relaxed mb-8"
-              style={fonts.body}
-            >
-              Only the top 100 users are available on the public leaderboard.
-              Keep recycling to improve your standing!
+            <p className="text-slate-600 text-sm font-medium leading-relaxed mb-8" style={fonts.body}>
+              Only the top 100 users are available on the public leaderboard. Keep recycling to improve your standing!
             </p>
             <button
               onClick={() => setShowRankModal(false)}

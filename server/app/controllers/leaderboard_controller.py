@@ -34,7 +34,7 @@ leaderboard_bp = Blueprint('leaderboard', __name__, url_prefix='/leaderboard')
 
 @leaderboard_bp.route('', methods=['GET'])
 @token_required
-@permission_required('leaderboard')
+@permission_required('leaderboard', allow_non_admin=True)
 @cached_endpoint('leaderboard', ttl=300)
 def get_leaderboard(current_user):
     """Return leaderboard data: top users and top groups."""
@@ -72,6 +72,7 @@ def get_leaderboard(current_user):
             users_list.append({
                 'id': u.id,
                 'name': u.name,
+                'username': u.username or '',
                 'points': row.points_balance or 0,
                 'lifetimePoints': row.lifetime_points or 0,
                 'streak': row.streak or 0,

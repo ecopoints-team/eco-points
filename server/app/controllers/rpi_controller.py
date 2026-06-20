@@ -298,6 +298,10 @@ def end_session(rvm, session_id, payload):
                 wallet.points_balance += total_points
                 wallet.lifetime_points = (wallet.lifetime_points or 0) + total_points
 
+                # Keep best_streak in sync whenever streak is tracked
+                if (wallet.streak or 0) > (wallet.best_streak or 0):
+                    wallet.best_streak = wallet.streak
+
                 txn = Transaction(
                     wallet_id=wallet.id,
                     transaction_type='earn',

@@ -1,12 +1,14 @@
 // user client
 // Profile section
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   AwardIcon,
   FlameIcon,
+  Ticket,
   PencilIcon,
   QrCodeIcon,
   UserIcon,
@@ -27,12 +29,13 @@ import {
   Trash2,
   ZoomIn,
   CheckCircle,
+  Trophy,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
-import { auth as authApi } from "../../services/api";
+import { auth as authApi, rewards as rewardsApi } from "../../services/api";
 
 
 // ─────────────────────────────────────────────
@@ -127,8 +130,33 @@ async function getCroppedImg(imageSrc, pixelCrop) {
 
 export default function ProfileSection() {
   const { currentUser, refreshUser } = useAuth();
+  const router = useRouter();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+
+  // ── Pending Claims state ──
+  const [pendingItems, setPendingItems] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPending() {
+      try {
+        const redemptions = await rewardsApi.getMyRedemptions();
+        if (cancelled) return;
+        const pending = (redemptions || []).filter(
+          (r) => r.status === 'pending' || r.status === 'PENDING'
+        );
+        setPendingItems(pending);
+        setPendingCount(pending.length);
+      } catch {
+        // silent — card shows 0
+      }
+    }
+    fetchPending();
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Crop modal state ──
   const cropFileInputRef = useRef(null);
@@ -656,100 +684,162 @@ export default function ProfileSection() {
             </div>
           </div>
 
-          {/* ───── 1B. ACTIVE STREAK CARD ───── */}
+          {/* ───── CARD 1: PENDING CLAIMS ───── */}
           <div
-            className="relative p-4 rounded-2xl overflow-hidden shadow-md"
-            style={{
-              background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a33 100%)",
-              boxShadow: "0 0 40px rgba(251,191,36,0.15), 0 4px 14px rgba(0,0,0,0.06)",
-            }}
+            onClick={() => setIsPendingModalOpen(true)}
+            className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-slate-200 flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              {/* Left: Flame + Text */}
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{
-                    background: "linear-gradient(135deg, #f97316, #ea580c)",
-                    boxShadow: "0 0 20px rgba(249,115,22,0.4), 0 0 40px rgba(249,115,22,0.15)",
-                    animation: "streakPulse 2s ease-in-out infinite",
-                  }}
-                >
-                  <FlameIcon size={24} className="text-white drop-shadow-lg" />
-                </div>
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#9CA3AF" }}>
-                    Active Streak
-                  </p>
-                  <p className="text-2xl font-black" style={{ ...fonts.data, color: "#059669" }}>
-                    {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              {/* Icon: rounded square, green bg */}
+              <div className="w-11 h-11 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] flex items-center justify-center flex-shrink-0">
+                <Ticket size={25} className="text-[#10B981]" />
+              </div>
+              <div>
+                <p className="font-black text-[#064E3B] text-md leading-tight" style={fonts.heading}>Pending Claims</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 font-bold mt-0.5" style={fonts.body}>View Tickets</p>
               </div>
             </div>
-
-            {/* Streak pulse animation */}
-            <style jsx>{`
-              @keyframes streakPulse {
-                0%, 100% { box-shadow: 0 0 20px rgba(249,115,22,0.4), 0 0 40px rgba(249,115,22,0.15); transform: scale(1); }
-                50% { box-shadow: 0 0 30px rgba(249,115,22,0.6), 0 0 60px rgba(249,115,22,0.25); transform: scale(1.05); }
-              }
-            `}</style>
-          </div>
-
-          {/* ───── 1C. ORGANIZATION RANK CARD ───── */}
-          <div className="bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-xl shadow-black/5 overflow-hidden p-4">
-            {/* Rank Header */}
-            <div className="flex items-center gap-2 mb-3">
-              <AwardIcon size={18} className="text-amber-500" />
-              <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ ...fonts.body, color: "#6B7280" }}>
-                Organization Rank
-              </p>
-            </div>
-
-            {/* Rank Display */}
-            <div className="flex items-baseline gap-1.5 mb-3">
-              <p className="text-3xl font-black" style={{ ...fonts.data, color: "#064E3B" }}>
-                {currentUser?.campusRank != null ? `#${currentUser.campusRank}` : PLACEHOLDER}
-              </p>
-              {currentUser?.organizationUserCount != null && (
-                <p className="text-sm font-bold" style={{ ...fonts.data, color: "#9CA3AF" }}>
-                  / {currentUser.organizationUserCount.toLocaleString()}
-                </p>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            {currentUser?.campusRank != null && currentUser?.organizationUserCount != null && currentUser.organizationUserCount > 0 && (
-              <div className="mb-4">
-                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out"
-                    style={{
-                      width: `${Math.max(5, Math.round(((currentUser.organizationUserCount - currentUser.campusRank) / currentUser.organizationUserCount) * 100))}%`,
-                      background: "linear-gradient(90deg, #10b981, #34d399)",
-                    }}
-                  />
-                </div>
-                <p className="text-[10px] font-bold mt-1.5" style={{ ...fonts.body, color: "#9CA3AF" }}>
-                  Top {Math.round((currentUser.campusRank / currentUser.organizationUserCount) * 100)}% of your organization
-                </p>
+            {/* Badge: amber square-rounded */}
+            {pendingCount > 0 && (
+              <div className="w-9 h-9 rounded-xl bg-[#F59E0B] flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-black text-sm" style={fonts.data}>{pendingCount}</span>
               </div>
             )}
+          </div>
 
-            {/* Motivation Callout Box */}
-            <div
-              className="rounded-xl p-3"
-              style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}
-            >
-              <p className="text-xs font-bold leading-relaxed" style={{ ...fonts.body, color: "#92400E" }}>
-                {currentUser?.campusRank != null
-                  ? currentUser.campusRank <= 3
-                    ? "🏆 You're in the top 3! Keep up the amazing work!"
-                    : `🔥 You're ranked #${currentUser.campusRank}! Keep recycling to climb higher!`
-                  : "Start recycling to earn your rank! 🌱"}
-              </p>
+          {/* ───── CARD 2: ACTIVE STREAK ───── */}
+          <div
+            className="rounded-2xl p-4 shadow-sm border border-[#FDE68A] flex items-center justify-between"
+            style={{ background: '#fffdf3ff' }}
+          >
+            {/* Left: icon + label + value */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center flex-shrink-0">
+                <FlameIcon size={25} className="text-[#F59E0B]" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-black mb-0.5" style={fonts.body}>Active Streak</p>
+                <p className="text-xl font-black leading-none" style={{ ...fonts.data, color: '#064E3B' }}>
+                  {currentUser?.streak != null ? `${currentUser.streak} Days` : PLACEHOLDER}
+                </p>
+              </div>
             </div>
+            {/* Right: best streak */}
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-black leading-tight" style={{ ...fonts.data, color: '#F59E0B' }}>
+                Best: {currentUser?.bestStreak ?? currentUser?.streak ?? PLACEHOLDER}
+              </p>
+              <p className="text-[9px] uppercase tracking-[0.12em] text-slate-400 font-bold mt-0.5" style={fonts.body}>Record</p>
+            </div>
+          </div>
+
+          {/* ───── CARD 3: ORGANIZATION RANK ───── */}
+          <div
+            className="rounded-2xl shadow-sm border border-[#FDE68A] flex flex-col gap-0 overflow-hidden"
+            style={{ background: '#FFFBEB' }}
+          >
+            <div className="p-4 flex flex-col gap-3">
+              {/* Top row: icon+label left, rank right */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AwardIcon size={25} className="text-[#F59E0B]" />
+                  <div>
+                    <p className="font-black text-[#064E3B] text-md leading-tight" style={fonts.heading}>Leaderboard</p>
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-black" style={fonts.body}>
+                      Organization Rank
+                    </p>
+                  </div>
+                </div>
+                <p className="text-3xl font-black leading-none" style={{ ...fonts.data, color: '#059669' }}>
+                  {currentUser?.campusRank != null ? `#${currentUser.campusRank}` : PLACEHOLDER}
+                </p>
+              </div>
+
+              {/* EP labels + progress bar */}
+              {currentUser?.campusRank != null && (currentUser?.organizationUserCount ?? 0) > 0 && (() => {
+                const pct = Math.max(4, Math.round(
+                  ((currentUser.organizationUserCount - currentUser.campusRank) / currentUser.organizationUserCount) * 100
+                ));
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span style={{ ...fonts.body, color: '#6B7280' }}>
+                        Current: {(currentUser?.lifetimePoints ?? 0).toLocaleString()} EP
+                      </span>
+                      {currentUser?.nextRankPoints != null && (
+                        <span style={{ ...fonts.body, color: '#F59E0B' }}>
+                          Next Rank: {currentUser.nextRankPoints.toLocaleString()} EP
+                        </span>
+                      )}
+                    </div>
+                    {/* Track */}
+                    <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+                      <div
+                        className="h-full rounded-full relative overflow-hidden"
+                        style={{
+                          width: `${pct}%`,
+                          background: 'linear-gradient(90deg, #FBBF24, #F59E0B)',
+                        }}
+                      >
+                        {/* Shimmer */}
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                            backgroundSize: '200% 100%',
+                            animation: 'rankShimmer 1.8s ease-in-out infinite',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Motivation box */}
+              <div className="bg-white/70 rounded-xl p-3 border border-[#FDE68A]">
+                <p className="text-xs font-semibold leading-relaxed" style={{ ...fonts.body, color: '#374151' }}>
+                  {currentUser?.epToNextRank != null && currentUser?.nextRankUsername ? (
+                    <>
+                      You are{' '}
+                      <span className="font-black" style={{ color: '#F59E0B' }}>
+                        {currentUser.epToNextRank.toLocaleString()} EP
+                      </span>{' '}
+                      away from overtaking{' '}
+                      <span className="font-black" style={{ color: '#064E3B' }}>
+                        @{currentUser.nextRankUsername}
+                      </span>
+                      ! Keep recycling!
+                    </>
+                  ) : currentUser?.campusRank != null ? (
+                    currentUser.campusRank <= 3
+                      ? "🏆 You're in the top 3! Keep up the amazing work!"
+                      : `🔥 You're ranked #${currentUser.campusRank}! Keep recycling to climb higher!`
+                  ) : (
+                    'Start recycling to earn your rank! 🌱'
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer: View Leaderboards */}
+            <div className="border-t border-[#FDE68A] px-4 py-3">
+              <button
+                onClick={() => router.push('/leaderboard')}
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] transition-colors cursor-pointer"
+                style={{ ...fonts.body, color: '#10B981' }}
+              >
+                VIEW LEADERBOARD
+                <span className="text-sm font-bold">→</span>
+              </button>
+            </div>
+
+            <style>{`
+              @keyframes rankShimmer {
+                0%   { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+              }
+            `}</style>
           </div>
         </div>
 
@@ -1277,6 +1367,88 @@ export default function ProfileSection() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PENDING CLAIMS MODAL */}
+      {isPendingModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsPendingModalOpen(false)}
+          />
+          <div
+            className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl z-10 overflow-hidden flex flex-col"
+            style={{ maxHeight: '80vh', animation: 'scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+          >
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 pt-5 pb-3 flex items-start justify-between border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Ticket size={20} className="text-[#10B981]" />
+                  <h3 className="text-lg font-black" style={{ ...fonts.heading, color: '#064E3B' }}>Pending Claims</h3>
+                </div>
+                <p className="text-xs font-semibold text-slate-400 mt-0.5" style={fonts.body}>Items waiting to be picked up.</p>
+              </div>
+              <button
+                onClick={() => setIsPendingModalOpen(false)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors flex-shrink-0 ml-3"
+              >
+                <XIcon size={16} className="text-slate-500" />
+              </button>
+            </div>
+
+            {/* Scrollable list */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {pendingItems.length === 0 ? (
+                <div className="text-center py-10">
+                  <Ticket size={36} className="text-slate-200 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-400" style={fonts.body}>No pending claims</p>
+                  <p className="text-xs text-slate-300 mt-1" style={fonts.body}>Redeem a reward to see your tickets here.</p>
+                </div>
+              ) : (
+                pendingItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-slate-50 rounded-2xl p-4 border border-slate-100"
+                  >
+                    {/* Badge row */}
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-full border"
+                        style={{ ...fonts.data, color: '#10B981', background: '#F0FDF4', borderColor: '#BBF7D0' }}
+                      >
+                        EP-REQ-{String(item.id).padStart(6, '0')}
+                      </span>
+                      <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        <Ticket size={14} className="text-[#10B981]" />
+                      </div>
+                    </div>
+                    {/* Name */}
+                    <p className="text-sm font-black text-slate-800 mb-0.5" style={fonts.heading}>
+                      {item.rewardName || 'Unknown Reward'}
+                      {item.variantName && item.variantName !== 'Default' ? ` (${item.variantName})` : ''}
+                    </p>
+                    {/* Meta */}
+                    <p className="text-xs font-semibold text-slate-400 mb-3" style={fonts.body}>
+                      Qty: 1 • {item.redeemedAt
+                        ? new Date(item.redeemedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                        : '—'}
+                    </p>
+                    {/* Show QR Ticket button */}
+                    <button
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
+                      style={fonts.body}
+                      onClick={() => {/* future: show QR for this redemption code */ }}
+                    >
+                      <QrCodeIcon size={14} className="text-[#10B981]" />
+                      Show QR Ticket
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

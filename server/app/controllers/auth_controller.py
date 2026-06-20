@@ -307,6 +307,37 @@ def _serialize_auth_user(u):
             except Exception:
                 campus_rank = None
 
+    # nextRankPoints / nextRankUsername / nextRankName / epToNextRank:
+    # The user directly above in lifetime-points within the same org.
+    next_rank_points = None
+    next_rank_username = None
+    next_rank_name = None
+    ep_to_next_rank = None
+    if location_id is not None and u.wallet is not None:
+        try:
+            user_lifetime = u.wallet.lifetime_points or 0
+            next_row = db.session.query(
+                User.username, User.first_name, User.last_name, Wallet.lifetime_points
+            ).join(Wallet, Wallet.user_id == User.id)\
+                .join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
+                .filter(
+                    CommunityGroup.organization_id == location_id,
+                    Wallet.lifetime_points > user_lifetime,
+                    User.role == 'user',
+                )\
+                .order_by(Wallet.lifetime_points.asc())\
+                .first()
+            if next_row:
+                next_rank_points = next_row.lifetime_points
+                next_rank_username = next_row.username
+                # Full name matching what the leaderboard page shows
+                next_rank_name = ' '.join(
+                    p for p in [next_row.first_name, next_row.last_name] if p
+                ) or next_row.username
+                ep_to_next_rank = next_rank_points - user_lifetime
+        except Exception:
+            pass
+
     # Enum normalization (Requirement 3.6).
     role_value = (u.role or '').lower() or None
     user_type_value = (u.user_type or '').lower() or None
@@ -336,6 +367,7 @@ def _serialize_auth_user(u):
         'pointsBalance': u.wallet.points_balance if u.wallet else 0,
         'lifetimePoints': u.wallet.lifetime_points if u.wallet else 0,
         'streak': u.wallet.streak if u.wallet else 0,
+        'bestStreak': u.wallet.best_streak if u.wallet else 0,
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
         'lastUsernameChange': u.last_username_change.isoformat() if u.last_username_change else None,
@@ -344,6 +376,10 @@ def _serialize_auth_user(u):
         'qrPayload': qr_payload,
         'campusRank': campus_rank,
         'organizationUserCount': organization_user_count,
+        'nextRankPoints': next_rank_points,
+        'nextRankUsername': next_rank_username,
+        'nextRankName': next_rank_name,
+        'epToNextRank': ep_to_next_rank,
     }
 
 
