@@ -9,6 +9,7 @@ import { detectedClassLabel } from '../../src/lib/enumLabels';
 import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { analytics as analyticsApi } from '../../src/services/api';
 
 
 
@@ -141,6 +142,7 @@ export default function AdminDashboard() {
     const [timeRange, setTimeRange] = useState('month');
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
+    const [analyticsData, setAnalyticsData] = useState(null);
 
     // Delay chart rendering until browser has completed at least one full paint
     // cycle — double-rAF ensures layout is stable before Recharts measures.
@@ -156,6 +158,15 @@ export default function AdminDashboard() {
         fetchDashboard(effectiveLocationId);
     }, [effectiveLocationId, fetchDashboard]);
 
+    // Fetch pre-aggregated analytics for accurate monthly/yearly chart
+    // Use effectiveLocationId directly (same as dashboard stats fetch) so
+    // superadmins "viewing as" a location see that location's chart data.
+    useEffect(() => {
+        if (!currentUser) return;
+        setAnalyticsData(null); // clear stale data immediately on location change
+        analyticsApi.getData(effectiveLocationId).then(setAnalyticsData).catch(() => {});
+    }, [currentUser, effectiveLocationId]);
+
     // Location-specific chart data with accepted/rejected
     const chartData = useMemo(() => {
         // Return empty data during SSR to prevent hydration mismatch
@@ -169,15 +180,15 @@ export default function AdminDashboard() {
 
         const logs = bottleLogs;
         const now = new Date();
+        const getMax = (arr1, arr2) => Math.max(...arr1, ...arr2, 10);
 
         // Helper: classify status
         const isAccepted = (l) => ['Accepted', 'Completed', 'Success'].includes(l.status);
         const isRejected = (l) => ['Rejected', 'Failed', 'Error'].includes(l.status);
 
-        // ── 1. WEEKLY: Real-time 7-day window (Mon → Sun of current week) ──
+        // ── 1. WEEKLY: Real-time 7-day window from bottleLogs (500 recent is fine) ──
         const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        // Find Monday of the current week (ISO week: Monday = 1)
-        const currentDay = now.getDay(); // 0=Sun, 1=Mon,...
+        const currentDay = now.getDay();
         const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
         const monday = new Date(now);
         monday.setDate(now.getDate() + mondayOffset);
@@ -190,70 +201,85 @@ export default function AdminDashboard() {
             dayStart.setDate(monday.getDate() + i);
             const dayEnd = new Date(dayStart);
             dayEnd.setHours(23, 59, 59, 999);
-
             const dayLogs = logs.filter(l => l.timestampObj >= dayStart && l.timestampObj <= dayEnd);
             weeklyAccepted.push(dayLogs.filter(isAccepted).length);
             weeklyRejected.push(dayLogs.filter(isRejected).length);
         }
 
-        // ── 2. MONTHLY: Jan → Dec of the current year (real-time) ──
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        // ── 2. MONTHLY: Use pre-aggregated analytics API (not capped bottleLogs) ──
+        const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentYear = now.getFullYear();
-        const monthlyAccepted = new Array(12).fill(0);
-        const monthlyRejected = new Array(12).fill(0);
-        logs.forEach(log => {
-            const d = log.timestampObj;
-            if (d && d.getFullYear() === currentYear) {
-                const m = d.getMonth();
-                if (isAccepted(log)) monthlyAccepted[m]++;
-                else if (isRejected(log)) monthlyRejected[m]++;
-            }
-        });
+        let monthlyAccepted = new Array(12).fill(0);
+        let monthlyRejected = new Array(12).fill(0);
 
-        // ── 3. YEARLY: One point per year, dynamically grows ──
-        // Find the range of years present in the data
-        const yearSet = new Set();
-        yearSet.add(currentYear); // Always include current year
-        logs.forEach(log => {
-            if (log.timestampObj) yearSet.add(log.timestampObj.getFullYear());
-        });
-        const years = [...yearSet].sort((a, b) => a - b);
-        const yearlyLabels = years.map(String);
-        const yearlyAccepted = years.map(() => 0);
-        const yearlyRejected = years.map(() => 0);
-        logs.forEach(log => {
-            if (log.timestampObj) {
-                const yIdx = years.indexOf(log.timestampObj.getFullYear());
-                if (yIdx !== -1) {
-                    if (isAccepted(log)) yearlyAccepted[yIdx]++;
-                    else if (isRejected(log)) yearlyRejected[yIdx]++;
+        if (analyticsData?.recyclingTrends) {
+            analyticsData.recyclingTrends.forEach(row => {
+                // row.month is 'YYYY-MM' e.g. '2026-01'
+                const [rowYear, rowMonth] = (row.month || '').split('-').map(Number);
+                if (rowYear === currentYear) {
+                    const mIdx = rowMonth - 1; // convert 1-based month to 0-based index
+                    if (mIdx >= 0 && mIdx < 12) {
+                        monthlyAccepted[mIdx] = (row.accepted ?? 0);
+                        monthlyRejected[mIdx] = (row.rejected ?? 0);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // Fallback to bottleLogs if analytics not yet loaded
+            logs.forEach(log => {
+                const d = log.timestampObj;
+                if (d && d.getFullYear() === currentYear) {
+                    const m = d.getMonth();
+                    if (isAccepted(log)) monthlyAccepted[m]++;
+                    else if (isRejected(log)) monthlyRejected[m]++;
+                }
+            });
+        }
 
-        const getMax = (arr1, arr2) => Math.max(...arr1, ...arr2, 10);
+        // ── 3. YEARLY: Use pre-aggregated analytics API ──
+        let yearlyLabels = [String(currentYear)];
+        let yearlyAccepted = [0];
+        let yearlyRejected = [0];
+
+        if (analyticsData?.recyclingTrends) {
+            const yearMap = {};
+            analyticsData.recyclingTrends.forEach(row => {
+                // row.month is 'YYYY-MM' e.g. '2026-01'
+                const y = (row.month || '').split('-')[0];
+                if (!y) return;
+                if (!yearMap[y]) yearMap[y] = { accepted: 0, rejected: 0 };
+                yearMap[y].accepted += (row.accepted ?? 0);
+                yearMap[y].rejected += (row.rejected ?? 0);
+            });
+            const sortedYears = Object.keys(yearMap).sort();
+            yearlyLabels = sortedYears;
+            yearlyAccepted = sortedYears.map(y => yearMap[y].accepted);
+            yearlyRejected = sortedYears.map(y => yearMap[y].rejected);
+        } else {
+            // Fallback to bottleLogs
+            const yearSet = new Set([currentYear]);
+            logs.forEach(log => { if (log.timestampObj) yearSet.add(log.timestampObj.getFullYear()); });
+            const years = [...yearSet].sort((a, b) => a - b);
+            yearlyLabels = years.map(String);
+            yearlyAccepted = years.map(() => 0);
+            yearlyRejected = years.map(() => 0);
+            logs.forEach(log => {
+                if (log.timestampObj) {
+                    const yIdx = years.indexOf(log.timestampObj.getFullYear());
+                    if (yIdx !== -1) {
+                        if (isAccepted(log)) yearlyAccepted[yIdx]++;
+                        else if (isRejected(log)) yearlyRejected[yIdx]++;
+                    }
+                }
+            });
+        }
 
         return {
-            week: {
-                labels: dayNames,
-                accepted: weeklyAccepted,
-                rejected: weeklyRejected,
-                maxValue: getMax(weeklyAccepted, weeklyRejected)
-            },
-            month: {
-                labels: monthNames,
-                accepted: monthlyAccepted,
-                rejected: monthlyRejected,
-                maxValue: getMax(monthlyAccepted, monthlyRejected)
-            },
-            year: {
-                labels: yearlyLabels,
-                accepted: yearlyAccepted,
-                rejected: yearlyRejected,
-                maxValue: getMax(yearlyAccepted, yearlyRejected)
-            }
+            week: { labels: dayNames, accepted: weeklyAccepted, rejected: weeklyRejected, maxValue: getMax(weeklyAccepted, weeklyRejected) },
+            month: { labels: MONTH_LABELS, accepted: monthlyAccepted, rejected: monthlyRejected, maxValue: getMax(monthlyAccepted, monthlyRejected) },
+            year: { labels: yearlyLabels, accepted: yearlyAccepted, rejected: yearlyRejected, maxValue: getMax(yearlyAccepted, yearlyRejected) },
         };
-    }, [bottleLogs, mounted]);
+    }, [bottleLogs, analyticsData, mounted]);
 
     const currentData = chartData[timeRange];
 
@@ -549,29 +575,26 @@ export default function AdminDashboard() {
                         ) : (
                             <PieChart>
                                 <Pie
-                                    data={currentData.labels
-                                        .map((label, i) => ({ name: label, value: currentData.accepted[i] + currentData.rejected[i] }))
-                                        .filter(item => item.value > 0)}
+                                    data={(() => {
+                                        const totalAccepted = currentData.accepted.reduce((s, v) => s + v, 0);
+                                        const totalRejected = currentData.rejected.reduce((s, v) => s + v, 0);
+                                        return [
+                                            { name: 'Accepted', value: totalAccepted },
+                                            { name: 'Rejected', value: totalRejected },
+                                        ].filter(d => d.value > 0);
+                                    })()}
                                     cx="50%"
                                     cy="50%"
-                                    labelLine={false}
+                                    labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
                                     label={({ name, percent }) => percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
-                                    outerRadius={100}
+                                    outerRadius={120}
                                     fill="#10b981"
                                     dataKey="value"
                                     animationDuration={800}
                                     animationEasing="ease-out"
                                 >
-                                    {currentData.labels.map((_, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={[
-                                                '#10b981', '#06b6d4', '#8b5cf6', '#f59e0b',
-                                                '#ec4899', '#6366f1', '#14b8a6', '#f97316',
-                                                '#84cc16', '#a855f7', '#22c55e', '#0ea5e9'
-                                            ][index % 12]}
-                                        />
-                                    ))}
+                                    <Cell fill="#10b981" />
+                                    <Cell fill="#ef4444" />
                                 </Pie>
                                 <Tooltip content={<PieTooltip />} isAnimationActive={true} />
                                 <Legend

@@ -212,8 +212,7 @@ function AnalyticsPageContent() {
         try {
             if (showFullLoading) setLoading(true);
             else setRefreshing(true);
-            const locationId = isSuperAdmin ? null : effectiveLocationId;
-            const result = await analyticsApi.getData(locationId);
+            const result = await analyticsApi.getData(effectiveLocationId);
             setData(result);
             setError(null);
         } catch (err) {
@@ -222,7 +221,7 @@ function AnalyticsPageContent() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [isSuperAdmin, effectiveLocationId]);
+    }, [effectiveLocationId]);
 
     useEffect(() => {
         if (currentUser) fetchAnalytics(true);
@@ -263,9 +262,13 @@ function AnalyticsPageContent() {
         return years.sort();
     }, [recyclingTrendData]);
 
-    // Year-filtered recycling data
+    // Year-filtered recycling data — show all 12 months (Jan-Dec) like the dashboard
     const yearFilteredTrendData = useMemo(() => {
-        return recyclingTrendData.filter(d => parseInt(d.year) === trendYear);
+        const dataByMonth = {};
+        recyclingTrendData
+            .filter(d => parseInt(d.year) === trendYear)
+            .forEach(d => { dataByMonth[d.name] = d; });
+        return MONTH_LABELS.map(label => dataByMonth[label] || { name: label, year: String(trendYear), Accepted: 0, Rejected: 0 });
     }, [recyclingTrendData, trendYear]);
 
     // Weekly (daily) trend data from backend
@@ -841,7 +844,7 @@ function AnalyticsPageContent() {
                                     cx="50%" cy="50%"
                                     labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
                                     label={({ name, percent }) => percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
-                                    outerRadius={120} innerRadius={60}
+                                    outerRadius={120}
                                     fill="#10b981" dataKey="value"
                                     animationDuration={800}
                                 >

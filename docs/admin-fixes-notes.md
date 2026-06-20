@@ -197,13 +197,12 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 
 - First, check if the rewards shown on the rewards page on the website is mock or the data that we have on the seeded database. If yes, remove it and fetch the data on the database instead. If no, let's connect the rewards menu to the website's rewards page so we can test if we can post a reward on the website.
 
-
-## Admin Dashbaord UI Fixes 
+## Admin Dashbaord UI Fixes
 
 ## Tasks
 
-- Currently, the website and the adin dashboard shares some of the same styling from the general style of ours. Now, I want you to separate the two styles. For instance, the custom dropdown of ours [text](../client/src/components/admin/CustomDropdown.jsx) the website and the admin dashboard are using the same component styling, which is good. But some of the styling affects the UI of the admin dashboard. You can see that almost all the cards on the admin dashbaord becamse radiused corner which is not good. I don't know if it came from the website or somewhere but its not supposed to be like that. 
-https://github.com/obra/superpowers/tree/main/skills/brainstorming
+- Currently, the website and the adin dashboard shares some of the same styling from the general style of ours. Now, I want you to separate the two styles. For instance, the custom dropdown of ours [text](../client/src/components/admin/CustomDropdown.jsx) the website and the admin dashboard are using the same component styling, which is good. But some of the styling affects the UI of the admin dashboard. You can see that almost all the cards on the admin dashbaord becamse radiused corner which is not good. I don't know if it came from the website or somewhere but its not supposed to be like that.
+  https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 ## Admin Dashboard Fixes Part 6
 
@@ -215,37 +214,34 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 ### Points Config Bad Request Error
 
--  GET /admin/settings 200 in 1157ms (next.js: 1113ms, application-code: 44ms)
-[browser] Failed to load points config: ApiError: BAD REQUEST
-    at <unknown> (src/services/api/client.js:211:15)
-  209 |             dispatchUnauthorized();
-  210 |         }
-> 211 |         throw new ApiError(
-      |               ^
-  212 |             serverError.code || `HTTP_${response.status}`,
-  213 |             serverError.message || response.statusText || `Request failed (${response.status})`,
-  214 |             response.status, (app/admin/settings/page.js:76:21)
+- GET /admin/settings 200 in 1157ms (next.js: 1113ms, application-code: 44ms)
+  [browser] Failed to load points config: ApiError: BAD REQUEST
+  at <unknown> (src/services/api/client.js:211:15)
+  209 | dispatchUnauthorized();
+  210 | }
+  > 211 | throw new ApiError(
+        |               ^
+  212 | serverError.code || `HTTP_${response.status}`,
+  213 | serverError.message || response.statusText || `Request failed (${response.status})`,
+  214 | response.status, (app/admin/settings/page.js:76:21)
 
 ### Location Import Feature
 
-- Make a csv, xls, and other available file format for importing data. 
+- Make a csv, xls, and other available file format for importing data.
 - Make a helper icon for information on the import
 
 ### Bulk Session Import Feature
 
-- Make a csv, xls, and other available file format for importing data. 
+- Make a csv, xls, and other available file format for importing data.
 - Make a helper icon for information on the import
-
-  
 
 ### Website Polishing Part 1
 
-## Tasks 
+## Tasks
 
 - On the sign up side of the log in modal, the fields should be the same as the `Add User` modal on the `User Management` Menu
 
 - The fields on the signup page lost their slight radius, add some as well.
-
 
 ### Admin Dashboard Fixes Part 7
 
@@ -253,15 +249,13 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 ### ERD Field and Admin Dashboard Re-polishing
 
-- On the `Locations Menu`, on its community group field, we will transfer the  string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | Newly Added", string year_level "Nullable - e.g. Grade 11, 3rd Year | Newly Added" column from the ERD to the community group and remove on the users table. Also remove the string group_type "Nullable - e.g. College Dept, SHS Strand" because its necesarry anymore. Here's the new field on the community group:
-
+- On the `Locations Menu`, on its community group field, we will transfer the string educational_level "Nullable - Kindergarten, Elementary, JHS, SHS, College | Newly Added", string year_level "Nullable - e.g. Grade 11, 3rd Year | Newly Added" column from the ERD to the community group and remove on the users table. Also remove the string group_type "Nullable - e.g. College Dept, SHS Strand" because its necesarry anymore. Here's the new field on the community group:
   - Name field, Abbrev field, Educ Level field, and year level
 
 - Now, since we transfered the column and the field on the commuity group add location modal those columns, we will removing them on the users table and the Add User modal as well as the sign up side of the log in page. Meaning the Add User and Sign up side should look like this now:
-
   - When the location is selected by the user, the field that will show up next should be user type and community group only now. No educ level and year level anymore.
 
-- We will be updating the import and the helper on the add location import on the community group side on the locations menu. 
+- We will be updating the import and the helper on the add location import on the community group side on the locations menu.
 
 - HUGE NOTE: This is ONLY if the user's user type is a student, okay? Other user type should be the same
 
@@ -269,17 +263,14 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 - We will stick into 3 organization type only. University, Corporate, and Community. We will remove the add button beside the organization type field.
 
-- For other organization type, the community group field should stay: Name field and Abrev field only along with its import. Meaning, the import and helper icon  and template for university is different from the Corporate and Community Organization type.
-
+- For other organization type, the community group field should stay: Name field and Abrev field only along with its import. Meaning, the import and helper icon and template for university is different from the Corporate and Community Organization type.
 
 ### User Session Fixes Part 1
 
 ## Tasks
 
 - This is a serious security and session issue. I will list all the bugs that I hve found.
-
-    - First, `URL` bug. As a non-user or a user with no account, I can access the profile, rewards, and leaderboards on the URL. This is not a win because the non-user should not able to navigate those pages not even access. Add a security layer just like on the /admin url that we have right now and enhance them even more.
-
+  - First, `URL` bug. As a non-user or a user with no account, I can access the profile, rewards, and leaderboards on the URL. This is not a win because the non-user should not able to navigate those pages not even access. Add a security layer just like on the /admin url that we have right now and enhance them even more.
 
 ### Email Configuration Part 1
 
@@ -287,126 +278,153 @@ https://github.com/obra/superpowers/tree/main/skills/brainstorming
 
 - I have updated the env with our resend API. Let's continue configuring it and try testing using the settings on the admin dashboard.
 
-
 ### User Session Fixes Part 2
 
 - When I log in an admin account, for instance, the superadmin account then I change the url from /admin to /profile the super admin account shows an activity on the website which is not a win. We planed before that we will separate the admin accounts to user accounts, right? Here's what's going to happen:
-
   - We will be planning some session fixes for the following:
-    - When an admin account logs in for the admin dashboard (superadmin, admin, auditor, inventory officer, technician), when they change the URL to return to the website's page like the /profile, and /rewards, their account should unauthorized. If the admin wanted a normal account too, they should make another one. That will enhance our RBAC security and limitations. Meaning, the session of the admin acccounts should expire or force log out whenever they change the URL into website's URL. 
-
-
+    - When an admin account logs in for the admin dashboard (superadmin, admin, auditor, inventory officer, technician), when they change the URL to return to the website's page like the /profile, and /rewards, their account should unauthorized. If the admin wanted a normal account too, they should make another one. That will enhance our RBAC security and limitations. Meaning, the session of the admin acccounts should expire or force log out whenever they change the URL into website's URL.
 
 ### General Website Fixes From our SQA (System Quality Assurance) - Failed Ones
 
 ## Overvew
+
 - These are some failed tests from our SQA read the note at the last bullet for the task.
 
-### Failed Tests 
+### Failed Tests
 
-- 1.4.5		Creating an Account (e.g. User, Staff, and Faculty)	Create an account using the sign-up button in the sign-up modal	Account setup for all user types (e.g. User, Staff and Faculty) needs to deliver a fluid experience without triggering input validation errors.	The flow in creating an account is smooth although the submission of the actual information had an error (Request Failed 409)	Failed				
-- 2.1.1	ADMIN	Filter Functional Test	"Change ""View as"" filter to a 
-specific location"	"Dashboard data should refresh to show
-only that locations metrics."	"The data is still the same as when the
-filter is on ""All Location"""	Failed	
-- 2.4.1	ADMIN	Add Machine	"Click ""+ Add Machine"", enter 
-Name ""Library RVM"", 
-"	"A new machine card appears; Summary 
-""Online"" count increases to 2."	"When adding a machine
-the add machine button does not
-work"	Failed
-- 2.4.2		Search Filter	Type "Library" into the search bar	"The ""Library RVM"" card remains, any
-other disappear."	"Before finishing typing ""Location""
-an error appeared saying 
-""getLocationName is not a function"""	Failed																			
-- 2.4.3		Maintenance Mode	"Click the ""Maintenance"" button on
-the machine card"	"Machine status should change (e.g. 
-Offline, Under Maintenance, etc) "	An error appeared saying Bad Request	Failed																			
-- 2.4.4		Edit Machine	"Click the Pencil Icon and change
-Location to ""Main Lobby"""	"The Card updates ""Library"" 
-to ""Main Lobby"" successfully"	"The save changes button is not 
-working "	Failed																			
-- 2.4.5		Bin Status Alert	Fill the bin the data to 100%	"The text ""Nomal"" (Green) should 
-change to ""Full"" or ""Warning"" (Red)"	"Cannot Test yet unless the prototype 
-is done."	Failed	
-- 2.5.1	ADMIN	Add New User	"Click ""+ Add User"", fill in name: 
-""Test User"", Role: ""Student"""	"Total Users count increases to 1; 
-User appears in table."	"an error appeared saying BAD
-REQUEST"	Failed																			
-- 2.5.4		Edit User	"Click the Pencil icon and change
-Role to ""Staff"""	"The ""Role"" badge in the table updates to
-""Staff"" immediately"	"The account badge did not change
- to a ""Staff"" and remained as ""Student
-"	Failed																			
-- 2.6.4		Permission Enforcement	"Log in as an Auditor and try to delete
-a machine"	"The system should show an ""Access 
-Denied"" or ""403 Forbidden"" error."	"No delete button on the UI of the 
-Auditor. but you can delete an account
-on manage admin which should not. 
-There is also an error when 
-opening the analytics tab"	Failed																			
-- 2.7.1	ADMIN	Add Reward	"Click ""+ Add Reward"", 
-Name: ""Eco-Notebook"", 
-Points: ""100"", Stock: ""50"""	"Item appears in table; ""Total Rewards"" 
-card becomes 1; 
-""Total Stock"" becomes 50."	"Fill in the modal, and yet when you
-clicked the save changes, the reward 
-does not show on the tables list, even 
-when refreshed"	Failed																			
-- 2.8.1	ADMIN	Tab Switching	Click the "Top Schools" button	"The view should switch from individual 
-rankings to a ranking of different school 
-locations."	"Showed the account that has the most 
-points, but cannot test yet for top 
-school due to having no comparison"	Failed																			
-- 2.8.2		Role Filtering	"Click the ""All Roles"" 
-dropdown and select ""Staff"""	"The leaderboard should refresh 
-to show only ""test user"" 
-(the only staff member)."	"Test Technician account did not shown
-when the filter was ""staff"""	Failed				
-- 2.9.1	ADMIN	Global Refresh	"Click the ""Refresh"" button at the top 
-right"	"All 8+ charts should show a loading 
-spinner and then update simultaneously."	"No loading spinner was shown when
-the refresh button was clicked."	Failed																			
-- 2.9.3		Chart Toggle	"Click the ""Weekly"" button on the 
-Recycling Trends chart"	"The X-axis should change from Months to 
-Days (Mon-Sun)."	"The monthly togle and yearly toggle
-doesn not show day and is rather blank
-unlike the weekly toggle"	Failed																			
-- 2.9.5		Filter Sync	"Change the top Year filter from 2026 
-to 2025"	"All charts on the page should update to 
-reflect 2025 data."	"No year other than 2026 were on 
-filter."	Failed																			
-- 3.1	AUDITOR	Data Sync Check	View Dashboard	"Summary cards (e.g. Total Bottles, Points)  
-must match the sum of Real-Time Logs."	"The summary cards does not add your creation on 
-count. The Total Points Distributed and Total Bottles 
-card is not yet tested."	Failed																			
-- 3.1.3		Analytics: Roles	Switch from "Student" to "Faculty" and "Staff" view	The table shows the information of users for each role (e.g. Student, Faculty, and Staff)	It does not show the users for each role	Failed																			
-- 4.6		Empty State Check	"View Real-Time Bottle Logs when
-database is empty"	"A placeholder message like ""No recent 
-bottle logs found"" should be visible."	"The table only has its header and 
-pagination. No message to indicate its
- empty."	Failed																			
-- 4.1.1	TECHNICIAN	Permission Enforcement Pencil	Click the "Pencil" icon button	"System should  block the action with an 
-error of prevent the click entirely"	"The pencil button cannot save 
-changes due to lack of location. 
-There is no lists of location."	Failed																			
-- 4.1.2		Permission Enforcement  Maintenance	Click the "Maintenance" icon button	"System should  block the action with an 
-error of prevent the click entirely"	"Whenever you click on the 
-Maintenance button it errors saying 
-""This page couldn't load"	Failed																			
-- 4.1.3		Search Machine	Type "Library" into the search bar	"The ""Seed RVM"" card disappears, and 
-only the ""Library RVM"" card remains
-visible"	"Whenever I input anything on the 
-search bar, an error appear."	Failed				
-- 4.3.1	TECHNICIAN	Create Maintenance Log	"Click ""+ Create Log"" select 
-""Seed RVM""  Action: ""Sensor
-Calibration""."	"The new entry appears at the top of the
-table. The total count increases to 8"	"An error appear saying CSRF token
-missing or invalid."	Failed																			
-- 4.4.1	TECHNICIAN	Scan QR Code	Click the Scan QR Code button	System should request camera permission to launch the scanner overlay	no permission asked, it proceed on the scanning 	Failed																			
-- 4.4.2		Update action status	Change row 3 dropdown from pending to claimed	The adjacent status badge changed to a green claimed badge instantly without a page reload	an error appeared saying CSRF token is missing or invalid	Failed																			
-- 4.4.3		Search by Code	Type the voucher code CQK4 into the search bar	Table filters to show only Adrian Rivera's transaction	No log appeared when filtered	Failed		
-- 4.6.3		Search by API endpoint	Type "/locations" in the search bar	Table filters to display only the denied access attempts to that specific endpoint.	no data appeared	Failed																			
+- 1.4.5 Creating an Account (e.g. User, Staff, and Faculty) Create an account using the sign-up button in the sign-up modal Account setup for all user types (e.g. User, Staff and Faculty) needs to deliver a fluid experience without triggering input validation errors. The flow in creating an account is smooth although the submission of the actual information had an error (Request Failed 409) Failed
+- 2.1.1 ADMIN Filter Functional Test "Change ""View as"" filter to a
+  specific location" "Dashboard data should refresh to show
+  only that locations metrics." "The data is still the same as when the
+  filter is on ""All Location""" Failed
+- 2.4.1 ADMIN Add Machine "Click ""+ Add Machine"", enter
+  Name ""Library RVM"",
+  " "A new machine card appears; Summary
+  ""Online"" count increases to 2." "When adding a machine
+  the add machine button does not
+  work" Failed
+- 2.4.2 Search Filter Type "Library" into the search bar "The ""Library RVM"" card remains, any
+  other disappear." "Before finishing typing ""Location""
+  an error appeared saying
+  ""getLocationName is not a function""" Failed
+- 2.4.3 Maintenance Mode "Click the ""Maintenance"" button on
+  the machine card" "Machine status should change (e.g.
+  Offline, Under Maintenance, etc) " An error appeared saying Bad Request Failed
+- 2.4.4 Edit Machine "Click the Pencil Icon and change
+  Location to ""Main Lobby""" "The Card updates ""Library""
+  to ""Main Lobby"" successfully" "The save changes button is not
+  working " Failed
+- 2.4.5 Bin Status Alert Fill the bin the data to 100% "The text ""Nomal"" (Green) should
+  change to ""Full"" or ""Warning"" (Red)" "Cannot Test yet unless the prototype
+  is done." Failed
+- 2.5.1 ADMIN Add New User "Click ""+ Add User"", fill in name:
+  ""Test User"", Role: ""Student""" "Total Users count increases to 1;
+  User appears in table." "an error appeared saying BAD
+  REQUEST" Failed
+- 2.5.4 Edit User "Click the Pencil icon and change
+  Role to ""Staff""" "The ""Role"" badge in the table updates to
+  ""Staff"" immediately" "The account badge did not change
+  to a ""Staff"" and remained as ""Student
+  " Failed
+- 2.6.4 Permission Enforcement "Log in as an Auditor and try to delete
+  a machine" "The system should show an ""Access
+  Denied"" or ""403 Forbidden"" error." "No delete button on the UI of the
+  Auditor. but you can delete an account
+  on manage admin which should not.
+  There is also an error when
+  opening the analytics tab" Failed
+- 2.7.1 ADMIN Add Reward "Click ""+ Add Reward"",
+  Name: ""Eco-Notebook"",
+  Points: ""100"", Stock: ""50""" "Item appears in table; ""Total Rewards""
+  card becomes 1;
+  ""Total Stock"" becomes 50." "Fill in the modal, and yet when you
+  clicked the save changes, the reward
+  does not show on the tables list, even
+  when refreshed" Failed
+- 2.8.1 ADMIN Tab Switching Click the "Top Schools" button "The view should switch from individual
+  rankings to a ranking of different school
+  locations." "Showed the account that has the most
+  points, but cannot test yet for top
+  school due to having no comparison" Failed
+- 2.8.2 Role Filtering "Click the ""All Roles""
+  dropdown and select ""Staff""" "The leaderboard should refresh
+  to show only ""test user""
+  (the only staff member)." "Test Technician account did not shown
+  when the filter was ""staff""" Failed
+- 2.9.1 ADMIN Global Refresh "Click the ""Refresh"" button at the top
+  right" "All 8+ charts should show a loading
+  spinner and then update simultaneously." "No loading spinner was shown when
+  the refresh button was clicked." Failed
+- 2.9.3 Chart Toggle "Click the ""Weekly"" button on the
+  Recycling Trends chart" "The X-axis should change from Months to
+  Days (Mon-Sun)." "The monthly togle and yearly toggle
+  doesn not show day and is rather blank
+  unlike the weekly toggle" Failed
+- 2.9.5 Filter Sync "Change the top Year filter from 2026
+  to 2025" "All charts on the page should update to
+  reflect 2025 data." "No year other than 2026 were on
+  filter." Failed
+- 3.1 AUDITOR Data Sync Check View Dashboard "Summary cards (e.g. Total Bottles, Points)  
+  must match the sum of Real-Time Logs." "The summary cards does not add your creation on
+  count. The Total Points Distributed and Total Bottles
+  card is not yet tested." Failed
+- 3.1.3 Analytics: Roles Switch from "Student" to "Faculty" and "Staff" view The table shows the information of users for each role (e.g. Student, Faculty, and Staff) It does not show the users for each role Failed
+- 4.6 Empty State Check "View Real-Time Bottle Logs when
+  database is empty" "A placeholder message like ""No recent
+  bottle logs found"" should be visible." "The table only has its header and
+  pagination. No message to indicate its
+  empty." Failed
+- 4.1.1 TECHNICIAN Permission Enforcement Pencil Click the "Pencil" icon button "System should block the action with an
+  error of prevent the click entirely" "The pencil button cannot save
+  changes due to lack of location.
+  There is no lists of location." Failed
+- 4.1.2 Permission Enforcement Maintenance Click the "Maintenance" icon button "System should block the action with an
+  error of prevent the click entirely" "Whenever you click on the
+  Maintenance button it errors saying
+  ""This page couldn't load" Failed
+- 4.1.3 Search Machine Type "Library" into the search bar "The ""Seed RVM"" card disappears, and
+  only the ""Library RVM"" card remains
+  visible" "Whenever I input anything on the
+  search bar, an error appear." Failed
+- 4.3.1 TECHNICIAN Create Maintenance Log "Click ""+ Create Log"" select
+  ""Seed RVM"" Action: ""Sensor
+  Calibration""." "The new entry appears at the top of the
+  table. The total count increases to 8" "An error appear saying CSRF token
+  missing or invalid." Failed
+- 4.4.1 TECHNICIAN Scan QR Code Click the Scan QR Code button System should request camera permission to launch the scanner overlay no permission asked, it proceed on the scanning Failed
+- 4.4.2 Update action status Change row 3 dropdown from pending to claimed The adjacent status badge changed to a green claimed badge instantly without a page reload an error appeared saying CSRF token is missing or invalid Failed
+- 4.4.3 Search by Code Type the voucher code CQK4 into the search bar Table filters to show only Adrian Rivera's transaction No log appeared when filtered Failed
+- 4.6.3 Search by API endpoint Type "/locations" in the search bar Table filters to display only the denied access attempts to that specific endpoint. no data appeared Failed
 
 ## NOTE
+
 - Some of these might be already fixed so thoroughly check if it does so we dont duplicate fixes. Make a phased analysis for these issues and get back to me for a comprehensive analysis report.
+
+
+### Notification Fixes, Security and Adjustments Past 1
+
+## Tasks 
+
+- Remove the pop up card inside the Notification Alerts under Settings "Email & SMS Credentials Required
+
+To send notifications, configure your SMTP (email) or Twilio (SMS) credentials in the server .env file. See .env.example for setup instructions."
+
+- Since we will be using  email only for our notification, remove the phonne icon and the phone number placeholder under recepients on each alerts.
+
+- Also, on the test notification, remove the channel dropdown, the only option should be email
+
+- Are all inside of the security tab works?
+
+### Admin Dashboard Important Feature
+
+## Tasks
+
+- Under Settings Menu, add a new tab for Back Up and Restore. There should be a back up button and a restore button. Look at the given photo for a reference. The photo is from an asset management called "Snipe IT", if you're familiar with it. 
+
+- Add a new tab again called Test Data, under settings tab. Inside, it should have a button to generate fake data which we have in our seeder now. When clicked, it should generate fake data for all the tables in the database. A button for generating test data and a button for truncating the tables.
+
+### Website Important Feature (NOTE: This is a High Priority)
+
+## Tasks
+
+- On the login modal, we have the forget password but its not currently working. Make a functionality about it. It should work like a normal forget password. Make sure that the UI that you will be doing is a responsive one.

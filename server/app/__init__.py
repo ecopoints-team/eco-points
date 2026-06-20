@@ -319,9 +319,8 @@ def create_app():
             return send_from_directory(uploads_dir, filename)
 
     # Register CLI commands
-    from .seeder import seed_cmd, demo_seed_cmd
+    from .seeder import seed_cmd
     app.cli.add_command(seed_cmd)
-    app.cli.add_command(demo_seed_cmd)
 
     # Phase 4I (task 18.1): register the token-blacklist cleanup command.
     # Validates Requirements 4I.32, 4I.33.
