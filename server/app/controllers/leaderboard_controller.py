@@ -9,7 +9,8 @@ Phase 1 is a pure restructuring: decorators on every moved route are
 preserved byte-for-byte. The `@admin_required` → `@permission_required`
 substitution is the work of Phase 2.
 """
-from flask import Blueprint, jsonify
+from datetime import datetime, timezone, timedelta
+from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 
 from ..models import (
@@ -18,10 +19,13 @@ from ..models import (
     CommunityGroup,
     Organization,
     RecyclingSession,
+    RecyclingItem,
+    RewardRedemption,
+    RewardVariant,
+    Reward,
 )
 from ..middleware import token_required, permission_required
 from .. import db
-from ._shared import _scope_location_id
 from ..cache import cached_endpoint
 
 
@@ -39,30 +43,69 @@ leaderboard_bp = Blueprint('leaderboard', __name__, url_prefix='/leaderboard')
 def get_leaderboard(current_user):
     """Return leaderboard data: top users and top groups."""
     try:
-        loc_id = _scope_location_id(current_user)
+        # ── Date boundaries (UTC) ──
+        now = datetime.now(timezone.utc)
+        week_start  = now - timedelta(days=now.weekday())          # Monday of this week
+        week_start  = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Subquery: bottles collected per wallet
+        # ── Subquery: bottles collected per wallet (lifetime) ──
         bottle_sub = db.session.query(
             RecyclingSession.wallet_id,
             func.coalesce(func.sum(RecyclingSession.item_count), 0).label('bottles')
         ).group_by(RecyclingSession.wallet_id).subquery()
 
+        # ── Subquery: points earned this month per wallet ──
+        month_sub = db.session.query(
+            RecyclingSession.wallet_id,
+            func.coalesce(func.sum(RecyclingItem.points_awarded), 0).label('pts_month')
+        ).join(RecyclingItem, RecyclingItem.session_id == RecyclingSession.id)\
+         .filter(RecyclingSession.start_time >= month_start)\
+         .group_by(RecyclingSession.wallet_id).subquery()
+
+        # ── Subquery: points earned this week per wallet ──
+        week_sub = db.session.query(
+            RecyclingSession.wallet_id,
+            func.coalesce(func.sum(RecyclingItem.points_awarded), 0).label('pts_week')
+        ).join(RecyclingItem, RecyclingItem.session_id == RecyclingSession.id)\
+         .filter(RecyclingSession.start_time >= week_start)\
+         .group_by(RecyclingSession.wallet_id).subquery()
+
+        # ── Subquery: rewards redeemed per wallet ──
+        redemption_sub = db.session.query(
+            RewardRedemption.wallet_id,
+            func.count(RewardRedemption.id).label('rewards_count')
+        ).filter(RewardRedemption.status.in_(['claimed', 'used', 'pending']))\
+         .group_by(RewardRedemption.wallet_id).subquery()
+
         user_query = db.session.query(
             User, Wallet.points_balance, Wallet.lifetime_points, Wallet.streak,
             func.coalesce(bottle_sub.c.bottles, 0).label('bottles_collected'),
+            func.coalesce(month_sub.c.pts_month, 0).label('pts_month'),
+            func.coalesce(week_sub.c.pts_week, 0).label('pts_week'),
+            func.coalesce(redemption_sub.c.rewards_count, 0).label('rewards_claimed'),
             CommunityGroup.abbreviation.label('group_abbr'),
             CommunityGroup.name.label('group_name'),
             CommunityGroup.educational_level,
             CommunityGroup.organization_id,
-            Organization.name.label('org_name'),
+            func.coalesce(Organization.full_name, Organization.name).label('org_name'),
         ).select_from(User)\
          .join(Wallet, Wallet.user_id == User.id)\
          .join(CommunityGroup, CommunityGroup.id == User.community_group_id)\
          .join(Organization, Organization.id == CommunityGroup.organization_id)\
-         .outerjoin(bottle_sub, bottle_sub.c.wallet_id == Wallet.id)
+         .outerjoin(bottle_sub, bottle_sub.c.wallet_id == Wallet.id)\
+         .outerjoin(month_sub, month_sub.c.wallet_id == Wallet.id)\
+         .outerjoin(week_sub, week_sub.c.wallet_id == Wallet.id)\
+         .outerjoin(redemption_sub, redemption_sub.c.wallet_id == Wallet.id)
 
+        # Leaderboard is cross-org: all authenticated users see all orgs.
+        # Superadmins may still pass ?location_id to scope to one org.
+        loc_id = None
+        if current_user.role == 'superadmin':
+            loc_id = request.args.get('location_id', type=int)
         if loc_id:
             user_query = user_query.filter(CommunityGroup.organization_id == loc_id)
+
         top_users = user_query.filter(User.role == 'user')\
             .order_by(Wallet.lifetime_points.desc()).all()
 
@@ -75,6 +118,9 @@ def get_leaderboard(current_user):
                 'username': u.username or '',
                 'points': row.points_balance or 0,
                 'lifetimePoints': row.lifetime_points or 0,
+                'pointsThisMonth': row.pts_month or 0,
+                'pointsThisWeek': row.pts_week or 0,
+                'rewardsClaimed': row.rewards_claimed or 0,
                 'streak': row.streak or 0,
                 'bottlesCollected': row.bottles_collected or 0,
                 'userType': u.user_type,

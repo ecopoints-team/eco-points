@@ -139,6 +139,7 @@ export default function ProfileSection() {
   const [pendingCount, setPendingCount] = useState(0);
   const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
 
+
   useEffect(() => {
     let cancelled = false;
     async function fetchPending() {
@@ -386,6 +387,19 @@ export default function ProfileSection() {
   // EDIT STATE
   const [isEditing, setIsEditing] = useState(false);
   const [showUsernameConfirm, setShowUsernameConfirm] = useState(false);
+
+  // ── Hide page header whenever any modal is open ──
+  useEffect(() => {
+    const anyOpen =
+      isPendingModalOpen || isQrModalOpen || isHowItWorksOpen ||
+      isCropModalOpen || isEditing;
+    if (anyOpen) {
+      document.body.classList.add('profile-modal-open');
+    } else {
+      document.body.classList.remove('profile-modal-open');
+    }
+    return () => document.body.classList.remove('profile-modal-open');
+  }, [isPendingModalOpen, isQrModalOpen, isHowItWorksOpen, isCropModalOpen, isEditing]);
 
   // FOCUS STATE (INPUT)
   const [isFocused, setIsFocused] = useState(null);

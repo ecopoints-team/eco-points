@@ -20,6 +20,16 @@ function ProfileHeader() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Hide header when any profile modal is open
+  useEffect(() => {
+    const check = () => setModalOpen(document.body.classList.contains('profile-modal-open'));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -73,6 +83,8 @@ function ProfileHeader() {
     { label: "Rewards", icon: Gift, onClick: () => { setIsDropdownOpen(false); router.push("/rewards"); } },
     { label: "Leaderboard", icon: Trophy, onClick: () => { setIsDropdownOpen(false); router.push("/leaderboard"); } },
   ];
+
+  if (modalOpen) return null;
 
   return (
     <>
