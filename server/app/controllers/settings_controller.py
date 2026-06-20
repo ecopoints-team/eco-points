@@ -30,6 +30,8 @@ from ..schemas import (
     ChannelConfigUpdateSchema,
     SecurityConfigUpdateSchema,
     ForceLogoutSchema,
+    RestoreBackupSchema,
+    SeedSchema,
 )
 from .. import db
 from ._shared import _dt, _scope_location_id, log_action
@@ -621,22 +623,22 @@ def download_backup(current_user):
 @settings_bp.route('/restore', methods=['POST'])
 @token_required
 @permission_required('settings')
-def restore_backup(current_user):
+@validate_request(RestoreBackupSchema)
+def restore_backup(current_user, payload):
     """Restore database from a JSON backup file. Superadmin only."""
     import json as _json
     try:
         if current_user.role != 'superadmin':
             return jsonify({'success': False, 'error': 'Only Super Admin can restore backups'}), 403
 
-        data = request.get_json(silent=True)
-        if not data or 'meta' not in data or 'tables' not in data:
+        # Use the validated payload (meta + tables already parsed by schema).
+        meta = payload.meta
+        tables = payload.tables
+        if meta is None or tables is None:
             return jsonify({'success': False, 'error': 'Invalid backup file format'}), 400
 
-        meta = data['meta']
-        if meta.get('version') != '1.0':
-            return jsonify({'success': False, 'error': f"Unsupported backup version: {meta.get('version')}"}), 400
-
-        tables = data['tables']
+        if (meta.version if meta else None) != '1.0':
+            return jsonify({'success': False, 'error': f"Unsupported backup version: {meta.version if meta else None}"}), 400
 
         # Truncate in reverse dependency order
         for table_name in reversed(_BACKUP_TABLES):
@@ -695,14 +697,14 @@ _seed_lock = threading.Lock()
 @settings_bp.route('/seed', methods=['POST'])
 @token_required
 @permission_required('settings')
-def run_seed(current_user):
+@validate_request(SeedSchema)
+def run_seed(current_user, payload):
     """Generate demo data or truncate all tables. Superadmin only."""
     try:
         if current_user.role != 'superadmin':
             return jsonify({'success': False, 'error': 'Only Super Admin can manage test data'}), 403
 
-        data = request.get_json(silent=True) or {}
-        mode = data.get('mode', 'demo')
+        mode = payload.mode or 'demo'
 
         if mode == 'truncate':
             # Truncate is fast — run synchronously

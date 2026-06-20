@@ -744,8 +744,20 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters!");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters!");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError("Password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one digit.");
       return;
     }
 
@@ -782,7 +794,15 @@ export default function LogIn({ onClose, initialSignUp = false }) {
       setIsSignUp(false);
     } catch (err) {
       setIsLoading(false);
-      setError(err.message || "Registration failed. Please try again.");
+      // err.body.error may be a plain string (server returns {success:false, error:"..."}),
+      // while err.message falls back to the HTTP status text (e.g. "BAD REQUEST").
+      // Prefer the plain-string body error over the generic status text.
+      const bodyError = err.body?.error;
+      const displayMsg =
+        (typeof bodyError === 'string' ? bodyError : null) ||
+        err.message ||
+        "Registration failed. Please try again.";
+      setError(displayMsg);
     }
   };
 

@@ -276,6 +276,38 @@ class ForceLogoutSchema(_StrictModel):
     """
 
 
+class RestoreBackupMetaSchema(_StrictModel):
+    """Metadata envelope inside ``RestoreBackupSchema.meta``."""
+
+    version: Optional[str] = None
+    created_at: Optional[str] = None
+    table_count: Optional[int] = None
+
+
+class RestoreBackupSchema(_StrictModel):
+    """Body for ``POST /api/web/settings/restore``.
+
+    The backup file is a JSON object with a ``meta`` envelope and a
+    ``tables`` map.  Table values are arbitrary row arrays, so ``tables``
+    is typed ``Optional[Any]`` to avoid enumerating every table name.
+    The handler performs its own structural validation after parsing.
+    """
+
+    meta: Optional[RestoreBackupMetaSchema] = None
+    tables: Optional[Any] = None
+
+
+class SeedSchema(_StrictModel):
+    """Body for ``POST /api/web/settings/seed``.
+
+    ``mode`` controls whether demo data is generated (``'demo'``) or all
+    tables are truncated (``'truncate'``).  Defaults to ``'demo'`` in the
+    handler when omitted.
+    """
+
+    mode: Optional[Literal['demo', 'truncate']] = None
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # sessions_controller (sessions_bp — owns /sessions/* and /bulk-deposits)
 # ══════════════════════════════════════════════════════════════════════════
@@ -631,6 +663,9 @@ __all__ = [
     'ChannelConfigUpdateSchema',
     'SecurityConfigUpdateSchema',
     'ForceLogoutSchema',
+    'RestoreBackupMetaSchema',
+    'RestoreBackupSchema',
+    'SeedSchema',
     # sessions_controller
     'BulkSessionItemSchema',
     'BulkSessionCreateSchema',
