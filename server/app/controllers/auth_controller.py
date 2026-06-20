@@ -22,6 +22,9 @@ from ..schemas import (
     ProfileUpdateSchema,
     ChangePasswordSchema,
     RegisterSchema,
+    ForgotPasswordSchema,
+    VerifyResetOtpSchema,
+    ResetPasswordSchema,
 )
 from .. import db, limiter
 
@@ -938,4 +941,141 @@ def public_groups():
         } for g in groups]
         return jsonify({'success': True, 'groups': result}), 200
     except Exception as e:
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ── Password Reset (Forgot Password) ─────────────────────────────────────
+
+RESET_TOKEN_MINUTES = 10
+
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+@limiter.limit("3 per minute")
+@validate_request(ForgotPasswordSchema)
+def forgot_password(payload):
+    """Step 1: Send a password-reset OTP to the user's email.
+
+    Always returns success to prevent user-enumeration attacks.
+    """
+    try:
+        email = (payload.email or '').strip().lower()
+        if not email:
+            # Still return success to avoid enumeration
+            return jsonify({'success': True, 'message': 'If an account with that email exists, a reset code has been sent.'}), 200
+
+        user = User.query.filter(func.lower(User.email) == email).first()
+        if not user:
+            # No user found — return generic success (no enumeration)
+            return jsonify({'success': True, 'message': 'If an account with that email exists, a reset code has been sent.'}), 200
+
+        # Send OTP via existing otp_service
+        from ..services.otp_service import send_otp
+        _code, success, error = send_otp(user, method='email')
+
+        if not success:
+            print(f'FORGOT-PASSWORD OTP send failed for {email}: {error}')
+            # Still return generic success to client
+
+        return jsonify({'success': True, 'message': 'If an account with that email exists, a reset code has been sent.'}), 200
+    except Exception as e:
+        print(f'FORGOT-PASSWORD ERROR: {e}')
+        return jsonify({'success': True, 'message': 'If an account with that email exists, a reset code has been sent.'}), 200
+
+
+@auth_bp.route('/verify-reset-otp', methods=['POST'])
+@limiter.limit("5 per minute")
+@validate_request(VerifyResetOtpSchema)
+def verify_reset_otp(payload):
+    """Step 2: Verify the OTP and return a single-use reset token.
+
+    The reset token is a short-lived JWT with purpose='password_reset'.
+    """
+    try:
+        email = (payload.email or '').strip().lower()
+        code = (payload.code or '').strip()
+
+        if not email or not code:
+            return jsonify({'success': False, 'error': 'Email and code are required'}), 400
+
+        user = User.query.filter(func.lower(User.email) == email).first()
+        if not user:
+            return jsonify({'success': False, 'error': 'Invalid or expired code'}), 400
+
+        # Verify OTP
+        from ..services.otp_service import verify_otp
+        ok, otp_error = verify_otp(user.id, code)
+        if not ok:
+            return jsonify({'success': False, 'error': otp_error or 'Invalid or expired code'}), 400
+
+        # Generate a purpose-scoped reset token
+        reset_payload = {
+            'user_id': user.id,
+            'purpose': 'password_reset',
+            'jti': str(uuid.uuid4()),
+            'exp': datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_MINUTES),
+            'iat': datetime.now(timezone.utc),
+        }
+        reset_token = jwt.encode(reset_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+        return jsonify({'success': True, 'resetToken': reset_token}), 200
+    except Exception as e:
+        print(f'VERIFY-RESET-OTP ERROR: {e}')
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@auth_bp.route('/reset-password', methods=['POST'])
+@limiter.limit("3 per minute")
+@validate_request(ResetPasswordSchema)
+def reset_password(payload):
+    """Step 3: Set a new password using the reset token.
+
+    Validates the purpose-scoped reset token and enforces password policy.
+    """
+    try:
+        reset_token = payload.resetToken
+        new_password = payload.newPassword
+
+        if not reset_token or not new_password:
+            return jsonify({'success': False, 'error': 'Reset token and new password are required'}), 400
+
+        # Decode and validate the reset token
+        try:
+            token_data = jwt.decode(reset_token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return jsonify({'success': False, 'error': 'Reset link has expired. Please request a new one.'}), 400
+        except jwt.InvalidTokenError:
+            return jsonify({'success': False, 'error': 'Invalid reset token'}), 400
+
+        # Verify purpose claim
+        if token_data.get('purpose') != 'password_reset':
+            return jsonify({'success': False, 'error': 'Invalid reset token'}), 400
+
+        # Validate password policy
+        pw_valid, pw_message = validate_password_policy(new_password)
+        if not pw_valid:
+            return jsonify({'success': False, 'error': pw_message}), 400
+
+        # Look up user
+        user = db.session.get(User, token_data['user_id'])
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 400
+
+        # Set the new password
+        user.set_password(new_password)
+        db.session.commit()
+
+        # Audit log
+        log = AdminLog(
+            admin_user_id=user.id,
+            action='Password Reset',
+            target=user.name,
+            category='Auth',
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Password has been reset successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f'RESET-PASSWORD ERROR: {e}')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

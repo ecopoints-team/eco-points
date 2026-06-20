@@ -508,3 +508,263 @@ def get_login_history(current_user):
         return jsonify({'success': True, 'history': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: BACKUP & RESTORE
+# ══════════════════════════════════════════════════════════════════════════
+
+# Table export order (dependency-safe for restore)
+_BACKUP_TABLES = [
+    'org_types', 'organizations', 'org_addresses', 'org_contacts',
+    'community_groups', 'users', 'wallets', 'user_securities',
+    'rvms', 'reward_categories', 'rewards', 'reward_org_assignments',
+    'reward_variants', 'recycling_sessions', 'recycling_items',
+    'reward_redemptions', 'transactions', 'bulk_deposits',
+    'admin_logs', 'maintenance_logs', 'notification_settings',
+    'notification_logs', 'otp_codes', 'token_blacklist', 'login_attempts',
+]
+
+
+def _serialize_row(row):
+    """Convert a SQLAlchemy row to a JSON-safe dict."""
+    import json as _json
+    d = {}
+    for col in row.__table__.columns:
+        val = getattr(row, col.name)
+        if val is None:
+            d[col.name] = None
+        elif isinstance(val, datetime):
+            d[col.name] = val.isoformat()
+        elif isinstance(val, bytes):
+            import base64
+            d[col.name] = base64.b64encode(val).decode('ascii')
+        else:
+            d[col.name] = val
+    return d
+
+
+def _get_model_for_table(table_name):
+    """Resolve SQLAlchemy model class by table name."""
+    from ..models import (
+        OrgType, Organization, OrgAddress, OrgContact, CommunityGroup,
+        User, Wallet, UserSecurity, OtpCode, RVM,
+        RecyclingSession, RecyclingItem, MaintenanceLog, Transaction,
+        RewardCategory, Reward, RewardOrgAssignment, RewardVariant,
+        RewardRedemption, BulkDeposit, AdminLog,
+        NotificationSetting, NotificationLog, TokenBlacklist, LoginAttempt,
+    )
+    mapping = {
+        'org_types': OrgType, 'organizations': Organization,
+        'org_addresses': OrgAddress, 'org_contacts': OrgContact,
+        'community_groups': CommunityGroup, 'users': User,
+        'wallets': Wallet, 'user_securities': UserSecurity,
+        'otp_codes': OtpCode, 'rvms': RVM,
+        'recycling_sessions': RecyclingSession, 'recycling_items': RecyclingItem,
+        'maintenance_logs': MaintenanceLog, 'transactions': Transaction,
+        'reward_categories': RewardCategory, 'rewards': Reward,
+        'reward_org_assignments': RewardOrgAssignment,
+        'reward_variants': RewardVariant, 'reward_redemptions': RewardRedemption,
+        'bulk_deposits': BulkDeposit, 'admin_logs': AdminLog,
+        'notification_settings': NotificationSetting,
+        'notification_logs': NotificationLog,
+        'token_blacklist': TokenBlacklist, 'login_attempts': LoginAttempt,
+    }
+    return mapping.get(table_name)
+
+
+@settings_bp.route('/backup', methods=['GET'])
+@token_required
+@permission_required('settings')
+def download_backup(current_user):
+    """Export all tables as a JSON backup file. Superadmin only."""
+    import json as _json
+    try:
+        if current_user.role != 'superadmin':
+            return jsonify({'success': False, 'error': 'Only Super Admin can create backups'}), 403
+
+        tables_data = {}
+        total_rows = 0
+        for table_name in _BACKUP_TABLES:
+            Model = _get_model_for_table(table_name)
+            if not Model:
+                continue
+            rows = Model.query.all()
+            tables_data[table_name] = [_serialize_row(r) for r in rows]
+            total_rows += len(rows)
+
+        backup = {
+            'meta': {
+                'version': '1.0',
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'table_count': len(tables_data),
+                'total_rows': total_rows,
+            },
+            'tables': tables_data,
+        }
+
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+        response = jsonify(backup)
+        response.headers['Content-Disposition'] = f'attachment; filename=ecopoints-backup-{timestamp}.json'
+        response.headers['Content-Type'] = 'application/json'
+
+        log_action(current_user, 'settings.backup.create', target='backup',
+                   before=None, after={'total_rows': total_rows}, category='settings')
+        db.session.commit()
+
+        return response, 200
+    except Exception as e:
+        print(f'BACKUP ERROR: {e}')
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@settings_bp.route('/restore', methods=['POST'])
+@token_required
+@permission_required('settings')
+def restore_backup(current_user):
+    """Restore database from a JSON backup file. Superadmin only."""
+    import json as _json
+    try:
+        if current_user.role != 'superadmin':
+            return jsonify({'success': False, 'error': 'Only Super Admin can restore backups'}), 403
+
+        data = request.get_json(silent=True)
+        if not data or 'meta' not in data or 'tables' not in data:
+            return jsonify({'success': False, 'error': 'Invalid backup file format'}), 400
+
+        meta = data['meta']
+        if meta.get('version') != '1.0':
+            return jsonify({'success': False, 'error': f"Unsupported backup version: {meta.get('version')}"}), 400
+
+        tables = data['tables']
+
+        # Truncate in reverse dependency order
+        for table_name in reversed(_BACKUP_TABLES):
+            Model = _get_model_for_table(table_name)
+            if Model and table_name in tables:
+                db.session.execute(Model.__table__.delete())
+
+        # Insert in dependency order
+        restored_rows = 0
+        for table_name in _BACKUP_TABLES:
+            Model = _get_model_for_table(table_name)
+            if not Model or table_name not in tables:
+                continue
+            rows = tables[table_name]
+            for row_data in rows:
+                # Convert ISO datetime strings back to datetime objects
+                for col in Model.__table__.columns:
+                    if col.name in row_data and row_data[col.name] is not None:
+                        if hasattr(col.type, 'python_type') and col.type.python_type == datetime:
+                            try:
+                                row_data[col.name] = datetime.fromisoformat(row_data[col.name])
+                            except (ValueError, TypeError):
+                                pass
+                db.session.execute(Model.__table__.insert().values(**row_data))
+                restored_rows += 1
+
+        log_action(current_user, 'settings.backup.restore', target='backup',
+                   before=None, after={'restored_rows': restored_rows}, category='settings')
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Backup restored successfully ({restored_rows} rows)',
+            'restored_rows': restored_rows,
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f'RESTORE ERROR: {e}')
+        return jsonify({'success': False, 'error': str(e) if str(e) else 'An internal error occurred'}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SETTINGS: TEST DATA (SEED / TRUNCATE)
+# ══════════════════════════════════════════════════════════════════════════
+
+import threading
+
+_seed_status = {
+    'status': 'idle',   # idle | running | done | error
+    'message': '',
+    'percent': 0,
+}
+_seed_lock = threading.Lock()
+
+
+@settings_bp.route('/seed', methods=['POST'])
+@token_required
+@permission_required('settings')
+def run_seed(current_user):
+    """Generate demo data or truncate all tables. Superadmin only."""
+    try:
+        if current_user.role != 'superadmin':
+            return jsonify({'success': False, 'error': 'Only Super Admin can manage test data'}), 403
+
+        data = request.get_json(silent=True) or {}
+        mode = data.get('mode', 'demo')
+
+        if mode == 'truncate':
+            # Truncate is fast — run synchronously
+            from ..seeder.seed import _wipe_all_tables
+            _wipe_all_tables()
+            log_action(current_user, 'settings.seed.truncate', target='all_tables',
+                       before=None, after={'mode': 'truncate'}, category='settings')
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'All tables truncated successfully'}), 200
+
+        elif mode == 'demo':
+            with _seed_lock:
+                if _seed_status['status'] == 'running':
+                    return jsonify({'success': False, 'error': 'Seeding is already in progress'}), 409
+
+                _seed_status['status'] = 'running'
+                _seed_status['message'] = 'Starting demo seed...'
+                _seed_status['percent'] = 0
+
+            def _run_seed_thread(app):
+                with app.app_context():
+                    try:
+                        from ..seeder.seed import run_demo_seed
+                        _seed_status['message'] = 'Generating demo data...'
+                        _seed_status['percent'] = 10
+                        run_demo_seed(skip_wipe=True)
+                        _seed_status['status'] = 'done'
+                        _seed_status['message'] = 'Demo data generated successfully'
+                        _seed_status['percent'] = 100
+                    except Exception as e:
+                        _seed_status['status'] = 'error'
+                        _seed_status['message'] = str(e)
+                        _seed_status['percent'] = 0
+                        print(f'SEED THREAD ERROR: {e}')
+
+            from flask import current_app
+            app = current_app._get_current_object()
+            thread = threading.Thread(target=_run_seed_thread, args=(app,), daemon=True)
+            thread.start()
+
+            log_action(current_user, 'settings.seed.demo', target='demo_data',
+                       before=None, after={'mode': 'demo'}, category='settings')
+            db.session.commit()
+
+            return jsonify({'success': True, 'message': 'Demo seeding started', 'status': 'running'}), 202
+        else:
+            return jsonify({'success': False, 'error': f'Invalid mode: {mode}'}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        print(f'SEED ERROR: {e}')
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+@settings_bp.route('/seed/status', methods=['GET'])
+@token_required
+@permission_required('settings')
+def seed_status(current_user):
+    """Check the status of a running seed operation."""
+    return jsonify({
+        'success': True,
+        'status': _seed_status['status'],
+        'message': _seed_status['message'],
+        'percent': _seed_status['percent'],
+    }), 200
