@@ -215,7 +215,7 @@ function BulkSessionsPageContent() {
         try {
             await bulkApi.create({
                 rvmId: parseInt(selectedRvm),
-                accountId: parseInt(selectedAccount),
+                walletId: parseInt(selectedAccount),
                 notes,
                 items: items.map(i => ({
                     detectedClass: i.detectedClass,
@@ -453,7 +453,9 @@ function BulkSessionsPageContent() {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">User Account <span className="text-red-500">*</span></label>
                                     <CustomDropdown value={selectedAccount} onChange={setSelectedAccount} searchable showPlaceholder={false}
-                                        options={allUsers.map(u => ({ value: String(u.accountId || u.id), label: `${u.name} (${u.email})` }))} placeholder="Select user" />
+                                        options={allUsers
+                                            .filter(u => u.walletId)
+                                            .map(u => ({ value: String(u.walletId), label: `${u.name} (${u.email})` }))} placeholder="Select user" />
                                 </div>
 
                                 <div>
