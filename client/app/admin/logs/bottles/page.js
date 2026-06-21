@@ -12,7 +12,7 @@ import { formatField } from '../../../../src/lib/formatField';
 import { detectedClassLabel } from '../../../../src/lib/enumLabels';
 
 function BottleLogsPageContent() {
-    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations, hasPermission } = useAuth();
 
     // API-loaded data
     const [allBottleLogs, setAllBottleLogs] = useState([]);
@@ -138,10 +138,12 @@ function BottleLogsPageContent() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bottle Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">View all bottle recycling transactions and activity logs</p>
                 </div>
+                {hasPermission('logs', 'export') && (
                 <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} />
                     Export CSV
                 </button>
+                )}
             </div>
 
 

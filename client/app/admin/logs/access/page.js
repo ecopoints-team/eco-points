@@ -12,7 +12,7 @@ import { useAuth } from '../../../../src/context/AuthContext';
 import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 function AdminAccessLogsPageContent() {
-    const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
+    const { effectiveLocationId, isSuperAdmin, allLocations, hasPermission } = useAuth();
 
     // API-loaded data
     const [allAdminLogs, setAllAdminLogs] = useState([]);
@@ -169,10 +169,12 @@ function AdminAccessLogsPageContent() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Admin Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">Track all administrative actions</p>
                 </div>
+                {hasPermission('logs', 'export') && (
                 <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} />
                     Export CSV
                 </button>
+                )}
             </div>
 
             <div className="bg-white dark:bg-[#1e293b]/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-x-auto backdrop-blur-xl">
