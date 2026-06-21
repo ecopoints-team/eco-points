@@ -49,9 +49,12 @@ locations_bp = Blueprint('locations', __name__)
 
 @locations_bp.route('/org-types', methods=['GET'])
 @token_required
-@permission_required('locations')
 def get_org_types(current_user):
-    """Return all organization types for dropdown selectors."""
+    """Return all organization types for dropdown selectors.
+
+    Any authenticated admin may read the org-types lookup list.
+    Mutations (POST/PUT/DELETE) remain superadmin-only.
+    """
     try:
         types = OrgType.query.order_by(OrgType.name).all()
         return jsonify({'success': True, 'orgTypes': [_serialize_org_type(t) for t in types]}), 200
