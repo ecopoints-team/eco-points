@@ -15,7 +15,7 @@ substitution is the work of Phase 2.
 """
 from datetime import datetime, timezone
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from sqlalchemy.orm import joinedload
 
 from ..models import (
@@ -90,7 +90,8 @@ def get_bulk_sessions(current_user):
             query = query.join(RVM, RecyclingSession.rvm_id == RVM.id).filter(RVM.organization_id == loc_id)
         sessions = query.order_by(RecyclingSession.start_time.desc()).limit(200).all()
         return jsonify({'success': True, 'sessions': [_serialize_bulk_session(s) for s in sessions]}), 200
-    except Exception as e:
+    except Exception:
+        current_app.logger.exception('get_bulk_sessions failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
@@ -208,8 +209,9 @@ def create_bulk_session(current_user, payload):
             pass
 
         return jsonify({'success': True, 'session': _serialize_bulk_session(session)}), 201
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('create_bulk_session failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 

@@ -9,7 +9,7 @@ Phase 1 is a pure restructuring: decorators on every moved route are
 preserved byte-for-byte. The `@admin_required` → `@permission_required`
 substitution is the work of Phase 2.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
 from ..models import (
     Organization,
@@ -79,7 +79,8 @@ def get_users(current_user):
         query = query.order_by(User.id.asc())
         users, pagination = _paginate(query)
         return jsonify({'success': True, 'users': [_serialize_user(u) for u in users], 'pagination': pagination}), 200
-    except Exception as e:
+    except Exception:
+        current_app.logger.exception('get_users failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
