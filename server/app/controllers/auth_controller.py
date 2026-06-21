@@ -14,6 +14,7 @@ from ..models import (
     LoginAttempt, NotificationSetting,
 )
 from ..middleware import token_required, get_user_org_id, ROLE_PERMISSIONS, validate_request, compute_qr_suffix
+from ..permissions import permissions_for_role
 from ..services.password_policy import validate_password_policy
 from ..schemas import (
     LoginSchema,
@@ -360,6 +361,7 @@ def _serialize_auth_user(u):
         'username': u.username, 'email': u.email, 'phone': u.phone,
         'displayId': u.display_id,
         'role': role_value, 'permission_categories': permission_categories,
+        'permissions': permissions_for_role(u.role),
         'userType': user_type_value,
         'isActive': u.is_active, 'locationId': location_id,
         'locationName': (org['name'] if org else None),
