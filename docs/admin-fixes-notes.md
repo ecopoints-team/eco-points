@@ -459,3 +459,93 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 ### Admin Dashboard Fixes - Manage User Menu
 
 - Just like the bad request error we've encountered on the sign up page, where I we cant create a user. It happened on the Add User on the Manage User Menu as well. We can make them same functionality so that we can avoid that bad request error.
+
+
+
+
+
+### General Admin Dashboar Fixes (Failed From SQA)
+
+## Overview
+
+- This part of fixes wil introduce some admin dashboard view issues based on their role and their permissions on specific menu and functions. Also, it will introduce some specified build errors, initernal server errors and bad API request as well. Please rread them carefully and make a phased task tracker for us to be able to fix these error smoothly.
+
+## Tasks
+
+### From our QA
+- This following iinformation if from our QA. On my POV it looks detailed and nice but you can re-read them for better understanding on the issue:
+
+  - head admin 
+      dashboard - view and edit
+      user management - view, edit, create, delete
+      machine - view- delete
+      rewards inventory - view-delete
+      analytics - view
+      bulk - view and create
+      system logs - view and export
+      system settings - view and edit
+
+      analytics  - based on the permission it is only allowed to view and yet it can export on the test
+
+
+
+  - Auditor
+      dashboard - view, x edit
+      user management - rewards inventory - view, x edit to delete
+      analytics - view
+      bulk session- view and create
+      system logs - view and export
+      setting - view, x edit
+
+      user management, machine, and rewards inventory - should be on the sidebar menu so auditor can view just as permmited to. It is on the quick actions on the dashboard tab, but only leads to the dashboard still when clicked.
+
+      bulk session - based on the permission, the auditor is supposedly allowed to both view and create in the bulk session. and yet it said it can only view.
+
+  - Inventory Officer
+      dashboard - view, 
+      user management and machine - x from view to delete
+      rewards inventory - view - delete
+      analytics - x view
+      bulk session - view and create
+      system logs - view, x export
+      settings - view, x edit
+
+      user management and machine is on the quick action on the dashboard even though it is not on the side bar, and based on the permission it is x.
+
+      rewards inventory - permission based it can view, create, edit, delete, but on the testing it can only view the rewards inventory
+
+      analytics and bulk session- not on the sidebar menu
+
+      system logs - it should only view but on testing it can also export files even though it should denied
+
+  - technician
+      dashboard - view, x edit
+      use management, rewards inventory - x from view to delete
+      machine - view to edit
+      analytics - x view
+      bulk session - view , create
+      sysem log - view
+      setting - view, x edit
+
+      machine - based on permission it is allowed to view, and edit, and yet on testing it is only view.
+
+      system log - is permitted to view only and yet it can export file
+
+### From my end
+
+- Bulk Sessions Error and bad request:
+  - [browser] Failed to load modal data: ApiError: INTERNAL SERVER ERROR
+    at <unknown> (src/services/api/client.js:224:15)
+  222 |         // back to the generic HTTP status text (e.g. "BAD REQUEST").
+  223 |         const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
+> 224 |         throw new ApiError(
+      |               ^
+  225 |             serverError.code || `HTTP_${response.status}`,
+  226 |             serverError.message || flatStringMessage || response.statusText || `Request failed ($ {response.stat...  227 |             response.status, (app/admin/bulk-sessions/page.js:120:33)
+
+  - 127.0.0.1 - - [21/Jun/2026 23:27:56] "GET /api/web/users?per_page=200 HTTP/1.1" 500 -
+    127.0.0.1 - - [21/Jun/2026 23:34:32] "OPTIONS /api/web/sessions/bulk HTTP/1.1" 200 -
+    127.0.0.1 - - [21/Jun/2026 23:34:33] "POST /api/web/sessions/bulk HTTP/1.1" 400 -
+
+- System Logs(Admin Logs) Query Optimization:
+  - Currently, the Admin logs takes pretty long time to render. I found out that we used joiined query in there. Can we do some optimizatoin there? Maybe a different query for different tables? Give me your best solution.
