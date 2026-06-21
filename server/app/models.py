@@ -634,7 +634,7 @@ class AdminLog(db.Model):
     target = db.Column(db.String(200))
     category = db.Column(db.String(50))
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     def __repr__(self):
         return f'<AdminLog {self.action} by User {self.admin_user_id}>'
