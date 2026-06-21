@@ -31,7 +31,6 @@ ROLE_ACTION_PERMISSIONS = {
         'users': {'view', 'edit', 'create', 'delete'},
         'machines': {'view', 'edit', 'create', 'delete'},
         'rewards': {'view', 'edit', 'create', 'delete'},
-        'locations': {'view', 'edit', 'create', 'delete'},
         'groups': {'view', 'edit', 'create', 'delete'},
         'leaderboard': {'view', 'edit'},
         'analytics': {'view'},
