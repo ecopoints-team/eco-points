@@ -50,7 +50,7 @@ def get_machines(current_user):
 
 @machines_bp.route('', methods=['POST'])
 @token_required
-@permission_required('machines')
+@permission_required('machines', action='create')
 @validate_request(MachineCreateSchema)
 def create_machine(current_user, payload):
     """Register a new RVM."""
@@ -82,7 +82,7 @@ def create_machine(current_user, payload):
 
 @machines_bp.route('/<int:machine_id>', methods=['PUT'])
 @token_required
-@permission_required('machines')
+@permission_required('machines', action='edit')
 @validate_request(MachineUpdateSchema)
 def update_machine(current_user, machine_id, payload):
     """Update an RVM."""
@@ -132,7 +132,7 @@ def update_machine(current_user, machine_id, payload):
 
 @machines_bp.route('/<int:machine_id>', methods=['DELETE'])
 @token_required
-@permission_required('machines')
+@permission_required('machines', action='delete')
 def delete_machine(current_user, machine_id):
     """Decommission an RVM."""
     try:

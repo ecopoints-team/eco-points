@@ -107,7 +107,7 @@ def get_user(current_user, user_id):
 
 @users_bp.route('', methods=['POST'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='create')
 @validate_request(UserCreateSchema)
 def create_user(current_user, payload):
     """Create a new user (regular or admin).
@@ -261,7 +261,7 @@ def create_user(current_user, payload):
 
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='edit')
 @validate_request(UserUpdateSchema)
 def update_user(current_user, user_id, payload):
     """Update user fields."""
@@ -384,7 +384,7 @@ def update_user(current_user, user_id, payload):
 
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='delete')
 def delete_user(current_user, user_id):
     """Deactivate a user (soft delete)."""
     try:
@@ -415,7 +415,7 @@ def delete_user(current_user, user_id):
 
 @users_bp.route('/<int:user_id>/adjust-points', methods=['POST'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='edit')
 @validate_request(UserAdjustPointsSchema)
 def adjust_user_points(current_user, user_id, payload):
     """Manually adjust a user's point balance (add or subtract)."""

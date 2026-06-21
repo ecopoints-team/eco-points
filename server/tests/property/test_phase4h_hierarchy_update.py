@@ -46,6 +46,7 @@ from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from app import Config, db
 from app.controllers._shared import level
 from app.middleware import ADMIN_ROLE_SET, ROLE_HIERARCHY, ROLE_PERMISSIONS
+from app.permissions import role_can
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ ALL_ROLES = sorted(ROLE_HIERARCHY.keys(), key=lambda r: ROLE_HIERARCHY[r])
 ACTOR_ROLES = sorted(
     role for role in ADMIN_ROLE_SET
     if 'users' in ROLE_PERMISSIONS.get(role, set())
+    and role_can(role, 'users', 'create')
 )
 
 # Target roles for the *attempted* role assignment: any role in the
