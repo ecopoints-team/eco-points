@@ -30,7 +30,8 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
 
 
     const validateForm = () => {
-        const { errors: fieldErrors, isValid } = validateAll(VALIDATION_RULES.machine, formData);
+        const scoped = { name: VALIDATION_RULES.machine.name };
+        const { errors: fieldErrors, isValid } = validateAll(scoped, formData);
         if (!formData.locationId) fieldErrors.locationId = 'Location is required';
         setErrors(fieldErrors);
         return isValid && !fieldErrors.locationId;
@@ -39,15 +40,13 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
-            const loc = locations.find(l => l.id === formData.locationId);
+            const machineUuid = `RVM-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
             onSubmit({
-                ...formData,
-                id: `RVM-${Date.now().toString().slice(-6)}`,
-                machineUuid: `RVM-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-                organizationName: loc ? loc.name : '',
-                totalItemsCollected: 0,
-                currentCapacity: 0,
-                lastSync: 'Just now'
+                name: formData.name.trim(),
+                machineUuid,
+                locationId: formData.locationId,
+                locationName: formData.locationName.trim(),
+                isOnline: formData.isOnline,
             });
             setFormData({ name: '', locationId: '', locationName: '', isOnline: true });
             onClose();
@@ -154,7 +153,8 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
 
 
     const validateForm = () => {
-        const { errors: fieldErrors, isValid } = validateAll(VALIDATION_RULES.machine, formData);
+        const scoped = { name: VALIDATION_RULES.machine.name };
+        const { errors: fieldErrors, isValid } = validateAll(scoped, formData);
         if (!formData.locationId) fieldErrors.locationId = 'Location is required';
         setErrors(fieldErrors);
         return isValid && !fieldErrors.locationId;
@@ -164,9 +164,8 @@ const EditMachineModal = ({ isOpen, onClose, onSubmit, machine, locations }) => 
         e.preventDefault();
         if (validateForm()) {
             onSubmit(machine.id, {
-                name: formData.name,
-                locationId: formData.locationId,
-                locationName: formData.locationName,
+                name: formData.name.trim(),
+                locationName: formData.locationName.trim(),
                 isOnline: formData.isOnline,
             });
         }
@@ -650,6 +649,12 @@ function MachinesPageContent() {
         setCurrentPage(1);
     }, [effectiveLocationId, refreshKey]);
 
+    // Get location name for a machine
+    const getLocationName = (locationId) => {
+        const loc = allLocations.find(l => l.id === locationId);
+        return loc ? loc.name : '';
+    };
+
     // Filter machines by search
     const displayedMachines = useMemo(() => {
         if (!searchQuery) return machines;
@@ -696,10 +701,9 @@ function MachinesPageContent() {
     const handleAddMaintenanceLog = async (machineId, newLog) => {
         try {
             await logs.createMachineLog({
-                rvmId: machineId,
-                technicianId: newLog.technicianId || currentUser?.id || null,
+                rvmId: parseInt(machineId, 10),
                 actionType: newLog.actionType || newLog.action_type || newLog.type,
-                resolved: newLog.resolved || false,
+                status: newLog.resolved ? 'Resolved' : 'Pending',
                 notes: newLog.notes || '',
             });
             setRefreshKey(k => k + 1);
@@ -712,16 +716,10 @@ function MachinesPageContent() {
     const handleAddMachine = async (newMachine) => {
         try {
             const created = await machinesApi.create(newMachine);
-            setMachines([{ ...created, id: String(created.id) }, ...machines]);
+            setMachines(prev => [{ ...created, id: String(created.id) }, ...prev]);
         } catch (err) {
-            console.error('Failed to add machine:', err);
+            alert(err.message || 'Failed to add machine');
         }
-    };
-
-    // Get location name for a machine
-    const getLocationName = (locationId) => {
-        const loc = allLocations.find(l => l.id === locationId);
-        return loc ? loc.name : '';
     };
 
     return (

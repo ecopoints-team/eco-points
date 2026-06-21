@@ -428,3 +428,34 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 ## Tasks
 
 - On the login modal, we have the forget password but its not currently working. Make a functionality about it. It should work like a normal forget password. Make sure that the UI that you will be doing is a responsive one.
+
+
+### Admin Dashboard Fixes - Machine Menu
+
+## Tasks
+
+- The superadmin cant add a machine. The add machine is not working.
+- The edit machine is not working properly as well like it has no functionality.
+- The Maintenance is not working as well. The admin can't add a maintenance on a machine.
+- The search function of the machine throws a  GET /admin/machines 200 in 195ms (next.js: 85ms, application-code: 110ms)
+[browser] Uncaught TypeError: getLocationName is not a function
+    at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:660:13)
+    at Array.filter (<anonymous>)
+    at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:657:25)
+    at MachinesPageContent (app/admin/machines/page.js:654:38)
+    at MachinesPage (app/admin/machines/page.js:962:13)
+  658 |             m.name.toLowerCase().includes(q) ||
+  659 |             (m.locationName || '').toLowerCase().includes(q) ||
+> 660 |             getLocationName(m.locationId).toLowerCase().includes(q) ||
+      |             ^
+  661 |             m.id.toLowerCase().includes(q)
+  662 |         );
+  663 |     }, [machines, searchQuery]);
+
+### Admin Dashboard Fixes - View All Location filter alongside with Manage Users Menu (and might be manage admin as well)
+
+- My mate created an account on the EPTU organization. On the Manage users, when the View As filter is for All location, the created account wont show on the table. But it shows on the EPTU filter which is good but it must reflect on the all location filter.
+
+### Admin Dashboard Fixes - Manage User Menu
+
+- Just like the bad request error we've encountered on the sign up page, where I we cant create a user. It happened on the Add User on the Manage User Menu as well. We can make them same functionality so that we can avoid that bad request error.

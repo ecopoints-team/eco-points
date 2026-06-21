@@ -272,6 +272,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
 
         try {
             // Build the payload for the API
+            // Fields match UserCreateSchema exactly — no extra keys
+            // (server uses extra='forbid' and derives is_admin from `role`)
             const payload = {
                 firstName: firstName.trim(),
                 middleName: middleName.trim() || undefined,
@@ -281,8 +283,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                 phone: phone || undefined,
                 password,
                 role: selectedRole,
-                locationId: isSuperAdmin ? locationId : currentLocation?.id,
-                isAdmin: true,
+                locationId: isSuperAdmin
+                    ? (locationId ? parseInt(locationId, 10) : undefined)
+                    : (currentLocation?.id ? parseInt(currentLocation.id, 10) : undefined),
             };
 
             const created = await usersApi.create(payload);

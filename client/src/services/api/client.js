@@ -195,11 +195,14 @@ export async function request(method, path, { body, headers } = {}) {
     // Parse the body as JSON when present; tolerate empty bodies and non-JSON
     // payloads so callers always get a structured error on failure paths.
     let data = null;
+    let rawBodyText = null; // kept for flat-string error surfacing
     const rawText = await response.text();
     if (rawText) {
         try {
             data = JSON.parse(rawText);
         } catch {
+            // Not JSON — preserve the raw text so error paths can surface it.
+            rawBodyText = rawText;
             data = null;
         }
     }
@@ -214,9 +217,13 @@ export async function request(method, path, { body, headers } = {}) {
         if (response.status === 401) {
             dispatchUnauthorized();
         }
+        // When the server returns a flat string body (not a JSON envelope),
+        // use that string directly as the error message rather than falling
+        // back to the generic HTTP status text (e.g. "BAD REQUEST").
+        const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
         throw new ApiError(
             serverError.code || `HTTP_${response.status}`,
-            serverError.message || response.statusText || `Request failed (${response.status})`,
+            serverError.message || flatStringMessage || response.statusText || `Request failed (${response.status})`,
             response.status,
             data,
         );

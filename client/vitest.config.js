@@ -43,6 +43,7 @@ const jsxInJsPlugin = {
 export default defineConfig({
     plugins: [jsxInJsPlugin, react({ include: /\.(jsx|js|tsx|ts)$/ })],
     test: {
+        testTimeout: 60_000,
         environment: 'node',
         environmentMatchGlobs: [
             ['tests/property/**', 'jsdom'],

@@ -98,7 +98,16 @@ export const VALIDATION_RULES = {
     user: {
         name:       { required: true, maxLength: 200, label: 'Full Name' },
         email:      { required: true, maxLength: 200, type: 'email', label: 'Email' },
-        password:   { required: true, minLength: 6, maxLength: 128, label: 'Password' },
+        // Password policy mirrors server/app/services/password_policy.py:
+        //   ≥8 chars, one uppercase (A-Z), one lowercase (a-z), one digit (0-9)
+        password:   {
+            required: true,
+            minLength: 8,
+            maxLength: 128,
+            label: 'Password',
+            pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).+$/,
+            patternMessage: 'Password must contain at least one uppercase letter, one lowercase letter, and one digit',
+        },
         username:   { required: true, maxLength: 100, label: 'Username' },
         phone:      { type: 'phone', label: 'Phone' },
     },

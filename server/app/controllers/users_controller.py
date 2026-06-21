@@ -49,9 +49,15 @@ def get_users(current_user):
     """List users. Supports filters: ?role=, ?user_type=, ?location_id=, ?is_admin=."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = db.session.query(User).join(CommunityGroup)
         if loc_id:
-            query = query.filter(CommunityGroup.organization_id == loc_id)
+            # Scoped: INNER join is fine — only users in this org's community groups
+            query = db.session.query(User).join(CommunityGroup).filter(
+                CommunityGroup.organization_id == loc_id
+            )
+        else:
+            # Unscoped (superadmin "All locations"): outerjoin so users without
+            # a community_group row are still included
+            query = db.session.query(User).outerjoin(CommunityGroup)
 
         role_filter = request.args.get('role')
         if role_filter:
