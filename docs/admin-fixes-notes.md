@@ -700,3 +700,11 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 - On the add rewards modal, add fields for rewards variant which the admin can input the variants and its prices.
 - For the variant price, on its field, the admin can input a price different from the main variant's price (the main product). The admin can input a different price but they should also have an option where they can just make the price same as the main variant.
 - If the modal is too narrow for this additional feature, make the modal landscape and expand it sideways
+
+
+
+### Head Admin and Auditor Role Fixes & General RBAC permission Fixes
+
+- Right now, the Add Machine and Add user is looking for locations / Organization for the admin to be able to add a user or machine. Now, the superadmin is the only role that have access on location and that causes head admin of all tenant organization get an failed fetching or missing data. To fix this, we stil remove the access of locations for the tenant admins, and instead of putting locations fields for addng machine anc users or admins, it should automatically read their own location.
+
+- Back Up and Restore / Test Data. Since each tenant we have has their own database, they should have access on backup and restore and test data for their OWN database as well. Each tenant's head admin and auditor should have acces to those two tabs on the settings page so that they can back up their data and try to test their system as well.
