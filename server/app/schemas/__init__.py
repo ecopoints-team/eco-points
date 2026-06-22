@@ -443,6 +443,21 @@ class MachineUpdateSchema(_StrictModel):
 # ══════════════════════════════════════════════════════════════════════════
 
 
+class RewardVariantInputSchema(_StrictModel):
+    """One variant inside a reward create/update payload.
+
+    ``pointsRequired = None`` means the variant inherits the parent reward's
+    price. ``id`` is present only when editing an existing variant (upsert).
+    """
+
+    id: Optional[int] = None
+    varietyName: Optional[str] = None
+    stockQuantity: Optional[int] = None
+    pointsRequired: Optional[int] = None
+    imageUrl: Optional[str] = None
+    isActive: Optional[bool] = None
+
+
 class RewardCreateSchema(_StrictModel):
     """Body for ``POST /api/web/rewards``."""
 
@@ -455,6 +470,7 @@ class RewardCreateSchema(_StrictModel):
     imageUrl: Optional[str] = None
     isActive: Optional[bool] = None
     stockQuantity: Optional[int] = None
+    variants: Optional[List[RewardVariantInputSchema]] = None
 
 
 class RewardUpdateSchema(_StrictModel):
@@ -468,6 +484,7 @@ class RewardUpdateSchema(_StrictModel):
     imageUrl: Optional[str] = None
     isActive: Optional[bool] = None
     stockQuantity: Optional[int] = None
+    variants: Optional[List[RewardVariantInputSchema]] = None
 
 
 class RewardCategoryCreateSchema(_StrictModel):
@@ -689,6 +706,7 @@ __all__ = [
     'MachineCreateSchema',
     'MachineUpdateSchema',
     # rewards_controller
+    'RewardVariantInputSchema',
     'RewardCreateSchema',
     'RewardUpdateSchema',
     'RewardRedeemSchema',

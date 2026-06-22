@@ -75,6 +75,51 @@ def get_rewards(current_user):
 _ALLOWED_IMAGE_EXT = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 
 
+def _sync_reward_variants(reward, variants_payload):
+    """Upsert the reward's variants from a validated payload list.
+
+    Items with an id matching an existing variant are updated in place.
+    Items without an id (or unknown id) are created.
+    Existing variants NOT in the payload are soft-deactivated.
+    NULL pointsRequired stores as NULL (inherit parent price).
+    """
+    existing = {v.id: v for v in (reward.variants or [])}
+    seen_ids = set()
+
+    for item in variants_payload:
+        data = item.model_dump(exclude_unset=True)
+        vid = data.get('id')
+        name = (data.get('varietyName') or '').strip() or 'Default'
+        stock = data.get('stockQuantity') if data.get('stockQuantity') is not None else 0
+        price = data.get('pointsRequired')
+        image = data.get('imageUrl')
+        active = data.get('isActive') if data.get('isActive') is not None else True
+
+        if vid and vid in existing:
+            v = existing[vid]
+            v.variety_name = name
+            v.stock_quantity = stock
+            v.points_required = price
+            if 'imageUrl' in data:
+                v.image_url = image
+            v.is_active = active
+            seen_ids.add(vid)
+        else:
+            v = RewardVariant(
+                reward_id=reward.id,
+                variety_name=name,
+                stock_quantity=stock,
+                points_required=price,
+                image_url=image,
+                is_active=active,
+            )
+            db.session.add(v)
+
+    for vid, v in existing.items():
+        if vid not in seen_ids and v.is_active:
+            v.is_active = False
+
+
 @rewards_bp.route('/image', methods=['POST'])
 @token_required
 @permission_required('rewards', action='create')
@@ -134,14 +179,16 @@ def create_reward(current_user, payload):
         db.session.add(reward)
         db.session.flush()
 
-        # Create default variant
-        variant = RewardVariant(
-            reward_id=reward.id,
-            variety_name='Default',
-            stock_quantity=payload.stockQuantity if payload.stockQuantity is not None else 0,
-            is_active=True,
-        )
-        db.session.add(variant)
+        if payload.variants:
+            _sync_reward_variants(reward, payload.variants)
+        else:
+            db.session.add(RewardVariant(
+                reward_id=reward.id,
+                variety_name='Default',
+                stock_quantity=payload.stockQuantity if payload.stockQuantity is not None else 0,
+                points_required=None,
+                is_active=True,
+            ))
 
         _log_action(current_user, 'Reward Created', reward.name, 'Rewards')
         db.session.commit()
@@ -175,14 +222,16 @@ def update_reward(current_user, reward_id, payload):
             if front in data:
                 setattr(reward, back, data[front])
 
-        # Update default variant stock if stockQuantity sent
-        if 'stockQuantity' in data:
+        if payload.variants is not None:
+            _sync_reward_variants(reward, payload.variants)
+        elif 'stockQuantity' in data:
             default_var = RewardVariant.query.filter_by(reward_id=reward.id, variety_name='Default').first()
             if default_var:
                 default_var.stock_quantity = data['stockQuantity']
             else:
                 default_var = RewardVariant(reward_id=reward.id, variety_name='Default',
-                                           stock_quantity=data['stockQuantity'], is_active=True)
+                                           stock_quantity=data['stockQuantity'],
+                                           points_required=None, is_active=True)
                 db.session.add(default_var)
 
         _log_action(current_user, 'Reward Updated', reward.name, 'Rewards')
@@ -263,7 +312,8 @@ def redeem_reward(current_user, reward_id, payload):
         if variant.stock_quantity < quantity:
             return jsonify({'success': False, 'error': 'Insufficient stock'}), 400
 
-        total_points_required = reward.points_required * quantity
+        unit_price = variant.points_required if variant.points_required is not None else reward.points_required
+        total_points_required = unit_price * quantity
         wallet = current_user.wallet
         if not wallet or wallet.points_balance < total_points_required:
             return jsonify({'success': False, 'error': 'Insufficient points balance'}), 400
