@@ -685,12 +685,17 @@ function MachinesPageContent() {
 
     // Edit machine handler
     const handleEditMachine = async (machineId, updatedData) => {
-        await runWithProgress('Saving changes...', async () => {
-            const updated = await machinesApi.update(machineId, updatedData);
-            setMachines(prev => prev.map(m => m.id === String(machineId) ? { ...m, ...updated, id: String(updated.id || machineId) } : m));
-            setShowEditModal(false);
-            setEditingMachine(null);
-        }, { successLabel: 'Machine updated' });
+        try {
+            await runWithProgress('Saving changes...', async () => {
+                const updated = await machinesApi.update(machineId, updatedData);
+                setMachines(prev => prev.map(m => m.id === String(machineId) ? { ...m, ...updated, id: String(updated.id || machineId) } : m));
+                setShowEditModal(false);
+                setEditingMachine(null);
+            }, { successLabel: 'Machine updated' });
+        } catch (err) {
+            console.error('Failed to update machine:', err);
+            alert(err?.message || 'Failed to update machine. Please try again.');
+        }
     };
 
     // Refresh handler
@@ -699,23 +704,33 @@ function MachinesPageContent() {
     };
 
     const handleAddMaintenanceLog = async (machineId, newLog) => {
-        await runWithProgress('Logging maintenance...', async () => {
-            await logs.createMachineLog({
-                rvmId: parseInt(machineId, 10),
-                actionType: newLog.actionType || newLog.action_type || newLog.type,
-                status: newLog.resolved ? 'Resolved' : 'Pending',
-                notes: newLog.notes || '',
-            });
-            setRefreshKey(k => k + 1);
-        }, { successLabel: 'Maintenance logged' });
+        try {
+            await runWithProgress('Logging maintenance...', async () => {
+                await logs.createMachineLog({
+                    rvmId: parseInt(machineId, 10),
+                    actionType: newLog.actionType || newLog.action_type || newLog.type,
+                    status: newLog.resolved ? 'Resolved' : 'Pending',
+                    notes: newLog.notes || '',
+                });
+                setRefreshKey(k => k + 1);
+            }, { successLabel: 'Maintenance logged' });
+        } catch (err) {
+            console.error('Failed to log maintenance:', err);
+            alert(err?.message || 'Failed to log maintenance. Please try again.');
+        }
     };
 
     // Add machine handler
     const handleAddMachine = async (newMachine) => {
-        await runWithProgress('Adding machine...', async () => {
-            const created = await machinesApi.create(newMachine);
-            setMachines(prev => [{ ...created, id: String(created.id) }, ...prev]);
-        }, { successLabel: 'Machine added' });
+        try {
+            await runWithProgress('Adding machine...', async () => {
+                const created = await machinesApi.create(newMachine);
+                setMachines(prev => [{ ...created, id: String(created.id) }, ...prev]);
+            }, { successLabel: 'Machine added' });
+        } catch (err) {
+            console.error('Failed to add machine:', err);
+            alert(err?.message || 'Failed to add machine. Please try again.');
+        }
     };
 
     return (

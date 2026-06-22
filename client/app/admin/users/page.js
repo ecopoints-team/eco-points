@@ -96,29 +96,34 @@ function ManageUsersPageContent() {
 
     const saveEdit = async () => {
         if (selectedUser) {
-            await runWithProgress('Saving changes...', async () => {
-                const payload = {
-                    firstName: editFormData.firstName.trim(),
-                    middleName: editFormData.middleName.trim() || null,
-                    lastName: editFormData.lastName.trim(),
-                    username: editFormData.username,
-                    email: editFormData.email,
-                    phone: editFormData.phone,
-                    userType: editFormData.userType,
-                    yearLevel: editFormData.yearLevel || null,
-                    communityGroupId: editFormData.communityGroupId ? parseInt(editFormData.communityGroupId) : null,
-                    isActive: editFormData.isActive,
-                };
-                const updated = await usersApi.update(selectedUser.id, payload);
-                const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
-                setUsers(prev => prev.map(u =>
-                    u.id === selectedUser.id
-                        ? { ...u, ...updated, id: String(updated.id), name: updatedName, userType: editFormData.userType, isActive: editFormData.isActive }
-                        : u
-                ));
-                setIsEditModalOpen(false);
-                setSelectedUser(null);
-            }, { successLabel: 'User updated' });
+            try {
+                await runWithProgress('Saving changes...', async () => {
+                    const payload = {
+                        firstName: editFormData.firstName.trim(),
+                        middleName: editFormData.middleName.trim() || null,
+                        lastName: editFormData.lastName.trim(),
+                        username: editFormData.username,
+                        email: editFormData.email,
+                        phone: editFormData.phone,
+                        userType: editFormData.userType,
+                        yearLevel: editFormData.yearLevel || null,
+                        communityGroupId: editFormData.communityGroupId ? parseInt(editFormData.communityGroupId) : null,
+                        isActive: editFormData.isActive,
+                    };
+                    const updated = await usersApi.update(selectedUser.id, payload);
+                    const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
+                    setUsers(prev => prev.map(u =>
+                        u.id === selectedUser.id
+                            ? { ...u, ...updated, id: String(updated.id), name: updatedName, userType: editFormData.userType, isActive: editFormData.isActive }
+                            : u
+                    ));
+                    setIsEditModalOpen(false);
+                    setSelectedUser(null);
+                }, { successLabel: 'User updated' });
+            } catch (err) {
+                console.error('Failed to save user:', err);
+                alert(err?.message || 'Failed to save user. Please try again.');
+            }
         }
     };
 
@@ -130,14 +135,19 @@ function ManageUsersPageContent() {
 
     const confirmDelete = async () => {
         if (selectedUser) {
-            await runWithProgress('Deactivating user...', async () => {
-                await usersApi.delete(selectedUser.id);
-                setUsers(prev => prev.map(u =>
-                    u.id === selectedUser.id ? { ...u, isActive: false } : u
-                ));
-            }, { successLabel: 'User deactivated' });
-            setIsDeleteModalOpen(false);
-            setSelectedUser(null);
+            try {
+                await runWithProgress('Deactivating user...', async () => {
+                    await usersApi.delete(selectedUser.id);
+                    setUsers(prev => prev.map(u =>
+                        u.id === selectedUser.id ? { ...u, isActive: false } : u
+                    ));
+                }, { successLabel: 'User deactivated' });
+                setIsDeleteModalOpen(false);
+                setSelectedUser(null);
+            } catch (err) {
+                console.error('Failed to deactivate user:', err);
+                alert(err?.message || 'Failed to deactivate user. Please try again.');
+            }
         }
     };
 
@@ -152,17 +162,22 @@ function ManageUsersPageContent() {
     const confirmAdjustPoints = async () => {
         if (!selectedUser || !adjustAmount) return;
         setIsAdjusting(true);
-        await runWithProgress('Adjusting points...', async () => {
-            const result = await usersApi.adjustPoints(selectedUser.id, {
-                amount: parseInt(adjustAmount, 10),
-                reason: adjustReason || 'Manual adjustment',
-            });
-            setUsers(prev => prev.map(u =>
-                u.id === selectedUser.id ? { ...u, pointsBalance: result.balanceAfter } : u
-            ));
-            setIsAdjustModalOpen(false);
-            setSelectedUser(null);
-        }, { successLabel: 'Points adjusted' });
+        try {
+            await runWithProgress('Adjusting points...', async () => {
+                const result = await usersApi.adjustPoints(selectedUser.id, {
+                    amount: parseInt(adjustAmount, 10),
+                    reason: adjustReason || 'Manual adjustment',
+                });
+                setUsers(prev => prev.map(u =>
+                    u.id === selectedUser.id ? { ...u, pointsBalance: result.balanceAfter } : u
+                ));
+                setIsAdjustModalOpen(false);
+                setSelectedUser(null);
+            }, { successLabel: 'Points adjusted' });
+        } catch (err) {
+            console.error('Failed to adjust points:', err);
+            alert(err?.message || 'Failed to adjust points. Please try again.');
+        }
         setIsAdjusting(false);
     };
 

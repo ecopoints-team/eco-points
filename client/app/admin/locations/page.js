@@ -717,20 +717,30 @@ function LocationsPageContent() {
 
     // Add location handler
     const handleAddLocation = async (newLocation) => {
-        await runWithProgress('Creating location...', async () => {
-            const created = await locationsApi.create(newLocation);
-            setLocations([...locations, created]);
-            await refreshLocations();
-        }, { successLabel: 'Location created' });
+        try {
+            await runWithProgress('Creating location...', async () => {
+                const created = await locationsApi.create(newLocation);
+                setLocations([...locations, created]);
+                await refreshLocations();
+            }, { successLabel: 'Location created' });
+        } catch (err) {
+            console.error('Failed to create location:', err);
+            alert(err?.message || 'Failed to create location. Please try again.');
+        }
     };
 
     // Edit location handler
     const handleEditLocation = async (locationId, updatedData) => {
-        await runWithProgress('Saving changes...', async () => {
-            const updated = await locationsApi.update(locationId, updatedData);
-            setLocations(prev => prev.map(loc => loc.id === locationId ? { ...loc, ...updated } : loc));
-            await refreshLocations();
-        }, { successLabel: 'Location updated' });
+        try {
+            await runWithProgress('Saving changes...', async () => {
+                const updated = await locationsApi.update(locationId, updatedData);
+                setLocations(prev => prev.map(loc => loc.id === locationId ? { ...loc, ...updated } : loc));
+                await refreshLocations();
+            }, { successLabel: 'Location updated' });
+        } catch (err) {
+            console.error('Failed to update location:', err);
+            alert(err?.message || 'Failed to update location. Please try again.');
+        }
     };
 
     // Refresh handler

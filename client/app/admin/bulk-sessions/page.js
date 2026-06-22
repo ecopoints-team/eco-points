@@ -213,19 +213,24 @@ function BulkSessionsPageContent() {
         if (items.length === 0) { setModalError('Add at least one item'); return; }
         setSubmitting(true);
         setModalError('');
-        await runWithProgress('Creating bulk session...', async () => {
-            await bulkApi.create({
-                rvmId: parseInt(selectedRvm),
-                walletId: parseInt(selectedAccount),
-                notes,
-                items: items.map(i => ({
-                    detectedClass: i.detectedClass,
-                    pointsAwarded: parseInt(i.pointsAwarded) || 0,
-                })),
-            });
-            setShowModal(false);
-            setRefreshKey(k => k + 1);
-        }, { successLabel: 'Bulk session created' });
+        try {
+            await runWithProgress('Creating bulk session...', async () => {
+                await bulkApi.create({
+                    rvmId: parseInt(selectedRvm),
+                    walletId: parseInt(selectedAccount),
+                    notes,
+                    items: items.map(i => ({
+                        detectedClass: i.detectedClass,
+                        pointsAwarded: parseInt(i.pointsAwarded) || 0,
+                    })),
+                });
+                setShowModal(false);
+                setRefreshKey(k => k + 1);
+            }, { successLabel: 'Bulk session created' });
+        } catch (err) {
+            console.error('Failed to create bulk session:', err);
+            setModalError(err?.message || 'Failed to create bulk session. Please try again.');
+        }
         setSubmitting(false);
     };
 

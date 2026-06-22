@@ -497,45 +497,50 @@ function RewardsInventoryPageContent() {
         const label = editingReward ? 'Saving changes...' : 'Creating reward...';
         const successLabel = editingReward ? 'Reward updated' : 'Reward created';
 
-        await runWithProgress(label, async () => {
-            if (editingReward) {
-                await rewardsApi.update(editingReward.id, {
-                    name: formData.name,
-                    description: formData.description,
-                    pointsRequired: parseInt(formData.pointsRequired),
-                    stockQuantity,
-                    category: formData.category,
-                    imageUrl: formData.imageUrl,
-                    ...(variantsPayload.length ? { variants: variantsPayload } : {}),
-                });
-                setRewards(prev => prev.map(r => r.id === editingReward.id ? {
-                    ...r,
-                    ...formData,
-                    pointsRequired: parseInt(formData.pointsRequired),
-                    stockQuantity
-                } : r));
-            } else {
-                const created = await rewardsApi.create({
-                    name: formData.name,
-                    description: formData.description,
-                    pointsRequired: parseInt(formData.pointsRequired),
-                    stockQuantity,
-                    category: formData.category,
-                    imageUrl: formData.imageUrl,
-                    locationId: effectiveLocationId,
-                    ...(variantsPayload.length ? { variants: variantsPayload } : {}),
-                });
-                setRewards(prev => [{
-                    id: String(created.id),
-                    ...formData,
-                    pointsRequired: parseInt(formData.pointsRequired),
-                    stockQuantity,
-                    dispensed: 0,
-                    locationId: effectiveLocationId
-                }, ...prev]);
-            }
-        }, { successLabel });
-        setShowModal(false);
+        try {
+            await runWithProgress(label, async () => {
+                if (editingReward) {
+                    await rewardsApi.update(editingReward.id, {
+                        name: formData.name,
+                        description: formData.description,
+                        pointsRequired: parseInt(formData.pointsRequired),
+                        stockQuantity,
+                        category: formData.category,
+                        imageUrl: formData.imageUrl,
+                        ...(variantsPayload.length ? { variants: variantsPayload } : {}),
+                    });
+                    setRewards(prev => prev.map(r => r.id === editingReward.id ? {
+                        ...r,
+                        ...formData,
+                        pointsRequired: parseInt(formData.pointsRequired),
+                        stockQuantity
+                    } : r));
+                } else {
+                    const created = await rewardsApi.create({
+                        name: formData.name,
+                        description: formData.description,
+                        pointsRequired: parseInt(formData.pointsRequired),
+                        stockQuantity,
+                        category: formData.category,
+                        imageUrl: formData.imageUrl,
+                        locationId: effectiveLocationId,
+                        ...(variantsPayload.length ? { variants: variantsPayload } : {}),
+                    });
+                    setRewards(prev => [{
+                        id: String(created.id),
+                        ...formData,
+                        pointsRequired: parseInt(formData.pointsRequired),
+                        stockQuantity,
+                        dispensed: 0,
+                        locationId: effectiveLocationId
+                    }, ...prev]);
+                }
+            }, { successLabel });
+            setShowModal(false);
+        } catch (err) {
+            console.error('Failed to save reward:', err);
+            alert(err?.message || 'Failed to save reward. Please try again.');
+        }
     };
 
     // Dispense handler
@@ -986,13 +991,18 @@ function RewardsInventoryPageContent() {
                             </button>
                             <button
                                 onClick={async () => {
-                                    await runWithProgress('Deactivating reward...', async () => {
-                                        await rewardsApi.delete(deletingReward.id);
-                                        setRewards(prev => prev.map(x =>
-                                            x.id === deletingReward.id ? { ...x, isActive: false } : x
-                                        ));
-                                    }, { successLabel: 'Reward deactivated' });
-                                    setDeletingReward(null);
+                                    try {
+                                        await runWithProgress('Deactivating reward...', async () => {
+                                            await rewardsApi.delete(deletingReward.id);
+                                            setRewards(prev => prev.map(x =>
+                                                x.id === deletingReward.id ? { ...x, isActive: false } : x
+                                            ));
+                                        }, { successLabel: 'Reward deactivated' });
+                                        setDeletingReward(null);
+                                    } catch (err) {
+                                        console.error('Failed to deactivate reward:', err);
+                                        alert(err?.message || 'Failed to deactivate reward. Please try again.');
+                                    }
                                 }}
                                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"
                             >

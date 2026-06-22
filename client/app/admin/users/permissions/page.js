@@ -356,29 +356,34 @@ function PermissionsPageContent() {
 
     const saveEdit = async () => {
         if (selectedUser) {
-            await runWithProgress('Saving changes...', async () => {
-                await usersApi.update(selectedUser.id, {
-                    firstName: editFormData.firstName.trim(),
-                    middleName: editFormData.middleName.trim() || null,
-                    lastName: editFormData.lastName.trim(),
-                    email: editFormData.email,
-                    role: editFormData.role,
-                    isActive: editFormData.isActive,
-                });
-                const roleChanged = editFormData.role !== selectedUser.role;
-                const newPermissions = roleChanged
-                    ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
-                    : selectedUser.permissions;
+            try {
+                await runWithProgress('Saving changes...', async () => {
+                    await usersApi.update(selectedUser.id, {
+                        firstName: editFormData.firstName.trim(),
+                        middleName: editFormData.middleName.trim() || null,
+                        lastName: editFormData.lastName.trim(),
+                        email: editFormData.email,
+                        role: editFormData.role,
+                        isActive: editFormData.isActive,
+                    });
+                    const roleChanged = editFormData.role !== selectedUser.role;
+                    const newPermissions = roleChanged
+                        ? ROLES[editFormData.role]?.permissions || selectedUser.permissions
+                        : selectedUser.permissions;
 
-                const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
-                setAdminUsers(prev => prev.map(u =>
-                    u.id === selectedUser.id
-                        ? { ...u, ...editFormData, name: updatedName, avatar: editFormData.firstName.charAt(0).toUpperCase(), permissions: newPermissions }
-                        : u
-                ));
-                setIsEditModalOpen(false);
-                setSelectedUser(null);
-            }, { successLabel: 'Admin updated' });
+                    const updatedName = [editFormData.firstName, editFormData.middleName, editFormData.lastName].filter(Boolean).join(' ');
+                    setAdminUsers(prev => prev.map(u =>
+                        u.id === selectedUser.id
+                            ? { ...u, ...editFormData, name: updatedName, avatar: editFormData.firstName.charAt(0).toUpperCase(), permissions: newPermissions }
+                            : u
+                    ));
+                    setIsEditModalOpen(false);
+                    setSelectedUser(null);
+                }, { successLabel: 'Admin updated' });
+            } catch (err) {
+                console.error('Failed to save admin:', err);
+                alert(err?.message || 'Failed to save admin. Please try again.');
+            }
         }
     };
 
@@ -390,12 +395,17 @@ function PermissionsPageContent() {
 
     const confirmDelete = async () => {
         if (selectedUser) {
-            await runWithProgress('Deleting admin...', async () => {
-                await usersApi.delete(selectedUser.id);
-                setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
-            }, { successLabel: 'Admin deleted' });
-            setIsDeleteModalOpen(false);
-            setSelectedUser(null);
+            try {
+                await runWithProgress('Deleting admin...', async () => {
+                    await usersApi.delete(selectedUser.id);
+                    setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+                }, { successLabel: 'Admin deleted' });
+                setIsDeleteModalOpen(false);
+                setSelectedUser(null);
+            } catch (err) {
+                console.error('Failed to delete admin:', err);
+                alert(err?.message || 'Failed to delete admin. Please try again.');
+            }
         }
     };
 
