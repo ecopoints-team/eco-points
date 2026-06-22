@@ -549,3 +549,13 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 
 - System Logs(Admin Logs) Query Optimization:
   - Currently, the Admin logs takes pretty long time to render. I found out that we used joiined query in there. Can we do some optimizatoin there? Maybe a different query for different tables? Give me your best solution.
+
+
+
+  ### 2026-06-21-admin-rbac-and-crud-fixes
+
+  - In continuation of this fixes, here's some new issues found on the system:
+
+    - Since the superadmin is the only one that have access on locations, when the normal admins navigate on the `Analytics Menu`, it throws a 127.0.0.1 - - [22/Jun/2026 02:02:12] "GET /api/web/org-types HTTP/1.1" 403 - and 127.0.0.1 - - [22/Jun/2026 02:02:14] "GET /api/web/org-types HTTP/1.1" 403 -. Also, it throws a notifcation permission_denied on org_types and locations (which is good) every login of those tenant admin, let's not show it connstantly and hide it on the logs only. How can we fix these issues? alongside of keeping the annalytics showinnng their own locaton's data only.
+
+  
