@@ -281,6 +281,8 @@ function RewardsInventoryPageContent() {
         category: 'Merchandise',
         imageUrl: null
     });
+    const [imagePreview, setImagePreview] = useState(null);
+    const [imageUploading, setImageUploading] = useState(false);
     const fileInputRef = useRef(null);
 
     // Load rewards from API when location changes
@@ -427,6 +429,8 @@ function RewardsInventoryPageContent() {
     const openAddModal = () => {
         setEditingReward(null);
         setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null });
+        setImagePreview(null);
+        setImageUploading(false);
         setShowModal(true);
     };
 
@@ -440,15 +444,26 @@ function RewardsInventoryPageContent() {
             category: r.category,
             imageUrl: r.imageUrl || null
         });
+        setImagePreview(null);
+        setImageUploading(false);
         setShowModal(true);
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setFormData(p => ({ ...p, imageUrl: reader.result }));
-            reader.readAsDataURL(file);
+        if (!file) return;
+        // Local preview only — never persisted as base64
+        setImagePreview(URL.createObjectURL(file));
+        setImageUploading(true);
+        try {
+            const url = await rewardsApi.uploadImage(file);
+            setFormData(p => ({ ...p, imageUrl: url }));
+        } catch (err) {
+            console.error('Image upload failed:', err);
+            alert(err?.message || 'Image upload failed');
+            setImagePreview(null);
+        } finally {
+            setImageUploading(false);
         }
     };
 
@@ -870,7 +885,7 @@ function RewardsInventoryPageContent() {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Image</label>
                                 <div className="flex items-center gap-4">
                                     <div className="w-24 h-24 rounded-xl bg-slate-100 dark:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden">
-                                        {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-cover" /> : <Image size={32} className="text-slate-400" />}
+                                        {(imagePreview || formData.imageUrl) ? <img src={imagePreview || formData.imageUrl || ''} className="w-full h-full object-cover" /> : <Image size={32} className="text-slate-400" />}
                                     </div>
                                     <div>
                                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -912,7 +927,7 @@ function RewardsInventoryPageContent() {
                         </div>
                         <div className="flex gap-3 p-6 pt-0">
                             <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">Cancel</button>
-                            <button type="button" onClick={handleSubmit} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
+                            <button type="button" onClick={handleSubmit} disabled={imageUploading} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
                         </div>
                     </div>
                 </div>

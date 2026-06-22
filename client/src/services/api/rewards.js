@@ -72,3 +72,16 @@ export async function getAssignments(rewardId) {
     const data = await request('GET', `/rewards/${rewardId}/assignments`);
     return data;
 }
+
+/**
+ * Upload a reward image file. Returns the short server URL string
+ * (e.g. "/uploads/rewards/ab12.png") to store in reward.imageUrl.
+ * @param {File} file
+ * @returns {Promise<string>}
+ */
+export async function uploadImage(file) {
+    const form = new FormData();
+    form.append('image', file);
+    const res = await request('POST', '/rewards/image', { body: form });
+    return res.imageUrl;
+}
