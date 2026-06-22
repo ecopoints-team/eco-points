@@ -6,6 +6,7 @@ import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/Sk
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useProgress } from '../../../src/context/ProgressContext';
 import { rewards as rewardsApi, rewardCategories as categoriesApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
@@ -253,8 +254,7 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
 
 function RewardsInventoryPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
-
-    const [rewards, setRewards] = useState([]);
+    const { runWithProgress } = useProgress();
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
@@ -474,10 +474,12 @@ function RewardsInventoryPageContent() {
             return;
         }
         const stockQuantity = parseInt(formData.stockQuantity);
+        const label = editingReward ? 'Saving changes...' : 'Creating reward...';
+        const successLabel = editingReward ? 'Reward updated' : 'Reward created';
 
-        try {
+        await runWithProgress(label, async () => {
             if (editingReward) {
-                const updated = await rewardsApi.update(editingReward.id, {
+                await rewardsApi.update(editingReward.id, {
                     name: formData.name,
                     description: formData.description,
                     pointsRequired: parseInt(formData.pointsRequired),
@@ -510,9 +512,7 @@ function RewardsInventoryPageContent() {
                     locationId: effectiveLocationId
                 }, ...prev]);
             }
-        } catch (err) {
-            console.error('Failed to save reward:', err);
-        }
+        }, { successLabel });
         setShowModal(false);
     };
 
@@ -952,13 +952,12 @@ function RewardsInventoryPageContent() {
                             </button>
                             <button
                                 onClick={async () => {
-                                    try {
+                                    await runWithProgress('Deactivating reward...', async () => {
                                         await rewardsApi.delete(deletingReward.id);
-                                        // Backend soft-deletes (sets is_active=false), update local state to match
                                         setRewards(prev => prev.map(x =>
                                             x.id === deletingReward.id ? { ...x, isActive: false } : x
                                         ));
-                                    } catch (err) { console.error('Deactivate failed:', err); }
+                                    }, { successLabel: 'Reward deactivated' });
                                     setDeletingReward(null);
                                 }}
                                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/25 transition-all"

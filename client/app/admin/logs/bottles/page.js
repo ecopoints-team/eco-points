@@ -5,7 +5,7 @@ import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoade
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { formatDate } from '../../../../src/utils/formatDate';
+import { useProgress } from '../../../../src/context/ProgressContext';import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/api';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { formatField } from '../../../../src/lib/formatField';
@@ -13,8 +13,7 @@ import { detectedClassLabel } from '../../../../src/lib/enumLabels';
 
 function BottleLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations, hasPermission } = useAuth();
-
-    // API-loaded data
+    const { runWithProgress } = useProgress();
     const [allBottleLogs, setAllBottleLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -114,7 +113,7 @@ function BottleLogsPageContent() {
         return pages;
     };
 
-    const exportToCSV = () => {
+    const exportToCSV = () => runWithProgress('Preparing export...', async () => {
         const headers = ['Date', 'Log ID', 'User', 'Email', 'Machine', 'Location', 'Detected Class', 'Confidence %', 'Points', 'Status'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.machineName,
@@ -129,7 +128,7 @@ function BottleLogsPageContent() {
         link.download = `bottle-logs-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-    };
+    }, { successLabel: 'Export ready' });
 
     return (
         <>

@@ -7,6 +7,7 @@ import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import AddRegularUserModal from '../../../src/components/admin/AddRegularUserModal';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useProgress } from '../../../src/context/ProgressContext';
 // getDepartmentName replaced — server returns groupName directly
 import { users as usersApi, groups as groupsApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
@@ -15,6 +16,7 @@ import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield
 
 function ManageUsersPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, hasPermission } = useAuth();
+    const { runWithProgress } = useProgress();
 
     const [users, setUsers] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -94,7 +96,7 @@ function ManageUsersPageContent() {
 
     const saveEdit = async () => {
         if (selectedUser) {
-            try {
+            await runWithProgress('Saving changes...', async () => {
                 const payload = {
                     firstName: editFormData.firstName.trim(),
                     middleName: editFormData.middleName.trim() || null,
@@ -116,9 +118,7 @@ function ManageUsersPageContent() {
                 ));
                 setIsEditModalOpen(false);
                 setSelectedUser(null);
-            } catch (err) {
-                alert(err.message || 'Failed to update user');
-            }
+            }, { successLabel: 'User updated' });
         }
     };
 
@@ -130,15 +130,12 @@ function ManageUsersPageContent() {
 
     const confirmDelete = async () => {
         if (selectedUser) {
-            try {
+            await runWithProgress('Deactivating user...', async () => {
                 await usersApi.delete(selectedUser.id);
-                // Backend soft-deletes (sets is_active=false), update local state to match
                 setUsers(prev => prev.map(u =>
                     u.id === selectedUser.id ? { ...u, isActive: false } : u
                 ));
-            } catch (err) {
-                console.error('Failed to deactivate user:', err);
-            }
+            }, { successLabel: 'User deactivated' });
             setIsDeleteModalOpen(false);
             setSelectedUser(null);
         }
@@ -155,22 +152,18 @@ function ManageUsersPageContent() {
     const confirmAdjustPoints = async () => {
         if (!selectedUser || !adjustAmount) return;
         setIsAdjusting(true);
-        try {
+        await runWithProgress('Adjusting points...', async () => {
             const result = await usersApi.adjustPoints(selectedUser.id, {
                 amount: parseInt(adjustAmount, 10),
                 reason: adjustReason || 'Manual adjustment',
             });
-            // Update local user points (canonical key: pointsBalance)
             setUsers(prev => prev.map(u =>
                 u.id === selectedUser.id ? { ...u, pointsBalance: result.balanceAfter } : u
             ));
             setIsAdjustModalOpen(false);
             setSelectedUser(null);
-        } catch (err) {
-            alert(err.message || 'Failed to adjust points');
-        } finally {
-            setIsAdjusting(false);
-        }
+        }, { successLabel: 'Points adjusted' });
+        setIsAdjusting(false);
     };
 
     // Sortable column state

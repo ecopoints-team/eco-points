@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../../../src/context/AuthContext';
-import RequirePermission from '../../../src/components/admin/RequirePermission';
+import { useProgress } from '../../../src/context/ProgressContext';import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { SkeletonCard, SkeletonChart } from '../../../src/components/admin/SkeletonLoaders';
 import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
@@ -178,6 +178,7 @@ const YearPicker = ({ value, onChange, options, direction = 'down' }) => {
 
 function AnalyticsPageContent() {
     const { currentUser, isSuperAdmin, effectiveLocationId, allLocations, hasPermission } = useAuth();
+    const { runWithProgress } = useProgress();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -478,7 +479,7 @@ function AnalyticsPageContent() {
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
-    const exportCSV = () => {
+    const exportCSV = () => runWithProgress('Preparing export...', async () => {
         if (!data) return;
         const rows = [['Section', 'Metric', 'Value']];
 
@@ -540,7 +541,7 @@ function AnalyticsPageContent() {
         a.click();
         URL.revokeObjectURL(url);
         setShowExportMenu(false);
-    };
+    }, { successLabel: 'Export ready' });
 
     const exportPDF = () => {
         if (!data) return;

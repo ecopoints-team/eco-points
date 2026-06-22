@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Settings, LogOut, ChevronDown, MapPin, Users, Building2, Eye, Sun, Moon, Circle, Bell, ShieldAlert, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useProgress } from '../../context/ProgressContext';
 import { ROLES } from '../../data/roleConfig';
 import { logs as logsApi } from '../../services/api';
 import { formatDate } from '../../utils/formatDate';
@@ -103,6 +104,10 @@ export default function AdminLayout({ children }) {
         setViewAsLocation,
         logout,
     } = useAuth();
+    const { runWithProgress } = useProgress();
+
+    const handleSignOut = () =>
+        runWithProgress('Signing out...', async () => { await logout(); }, { successLabel: 'Signed out' });
 
     // Auth guard — redirect to landing page with login modal if not authenticated or not admin
     const router = useRouter();
@@ -525,7 +530,7 @@ export default function AdminLayout({ children }) {
                                             </Link>
 
                                             <button
-                                                onClick={async () => { await logout(); router.push('/?login=true'); }}
+                                                onClick={async () => { handleSignOut(); router.push('/?login=true'); }}
                                                 className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
                             text-red-600 hover:bg-red-50
                             dark:text-red-400 dark:hover:bg-red-900/10">

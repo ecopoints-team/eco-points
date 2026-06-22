@@ -5,7 +5,7 @@ import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoade
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { formatDate } from '../../../../src/utils/formatDate';
+import { useProgress } from '../../../../src/context/ProgressContext';import { formatDate } from '../../../../src/utils/formatDate';
 import { logs as logsApi } from '../../../../src/services/api';
 import { formatField } from '../../../../src/lib/formatField';
 import { transactionTypeLabel } from '../../../../src/lib/enumLabels';
@@ -13,6 +13,7 @@ import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, Re
 
 function TransactionLogsPageContent() {
     const { effectiveLocationId, isSuperAdmin, allLocations, hasPermission } = useAuth();
+    const { runWithProgress } = useProgress();
 
     const [allLogs, setAllLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -105,7 +106,7 @@ function TransactionLogsPageContent() {
         return pages;
     };
 
-    const exportToCSV = () => {
+    const exportToCSV = () => runWithProgress('Preparing export...', async () => {
         const headers = ['Date', 'ID', 'User', 'Email', 'Type', 'Amount', 'Before', 'After', 'Reference', 'Location'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.userName, log.userEmail, log.transactionType,
@@ -120,7 +121,7 @@ function TransactionLogsPageContent() {
         link.download = `transaction-logs-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-    };
+    }, { successLabel: 'Export ready' });
 
     return (
         <>

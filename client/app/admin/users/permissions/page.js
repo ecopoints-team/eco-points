@@ -7,6 +7,7 @@ import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import AddUserModal from '../../../../src/components/admin/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
+import { useProgress } from '../../../../src/context/ProgressContext';
 import { ROLES } from '../../../../src/data/roleConfig';
 import { users as usersApi } from '../../../../src/services/api';
 import { formatField } from '../../../../src/lib/formatField';
@@ -268,6 +269,7 @@ const UserAccountRow = ({ user, onRoleChange, onEdit, onDelete }) => {
 
 function PermissionsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, allLocations } = useAuth();
+    const { runWithProgress } = useProgress();
     const [roles] = useState(ROLES_DATA);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [allUsers, setAllUsers] = useState([]);
@@ -354,7 +356,7 @@ function PermissionsPageContent() {
 
     const saveEdit = async () => {
         if (selectedUser) {
-            try {
+            await runWithProgress('Saving changes...', async () => {
                 await usersApi.update(selectedUser.id, {
                     firstName: editFormData.firstName.trim(),
                     middleName: editFormData.middleName.trim() || null,
@@ -376,9 +378,7 @@ function PermissionsPageContent() {
                 ));
                 setIsEditModalOpen(false);
                 setSelectedUser(null);
-            } catch (err) {
-                alert(err.message || 'Failed to update admin.');
-            }
+            }, { successLabel: 'Admin updated' });
         }
     };
 
@@ -390,14 +390,12 @@ function PermissionsPageContent() {
 
     const confirmDelete = async () => {
         if (selectedUser) {
-            try {
+            await runWithProgress('Deleting admin...', async () => {
                 await usersApi.delete(selectedUser.id);
                 setAdminUsers(prev => prev.filter(u => u.id !== selectedUser.id));
-                setIsDeleteModalOpen(false);
-                setSelectedUser(null);
-            } catch (err) {
-                alert(err.message || 'Failed to delete admin.');
-            }
+            }, { successLabel: 'Admin deleted' });
+            setIsDeleteModalOpen(false);
+            setSelectedUser(null);
         }
     };
 

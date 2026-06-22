@@ -9,12 +9,11 @@ import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoade
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { useProgress } from '../../../../src/context/ProgressContext';import { Search, Filter, ChevronLeft, ChevronRight, ChevronDown, X, Download, Eye, EyeOff, RefreshCw, ChevronsUpDown, ChevronUp } from 'lucide-react';
 
 function AdminAccessLogsPageContent() {
     const { effectiveLocationId, isSuperAdmin, allLocations, hasPermission } = useAuth();
-
-    // API-loaded data
+    const { runWithProgress } = useProgress();
     const [allAdminLogs, setAllAdminLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -145,7 +144,7 @@ function AdminAccessLogsPageContent() {
         return colors[duty] || 'bg-slate-100 text-slate-600 dark:bg-slate-600 dark:text-slate-300';
     };
 
-    const exportToCSV = () => {
+    const exportToCSV = () => runWithProgress('Preparing export...', async () => {
         const headers = ['Date', 'Log ID', 'Admin ID', 'Admin', 'Role', 'Action', 'Target', 'Category', 'Location', 'Notes'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.adminUserId, log.adminName, log.adminRole,
@@ -160,7 +159,7 @@ function AdminAccessLogsPageContent() {
         link.download = `admin-logs-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-    };
+    }, { successLabel: 'Export ready' });
 
     return (
         <>

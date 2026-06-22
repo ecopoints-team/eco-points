@@ -5,6 +5,7 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { SkeletonCard, SkeletonMachineCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useProgress } from '../../../src/context/ProgressContext';
 import { locations as locationsApi } from '../../../src/services/api';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
@@ -656,6 +657,7 @@ function EditLocationModal({ isOpen, onClose, onSubmit, location, isSuperAdmin }
 // ============================================================================
 function LocationsPageContent() {
     const { isSuperAdmin, setViewAsLocation, allLocations, refreshLocations } = useAuth();
+    const { runWithProgress } = useProgress();
     const [locations, setLocations] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -715,24 +717,20 @@ function LocationsPageContent() {
 
     // Add location handler
     const handleAddLocation = async (newLocation) => {
-        try {
+        await runWithProgress('Creating location...', async () => {
             const created = await locationsApi.create(newLocation);
             setLocations([...locations, created]);
             await refreshLocations();
-        } catch (err) {
-            console.error('Failed to add location:', err);
-        }
+        }, { successLabel: 'Location created' });
     };
 
     // Edit location handler
     const handleEditLocation = async (locationId, updatedData) => {
-        try {
+        await runWithProgress('Saving changes...', async () => {
             const updated = await locationsApi.update(locationId, updatedData);
             setLocations(prev => prev.map(loc => loc.id === locationId ? { ...loc, ...updated } : loc));
             await refreshLocations();
-        } catch (err) {
-            console.error('Failed to update location:', err);
-        }
+        }, { successLabel: 'Location updated' });
     };
 
     // Refresh handler

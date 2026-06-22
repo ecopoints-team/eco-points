@@ -5,15 +5,15 @@ import { SkeletonTableRow } from '../../../../src/components/admin/SkeletonLoade
 import CustomDropdown from '../../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../../src/context/AuthContext';
-import { logs as logsApi, machines as machinesApi } from '../../../../src/services/api';
+import { useProgress } from '../../../../src/context/ProgressContext';
+import { logs as logsApi } from '../../../../src/services/api';
 import { formatDate } from '../../../../src/utils/formatDate';
 import { formatField } from '../../../../src/lib/formatField';
-import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Plus } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 function MachineLogsPageContent() {
     const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations, hasPermission } = useAuth();
-
-    // API-loaded data
+    const { runWithProgress } = useProgress();
     const [allMachineLogs, setAllMachineLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -46,40 +46,6 @@ function MachineLogsPageContent() {
     const [showMachine, setShowMachine] = useState(true);
     const [showLocation, setShowLocation] = useState(true);
     const [showTechnician, setShowTechnician] = useState(true);
-
-    // Create log modal state
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [availableMachines, setAvailableMachines] = useState([]);
-    const [createForm, setCreateForm] = useState({ rvmId: '', actionType: '', notes: '', resolved: false });
-    const [isCreating, setIsCreating] = useState(false);
-
-    useEffect(() => {
-        machinesApi.getAll({ locationId: effectiveLocationId }).then(m => setAvailableMachines(m || [])).catch(() => {});
-    }, [effectiveLocationId]);
-
-    const handleCreateLog = async () => {
-        if (!createForm.rvmId || !createForm.actionType) return;
-        setIsCreating(true);
-        try {
-            const newLog = await logsApi.createMachineLog({
-                rvmId: parseInt(createForm.rvmId),
-                actionType: createForm.actionType,
-                notes: createForm.notes,
-                resolved: createForm.resolved,
-            });
-            setAllMachineLogs(prev => [{
-                ...newLog,
-                id: String(newLog.id),
-                timestampObj: newLog.timestamp ? new Date(newLog.timestamp) : new Date(),
-            }, ...prev]);
-            setIsCreateModalOpen(false);
-            setCreateForm({ rvmId: '', actionType: '', notes: '', resolved: false });
-        } catch (err) {
-            alert(err.message || 'Failed to create log');
-        } finally {
-            setIsCreating(false);
-        }
-    };
 
     const machineNames = [...new Set(allMachineLogs.map(log => log.machineName))];
 
@@ -145,7 +111,7 @@ function MachineLogsPageContent() {
         return pages;
     };
 
-    const exportToCSV = () => {
+    const exportToCSV = () => runWithProgress('Preparing export...', async () => {
         const headers = ['Date', 'Log ID', 'Machine', 'Location', 'Technician', 'Action Type', 'Status', 'Notes'];
         const rows = filteredLogs.map(log => [
             log.timestamp, log.id, log.machineName, log.locationName || '—',
@@ -159,7 +125,7 @@ function MachineLogsPageContent() {
         link.download = `machine-logs-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-    };
+    }, { successLabel: 'Export ready' });
 
     return (
         <>
@@ -175,10 +141,6 @@ function MachineLogsPageContent() {
                         Export CSV
                     </button>
                     )}
-                    <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-bold text-sm shadow-lg shadow-blue-500/20">
-                        <Plus size={18} />
-                        Create Log
-                    </button>
                 </div>
             </div>
 
@@ -349,89 +311,6 @@ function MachineLogsPageContent() {
                 )}
             </div>
 
-            {/* Create Maintenance Log Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Create Maintenance Log</h3>
-                            <button onClick={() => setIsCreateModalOpen(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Machine *</label>
-                                <select
-                                    value={createForm.rvmId}
-                                    onChange={(e) => setCreateForm(prev => ({ ...prev, rvmId: e.target.value }))}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select a machine</option>
-                                    {availableMachines.map(m => (
-                                        <option key={m.id} value={m.id}>{m.name} — {m.locationName || 'Unknown'}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Action Type *</label>
-                                <select
-                                    value={createForm.actionType}
-                                    onChange={(e) => setCreateForm(prev => ({ ...prev, actionType: e.target.value }))}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select action type</option>
-                                    <option value="Routine Checkup">Routine Checkup</option>
-                                    <option value="Sensor Error">Sensor Error</option>
-                                    <option value="Bin Full">Bin Full</option>
-                                    <option value="Bin Emptied">Bin Emptied</option>
-                                    <option value="Hardware Repair">Hardware Repair</option>
-                                    <option value="Software Update">Software Update</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                    <option value="Calibration">Calibration</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
-                                <textarea
-                                    value={createForm.notes}
-                                    onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
-                                    rows={3}
-                                    placeholder="Optional notes..."
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                                />
-                            </div>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={createForm.resolved}
-                                    onChange={(e) => setCreateForm(prev => ({ ...prev, resolved: e.target.checked }))}
-                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">Mark as resolved</span>
-                            </label>
-                        </div>
-
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleCreateLog}
-                                disabled={!createForm.rvmId || !createForm.actionType || isCreating}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Plus size={16} />
-                                {isCreating ? 'Creating...' : 'Create Log'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }

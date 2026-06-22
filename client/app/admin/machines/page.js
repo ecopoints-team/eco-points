@@ -5,6 +5,7 @@ import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { SkeletonMachineCard, SkeletonCard } from '../../../src/components/admin/SkeletonLoaders';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useProgress } from '../../../src/context/ProgressContext';
 import { machines as machinesApi, logs } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
@@ -620,6 +621,7 @@ const MachineCard = ({ machine, onOpenMaintenance, onEdit, locationName, current
 
 function MachinesPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
+    const { runWithProgress } = useProgress();
 
     const [machines, setMachines] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -683,14 +685,12 @@ function MachinesPageContent() {
 
     // Edit machine handler
     const handleEditMachine = async (machineId, updatedData) => {
-        try {
+        await runWithProgress('Saving changes...', async () => {
             const updated = await machinesApi.update(machineId, updatedData);
             setMachines(prev => prev.map(m => m.id === String(machineId) ? { ...m, ...updated, id: String(updated.id || machineId) } : m));
             setShowEditModal(false);
             setEditingMachine(null);
-        } catch (err) {
-            alert(err.message || 'Failed to update machine');
-        }
+        }, { successLabel: 'Machine updated' });
     };
 
     // Refresh handler
@@ -699,7 +699,7 @@ function MachinesPageContent() {
     };
 
     const handleAddMaintenanceLog = async (machineId, newLog) => {
-        try {
+        await runWithProgress('Logging maintenance...', async () => {
             await logs.createMachineLog({
                 rvmId: parseInt(machineId, 10),
                 actionType: newLog.actionType || newLog.action_type || newLog.type,
@@ -707,19 +707,15 @@ function MachinesPageContent() {
                 notes: newLog.notes || '',
             });
             setRefreshKey(k => k + 1);
-        } catch (err) {
-            alert(err.message || 'Failed to create maintenance log');
-        }
+        }, { successLabel: 'Maintenance logged' });
     };
 
     // Add machine handler
     const handleAddMachine = async (newMachine) => {
-        try {
+        await runWithProgress('Adding machine...', async () => {
             const created = await machinesApi.create(newMachine);
             setMachines(prev => [{ ...created, id: String(created.id) }, ...prev]);
-        } catch (err) {
-            alert(err.message || 'Failed to add machine');
-        }
+        }, { successLabel: 'Machine added' });
     };
 
     return (
