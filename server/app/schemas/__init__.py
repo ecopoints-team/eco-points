@@ -261,7 +261,7 @@ class SecurityConfigUpdateSchema(_StrictModel):
     """Body for ``PUT /api/web/settings/security``."""
 
     twoFactorRequired: Optional[bool] = None
-    twoFactorMethod: Optional[Literal['email', 'sms']] = None
+    twoFactorMethod: Optional[Literal['email']] = None
     sessionTimeoutMinutes: Optional[int] = None
     maxLoginAttempts: Optional[int] = None
     lockoutDurationMinutes: Optional[int] = None

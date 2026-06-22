@@ -107,7 +107,7 @@ function SettingsPageContent() {
         setSecurityLoading(true);
         try {
             const config = await settingsApi.getSecurityConfig(effectiveLocationId);
-            setSecurityConfig(config);
+            setSecurityConfig({ ...config, twoFactorMethod: 'email' });
         } catch (err) {
             console.error('Failed to load security config:', err);
             setSecurityConfig({ twoFactorRequired: false, twoFactorMethod: 'email', sessionTimeoutMinutes: 1440, maxLoginAttempts: 5, lockoutDurationMinutes: 15 });
@@ -616,7 +616,7 @@ function SettingsPageContent() {
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Default 2FA Method</label>
                                             <CustomDropdown value={securityConfig.twoFactorMethod}
                                                 onChange={(v) => updateSecurityField('twoFactorMethod', v)}
-                                                options={[{ value: 'email', label: 'Email OTP' }, { value: 'sms', label: 'SMS OTP' }]} showPlaceholder={false} />
+                                                options={[{ value: 'email', label: 'Email OTP' }]} showPlaceholder={false} />
                                         </div>
                                     )}
                                 </div>

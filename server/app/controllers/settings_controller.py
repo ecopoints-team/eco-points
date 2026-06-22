@@ -403,7 +403,7 @@ def update_security_config(current_user, payload):
         method = payload.twoFactorMethod
         config = {
             'twoFactorRequired': bool(payload.twoFactorRequired) if payload.twoFactorRequired is not None else False,
-            'twoFactorMethod': method if method in ('email', 'sms') else 'email',
+            'twoFactorMethod': 'email',  # email is the only supported 2FA channel
             'sessionTimeoutMinutes': max(5, min(int(payload.sessionTimeoutMinutes if payload.sessionTimeoutMinutes is not None else 1440), 10080)),
             'maxLoginAttempts': max(3, min(int(payload.maxLoginAttempts if payload.maxLoginAttempts is not None else 5), 20)),
             'lockoutDurationMinutes': max(5, min(int(payload.lockoutDurationMinutes if payload.lockoutDurationMinutes is not None else 15), 1440)),
