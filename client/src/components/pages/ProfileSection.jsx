@@ -135,6 +135,34 @@ async function getCroppedImg(imageSrc, pixelCrop) {
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
 }
 
+// ─────────────────────────────────────────────
+// Username format validator (pure, non-exported)
+// Priority-ordered rules — first failure wins.
+// Returns an error string, or null when all rules pass.
+// ─────────────────────────────────────────────
+function validateUsernameFormat(value) {
+  // Rule 1: Empty string → no error, no availability check
+  if (value === '') return null;
+
+  // Rule 2: Contains space → spaces error (highest priority)
+  if (/\s/.test(value)) return 'No spaces allowed.';
+
+  // Rule 3: Does not start with a letter
+  if (!/^[a-zA-Z]/.test(value)) return 'Must start with a letter.';
+
+  // Rule 4: Too short (1–3 chars)
+  if (value.length < 4) return 'Must be at least 4 characters.';
+
+  // Rule 5: Too long (> 30 chars)
+  if (value.length > 30) return 'Username must be 30 characters or fewer.';
+
+  // Rule 6: Disallowed characters
+  if (/[^a-zA-Z0-9_.\-]/.test(value)) return 'Only letters, numbers, underscores, hyphens, and dots are allowed.';
+
+  // All rules pass
+  return null;
+}
+
 export default function ProfileSection() {
   const { currentUser, refreshUser } = useAuth();
   const router = useRouter();
@@ -558,6 +586,9 @@ export default function ProfileSection() {
   const [editMiddleName, setEditMiddleName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editUsername, setEditUsername] = useState("");
+  // '' | 'checking' | 'available' | 'taken' | 'error'
+  const [usernameCheckStatus, setUsernameCheckStatus] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   // editPhone stores only the 10-digit local part (no +63 prefix)
   const [editPhone, setEditPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -605,6 +636,8 @@ export default function ProfileSection() {
     const rawPhone = currentUser?.phone || "";
     setEditPhone(rawPhone.startsWith('+63') ? rawPhone.slice(3) : rawPhone);
     setPhoneError("");
+    setUsernameCheckStatus('');
+    setUsernameError('');
 
     // Reset change password state
     setIsChangingPassword(false);
@@ -621,6 +654,64 @@ export default function ProfileSection() {
 
     setIsEditing(true);
   };
+
+  // ── Debounced username availability check ──
+  // Runs synchronous format validation first; if that passes, debounces the
+  // backend uniqueness check. A `cancelled` flag + clearTimeout ensure stale
+  // timers and in-flight responses are discarded on every new keystroke.
+  useEffect(() => {
+    // Synchronous format check — runs on every input change
+    const formatError = validateUsernameFormat(editUsername);
+    if (formatError) {
+      setUsernameError(formatError);
+      setUsernameCheckStatus('');
+      return;
+    }
+
+    // Empty input → neutral state, no availability check
+    if (!editUsername) {
+      setUsernameError('');
+      setUsernameCheckStatus('');
+      return;
+    }
+
+    // Case-insensitive match of own saved username → immediately available,
+    // no API call needed (Requirement 2.7 / 3.7)
+    if (editUsername.toLowerCase() === (currentUser?.username || '').toLowerCase()) {
+      setUsernameError('');
+      setUsernameCheckStatus('available');
+      return;
+    }
+
+    // Format passes and value differs from saved → debounce the availability check
+    setUsernameCheckStatus('checking');
+    setUsernameError('');
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const available = await authApi.checkUsernameAvailability(editUsername);
+        if (cancelled) return;
+        if (available) {
+          setUsernameCheckStatus('available');
+          setUsernameError('');
+        } else {
+          setUsernameCheckStatus('taken');
+          setUsernameError('Username already taken.');
+        }
+      } catch {
+        if (cancelled) return;
+        // Network/server error — clear spinner, don't block save (Requirement 2.6 / 3.6)
+        setUsernameCheckStatus('error');
+        setUsernameError('');
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [editUsername, currentUser?.username]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -722,6 +813,18 @@ export default function ProfileSection() {
       setIsSubmitting(false);
     }
   };
+
+  // Derived: should the save button be blocked due to username validation state?
+  // Empty username → optional, don't block. Format error or taken → block.
+  // Checking or debounce pending (status '') → block. Available or network error → don't block.
+  const usernameBlocksSave = (() => {
+    if (!editUsername) return false;                          // empty → optional, don't block
+    if (usernameError) return true;                          // format error or "taken"
+    if (usernameCheckStatus === 'checking') return true;     // availability pending
+    if (usernameCheckStatus === '') return true;             // format valid but check not fired yet (debounce window)
+    // 'available' or 'error' (network failure) → don't block
+    return false;
+  })();
 
   return (
     <section className="min-h-screen p-4 sm:p-6 relative">
@@ -1153,16 +1256,35 @@ export default function ProfileSection() {
                   {/* USERNAME — editable */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Username</label>
-                    <input
-                      onFocus={() => setIsFocused("username")}
-                      onBlur={() => setIsFocused(null)}
-                      type="text"
-                      placeholder="Username"
-                      value={editUsername}
-                      onChange={(e) => setEditUsername(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-slate-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 text-sm font-semibold text-slate-800 truncate"
-                      style={fonts.body}
-                    />
+                    <div className="relative">
+                      <input
+                        onFocus={() => setIsFocused("username")}
+                        onBlur={() => setIsFocused(null)}
+                        type="text"
+                        placeholder="Username"
+                        value={editUsername}
+                        onChange={(e) => setEditUsername(e.target.value)}
+                        className={`w-full p-3 pr-9 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300/50 text-sm font-semibold text-slate-800 truncate ${
+                          usernameError
+                            ? 'border-rose-400 focus:border-rose-400'
+                            : usernameCheckStatus === 'available'
+                              ? 'border-emerald-400 focus:border-emerald-400'
+                              : 'border-slate-200 focus:border-emerald-300'
+                        }`}
+                        style={fonts.body}
+                      />
+                      {/* Right-side icon */}
+                      {usernameCheckStatus === 'checking' && !usernameError && (
+                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
+                      )}
+                      {usernameCheckStatus === 'available' && !usernameError && (
+                        <CheckCircle className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                      )}
+                    </div>
+                    {/* Inline error */}
+                    {usernameError && (
+                      <p className="text-[11px] text-rose-500 font-semibold mt-1 px-1" style={fonts.body}>{usernameError}</p>
+                    )}
                   </div>
                 </div>
 
@@ -1444,7 +1566,7 @@ export default function ProfileSection() {
                   className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50" style={fonts.body}>
                   Cancel
                 </button>
-                <button onClick={handleSave} disabled={isSubmitting}
+                <button onClick={handleSave} disabled={isSubmitting || usernameBlocksSave}
                   className="px-5 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm hover:bg-[#065F46] shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50 flex items-center gap-2 transition-all active:scale-95" style={fonts.body}>
                   {isSubmitting && <Loader2 size={16} className="animate-spin" />}
                   {isSubmitting ? "Saving..." : "Save"}

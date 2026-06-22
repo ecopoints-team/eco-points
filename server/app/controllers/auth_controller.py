@@ -1081,3 +1081,37 @@ def reset_password(payload):
         db.session.rollback()
         print(f'RESET-PASSWORD ERROR: {e}')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ── Username Availability Check ───────────────────────────────────────────
+
+@auth_bp.route('/check-username', methods=['GET'])
+@token_required
+def check_username(current_user):
+    """Check whether a username is available for the requesting user.
+
+    Query param: ?username=<value>
+
+    Returns:
+        200 { "available": true }  — username is free or belongs to the caller
+        200 { "available": false } — username is taken by another account
+        400 — missing/blank param or param too long
+        401 — no valid auth token (handled by @token_required)
+        500 — unexpected server error
+    """
+    username = request.args.get('username', '').strip()
+
+    if not username:
+        return jsonify({'success': False, 'error': 'username parameter required'}), 400
+    if len(username) > 100:
+        return jsonify({'success': False, 'error': 'username too long'}), 400
+
+    try:
+        # Case-insensitive match; same as the requesting user → available
+        existing = User.query.filter(
+            func.lower(User.username) == func.lower(username),
+            User.id != current_user.id
+        ).first()
+        return jsonify({'available': existing is None}), 200
+    except Exception:
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
