@@ -29,9 +29,9 @@ import { request } from './client';
  * follow up with `verifyOtp(...)`. The response body may still echo the JWT
  * during the Phase 4 transition window; the Client deliberately ignores it.
  */
-export async function login(identifier, password) {
+export async function login(identifier, password, captchaToken) {
     return await request('POST', '/auth/login', {
-        body: { email: identifier, password },
+        body: { email: identifier, password, captchaToken },
     });
 }
 

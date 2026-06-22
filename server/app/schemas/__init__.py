@@ -82,6 +82,7 @@ class LoginSchema(_StrictModel):
     username: Optional[str] = None
     identifier: Optional[str] = None
     password: Optional[str] = None
+    captchaToken: Optional[str] = None
 
 
 class VerifyOtpSchema(_StrictModel):

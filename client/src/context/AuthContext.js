@@ -119,8 +119,8 @@ export function AuthProvider({ children }) {
     }, [effectiveLocationId, allLocations]);
 
     // ── Actions ─────────────────────────────────────────────────────────
-    const login = useCallback(async (identifier, password) => {
-        const data = await authApi.login(identifier, password);
+    const login = useCallback(async (identifier, password, captchaToken) => {
+        const data = await authApi.login(identifier, password, captchaToken);
         // Skip the post-login load on 2FA challenges — the cookie is only
         // issued after `verifyOtp`, so `/locations` would 401 here.
         if (data && data.user) {

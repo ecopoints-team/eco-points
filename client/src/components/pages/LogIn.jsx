@@ -407,6 +407,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [showCaptchaPopup, setShowCaptchaPopup] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
   const recaptchaRef = useRef(null);
 
   // Password mismatch shake
@@ -681,6 +682,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   const handleCaptchaChange = (value) => {
     if (value) {
       setCaptchaVerified(true);
+      setCaptchaToken(value);
       setError(""); // Clear any previous error
       // Fade out the CAPTCHA popup after a short delay
       setTimeout(() => {
@@ -705,7 +707,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     setError("");
 
     try {
-      const data = await login(loginCredential, loginPassword);
+      const data = await login(loginCredential, loginPassword, captchaToken);
       setFailedAttempts(0);
       setShowCaptcha(false);
       setShowCaptchaPopup(false);
@@ -730,6 +732,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
         recaptchaRef.current.reset();
       }
       setCaptchaVerified(false);
+      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -978,7 +981,9 @@ export default function LogIn({ onClose, initialSignUp = false }) {
                     ref={recaptchaRef}
                     sitekey={
                       process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-                      "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                      (process.env.NODE_ENV !== 'production'
+                        ? '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
+                        : undefined)
                     }
                     onChange={handleCaptchaChange}
                     size="normal"

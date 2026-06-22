@@ -423,6 +423,24 @@ def login(payload):
             _log_attempt(identifier, ip, user.id if user else None, False, 'locked_out')
             return jsonify({'success': False, 'error': f'Account is temporarily locked. Try again in {remaining} minute(s).'}), 429
 
+        # ── CAPTCHA gate ──
+        # The client shows the reCAPTCHA widget after the first failed login.
+        # Require + verify the token whenever this identifier has a recent
+        # failure on record, so the server actually enforces it (the widget
+        # alone is bypassable).
+        from ..services.captcha_service import verify_captcha
+        _captcha_cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
+        _recent_failures = LoginAttempt.query.filter(
+            LoginAttempt.identifier == identifier,
+            LoginAttempt.is_success == False,  # noqa: E712
+            LoginAttempt.attempted_at >= _captcha_cutoff,
+        ).count()
+        if _recent_failures > 0:
+            _ok, _captcha_err = verify_captcha(payload.captchaToken, ip)
+            if not _ok:
+                _log_attempt(identifier, ip, user.id if user else None, False, 'captcha_failed')
+                return jsonify({'success': False, 'error': _captcha_err}), 400
+
         if not user:
             _log_attempt(identifier, ip, None, False, 'user_not_found')
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
