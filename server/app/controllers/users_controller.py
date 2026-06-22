@@ -9,7 +9,7 @@ Phase 1 is a pure restructuring: decorators on every moved route are
 preserved byte-for-byte. The `@admin_required` → `@permission_required`
 substitution is the work of Phase 2.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
 from ..models import (
     Organization,
@@ -49,9 +49,15 @@ def get_users(current_user):
     """List users. Supports filters: ?role=, ?user_type=, ?location_id=, ?is_admin=."""
     try:
         loc_id = _scope_location_id(current_user)
-        query = db.session.query(User).join(CommunityGroup)
         if loc_id:
-            query = query.filter(CommunityGroup.organization_id == loc_id)
+            # Scoped: INNER join is fine — only users in this org's community groups
+            query = db.session.query(User).join(CommunityGroup).filter(
+                CommunityGroup.organization_id == loc_id
+            )
+        else:
+            # Unscoped (superadmin "All locations"): outerjoin so users without
+            # a community_group row are still included
+            query = db.session.query(User).outerjoin(CommunityGroup)
 
         role_filter = request.args.get('role')
         if role_filter:
@@ -73,7 +79,8 @@ def get_users(current_user):
         query = query.order_by(User.id.asc())
         users, pagination = _paginate(query)
         return jsonify({'success': True, 'users': [_serialize_user(u) for u in users], 'pagination': pagination}), 200
-    except Exception as e:
+    except Exception:
+        current_app.logger.exception('get_users failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
@@ -100,7 +107,7 @@ def get_user(current_user, user_id):
 
 @users_bp.route('', methods=['POST'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='create')
 @validate_request(UserCreateSchema)
 def create_user(current_user, payload):
     """Create a new user (regular or admin).
@@ -254,7 +261,7 @@ def create_user(current_user, payload):
 
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='edit')
 @validate_request(UserUpdateSchema)
 def update_user(current_user, user_id, payload):
     """Update user fields."""
@@ -377,7 +384,7 @@ def update_user(current_user, user_id, payload):
 
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='delete')
 def delete_user(current_user, user_id):
     """Deactivate a user (soft delete)."""
     try:
@@ -408,7 +415,7 @@ def delete_user(current_user, user_id):
 
 @users_bp.route('/<int:user_id>/adjust-points', methods=['POST'])
 @token_required
-@permission_required('users')
+@permission_required('users', action='edit')
 @validate_request(UserAdjustPointsSchema)
 def adjust_user_points(current_user, user_id, payload):
     """Manually adjust a user's point balance (add or subtract)."""

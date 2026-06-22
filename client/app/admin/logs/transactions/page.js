@@ -12,7 +12,7 @@ import { transactionTypeLabel } from '../../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
 function TransactionLogsPageContent() {
-    const { effectiveLocationId, isSuperAdmin, allLocations } = useAuth();
+    const { effectiveLocationId, isSuperAdmin, allLocations, hasPermission } = useAuth();
 
     const [allLogs, setAllLogs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -129,9 +129,11 @@ function TransactionLogsPageContent() {
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Transaction Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">Track all point earn, redeem, and adjustment transactions</p>
                 </div>
+                {hasPermission('logs', 'export') && (
                 <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                     <Download size={18} /> Export CSV
                 </button>
+                )}
             </div>
 
 

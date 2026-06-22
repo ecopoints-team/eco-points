@@ -12,7 +12,7 @@ import { redemptionStatusLabel } from '../../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, ChevronRight as ChevronRightIcon, QrCode, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 function RewardsLogsPageContent() {
-    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations, hasPermission } = useAuth();
 
     // API-loaded data
     const [allRewardsLogs, setAllRewardsLogs] = useState([]);
@@ -345,6 +345,7 @@ function RewardsLogsPageContent() {
                         <QrCode size={18} />
                         Scan QR Code
                     </button>
+                    {hasPermission('logs', 'export') && (
                     <button
                         onClick={exportToCSV}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold text-sm shadow-lg dark:bg-slate-700 dark:hover:bg-slate-600"
@@ -352,6 +353,7 @@ function RewardsLogsPageContent() {
                         <Download size={18} />
                         Export CSV
                     </button>
+                    )}
                 </div>
             </div>
 

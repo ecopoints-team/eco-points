@@ -14,6 +14,7 @@ from ..models import (
     LoginAttempt, NotificationSetting,
 )
 from ..middleware import token_required, get_user_org_id, ROLE_PERMISSIONS, validate_request, compute_qr_suffix
+from ..permissions import permissions_for_role
 from ..services.password_policy import validate_password_policy
 from ..schemas import (
     LoginSchema,
@@ -360,6 +361,7 @@ def _serialize_auth_user(u):
         'username': u.username, 'email': u.email, 'phone': u.phone,
         'displayId': u.display_id,
         'role': role_value, 'permission_categories': permission_categories,
+        'permissions': permissions_for_role(u.role),
         'userType': user_type_value,
         'isActive': u.is_active, 'locationId': location_id,
         'locationName': (org['name'] if org else None),
@@ -373,7 +375,8 @@ def _serialize_auth_user(u):
         'bestStreak': u.wallet.best_streak if u.wallet else 0,
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
-        'lastUsernameChange': u.last_username_change.isoformat() if u.last_username_change else None,
+        'lastUsernameChange': u.last_username_change.isoformat() + 'Z' if u.last_username_change else None,
+        'usernameChangedAt': u.last_username_change.isoformat() + 'Z' if u.last_username_change else None,
         'otpEnabled': two_fa_enabled, 'otpMethod': two_fa_method,
         # Phase 3 task 8.2 — alignment-doc §15 derived fields.
         'qrPayload': qr_payload,
@@ -656,7 +659,12 @@ def update_profile(current_user, payload):
             if new_username != current_user.username:
                 # Enforce 30-day cooldown
                 if current_user.last_username_change:
-                    days_since = (datetime.now(timezone.utc) - current_user.last_username_change).days
+                    # last_username_change may be stored as a naive UTC datetime;
+                    # make it timezone-aware before subtracting to avoid TypeError.
+                    last_change = current_user.last_username_change
+                    if last_change.tzinfo is None:
+                        last_change = last_change.replace(tzinfo=timezone.utc)
+                    days_since = (datetime.now(timezone.utc) - last_change).days
                     if days_since < 30:
                         remaining = 30 - days_since
                         return jsonify({
@@ -1079,3 +1087,37 @@ def reset_password(payload):
         db.session.rollback()
         print(f'RESET-PASSWORD ERROR: {e}')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
+# ── Username Availability Check ───────────────────────────────────────────
+
+@auth_bp.route('/check-username', methods=['GET'])
+@token_required
+def check_username(current_user):
+    """Check whether a username is available for the requesting user.
+
+    Query param: ?username=<value>
+
+    Returns:
+        200 { "available": true }  — username is free or belongs to the caller
+        200 { "available": false } — username is taken by another account
+        400 — missing/blank param or param too long
+        401 — no valid auth token (handled by @token_required)
+        500 — unexpected server error
+    """
+    username = request.args.get('username', '').strip()
+
+    if not username:
+        return jsonify({'success': False, 'error': 'username parameter required'}), 400
+    if len(username) > 100:
+        return jsonify({'success': False, 'error': 'username too long'}), 400
+
+    try:
+        # Case-insensitive match; same as the requesting user → available
+        existing = User.query.filter(
+            func.lower(User.username) == func.lower(username),
+            User.id != current_user.id
+        ).first()
+        return jsonify({'available': existing is None}), 200
+    except Exception:
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500

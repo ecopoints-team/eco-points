@@ -11,7 +11,7 @@ import { formatField } from '../../../../src/lib/formatField';
 import { Search, Filter, ChevronLeft, ChevronRight, X, ChevronDown, Download, RefreshCw, ChevronsUpDown, ChevronUp, Eye, EyeOff, Plus } from 'lucide-react';
 
 function MachineLogsPageContent() {
-    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations } = useAuth();
+    const { currentUser, isSuperAdmin, viewAsLocationId, effectiveLocationId, allLocations, hasPermission } = useAuth();
 
     // API-loaded data
     const [allMachineLogs, setAllMachineLogs] = useState([]);
@@ -169,10 +169,12 @@ function MachineLogsPageContent() {
                     <p className="text-slate-500 dark:text-slate-400">Maintenance and issue logs for RVMs</p>
                 </div>
                 <div className="flex gap-3">
+                    {hasPermission('logs', 'export') && (
                     <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold text-sm shadow-lg shadow-emerald-500/20">
                         <Download size={18} />
                         Export CSV
                     </button>
+                    )}
                     <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-bold text-sm shadow-lg shadow-blue-500/20">
                         <Plus size={18} />
                         Create Log

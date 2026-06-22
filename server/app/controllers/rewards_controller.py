@@ -72,7 +72,7 @@ def get_rewards(current_user):
 
 @rewards_bp.route('', methods=['POST'])
 @token_required
-@permission_required('rewards')
+@permission_required('rewards', action='create')
 @validate_request(RewardCreateSchema)
 def create_reward(current_user, payload):
     """Create a new reward."""
@@ -115,7 +115,7 @@ def create_reward(current_user, payload):
 
 @rewards_bp.route('/<int:reward_id>', methods=['PUT'])
 @token_required
-@permission_required('rewards')
+@permission_required('rewards', action='edit')
 @validate_request(RewardUpdateSchema)
 def update_reward(current_user, reward_id, payload):
     """Update a reward."""
@@ -176,7 +176,7 @@ def update_reward(current_user, reward_id, payload):
 
 @rewards_bp.route('/<int:reward_id>', methods=['DELETE'])
 @token_required
-@permission_required('rewards')
+@permission_required('rewards', action='delete')
 def delete_reward(current_user, reward_id):
     """Deactivate a reward."""
     try:

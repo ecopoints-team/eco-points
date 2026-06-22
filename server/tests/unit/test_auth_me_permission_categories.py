@@ -170,3 +170,20 @@ def test_get_me_endpoint_returns_role_and_permission_categories(app_ctx):
     user_obj = body['user']
     assert user_obj['role'] == role
     assert user_obj['permission_categories'] == sorted(ROLE_PERMISSIONS[role])
+
+
+def test_serialize_auth_user_includes_per_verb_permissions(app_ctx):
+    """The /auth/me payload MUST include a per-verb `permissions` object
+    derived from app.permissions.permissions_for_role."""
+    from app.permissions import permissions_for_role
+
+    user_id = _seed_user(app_ctx, 'auditor')
+    with app_ctx.app_context():
+        user = db.session.get(User, user_id)
+        payload = _serialize_auth_user(user)
+
+    assert 'permissions' in payload
+    assert payload['permissions'] == permissions_for_role('auditor')
+    # auditor can view users but not edit
+    assert 'view' in payload['permissions']['users']
+    assert 'edit' not in payload['permissions'].get('users', [])

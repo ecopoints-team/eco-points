@@ -222,7 +222,10 @@ export default function AdminLayout({ children }) {
                 const accessLogs = await logsApi.getAccess(effectiveLocationId);
                 if (!cancelled) {
                     setNotifications(
-                        (accessLogs || []).slice(0, 10).map(log => ({
+                        (accessLogs || [])
+                            .filter(log => log.action !== 'permission_denied')
+                            .slice(0, 10)
+                            .map(log => ({
                             id: log.id,
                             title: log.action,
                             description: `${log.adminName} — ${log.target !== '-' ? log.target : log.category}`,

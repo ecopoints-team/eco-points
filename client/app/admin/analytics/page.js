@@ -177,7 +177,7 @@ const YearPicker = ({ value, onChange, options, direction = 'down' }) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 function AnalyticsPageContent() {
-    const { currentUser, isSuperAdmin, effectiveLocationId, allLocations } = useAuth();
+    const { currentUser, isSuperAdmin, effectiveLocationId, allLocations, hasPermission } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -702,6 +702,7 @@ function AnalyticsPageContent() {
                     </button>
 
                     {/* Export Button */}
+                    {hasPermission('analytics', 'export') && (
                     <div className="relative" ref={exportRef}>
                         <button
                             onClick={() => setShowExportMenu(!showExportMenu)}
@@ -744,6 +745,7 @@ function AnalyticsPageContent() {
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
             </div>
 

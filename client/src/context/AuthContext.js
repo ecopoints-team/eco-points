@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth as authApi, locations as locationsApi } from '../services/api';
-import { ROLES } from '../data/roleConfig';
 
 // ============================================================================
 // AUTH CONTEXT — JWT-Based Auth, Location Scoping, Permissions
@@ -19,8 +18,10 @@ export const ADMIN_ROLES = new Set([
 // Helper: attach role-based permissions to user object so existing code works
 function enrichUser(user) {
     if (!user) return null;
-    const roleConfig = ROLES[user.role];
-    return { ...user, permissions: roleConfig?.permissions || {} };
+    // Per-verb permissions are authoritative from the server (/auth/me).
+    // `user.permissions` is { category: [verbs] }. Keep as-is; hasPermission
+    // reads it directly. No client-side roleConfig permission lookup.
+    return { ...user, permissions: user.permissions || {} };
 }
 
 export function AuthProvider({ children }) {
@@ -147,7 +148,8 @@ export function AuthProvider({ children }) {
     const hasPermission = useCallback((module, action) => {
         if (!currentUser) return false;
         if (currentUser.role === 'superadmin') return true;
-        return currentUser.permissions?.[module]?.[action] || false;
+        const verbs = currentUser.permissions?.[module];
+        return Array.isArray(verbs) && verbs.includes(action);
     }, [currentUser]);
 
     const canAccessLocation = useCallback((locationId) => {

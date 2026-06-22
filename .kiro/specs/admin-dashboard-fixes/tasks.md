@@ -1,5 +1,9 @@
 # Implementation Plan: Admin Dashboard Fixes
 
+## Overview
+
+Implementation plan for the admin dashboard fixes. Parts 1–6 and the website-polishing/ERD-relocation sections capture completed phase work. The "Admin CRUD Bug Fixes (C1–C6)" section (tasks 39–55) follows the exploratory bugfix workflow — exploration + preservation tests first, then fixes, then re-run the same tests — covering the six active bug conditions: C1 Add Machine, C2 Edit Machine, C3 Maintenance log, C4 search crash / `getLocationName` TDZ, C5 All-locations user filter, C6 Add User bad request. See the Task Dependency Graph for execution waves.
+
 ## Tasks
 
 - [x] 1. Phase 1 — Field Validation Hardening
@@ -341,3 +345,282 @@ Plan: `docs/superpowers/plans/2026-06-18-erd-field-relocation-and-form-simplific
   - [x] 38.3 Client build passes (`npm run build` — Compiled successfully in 13.1s, 25 pages)
   - [x] 38.4 API service files clean — no stale `groupType` references in `client/src/services/api/`
   - [x] 38.5 Branch `feat/erd-field-relocation-frontend` pushed to origin
+
+---
+
+## Admin CRUD Bug Fixes (Bug Conditions C1–C6)
+
+Exploratory bugfix workflow: write exploration + preservation tests BEFORE the fix, then implement, then re-run the same tests. JS tests use `fast-check` (client, scoped to concrete failing inputs for deterministic bugs); Python tests use `hypothesis`/`pytest` (server). Exploration tests MUST FAIL on unfixed code; preservation tests MUST PASS on unfixed code.
+
+### Exploration Tests (write BEFORE any fix — expected to FAIL)
+
+- [x] 39. Write bug condition exploration test — C1 Add Machine
+  - **Property 1: Bug Condition** - Add Machine Does Not Persist
+  - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists. DO NOT fix the test or code when it fails.
+  - **GOAL**: Surface counterexamples proving submitting the Add Machine modal does not create a machine.
+  - **Scoped PBT Approach**: Scope to concrete valid payloads `{name, machineUuid, locationName, organizationId}`; for all valid inputs, `machinesApi.create` is invoked and a new card appears.
+  - Bug Condition: `isBugCondition(input)` = superadmin submits valid Add Machine form (`app/admin/machines/page.js` `AddMachineModal.handleSubmit` → `handleAddMachine` → `machinesApi.create`)
+  - Expected Behavior asserted: machine created via `POST /machines` and new card rendered with "Online" summary updated
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS**. Document counterexample (e.g. payload shape mismatch / create not called).
+  - _Requirements: 1.1_
+
+- [x] 40. Write bug condition exploration test — C2 Edit Machine
+  - **Property 2: Bug Condition** - Edit Machine Does Not Persist
+  - **CRITICAL**: This test MUST FAIL on unfixed code. DO NOT fix when it fails.
+  - **GOAL**: Surface counterexamples proving Edit Machine save does not persist changes.
+  - **Scoped PBT Approach**: For all changed field values, `EditMachineModal.handleSubmit` → `handleEditMachine` → `machinesApi.update(id, data)` persists and the card reflects new values.
+  - Bug Condition: `isBugCondition(input)` = admin changes a field in Edit Machine modal and saves (`app/admin/machines/page.js:163` `handleSubmit`, `:712` `handleEditMachine`)
+  - Expected Behavior asserted: change persisted via `PUT /machines/:id`, card shows updated values
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS**. Document counterexample.
+  - _Requirements: 1.2_
+
+- [x] 41. Write bug condition exploration test — C3 Maintenance Log
+  - **Property 3: Bug Condition** - Maintenance Log Not Created
+  - **CRITICAL**: This test MUST FAIL on unfixed code. DO NOT fix when it fails.
+  - **GOAL**: Surface counterexamples proving the Maintenance modal does not create a log.
+  - **Scoped PBT Approach**: For all valid `{technicianId, actionType, notes}`, `MaintenanceModal.handleSubmit` → `handleAddMaintenanceLog` → `logs.createMachineLog` creates a log.
+  - Bug Condition: `isBugCondition(input)` = admin submits Maintenance modal with valid data (`app/admin/machines/page.js:296` `handleSubmit`, `handleAddMaintenanceLog`)
+  - Expected Behavior asserted: log created via logs API and reflected
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS**. Document counterexample.
+  - _Requirements: 1.3_
+
+- [x] 42. Write bug condition exploration test — C4 Machine Search Crash (getLocationName TDZ)
+  - **Property 4: Bug Condition** - Search Throws getLocationName TDZ
+  - **CRITICAL**: This test MUST FAIL on unfixed code. DO NOT fix when it fails.
+  - **GOAL**: Reproduce `Uncaught TypeError: getLocationName is not a function` at `app/admin/machines/page.js:660`.
+  - **Scoped PBT Approach** (deterministic bug): scope to the concrete failing case — set `searchQuery` to any non-empty string while machines exist, evaluate `displayedMachines` useMemo.
+  - Bug Condition: `isBugCondition(input)` = any non-empty `searchQuery` → `displayedMachines` calls `getLocationName(m.locationId)` (L660) which is a `const` arrow declared later at L722 (temporal dead zone)
+  - Expected Behavior asserted: filtering returns results without throwing (Req 2.4 — `getLocationName` defined/hoisted before use)
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS (ReferenceError/TypeError)**. Document counterexample (e.g. `searchQuery="a"` throws).
+  - _Requirements: 1.4_
+
+- [x] 43. Write bug condition exploration test — C5 All-Locations User Filter
+  - **Property 5: Bug Condition** - All-Locations Omits Users
+  - **CRITICAL**: This test MUST FAIL on unfixed code. DO NOT fix when it fails.
+  - **GOAL**: Surface counterexamples proving "View As = All locations" omits users from some orgs (e.g. EPTU).
+  - **Scoped PBT Approach**: For all users including those with null/missing `community_group`, `GET /users` with no `location_id` scope returns every user. Seed a user whose `CommunityGroup` linkage is absent.
+  - Bug Condition: `isBugCondition(input)` = superadmin lists users with no location scope; `users_controller.get_users` uses `db.session.query(User).join(CommunityGroup)` (INNER join) which drops users lacking a community group row
+  - Expected Behavior asserted (Req 2.5): all users across all orgs returned
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS** (omitted user). Document counterexample.
+  - _Requirements: 1.5_
+
+- [x] 44. Write bug condition exploration test — C6 Add User Bad Request
+  - **Property 6: Bug Condition** - Add User Returns Generic BAD REQUEST
+  - **CRITICAL**: This test MUST FAIL on unfixed code. DO NOT fix when it fails.
+  - **GOAL**: Surface counterexamples where Add User fails with "BAD REQUEST" instead of creating the user or surfacing the real validation message.
+  - **Scoped PBT Approach**: (a) valid payloads matching `UserCreateSchema` + server password policy succeed; (b) invalid payloads surface the server's real error string (not "BAD REQUEST"). Cover password-policy mismatch and flat-string error body not parsed by `ApiError`.
+  - Bug Condition: `isBugCondition(input)` = admin submits Add User modal; client policy/shape diverges from server `UserCreateSchema` + `validate_password_policy`, and `ApiError` does not surface flat-string error body
+  - Expected Behavior asserted (Req 2.6): shared password policy (≥8, upper, lower, digit) + same field/shape as public registration; succeed on valid, surface real server message on invalid
+  - Run on UNFIXED code → **EXPECTED OUTCOME: FAILS**. Document counterexample (e.g. valid input rejected; or error shown as "BAD REQUEST").
+  - _Requirements: 1.6_
+
+### Preservation Tests (write BEFORE any fix — observation-first, expected to PASS on unfixed code)
+
+- [x] 45. Write preservation property test — Machine list & counts
+  - **Property 7: Preservation** - Machine List And Online/Offline Counts
+  - **IMPORTANT**: Observation-first. Observe `machinesApi.getAll(locationId)` output and rendered online/offline counts on UNFIXED code; record them.
+  - Write property test: for all machine datasets, listed machines and `onlineCount`/`offlineCount` equal observed values (`¬C` = normal load, no mutation/search/crash path).
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.1_
+
+- [x] 46. Write preservation property test — Search matches existing machines
+  - **Property 8: Preservation** - Search Returns Name/Id Matches
+  - **IMPORTANT**: Observation-first. On UNFIXED code, observe results for terms matching `m.name`/`m.id` (using inputs that do NOT trigger the C4 crash path, e.g. by stubbing `getLocationName`) and record them.
+  - Write property test: for all terms matching an existing name or id, those machines are returned.
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.2_
+
+- [x] 47. Write preservation property test — Specific-location user filter
+  - **Property 9: Preservation** - Single-Location User Scoping
+  - **IMPORTANT**: Observation-first. On UNFIXED code, observe `GET /users?location_id=<EPTU>` returns only that org's users; record them.
+  - Write property test: for all single-location scopes, only that location's users are returned (`¬C` = scope provided).
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.3_
+
+- [x] 48. Write preservation property test — Public registration policy
+  - **Property 10: Preservation** - Public Signup Password Policy & Errors
+  - **IMPORTANT**: Observation-first. On UNFIXED code, observe `LogIn.jsx` public registration applies shared password policy and surfaces server error messages; record behavior.
+  - Write property test: for all valid/invalid signup inputs, public registration applies the policy and surfaces server errors unchanged.
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.4_
+
+- [x] 49. Write preservation property test — Valid Add User create
+  - **Property 11: Preservation** - Valid Add User Still Creates
+  - **IMPORTANT**: Observation-first. On UNFIXED code, observe that already-valid Add User input creates a user with correct `UserCreateSchema` fields; record the created shape.
+  - Write property test: for all inputs already passing validation, user is created with correct fields (`¬C` = input already valid).
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.5_
+
+- [x] 50. Write preservation property test — Machines page renders without runtime error
+  - **Property 12: Preservation** - Cards/Edit/Maintenance No Runtime Error
+  - **IMPORTANT**: Observation-first. On UNFIXED code, observe machine cards, edit, and maintenance flows render without runtime errors for non-buggy inputs (no active search triggering C4); record behavior.
+  - Write property test: for all valid non-buggy interactions, the machines page renders without runtime errors.
+  - Run on UNFIXED code → **EXPECTED OUTCOME: PASSES**.
+  - _Requirements: 3.6_
+
+### Implementation (apply fixes, then re-run the SAME tests above)
+
+- [x] 51. Fix C1–C3 — Machine create/edit/maintenance submit wiring
+
+  - [x] 51.1 Implement machine CRUD submit fixes
+    - Align `AddMachineModal`/`EditMachineModal`/`MaintenanceModal` submit payloads to API field/shape expected by `machinesApi.create`/`update` and `logs.createMachineLog`
+    - Ensure `handleAddMachine`, `handleEditMachine`, `handleAddMaintenanceLog` invoke the API and update state on success; surface server errors on failure
+    - _Bug_Condition: isBugCondition = submit Add/Edit/Maintenance modal with valid data (C1, C2, C3)_
+    - _Expected_Behavior: create/update/log persisted via API and reflected in UI (Req 2.1, 2.2, 2.3)_
+    - _Preservation: machine list & counts (3.1), search matches (3.2), no runtime errors (3.6)_
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3_
+
+  - [x] 51.2 Verify exploration tests now pass — C1/C2/C3
+    - **Property 1: Expected Behavior** - Add Machine Persists
+    - **Property 2: Expected Behavior** - Edit Machine Persists
+    - **Property 3: Expected Behavior** - Maintenance Log Created
+    - **IMPORTANT**: Re-run the SAME tests from tasks 39, 40, 41 — do NOT write new tests
+    - **EXPECTED OUTCOME**: Tests PASS (bugs fixed)
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [x] 51.3 Verify preservation tests still pass
+    - **Property 7: Preservation** - Machine List And Counts
+    - **Property 12: Preservation** - No Runtime Error
+    - Re-run tests from tasks 45, 50 → **EXPECTED OUTCOME: PASS** (no regressions)
+    - _Requirements: 3.1, 3.6_
+
+- [x] 52. Fix C4 — `getLocationName` temporal-dead-zone in machine search
+
+  - [x] 52.1 Move/hoist `getLocationName` definition above the `displayedMachines` useMemo
+    - In `app/admin/machines/page.js`, define `getLocationName` (currently `const` arrow at L722) before its use at L660, or convert to a hoisted `function` declaration
+    - _Bug_Condition: isBugCondition = any non-empty searchQuery evaluates displayedMachines (C4)_
+    - _Expected_Behavior: search filters without crashing; getLocationName defined before use (Req 2.4)_
+    - _Preservation: search matches (3.2), no runtime errors (3.6)_
+    - _Requirements: 1.4, 2.4_
+
+  - [x] 52.2 Verify exploration test now passes — C4
+    - **Property 4: Expected Behavior** - Search Does Not Throw
+    - **IMPORTANT**: Re-run the SAME test from task 42 — do NOT write a new test
+    - **EXPECTED OUTCOME**: Test PASSES (no TDZ crash)
+    - _Requirements: 2.4_
+
+  - [x] 52.3 Verify preservation tests still pass
+    - **Property 8: Preservation** - Search Returns Name/Id Matches
+    - **Property 12: Preservation** - No Runtime Error
+    - Re-run tests from tasks 46, 50 → **EXPECTED OUTCOME: PASS**
+    - _Requirements: 3.2, 3.6_
+
+- [x] 53. Fix C5 — All-locations user filter omits users
+
+  - [x] 53.1 Replace INNER join with outer join / scope-aware query in `get_users`
+    - In `server/app/controllers/users_controller.py` `get_users`, change `db.session.query(User).join(CommunityGroup)` to an `outerjoin(CommunityGroup)` (or remove the join from the unscoped path) so users without a community group are still returned
+    - Keep location scoping intact via `_scope_location_id`
+    - _Bug_Condition: isBugCondition = superadmin lists users with no location scope; INNER join drops users lacking a community group (C5)_
+    - _Expected_Behavior: all users across all orgs returned (Req 2.5)_
+    - _Preservation: single-location scoping unchanged (3.3)_
+    - _Requirements: 1.5, 2.5_
+
+  - [x] 53.2 Verify exploration test now passes — C5
+    - **Property 5: Expected Behavior** - All-Locations Returns Every User
+    - **IMPORTANT**: Re-run the SAME test from task 43 — do NOT write a new test
+    - **EXPECTED OUTCOME**: Test PASSES (no omitted users)
+    - _Requirements: 2.5_
+
+  - [x] 53.3 Verify preservation test still passes
+    - **Property 9: Preservation** - Single-Location User Scoping
+    - Re-run test from task 47 → **EXPECTED OUTCOME: PASS**
+    - _Requirements: 3.3_
+
+- [x] 54. Fix C6 — Add User "BAD REQUEST"
+
+  - [x] 54.1 Align client policy/shape and surface real server errors
+    - Apply shared password policy (≥8 chars, one uppercase, one lowercase, one digit) in the Add User modal, matching `server/app/services/password_policy.py`
+    - Align Add User payload field/shape to `UserCreateSchema` (same handling as public registration)
+    - Update `ApiError` handling so a flat-string error body is surfaced as the real message instead of "BAD REQUEST"
+    - _Bug_Condition: isBugCondition = Add User submit with client/server policy or shape divergence; flat-string error not surfaced (C6)_
+    - _Expected_Behavior: succeed on valid input; surface server's real error on invalid (Req 2.6)_
+    - _Preservation: public registration unchanged (3.4), valid Add User still creates (3.5)_
+    - _Requirements: 1.6, 2.6_
+
+  - [x] 54.2 Verify exploration test now passes — C6
+    - **Property 6: Expected Behavior** - Add User Succeeds / Surfaces Real Error
+    - **IMPORTANT**: Re-run the SAME test from task 44 — do NOT write a new test
+    - **EXPECTED OUTCOME**: Test PASSES
+    - _Requirements: 2.6_
+
+  - [x] 54.3 Verify preservation tests still pass
+    - **Property 10: Preservation** - Public Signup Policy & Errors
+    - **Property 11: Preservation** - Valid Add User Still Creates
+    - Re-run tests from tasks 48, 49 → **EXPECTED OUTCOME: PASS**
+    - _Requirements: 3.4, 3.5_
+
+- [x] 55. Checkpoint — Ensure all C1–C6 tests pass
+  - Run full client + server test suites; confirm all exploration tests (Properties 1–6) PASS and all preservation tests (Properties 7–12) PASS
+  - Ask the user if questions arise
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+---
+
+## Task Dependency Graph
+
+Dependencies for the C1–C6 bugfix work (tasks 39–55). Tests are grouped by the bug condition they target; each fix depends on its exploration + preservation tests existing first, and each verification sub-task depends on its fix.
+
+Execution waves (tasks within a wave have no inter-dependencies and may run in parallel; each wave depends on the previous):
+
+```json
+{
+  "waves": [
+    {
+      "wave": 1,
+      "description": "Write all exploration tests (must FAIL) and preservation tests (must PASS) on UNFIXED code",
+      "tasks": ["39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50"]
+    },
+    {
+      "wave": 2,
+      "description": "Apply the four independent fixes",
+      "tasks": ["51.1", "52.1", "53.1", "54.1"]
+    },
+    {
+      "wave": 3,
+      "description": "Re-run the same tests to verify fixes (Expected Behavior) and preservation (no regressions)",
+      "tasks": ["51.2", "51.3", "52.2", "52.3", "53.2", "53.3", "54.2", "54.3"]
+    },
+    {
+      "wave": 4,
+      "description": "Checkpoint - full suite green",
+      "tasks": ["55"]
+    }
+  ]
+}
+```
+
+```
+Exploration tests (must FAIL on unfixed code):
+  39 (C1) ─┐
+  40 (C2) ─┤
+  41 (C3) ─┴──────────────► 51.1 (fix C1–C3) ──► 51.2 (verify P1/P2/P3) ──► 51.3 (verify P7/P12)
+  42 (C4) ─────────────────► 52.1 (fix C4)     ──► 52.2 (verify P4)      ──► 52.3 (verify P8/P12)
+  43 (C5) ─────────────────► 53.1 (fix C5)     ──► 53.2 (verify P5)      ──► 53.3 (verify P9)
+  44 (C6) ─────────────────► 54.1 (fix C6)     ──► 54.2 (verify P6)      ──► 54.3 (verify P10/P11)
+
+Preservation tests (must PASS on unfixed code):
+  45 (P7  Req 3.1) ──► gate for 51.3
+  46 (P8  Req 3.2) ──► gate for 51.3, 52.3
+  47 (P9  Req 3.3) ──► gate for 53.3
+  48 (P10 Req 3.4) ──► gate for 54.3
+  49 (P11 Req 3.5) ──► gate for 54.3
+  50 (P12 Req 3.6) ──► gate for 51.3, 52.3
+
+Checkpoint:
+  51.* , 52.* , 53.* , 54.*  ──►  55 (all tests pass)
+```
+
+Ordering rules:
+- All exploration tests (39–44) and preservation tests (45–50) MUST be written and run on UNFIXED code before any fix (51–54).
+- Exploration tests must FAIL and preservation tests must PASS before proceeding to fixes.
+- Each fix sub-task (51.1, 52.1, 53.1, 54.1) precedes its verification sub-tasks.
+- The four fixes (51–54) are independent of each other and may proceed in any order or in parallel.
+- Task 55 (checkpoint) depends on all of 51–54.
+
+## Notes
+
+- Exploration tests encode expected behavior; the same test that FAILS pre-fix MUST PASS post-fix. Do not rewrite tests during verification — re-run them.
+- For deterministic bugs (C4 especially), scope property-based tests to the concrete failing input(s) for reproducibility.
+- Client tests: `fast-check` + the project's JS test runner. Server tests: `hypothesis`/`pytest` (`python -m pytest -m "not integration" -q`).
+- Run test runners with a single-execution flag (e.g. `--run`), not watch mode.
+- C4 root cause confirmed in code: `getLocationName` is a `const` arrow at `app/admin/machines/page.js:722` used at L660 (temporal dead zone). C5 root cause: INNER `join(CommunityGroup)` in `users_controller.get_users`.

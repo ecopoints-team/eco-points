@@ -10,6 +10,7 @@ from flask import request, jsonify, current_app, g
 from pydantic import BaseModel, ValidationError
 from .models import User
 from . import db
+from .permissions import ROLE_ACTION_PERMISSIONS, categories_for_role, role_can
 
 
 # ── Phase 4B: CSRF protection ───────────────────────────────────────
@@ -78,26 +79,8 @@ ADMIN_ROLE_SET = {
 #                        inventory officer needs (logs, settings,
 #                        dashboard).
 ROLE_PERMISSIONS = {
-    'superadmin': {
-        'users', 'machines', 'rewards', 'locations', 'logs',
-        'analytics', 'settings', 'groups', 'sessions',
-        'leaderboard', 'dashboard',
-    },
-    'head_admin': {
-        'users', 'machines', 'rewards', 'locations', 'logs',
-        'analytics', 'settings', 'groups', 'sessions',
-        'leaderboard', 'dashboard',
-    },
-    'auditor': {
-        'logs', 'analytics', 'sessions', 'settings',
-        'leaderboard', 'dashboard',
-    },
-    'technician': {
-        'machines', 'logs', 'settings', 'dashboard',
-    },
-    'inventory_officer': {
-        'rewards', 'logs', 'settings', 'dashboard',
-    },
+    role: categories_for_role(role)
+    for role in ROLE_ACTION_PERMISSIONS
 }
 
 # Defensive invariant check: keys must be exactly the admin role set, and
@@ -439,7 +422,7 @@ def superadmin_required(f):
     return decorated
 
 
-def permission_required(*categories, allow_non_admin=False):
+def permission_required(*categories, action=None, allow_non_admin=False):
     """Decorator that gates a route on `ROLE_PERMISSIONS[current_user.role]`
     after the universal admin guard passes (Requirement 0.3, 0.4, 0.8).
 
@@ -534,6 +517,20 @@ def permission_required(*categories, allow_non_admin=False):
                             ),
                         },
                     }), 403
+            # Per-verb enforcement (Phase C). When `action` is supplied, the
+            # role must hold that verb in EACH requested category. Category
+            # presence alone is no longer sufficient for mutating routes.
+            if action is not None:
+                for cat in categories:
+                    if not role_can(current_user.role, cat, action):
+                        return jsonify({
+                            'success': False,
+                            'error': {
+                                'code': 'FORBIDDEN',
+                                'missing': f'{cat}:{action}',
+                                'message': f'Your role cannot {action} {cat}.',
+                            },
+                        }), 403
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator

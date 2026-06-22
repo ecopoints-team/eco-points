@@ -11,7 +11,7 @@ substitution is the work of Phase 2.
 """
 from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..models import (
     RecyclingItem, RecyclingSession, RVM, MaintenanceLog,
@@ -172,9 +172,9 @@ def get_access_logs(current_user):
     try:
         loc_id = _scope_location_id(current_user)
         query = AdminLog.query.join(User, AdminLog.admin_user_id == User.id).options(
-            joinedload(AdminLog.admin)
-                .joinedload(User.community_group)
-                .joinedload(CommunityGroup.organization),
+            selectinload(AdminLog.admin)
+                .selectinload(User.community_group)
+                .selectinload(CommunityGroup.organization),
         )
         if loc_id:
             query = query.join(CommunityGroup, User.community_group_id == CommunityGroup.id)\

@@ -19,12 +19,13 @@ function withQuery(path, params) {
  * GET /api/web/users — list users.
  * Filters: `locationId`, `role`, `userType`, `isAdmin`.
  */
-export async function getAll({ locationId, role, userType, isAdmin } = {}) {
+export async function getAll({ locationId, role, userType, isAdmin, perPage = 200 } = {}) {
     const data = await request('GET', withQuery('/users', {
         location_id: locationId,
         role,
         user_type: userType,
         is_admin: isAdmin,
+        per_page: perPage,
     }));
     return data.users;
 }

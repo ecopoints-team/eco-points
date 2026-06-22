@@ -201,9 +201,8 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
                 // year_level only for university students with a level on their group
                 yearLevel: showYearLevel && yearLevel ? yearLevel : undefined,
                 // group: omit when non-student-auto so backend assigns default
-                communityGroupId: showGroupField && communityGroupId ? communityGroupId : undefined,
-                locationId: effectiveLocationId,
-                isAdmin: false,
+                communityGroupId: showGroupField && communityGroupId ? parseInt(communityGroupId, 10) : undefined,
+                locationId: effectiveLocationId ? parseInt(effectiveLocationId, 10) : undefined,
             };
 
             const created = await usersApi.create(payload);

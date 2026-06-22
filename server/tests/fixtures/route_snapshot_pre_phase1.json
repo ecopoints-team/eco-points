@@ -43,7 +43,7 @@
   {"method": "PUT",    "rule": "/api/web/machines/<int:machine_id>",                    "endpoint": "web.machines.update_machine",           "decorators": ["token_required", "permission_required"]},
   {"method": "DELETE", "rule": "/api/web/machines/<int:machine_id>",                    "endpoint": "web.machines.delete_machine",           "decorators": ["token_required", "permission_required"]},
 
-  {"method": "GET",    "rule": "/api/web/org-types",                                     "endpoint": "web.locations.get_org_types",           "decorators": ["token_required", "permission_required"]},
+  {"method": "GET",    "rule": "/api/web/org-types",                                     "endpoint": "web.locations.get_org_types",           "decorators": ["token_required"]},
   {"method": "POST",   "rule": "/api/web/org-types",                                     "endpoint": "web.locations.create_org_type",         "decorators": ["token_required", "superadmin_required"]},
   {"method": "DELETE", "rule": "/api/web/org-types/<int:ot_id>",                         "endpoint": "web.locations.delete_org_type",         "decorators": ["token_required", "superadmin_required"]},
 

@@ -311,7 +311,14 @@ export default function LeaderboardPodium() {
 
     list = [...list].sort((a, b) => b.displayPoints - a.displayPoints);
 
-    return list.map((u, idx) => ({ ...u, rank: idx + 1 }));
+    // Assign dense ranks: tied points share the same rank
+    let currentRank = 1;
+    return list.map((u, idx) => {
+      if (idx > 0 && u.displayPoints < list[idx - 1].displayPoints) {
+        currentRank = idx + 1;
+      }
+      return { ...u, rank: currentRank };
+    });
   }, [rawUsers, orgFilter, searchQuery, timeFilter]);
 
   // Identify current user by ID
@@ -322,14 +329,17 @@ export default function LeaderboardPodium() {
 
   const CURRENT_USER_RANK = currentUser?.rank || null;
 
-  const TABLE_LEADERBOARD = filteredList.slice(0, maxItems);
+  // Include all users whose rank is within the top maxItems (ties at the boundary are shown)
+  const TABLE_LEADERBOARD = filteredList.filter((u) => u.rank <= maxItems);
   const totalPages = Math.max(1, Math.ceil(TABLE_LEADERBOARD.length / itemsPerPage));
   const currentList = TABLE_LEADERBOARD.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const isUserIncluded = currentUser ? currentList.some((u) => u.rank === CURRENT_USER_RANK) : false;
+  const isUserIncluded = authUser?.id
+    ? currentList.some((u) => String(u.id) === String(authUser.id))
+    : false;
 
   // Podium list — org + time filter, never affected by search
   const podiumList = useMemo(() => {
@@ -342,10 +352,18 @@ export default function LeaderboardPodium() {
             : timeFilter === "week" ? u.pointsThisWeek
               : u.pointsAllTime,
       }));
-    return [...list]
-      .sort((a, b) => b.displayPoints - a.displayPoints)
-      .slice(0, 3)
-      .map((u, idx) => ({ ...u, rank: idx + 1 }));
+    const sorted = [...list].sort((a, b) => b.displayPoints - a.displayPoints);
+
+    // Assign dense ranks consistent with the main leaderboard
+    let currentRank = 1;
+    const ranked = sorted.map((u, idx) => {
+      if (idx > 0 && u.displayPoints < sorted[idx - 1].displayPoints) {
+        currentRank = idx + 1;
+      }
+      return { ...u, rank: currentRank };
+    });
+
+    return ranked.slice(0, 3);
   }, [rawUsers, orgFilter, timeFilter]);
 
   // Podium order: 2nd | 1st | 3rd
@@ -746,7 +764,7 @@ export default function LeaderboardPodium() {
 
               {/* Data rows */}
               {!loading && !error && currentList.map((user) => {
-                const isMe = CURRENT_USER_RANK && user.rank === CURRENT_USER_RANK;
+                const isMe = authUser?.id && String(user.id) === String(authUser.id);
                 return (
                   <div
                     key={user.id}
@@ -965,7 +983,7 @@ export default function LeaderboardPodium() {
             <div className="bg-emerald-900/40 rounded-[20px] p-4 backdrop-blur-sm border border-emerald-400/30 w-full mt-auto">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200" style={fonts.body}>
-                  Current Points
+                  Current EcoPoints (EP)
                 </p>
                 <Zap size={14} className="text-yellow-400 fill-yellow-400" />
               </div>
@@ -979,7 +997,7 @@ export default function LeaderboardPodium() {
           </div>
 
           {/* ── Accumulated Points ── */}
-          <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-emerald-100 lg:border-t-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
+          <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/50 transition-all flex flex-col justify-center border-t border-emerald-100 lg:border-t-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
             <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center mb-4">
               <Recycle className="text-sky-500 w-6 h-6" />
             </div>
@@ -995,7 +1013,7 @@ export default function LeaderboardPodium() {
           </div>
 
           {/* ── Bottles Collected ── */}
-          <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/30 transition-all flex flex-col justify-center border-t border-l border-emerald-100 lg:border-t-0 lg:border-l-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
+          <div className="col-span-1 lg:flex-none bg-white p-5 sm:p-6 lg:p-6 relative overflow-hidden group hover:bg-emerald-50/50 transition-all flex flex-col justify-center border-t border-l border-emerald-100 lg:border-t-0 lg:border-l-0 lg:rounded-[40px] lg:shadow-sm lg:border lg:border-emerald-100">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
               <Gift className="text-amber-500 w-6 h-6" />
             </div>
