@@ -128,3 +128,18 @@ export async function resetPassword(resetToken, newPassword) {
         body: { resetToken, newPassword },
     });
 }
+
+/**
+ * GET /api/web/auth/check-username — returns true if the username is
+ * available (not taken by another account).
+ *
+ * Throws synchronously for invalid input so callers never make a pointless
+ * network request.
+ */
+export async function checkUsernameAvailability(username) {
+    if (!username || typeof username !== 'string') {
+        throw new Error('username must be a non-empty string');
+    }
+    const data = await request('GET', `/auth/check-username?username=${encodeURIComponent(username)}`);
+    return data?.available === true;
+}
