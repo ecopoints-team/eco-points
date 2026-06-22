@@ -251,7 +251,7 @@ def create_user(current_user, payload):
                           f'New user registered: {user.name}',
                           f'A new {role} "{user.name}" was created by {current_user.name}.')
         except Exception:
-            pass
+            current_app.logger.exception('new_user_registered alert failed (non-fatal)')
 
         return jsonify({'success': True, 'user': _serialize_user(user)}), 201
     except Exception as e:
@@ -488,7 +488,7 @@ def adjust_user_points(current_user, user_id, payload):
                                   f'{current_user.name} {direction} {abs(amount)} points for {user.name}. '
                                   f'Balance: {balance_before} → {balance_after}. Reason: {reason}')
         except Exception:
-            pass
+            current_app.logger.exception('suspicious_activity alert failed (non-fatal)')
 
         return jsonify({
             'success': True,

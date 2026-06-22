@@ -193,8 +193,10 @@ def test_notification(current_user, payload):
 
         if success:
             return jsonify({'success': True, 'message': f'Test email sent to {recipient}'}), 200
-        else:
-            return jsonify({'success': False, 'error': f'Failed to send: {error}'}), 500
+        # A send/config failure is an upstream (email provider) problem, not a
+        # server crash — surface it as 502 with the real reason so the admin
+        # can fix configuration instead of seeing a generic 500.
+        return jsonify({'success': False, 'error': f'Failed to send: {error}'}), 502
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
