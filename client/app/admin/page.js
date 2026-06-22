@@ -6,7 +6,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
 import { detectedClassLabel } from '../../src/lib/enumLabels';
-import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw, Wrench } from 'lucide-react';
+import { Activity, Zap, TrendingUp, Box, Boxes, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw, Wrench } from 'lucide-react';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
 import TechnicianActionModal from '../../src/components/admin/TechnicianActionModal';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
