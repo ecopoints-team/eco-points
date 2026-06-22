@@ -283,6 +283,8 @@ function RewardsInventoryPageContent() {
         category: 'Merchandise',
         imageUrl: null,
         variants: [],
+        ownerLocationId: null,
+        assignToAll: false,
     });
     const [imagePreview, setImagePreview] = useState(null);
     const [imageUploading, setImageUploading] = useState(false);
@@ -431,7 +433,7 @@ function RewardsInventoryPageContent() {
     // Modal handlers
     const openAddModal = () => {
         setEditingReward(null);
-        setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null, variants: [] });
+        setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null, variants: [], ownerLocationId: null, assignToAll: false });
         setImagePreview(null);
         setImageUploading(false);
         setShowModal(true);
@@ -497,6 +499,12 @@ function RewardsInventoryPageContent() {
         const label = editingReward ? 'Saving changes...' : 'Creating reward...';
         const successLabel = editingReward ? 'Reward updated' : 'Reward created';
 
+        // Resolve the location to own this reward.
+        // - Non-superadmin: always effectiveLocationId (their org)
+        // - Superadmin with View As set: use effectiveLocationId
+        // - Superadmin viewing All: use the explicitly chosen ownerLocationId
+        const resolvedLocationId = effectiveLocationId || formData.ownerLocationId;
+
         try {
             await runWithProgress(label, async () => {
                 if (editingReward) {
@@ -523,16 +531,26 @@ function RewardsInventoryPageContent() {
                         stockQuantity,
                         category: formData.category,
                         imageUrl: formData.imageUrl,
-                        locationId: effectiveLocationId,
+                        locationId: resolvedLocationId,
                         ...(variantsPayload.length ? { variants: variantsPayload } : {}),
                     });
+                    // If superadmin chose "assign to all locations", auto-assign
+                    // the new reward to every other organization.
+                    if (formData.assignToAll && allLocations.length > 1) {
+                        const otherOrgIds = allLocations
+                            .filter(l => l.id !== resolvedLocationId)
+                            .map(l => l.id);
+                        if (otherOrgIds.length) {
+                            await rewardsApi.assign(created.id, otherOrgIds);
+                        }
+                    }
                     setRewards(prev => [{
                         id: String(created.id),
                         ...formData,
                         pointsRequired: parseInt(formData.pointsRequired),
                         stockQuantity,
                         dispensed: 0,
-                        locationId: effectiveLocationId
+                        locationId: resolvedLocationId,
                     }, ...prev]);
                 }
             }, { successLabel });
@@ -909,6 +927,30 @@ function RewardsInventoryPageContent() {
                         </div>
                         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
+                            {/* Superadmin global-create: pick owner location */}
+                            {isSuperAdmin && !effectiveLocationId && !editingReward && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        Owner Location *
+                                    </label>
+                                    <CustomDropdown
+                                        value={formData.ownerLocationId}
+                                        onChange={(v) => setFormData(p => ({ ...p, ownerLocationId: v }))}
+                                        options={allLocations.map(l => ({ value: l.id, label: l.name }))}
+                                        placeholder="Select owner location"
+                                        showPlaceholder={true}
+                                    />
+                                    <label className="flex items-center gap-2 mt-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={!!formData.assignToAll}
+                                            onChange={(e) => setFormData(p => ({ ...p, assignToAll: e.target.checked }))}
+                                            className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        Make available to all locations (assign globally)
+                                    </label>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Image</label>
                                 <div className="flex items-center gap-4">
@@ -966,7 +1008,7 @@ function RewardsInventoryPageContent() {
                         </div>{/* end grid */}
                         <div className="flex gap-3 p-6 pt-0">
                             <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">Cancel</button>
-                            <button type="button" onClick={handleSubmit} disabled={imageUploading} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
+                            <button type="button" onClick={handleSubmit} disabled={imageUploading || (isSuperAdmin && !effectiveLocationId && !editingReward && !formData.ownerLocationId)} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
                         </div>
                     </div>
                 </div>
