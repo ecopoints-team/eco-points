@@ -102,7 +102,8 @@ _MUTATING_METHODS = {'POST', 'PUT', 'PATCH'}
 # calls request.get_json() which fails on multipart bodies.  Manual
 # validation is performed inside the handler itself.
 _MULTIPART_EXEMPT_ROUTES = {
-    'upload_avatar',  # auth_controller: POST /avatar — file upload
+    'upload_avatar',         # auth_controller: POST /avatar — file upload
+    'upload_reward_image',   # rewards_controller: POST /rewards/image — file upload
 }
 
 # ════════════════════════════════════════════════════════════════════════

@@ -10,8 +10,10 @@ preserved byte-for-byte. The `@admin_required` → `@permission_required`
 substitution is the work of Phase 2.
 """
 from datetime import datetime, timezone
+import os
+import uuid
 import secrets
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
 from sqlalchemy import or_
 
@@ -70,6 +72,42 @@ def get_rewards(current_user):
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
+_ALLOWED_IMAGE_EXT = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+
+
+@rewards_bp.route('/image', methods=['POST'])
+@token_required
+@permission_required('rewards', action='create')
+def upload_reward_image(current_user):
+    """Upload a reward image (multipart/form-data, field name 'image').
+
+    Saves to server/uploads/rewards/ and returns a short URL string that
+    fits the rewards.image_url String(500) column. Mirrors the avatar flow.
+    """
+    try:
+        file = request.files.get('image')
+        if not file or not file.filename:
+            return jsonify({'success': False, 'error': 'No image file provided'}), 400
+
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext not in _ALLOWED_IMAGE_EXT:
+            return jsonify({'success': False, 'error': 'Unsupported image type'}), 400
+
+        upload_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'uploads', 'rewards',
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        filename = f'{uuid.uuid4().hex[:16]}.{ext}'
+        file.save(os.path.join(upload_dir, filename))
+
+        return jsonify({'success': True, 'imageUrl': f'/uploads/rewards/{filename}'}), 200
+    except Exception:
+        current_app.logger.exception('upload_reward_image failed')
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
+
+
 @rewards_bp.route('', methods=['POST'])
 @token_required
 @permission_required('rewards', action='create')
@@ -108,8 +146,9 @@ def create_reward(current_user, payload):
         _log_action(current_user, 'Reward Created', reward.name, 'Rewards')
         db.session.commit()
         return jsonify({'success': True, 'reward': _serialize_reward(reward)}), 201
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('create_reward failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
@@ -169,8 +208,9 @@ def update_reward(current_user, reward_id, payload):
             pass  # never break the main response
 
         return jsonify({'success': True, 'reward': _serialize_reward(reward)}), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('update_reward failed')
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
