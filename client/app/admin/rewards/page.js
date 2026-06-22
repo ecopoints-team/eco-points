@@ -255,6 +255,7 @@ const CategorySearchField = ({ value, onChange, existingCategories }) => {
 function RewardsInventoryPageContent() {
     const { effectiveLocationId, currentLocation, isSuperAdmin, allLocations, currentUser, hasPermission } = useAuth();
     const { runWithProgress } = useProgress();
+    const [rewards, setRewards] = useState([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilter, setShowFilter] = useState(false);
