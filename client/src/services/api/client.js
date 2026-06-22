@@ -208,7 +208,11 @@ export async function request(method, path, { body, headers } = {}) {
     }
 
     if (!response.ok) {
-        const serverError = (data && typeof data === 'object' && data.error) || {};
+        const errorField = data && typeof data === 'object' ? data.error : null;
+        const serverError = (errorField && typeof errorField === 'object') ? errorField : {};
+        // The server sometimes returns `error` as a plain string
+        // (e.g. { success: false, error: "Location is required" }).
+        const stringError = typeof errorField === 'string' ? errorField : null;
         // A 401 from any endpoint means the session is gone (expired,
         // forced-logout, or never existed). Notify `AuthContext` so it can
         // clear in-memory state and bounce the user to the landing page.
@@ -229,20 +233,22 @@ export async function request(method, path, { body, headers } = {}) {
             : null;
         throw new ApiError(
             serverError.code || `HTTP_${response.status}`,
-            serverError.message || validationMsg || flatStringMessage || response.statusText || `Request failed (${response.status})`,
+            serverError.message || stringError || validationMsg || flatStringMessage || response.statusText || `Request failed (${response.status})`,
             response.status,
             data,
         );
     }
 
     if (data && typeof data === 'object' && data.success === false) {
-        const serverError = data.error || {};
+        const errorField = data.error;
+        const serverError = (errorField && typeof errorField === 'object') ? errorField : {};
+        const stringError = typeof errorField === 'string' ? errorField : null;
         const validationMsg = Array.isArray(serverError.errors) && serverError.errors.length
             ? `${serverError.errors[0].field}: ${serverError.errors[0].message}`
             : null;
         throw new ApiError(
             serverError.code || 'REQUEST_FAILED',
-            serverError.message || validationMsg || 'Request failed',
+            serverError.message || stringError || validationMsg || 'Request failed',
             response.status,
             data,
         );
