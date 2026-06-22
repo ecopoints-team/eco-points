@@ -4,6 +4,7 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { ThemeProvider } from '../src/context/ThemeContext';
 import { UIProvider, useUI } from '../src/context/UIContext';
 import RouteLoadingBar from '../src/components/shared/RouteLoadingBar';
+import { ProgressProvider } from '../src/context/ProgressContext';
 
 // Lazy-load the login modal — it's only rendered when open
 const LogIn = dynamic(() => import('../src/components/pages/LogIn'), { ssr: false });
@@ -27,9 +28,11 @@ export function Providers({ children }) {
         <ThemeProvider>
             <AuthProvider>
                 <UIProvider>
-                    <RouteLoadingBar />
-                    {children}
-                    <GlobalModals />
+                    <ProgressProvider>
+                        <RouteLoadingBar />
+                        {children}
+                        <GlobalModals />
+                    </ProgressProvider>
                 </UIProvider>
             </AuthProvider>
         </ThemeProvider>

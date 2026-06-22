@@ -44,11 +44,13 @@ export default defineConfig({
     plugins: [jsxInJsPlugin, react({ include: /\.(jsx|js|tsx|ts)$/ })],
     test: {
         testTimeout: 60_000,
+        setupFiles: ['./tests/setup.js'],
         environment: 'node',
         environmentMatchGlobs: [
             ['tests/property/**', 'jsdom'],
+            ['tests/property/**/*.jsx', 'jsdom'],
         ],
-        include: ['tests/**/*.test.js'],
+        include: ['tests/**/*.test.js', 'tests/**/*.test.jsx'],
         exclude: [
             '**/node_modules/**',
             '**/.next/**',
