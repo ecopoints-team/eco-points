@@ -1,4 +1,4 @@
-'use client';
+    'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import SlotCounter from '../../src/components/shared/SlotCounter';
@@ -6,8 +6,9 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
 import { detectedClassLabel } from '../../src/lib/enumLabels';
-import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw, Boxes } from 'lucide-react';
+import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw, Wrench } from 'lucide-react';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
+import TechnicianActionModal from '../../src/components/admin/TechnicianActionModal';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { analytics as analyticsApi } from '../../src/services/api';
 import { QUICK_ACTIONS } from '../../src/data/quickActions';
@@ -98,6 +99,26 @@ const ShortcutBtn = ({ label, icon: Icon, color, href }) => {
     );
 }
 
+// ACTION BUTTON COMPONENT - Used for triggering modals
+const ShortcutActionBtn = ({ label, icon: Icon, color, onClick }) => {
+    const colors = {
+        emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20 dark:hover:border-emerald-500 system:bg-emerald-500/5 system:text-emerald-400 system:border-emerald-500/15 system:hover:bg-emerald-500/10 system:hover:border-emerald-500/30',
+        blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 dark:hover:bg-blue-500/20 dark:hover:border-blue-500 system:bg-blue-500/5 system:text-blue-400 system:border-blue-500/15 system:hover:bg-blue-500/10 system:hover:border-blue-500/30',
+        amber: 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 dark:hover:border-amber-500 system:bg-amber-500/5 system:text-amber-400 system:border-amber-500/15 system:hover:bg-amber-500/10 system:hover:border-amber-500/30',
+        purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:hover:border-purple-500 system:bg-purple-500/5 system:text-purple-400 system:border-purple-500/15 system:hover:bg-purple-500/10 system:hover:border-purple-500/30',
+    };
+    const style = colors[color] || colors.emerald;
+
+    return (
+        <button onClick={onClick} className={`w-full flex-1 min-w-[140px] flex flex-col items-center justify-center gap-3 px-5 py-5 rounded-xl border border-transparent transition-all duration-300 group ${style}`}>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#0f172a] system:bg-[#0F1B11] shadow-md group-hover:scale-110 transition-transform">
+                <Icon size={24} strokeWidth={1.5} />
+            </div>
+            <span className="text-sm font-bold text-center">{label}</span>
+        </button>
+    );
+}
+
 // Custom Tooltip Component for Charts - Styled like reference
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -146,6 +167,7 @@ export default function AdminDashboard() {
     const [chartType, setChartType] = useState('line');
     const [mounted, setMounted] = useState(false);
     const [analyticsData, setAnalyticsData] = useState(null);
+    const [showTechnicianModal, setShowTechnicianModal] = useState(false);
 
     // Delay chart rendering until browser has completed at least one full paint
     // cycle — double-rAF ensures layout is stable before Recharts measures.
@@ -670,6 +692,7 @@ export default function AdminDashboard() {
                     Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+<<<<<<< HEAD
                     {(QUICK_ACTIONS[isSuperAdmin ? 'head_admin' : currentUser?.role] || [])
                         .filter(a => isSuperAdmin || hasPermission(a.permission[0], a.permission[1]))
                         .map(a => (
@@ -681,8 +704,36 @@ export default function AdminDashboard() {
                                 href={a.href}
                             />
                         ))}
+=======
+                    {/* Permission-based Shortcuts */}
+                    {(isSuperAdmin || hasPermission('rewards', 'view')) && (
+                        <ShortcutBtn label="Rewards" icon={Trophy} color="purple" href="/admin/rewards" />
+                    )}
+
+                    {(isSuperAdmin || hasPermission('users', 'view')) && (
+                        <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
+                    )}
+
+                    {(isSuperAdmin || hasPermission('logs', 'view')) && (
+                        <ShortcutBtn label="Admin Logs" icon={FileText} color="blue" href="/admin/logs/access" />
+                    )}
+
+                    {(isSuperAdmin || hasPermission('machines', 'view')) && (
+                        <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
+                    )}
+
+                    {(isSuperAdmin || currentUser?.role === 'technician' || hasPermission('machines', 'write')) && (
+                        <ShortcutActionBtn label="Technician Actions" icon={Wrench} color="emerald" onClick={() => setShowTechnicianModal(true)} />
+                    )}
+>>>>>>> d14f288ca0847cdf14e369636fde9534d2ed9da0
                 </div>
             </div>
+
+            {/* Technician Modal */}
+            <TechnicianActionModal 
+                isOpen={showTechnicianModal} 
+                onClose={() => setShowTechnicianModal(false)} 
+            />
 
             {/* 3. Recent Transactions Table - Location Filtered */}
             <div className="bg-white dark:bg-slate-800/50 system:bg-[#1A2E1F] rounded-2xl border border-slate-200 dark:border-slate-700 system:border-[rgba(123,160,91,0.2)] shadow-xl system:shadow-[0_0_20px_rgba(123,160,91,0.1)] overflow-hidden mt-6">
