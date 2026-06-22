@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 from flask import Flask
+from sqlalchemy.pool import StaticPool
 
 from app import Config, db
 from app.controllers.settings_controller import settings_bp
@@ -13,7 +14,11 @@ from app.models import CommunityGroup, Organization, OrgType, User, Notification
 
 def _build_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = Config.SQLALCHEMY_DATABASE_URI
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///file:test-2fa-email-db?mode=memory&cache=shared&uri=true'
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'check_same_thread': False},
+        'poolclass': StaticPool,
+    }
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = Config.SECRET_KEY
     app.config['TESTING'] = True
