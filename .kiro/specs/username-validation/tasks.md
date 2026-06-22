@@ -153,6 +153,55 @@ Implement live inline username validation in the Edit Profile modal of `ProfileS
 - [x] 7. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 8. Implement Username Change Lockout (Requirement 7)
+  - [x] 8.1 Add `username_changed_at` column to the `users` table via a new migration
+    - Create a new Alembic migration file in `server/migrations/versions/`
+    - Add column: `username_changed_at = Column(DateTime(timezone=True), nullable=True, default=None)`
+    - Migration `upgrade()`: `op.add_column('users', sa.Column('username_changed_at', sa.DateTime(timezone=True), nullable=True))`
+    - Migration `downgrade()`: `op.drop_column('users', 'username_changed_at')`
+    - _Requirements: 7.9_
+
+  - [x] 8.2 Update `PUT /auth/profile` handler to set `username_changed_at` on successful username change
+    - In `server/app/controllers/auth_controller.py`, locate the `update_profile` route
+    - After a successful save, check if the `username` field in the request body differs from the previously stored value; if so, set `current_user.username_changed_at = datetime.utcnow()`
+    - _Requirements: 7.10_
+
+  - [x] 8.3 Include `usernameChangedAt` in the user profile API response
+    - In the user serialization/response helper (or directly in the `me()` / profile endpoint), add `"usernameChangedAt": user.username_changed_at.isoformat() + 'Z' if user.username_changed_at else None`
+    - Ensure the field is present (not omitted) in every profile response, with value `null` when never changed
+    - _Requirements: 7.9_
+
+  - [x] 8.4 Derive `isUsernameLocked` and `lockoutRemainingDays` in `ProfileSection.jsx`
+    - Add the two derived values computed once at render time from `currentUser.usernameChangedAt` (not in `useState`):
+      - `isUsernameLocked`: returns `false` if `usernameChangedAt` is absent/null/unparseable; otherwise `elapsedDays < 30`
+      - `lockoutRemainingDays`: `Math.max(1, 30 - Math.floor(elapsed / 86_400_000))` when locked, else `0`
+    - Treat any non-null, non-parseable `usernameChangedAt` as `null` (Requirement 7.13)
+    - _Requirements: 7.1, 7.7, 7.8, 7.13_
+
+  - [x] 8.5 Guard the validation `useEffect` and `handleSave` with `isUsernameLocked`
+    - At the top of the debounced `useEffect`, add `if (isUsernameLocked) return;` before any validation logic
+    - Add `isUsernameLocked` to the `useEffect` dependency array: `[editUsername, currentUser?.username, isUsernameLocked]`
+    - In `handleSave`, update the `usernameChanged` guard: `const usernameChanged = !isUsernameLocked && editUsername !== currentUser?.username;`
+    - _Requirements: 7.11, 7.12_
+
+  - [x] 8.6 Conditionally render the locked vs. editable username input in `ProfileSection.jsx`
+    - Wrap the existing username field rendering in a ternary on `isUsernameLocked`
+    - **Locked branch** (when `isUsernameLocked` is `true`):
+      - Render a `relative` container with a `disabled` `<input>` using classes `w-full pr-9 bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200 rounded-lg px-3 py-2 text-sm`
+      - Render `<Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />` inside the container (import `Lock` from `lucide-react` if not already imported)
+      - Render lockout message below: `text-[11px] text-slate-400 mt-1 px-1` with text `"Username locked — available to change in X day."` (singular) or `"Username locked — available to change in X days."` (plural) based on `lockoutRemainingDays`
+    - **Editable branch** (when `isUsernameLocked` is `false`): keep the existing rendering logic unchanged
+    - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6_
+
+  - [ ]* 8.7 Write property test for locked field save gating — Property 9
+    - **Property 9: Locked Field Never Blocks Save**
+    - Generator: `fc.record({ usernameError: fc.string(), usernameCheckStatus: fc.constantFrom('', 'checking', 'available', 'taken', 'error') })` with `isUsernameLocked` fixed to `true`
+    - Assert: `usernameBlocksSave === false` for all combinations when `isUsernameLocked` is `true`
+    - **Validates: Requirements 7.11, 7.12**
+
+- [x] 9. Final checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -160,9 +209,10 @@ Implement live inline username validation in the Edit Profile modal of `ProfileS
 - Run property tests with `vitest --run` (single pass, no watch mode)
 - Minimum 100 iterations per fast-check property test
 - Each property test is tagged with its design property number for traceability (e.g., `Feature: username-validation, Property 1`)
-- The `Loader2` and `CheckCircle` icons are already imported in `ProfileSection.jsx` — no new imports needed
+- The `Loader2` and `CheckCircle` icons are already imported in `ProfileSection.jsx` — no new imports needed for those; verify `Lock` is imported or add it
 - `fast-check` (v4) is already in `devDependencies` — no new client dependencies required
-- No database schema changes are required; the feature reads existing `users.username` and `users.id` columns
+- Tasks 8.1–8.3 are backend/database changes; Tasks 8.4–8.6 are frontend changes in `ProfileSection.jsx`
+- The `username_changed_at` column is nullable — existing rows will have `NULL` and will not trigger the lockout
 
 ## Task Dependency Graph
 
@@ -175,7 +225,13 @@ Implement live inline username validation in the Edit Profile modal of `ProfileS
     { "id": 3, "tasks": ["4.3", "5.1"] },
     { "id": 4, "tasks": ["5.2", "5.3", "6.1"] },
     { "id": 5, "tasks": ["6.2", "6.3"] },
-    { "id": 6, "tasks": ["6.4"] }
+    { "id": 6, "tasks": ["6.4"] },
+    { "id": 7, "tasks": ["8.1"] },
+    { "id": 8, "tasks": ["8.2", "8.3"] },
+    { "id": 9, "tasks": ["8.4"] },
+    { "id": 10, "tasks": ["8.5"] },
+    { "id": 11, "tasks": ["8.6"] },
+    { "id": 12, "tasks": ["8.7"] }
   ]
 }
 ```

@@ -12,6 +12,8 @@ The four rules are:
 
 When all rules pass, the field should show a green "available" indicator. The Save button must be blocked while any rule is failing or while the availability check is pending.
 
+Additionally, once a user successfully changes their username, the Username_Field is locked for a 30-day Username_Lockout_Period. During this period the field is non-interactive and styled consistently with other locked fields in the modal (User ID, Email, Organization). The backend must supply a `usernameChangedAt` timestamp on the user profile so the frontend can calculate the Lockout_Remaining_Days and display an appropriate message. The existing `showUsernameConfirm` flow already warns users of this constraint before they confirm a change; this feature adds the client-side enforcement.
+
 ---
 
 ## Glossary
@@ -26,6 +28,9 @@ When all rules pass, the field should show a green "available" indicator. The Sa
 - **Debounce_Delay**: A 500 ms idle period after the user stops typing before the Availability_Check is fired, preventing excessive network requests.
 - **Save_Button**: The primary action button in the Edit_Profile_Modal that triggers `handleSave`.
 - **Check_Username_Endpoint**: `GET /api/web/auth/check-username` — a new lightweight backend endpoint that returns `{ available: boolean }`.
+- **Username_Lockout_Period**: The 30-calendar-day window following a successful username change during which the Username_Field is locked and cannot be edited again.
+- **Username_Locked_State**: The visual and interactive state of the Username_Field during a Username_Lockout_Period — non-interactive, styled with `bg-slate-50 text-slate-400 cursor-not-allowed`, and accompanied by a `Lock` icon and a lockout message.
+- **Lockout_Remaining_Days**: The number of whole calendar days remaining in the Username_Lockout_Period, calculated on the client as `30 − floor((now − usernameChangedAt) / 86 400 000)`, clamped to a minimum of 1.
 
 ---
 
@@ -116,3 +121,23 @@ When all rules pass, the field should show a green "available" indicator. The Sa
 3. THE `checkUsernameAvailability` function SHALL return a boolean — `true` if the response body's `available` field is `true`, `false` if it is `false` or absent.
 4. IF the `checkUsernameAvailability` is called with an empty string or a non-string value, THEN the function SHALL throw an `Error` with the message `"username must be a non-empty string"` without making a network request.
 5. IF the underlying `request` call throws or rejects, THE `checkUsernameAvailability` function SHALL propagate the rejection to the caller (no internal catch); error handling is the responsibility of the calling component.
+
+### Requirement 7: Username Change Lockout
+
+**User Story:** As a user, I want to be clearly informed when I cannot change my username again, so that I understand why the field is locked and how long I must wait.
+
+#### Acceptance Criteria
+
+1. WHEN the Edit_Profile_Modal opens and the current user's `usernameChangedAt` timestamp is present and fewer than 30 days have elapsed since that timestamp (calculated in UTC), THE Edit_Profile_Modal SHALL render the Username_Field in the Username_Locked_State.
+2. WHILE the Username_Field is in the Username_Locked_State, THE Username_Field SHALL be rendered as a non-interactive element — the underlying `<input>` SHALL have the `disabled` attribute set so that the user cannot focus, type into, or click the field.
+3. WHILE the Username_Field is in the Username_Locked_State, THE Username_Field SHALL apply the CSS classes `bg-slate-50 text-slate-400 cursor-not-allowed` to match the disabled styling used by the User ID, Email, Organization, and other locked fields in the modal.
+4. WHILE the Username_Field is in the Username_Locked_State, THE Edit_Profile_Modal SHALL render a `Lock` icon (from `lucide-react`) absolutely positioned on the right side of the Username_Field, vertically centered, matching the icon placement pattern used by other locked fields in the modal.
+5. WHILE the Username_Field is in the Username_Locked_State, THE Edit_Profile_Modal SHALL render a lockout message directly below the Username_Field displaying "Username locked — available to change in X day." when Lockout_Remaining_Days equals 1, and "Username locked — available to change in X days." when Lockout_Remaining_Days is greater than 1.
+6. THE lockout message SHALL be styled using `text-[11px] text-slate-400 mt-1 px-1` to visually distinguish it from active Inline_Error messages.
+7. WHEN the Edit_Profile_Modal opens and the current user has no `usernameChangedAt` timestamp on their profile (value is `null`), THE Username_Field SHALL NOT be placed in the Username_Locked_State, regardless of whether the user currently has a username set.
+8. WHEN the Edit_Profile_Modal opens and 30 or more days have elapsed since `usernameChangedAt` (calculated in UTC), THE Username_Field SHALL NOT be placed in the Username_Locked_State and SHALL be fully editable.
+9. THE backend user profile response SHALL include a `usernameChangedAt` field containing an ISO 8601 UTC timestamp of the most recent successful username change, or `null` if the username has never been changed through the change flow.
+10. WHEN a user successfully saves a new username through the Edit_Profile_Modal, THE backend SHALL update the `usernameChangedAt` field to the current UTC timestamp and include the updated value in the subsequent profile response.
+11. WHILE the Username_Field is in the Username_Locked_State, THE Username_Validator SHALL NOT run format validation or trigger an Availability_Check for the Username_Field, and the Username_Field SHALL have no Inline_Error, spinner, or Available_Indicator.
+12. WHILE the Username_Field is in the Username_Locked_State, THE Save_Button SHALL remain enabled so the user can still save changes to other editable fields (first name, last name, phone, etc.).
+13. IF the `usernameChangedAt` value in the profile response is non-null but cannot be parsed as a valid date, THEN THE client SHALL treat it as absent (`null`) and SHALL NOT place the Username_Field in the Username_Locked_State.

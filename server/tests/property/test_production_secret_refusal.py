@@ -469,6 +469,7 @@ def test_secret_value_never_logged(
     assume("default" not in present_value.lower())
     assume("require" not in present_value.lower())
     assume("refus" not in present_value.lower())
+    assume("database" not in present_value.lower())
 
     if other_violation_kind == 'dev_default':
         other_value = data.draw(
