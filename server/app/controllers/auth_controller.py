@@ -290,7 +290,10 @@ def _serialize_auth_user(u):
         try:
             organization_user_count = db.session.query(func.count(User.id))\
                 .join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
-                .filter(CommunityGroup.organization_id == location_id)\
+                .filter(
+                    CommunityGroup.organization_id == location_id,
+                    User.role == 'user',
+                )\
                 .scalar() or 0
         except Exception:
             organization_user_count = None
@@ -306,6 +309,7 @@ def _serialize_auth_user(u):
                     .filter(
                         CommunityGroup.organization_id == location_id,
                         Wallet.lifetime_points > user_lifetime,
+                        User.role == 'user',
                     ).scalar() or 0
                 campus_rank = int(peers_above) + 1
             except Exception:

@@ -1139,9 +1139,14 @@ export default function ProfileSection() {
 
               {/* EP labels + progress bar */}
               {currentUser?.campusRank != null && (currentUser?.organizationUserCount ?? 0) > 0 && (() => {
-                const pct = Math.max(4, Math.round(
-                  ((currentUser.organizationUserCount - currentUser.campusRank) / currentUser.organizationUserCount) * 100
-                ));
+                const userPoints = currentUser?.lifetimePoints ?? 0;
+                const nextPoints = currentUser?.nextRankPoints ?? 0;
+                // Only show fill when the user has actually earned points.
+                // Clamp to a visible minimum (4%) only when points > 0.
+                const rawPct = nextPoints > 0
+                  ? Math.round((userPoints / nextPoints) * 100)
+                  : userPoints > 0 ? 100 : 0;
+                const pct = userPoints > 0 ? Math.max(4, rawPct) : 0;
                 return (
                   <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between text-[10px] font-bold">
@@ -1207,7 +1212,12 @@ export default function ProfileSection() {
             {/* Footer: View Leaderboards */}
             <div className="border-t border-[#FDE68A] px-4 py-3">
               <button
-                onClick={() => router.push('/leaderboard')}
+                onClick={() => {
+                  const org = currentUser?.locationName || '';
+                  const params = new URLSearchParams({ highlight: 'me' });
+                  if (org) params.set('org', org);
+                  router.push(`/leaderboard?${params.toString()}`);
+                }}
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] transition-colors cursor-pointer"
                 style={{ ...fonts.body, color: '#10B981' }}
               >

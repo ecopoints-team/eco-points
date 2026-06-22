@@ -4,6 +4,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Crown,
   Medal,
@@ -200,8 +201,12 @@ function SkeletonRow() {
 // ─────────────────────────────────────────────
 export default function LeaderboardPodium() {
   const { currentUser: authUser } = useAuth();
+  const searchParams = useSearchParams();
+  const highlightMe = searchParams.get('highlight') === 'me';
+  const orgParam = searchParams.get('org') || '';
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [orgFilter, setOrgFilter] = useState("All Organizations");
+  const [orgFilter, setOrgFilter] = useState(orgParam || "All Organizations");
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const orgDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -440,12 +445,40 @@ export default function LeaderboardPodium() {
   }, []);
 
   const scrollToTable = () => {
+    // When arriving via highlight=me, prefer scrolling to the user's specific row
+    const myRow = document.getElementById("my-leaderboard-row");
+    if (myRow) {
+      const rect = myRow.getBoundingClientRect();
+      const navHeight = 96;
+      // Place the row roughly in the upper-middle of the viewport so it's
+      // fully visible with the rows above it for context.
+      const viewportCenter = window.innerHeight * 0.38;
+      const scrollTarget = rect.top + window.scrollY - navHeight - viewportCenter;
+      window.scrollTo({ top: Math.max(0, scrollTarget), behavior: "smooth" });
+      return;
+    }
     if (tableRef.current) {
       const rect = tableRef.current.getBoundingClientRect();
       const navHeight = 96;
       window.scrollTo({ top: rect.top + window.scrollY - navHeight, behavior: "smooth" });
     }
   };
+
+  // ── Auto-scroll to the current user's row when arriving from "View Leaderboard" ──
+  // Fires once after data loads when `highlight=me` is in the URL.
+  const hasAutoScrolled = useRef(false);
+  useEffect(() => {
+    if (!highlightMe || hasAutoScrolled.current) return;
+    if (loading || !rawUsers.length) return;
+    if (!CURRENT_USER_RANK) return;
+
+    hasAutoScrolled.current = true;
+    const targetPage = Math.ceil(CURRENT_USER_RANK / itemsPerPage);
+    setCurrentPage(targetPage);
+    // Give the DOM a tick to re-render the correct page before scrolling
+    setTimeout(scrollToTable, 150);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightMe, loading, rawUsers.length, CURRENT_USER_RANK]);
 
   const handleSeeStats = () => {
     if (CURRENT_USER_RANK && CURRENT_USER_RANK <= maxItems) {
@@ -765,11 +798,13 @@ export default function LeaderboardPodium() {
               {/* Data rows */}
               {!loading && !error && currentList.map((user) => {
                 const isMe = authUser?.id && String(user.id) === String(authUser.id);
+                const isHighlighted = isMe && highlightMe;
                 return (
                   <div
                     key={user.id}
+                    id={isMe ? "my-leaderboard-row" : undefined}
                     className={`grid grid-cols-[auto_1fr_auto_auto] md:grid-cols-12 gap-x-3 gap-y-0 sm:gap-4 px-4 sm:px-8 py-4 items-center border-b border-emerald-50/50 last:border-none transition-colors ${isMe
-                      ? "bg-emerald-50/80 relative"
+                      ? `bg-emerald-50/80 relative${isHighlighted ? ' ring-2 ring-inset ring-emerald-400' : ''}`
                       : "hover:bg-slate-50"
                       }`}
                   >
