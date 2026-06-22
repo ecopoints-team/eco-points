@@ -332,9 +332,15 @@ def _serialize_reward(r):
         proxy for the "Total Dispensed" stat — each row corresponds to
         one redeemed unit.
     """
-    variants = [{'id': v.id, 'varietyName': v.variety_name,
-                 'stockQuantity': v.stock_quantity, 'isActive': v.is_active}
-                for v in (r.variants or [])]
+    variants = [{
+        'id': v.id,
+        'varietyName': v.variety_name,
+        'stockQuantity': v.stock_quantity,
+        'pointsRequired': v.points_required if v.points_required is not None else r.points_required,
+        'pointsRequiredOverride': v.points_required,
+        'imageUrl': v.image_url,
+        'isActive': v.is_active,
+    } for v in (r.variants or [])]
     total_stock = sum(v.stock_quantity or 0 for v in (r.variants or []))
 
     # Derived: how many redemptions have been claimed/used. We could

@@ -569,6 +569,7 @@ class RewardVariant(db.Model):
     reward_id = db.Column(db.Integer, db.ForeignKey('rewards.id'), nullable=False, index=True)
     variety_name = db.Column(db.String(200), nullable=False)      # e.g. "Red - Medium"
     stock_quantity = db.Column(db.Integer, default=0)
+    points_required = db.Column(db.Integer, nullable=True)        # NULL = inherit parent Reward.points_required
     image_url = db.Column(db.String(500), nullable=True)          # Variant-specific product image
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

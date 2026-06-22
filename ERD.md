@@ -115,6 +115,7 @@ erDiagram
         int reward_id FK "Reference -> REWARDS"
         string variety_name "e.g. Red - Medium, Blue - Large"
         int stock_quantity "inventory for item"
+        int points_required "Nullable - per-variant price; NULL inherits REWARDS.points_required"
         string image_url "Nullable - Variant-specific product image"
         boolean is_active
         datetime created_at
