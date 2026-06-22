@@ -10,6 +10,7 @@ This feature adds live inline username validation to the Edit Profile modal in `
 - **Debounced uniqueness check** (500 ms) via a new `GET /api/web/auth/check-username` endpoint.
 - **Save button gating** that blocks submission while any rule fails or the availability check is pending.
 - **Visual feedback** — inline error text, a `Loader2` spinner while checking, and a green `CheckCircle` when the username is valid and available.
+- **Username change lockout** — once a username is successfully changed, the field is locked for 30 days; the locked field is non-interactive, styled consistently with other locked fields, and displays a countdown message showing remaining days.
 
 ### Research Summary
 
@@ -256,11 +257,104 @@ def check_username(current_user):
 
 The `@token_required` decorator handles the 401 case. No CSRF is required because GET is a safe method (consistent with all other GET endpoints in the codebase).
 
+### 7. Username Lockout State
+
+When the Edit_Profile_Modal opens, the client computes two derived values **once** from `currentUser.usernameChangedAt` (the value received from the profile API, before the user edits anything):
+
+```js
+/**
+ * Returns true when the username is currently within the 30-day lockout window.
+ * Treats null, undefined, and malformed timestamps as "not locked".
+ */
+const isUsernameLocked = (() => {
+    if (!currentUser?.usernameChangedAt) return false;
+    const changedAt = new Date(currentUser.usernameChangedAt);
+    if (isNaN(changedAt.getTime())) return false;   // malformed → treat as null
+    const elapsedDays = (Date.now() - changedAt.getTime()) / 86_400_000;
+    return elapsedDays < 30;
+})();
+
+/**
+ * Whole days remaining in the lockout period, clamped to a minimum of 1.
+ * Only meaningful when isUsernameLocked is true.
+ */
+const lockoutRemainingDays = isUsernameLocked
+    ? Math.max(1, 30 - Math.floor((Date.now() - new Date(currentUser.usernameChangedAt).getTime()) / 86_400_000))
+    : 0;
+```
+
+Both values are computed once at render time from the prop/context value — not in a `useState` — so they stay stable for the lifetime of a single modal session and do not require an effect.
+
+#### Conditional Rendering
+
+When `isUsernameLocked` is `true`, the Username_Field renders in the **Username_Locked_State**:
+
+```jsx
+{isUsernameLocked ? (
+  // ── Locked state ────────────────────────────────────────────────
+  <>
+    <div className="relative">
+      <input
+        value={editUsername}
+        disabled
+        className="w-full pr-9 bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200 rounded-lg px-3 py-2 text-sm"
+      />
+      <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+    </div>
+    <p className="text-[11px] text-slate-400 mt-1 px-1">
+      {`Username locked — available to change in ${lockoutRemainingDays} ${lockoutRemainingDays === 1 ? 'day' : 'days'}.`}
+    </p>
+  </>
+) : (
+  // ── Normal editable state (existing rendering logic) ────────────
+  <>
+    <div className="relative">
+      <input value={editUsername} onChange={...} className={...} />
+      {/* spinner / CheckCircle icons */}
+    </div>
+    {usernameError && <p className="text-[11px] text-rose-500 font-semibold mt-1 px-1">{usernameError}</p>}
+  </>
+)}
+```
+
+The `disabled` attribute on the `<input>` ensures the field is completely non-interactive (no focus, no typing, no click). The `Lock` icon placement matches the pattern already used for User ID, Email, and Organization fields in the same modal.
+
+#### Effect Skip When Locked
+
+The `useEffect` that drives format validation and the availability check guards on `isUsernameLocked` at its top:
+
+```js
+useEffect(() => {
+    if (isUsernameLocked) return;   // ← do nothing; field is not editable
+    // ... existing validation logic ...
+}, [editUsername, currentUser?.username, isUsernameLocked]);
+```
+
+This ensures that when the field is locked, `usernameError`, `usernameCheckStatus`, and the Available_Indicator remain in their initial empty/neutral state.
+
+#### Save Button When Locked
+
+`usernameBlocksSave` already returns `false` when `editUsername` is empty (Requirement 3.4). When the field is locked the component keeps `editUsername` initialised to the current username and does **not** gate on `isUsernameLocked` separately — the existing logic naturally leaves the save button enabled because the locked username passes the "same as saved username" branch (`usernameCheckStatus === 'available'`) and has no error.
+
+If the surrounding save handler needs to skip the username-changed path when locked, it checks `isUsernameLocked` before comparing old vs. new username:
+
+```js
+const usernameChanged = !isUsernameLocked && editUsername !== currentUser?.username;
+```
+
 ---
 
 ## Data Models
 
-No database schema changes are required. The feature reads the existing `users.username` column (VARCHAR 100, unique, nullable) and the `users.id` column. Both are already indexed.
+No new database columns are required for the uniqueness-check feature itself. The feature reads the existing `users.username` column (VARCHAR 100, unique, nullable) and the `users.id` column. Both are already indexed.
+
+The lockout feature (Requirement 7) adds one column:
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `username_changed_at` | TIMESTAMP WITH TIME ZONE (ISO 8601 UTC) | Yes | Set to the current UTC timestamp each time a user successfully saves a new username through the Edit_Profile_Modal. `NULL` if the username has never been changed through the change flow. |
+
+The backend profile endpoint (`GET /api/web/auth/me` or equivalent) must include this field in its response as `usernameChangedAt` (camelCase). The `PUT /auth/profile` handler must update `username_changed_at` to `datetime.utcnow()` whenever the `username` field in the request body differs from the current stored value and the save succeeds.
 
 ### Validation State (client-side, in-memory only)
 
@@ -293,6 +387,21 @@ Error (500):
 ```
 
 The 400 responses will cause `request()` in `client.js` to throw an `ApiError` (because `success: false` triggers the error branch), which the component's `catch` block handles by entering the `'error'` status — clearing the spinner and unblocking save (Requirement 2.6 / 3.6).
+
+### User Profile Response Shape (updated for Requirement 7)
+
+The profile endpoint response (used by `me()` / `currentUser` context) must now include `usernameChangedAt`:
+
+```json
+{
+  "id": "...",
+  "username": "alice",
+  "usernameChangedAt": "2025-06-01T12:34:56Z",
+  ...
+}
+```
+
+`usernameChangedAt` is `null` when the username has never been changed through the change flow. The client treats any non-null, non-parseable value as `null` (Requirement 7.13).
 
 ---
 
@@ -364,6 +473,14 @@ The 400 responses will cause `request()` in `client.js` to throw an `ApiError` (
 
 ---
 
+### Property 9: Locked Field Never Blocks Save
+
+*For any* combination of `usernameError` (empty or any non-empty error string) and `usernameCheckStatus` (`''`, `'checking'`, `'available'`, `'taken'`, or `'error'`) values, when `isUsernameLocked` is `true`, `usernameBlocksSave` SHALL evaluate to `false`. The locked state supersedes all username validation state for the purpose of save-button gating.
+
+**Validates: Requirements 7.11, 7.12**
+
+---
+
 ## Error Handling
 
 ### Client-Side
@@ -376,6 +493,7 @@ The 400 responses will cause `request()` in `client.js` to throw an `ApiError` (
 | Stale response arrives after newer check | `cancelled = true` flag discards the stale result |
 | Modal closed or input cleared during in-flight check | `useEffect` cleanup cancels the timer; `cancelled` flag silences the resolved promise |
 | Username unchanged since last save | `handleSave` already guards `usernameChanged` before calling the API |
+| `usernameChangedAt` is non-null but not a parseable date | Treated as `null`; `isUsernameLocked` is `false`; field is fully editable (Requirement 7.13) |
 
 ### Server-Side
 

@@ -375,7 +375,8 @@ def _serialize_auth_user(u):
         'bestStreak': u.wallet.best_streak if u.wallet else 0,
         'lastLogin': u.last_login.isoformat() if u.last_login else None,
         'createdAt': u.created_at.isoformat() if u.created_at else None,
-        'lastUsernameChange': u.last_username_change.isoformat() if u.last_username_change else None,
+        'lastUsernameChange': u.last_username_change.isoformat() + 'Z' if u.last_username_change else None,
+        'usernameChangedAt': u.last_username_change.isoformat() + 'Z' if u.last_username_change else None,
         'otpEnabled': two_fa_enabled, 'otpMethod': two_fa_method,
         # Phase 3 task 8.2 — alignment-doc §15 derived fields.
         'qrPayload': qr_payload,
@@ -658,7 +659,12 @@ def update_profile(current_user, payload):
             if new_username != current_user.username:
                 # Enforce 30-day cooldown
                 if current_user.last_username_change:
-                    days_since = (datetime.now(timezone.utc) - current_user.last_username_change).days
+                    # last_username_change may be stored as a naive UTC datetime;
+                    # make it timezone-aware before subtracting to avoid TypeError.
+                    last_change = current_user.last_username_change
+                    if last_change.tzinfo is None:
+                        last_change = last_change.replace(tzinfo=timezone.utc)
+                    days_since = (datetime.now(timezone.utc) - last_change).days
                     if days_since < 30:
                         remaining = 30 - days_since
                         return jsonify({

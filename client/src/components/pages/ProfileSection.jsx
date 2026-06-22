@@ -660,6 +660,9 @@ export default function ProfileSection() {
   // backend uniqueness check. A `cancelled` flag + clearTimeout ensure stale
   // timers and in-flight responses are discarded on every new keystroke.
   useEffect(() => {
+    // Locked field — do nothing; field is not editable (Requirement 7.11)
+    if (isUsernameLocked) return;
+
     // Synchronous format check — runs on every input change
     const formatError = validateUsernameFormat(editUsername);
     if (formatError) {
@@ -711,15 +714,15 @@ export default function ProfileSection() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [editUsername, currentUser?.username]);
+  }, [editUsername, currentUser?.username, isUsernameLocked]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    // If username changed, intercept and show confirmation first
-    const usernameChanged = editUsername !== (currentUser?.username || "");
+    // If username changed (and not locked), intercept and show confirmation first
+    const usernameChanged = !isUsernameLocked && editUsername !== (currentUser?.username || "");
     if (usernameChanged && !showUsernameConfirm) {
       setShowUsernameConfirm(true);
       return;
@@ -814,10 +817,38 @@ export default function ProfileSection() {
     }
   };
 
+  // ── Username lockout derived values (Requirements 7.1, 7.7, 7.8, 7.13) ──
+  // Computed once at render time from the server-supplied usernameChangedAt field.
+  // Both values are plain const — NOT useState — so they are stable for the
+  // lifetime of a single modal session and require no effect.
+  // NOTE: must be declared before usernameBlocksSave so the guard below can reference it.
+
+  /**
+   * Returns true when the username is currently within the 30-day lockout window.
+   * Treats null, undefined, and malformed timestamps as "not locked" (Requirement 7.13).
+   */
+  const isUsernameLocked = (() => {
+    if (!currentUser?.usernameChangedAt) return false;
+    const changedAt = new Date(currentUser.usernameChangedAt);
+    if (isNaN(changedAt.getTime())) return false;   // malformed → treat as null (Req 7.13)
+    const elapsedDays = (Date.now() - changedAt.getTime()) / 86_400_000;
+    return elapsedDays < 30;
+  })();
+
+  /**
+   * Whole days remaining in the lockout period, clamped to a minimum of 1.
+   * Only meaningful when isUsernameLocked is true; evaluates to 0 otherwise.
+   */
+  const lockoutRemainingDays = isUsernameLocked
+    ? Math.max(1, 30 - Math.floor((Date.now() - new Date(currentUser.usernameChangedAt).getTime()) / 86_400_000))
+    : 0;
+
   // Derived: should the save button be blocked due to username validation state?
   // Empty username → optional, don't block. Format error or taken → block.
   // Checking or debounce pending (status '') → block. Available or network error → don't block.
+  // Locked field → never block (Requirement 7.12, Property 9).
   const usernameBlocksSave = (() => {
+    if (isUsernameLocked) return false;                       // locked → field can't change, never block
     if (!editUsername) return false;                          // empty → optional, don't block
     if (usernameError) return true;                          // format error or "taken"
     if (usernameCheckStatus === 'checking') return true;     // availability pending
@@ -1253,37 +1284,57 @@ export default function ProfileSection() {
                       <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 flex-shrink-0" />
                     </div>
                   </div>
-                  {/* USERNAME — editable */}
+                  {/* USERNAME — locked or editable */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Username</label>
-                    <div className="relative">
-                      <input
-                        onFocus={() => setIsFocused("username")}
-                        onBlur={() => setIsFocused(null)}
-                        type="text"
-                        placeholder="Username"
-                        value={editUsername}
-                        onChange={(e) => setEditUsername(e.target.value)}
-                        className={`w-full p-3 pr-9 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300/50 text-sm font-semibold text-slate-800 truncate ${
-                          usernameError
-                            ? 'border-rose-400 focus:border-rose-400'
-                            : usernameCheckStatus === 'available'
-                              ? 'border-emerald-400 focus:border-emerald-400'
-                              : 'border-slate-200 focus:border-emerald-300'
-                        }`}
-                        style={fonts.body}
-                      />
-                      {/* Right-side icon */}
-                      {usernameCheckStatus === 'checking' && !usernameError && (
-                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
-                      )}
-                      {usernameCheckStatus === 'available' && !usernameError && (
-                        <CheckCircle className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                      )}
-                    </div>
-                    {/* Inline error */}
-                    {usernameError && (
-                      <p className="text-[11px] text-rose-500 font-semibold mt-1 px-1" style={fonts.body}>{usernameError}</p>
+                    {isUsernameLocked ? (
+                      /* ── Locked state (Requirements 7.2–7.6) ─────────────────── */
+                      <>
+                        <div className="relative">
+                          <input
+                            value={editUsername}
+                            disabled
+                            className="w-full pr-9 bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 px-1" style={fonts.body}>
+                          {`Username locked — available to change in ${lockoutRemainingDays} ${lockoutRemainingDays === 1 ? 'day' : 'days'}.`}
+                        </p>
+                      </>
+                    ) : (
+                      /* ── Normal editable state ────────────────────────────────── */
+                      <>
+                        <div className="relative">
+                          <input
+                            onFocus={() => setIsFocused("username")}
+                            onBlur={() => setIsFocused(null)}
+                            type="text"
+                            placeholder="Username"
+                            value={editUsername}
+                            onChange={(e) => setEditUsername(e.target.value)}
+                            className={`w-full p-3 pr-9 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300/50 text-sm font-semibold text-slate-800 truncate ${
+                              usernameError
+                                ? 'border-rose-400 focus:border-rose-400'
+                                : usernameCheckStatus === 'available'
+                                  ? 'border-emerald-400 focus:border-emerald-400'
+                                  : 'border-slate-200 focus:border-emerald-300'
+                            }`}
+                            style={fonts.body}
+                          />
+                          {/* Right-side icon */}
+                          {usernameCheckStatus === 'checking' && !usernameError && (
+                            <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
+                          )}
+                          {usernameCheckStatus === 'available' && !usernameError && (
+                            <CheckCircle className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                          )}
+                        </div>
+                        {/* Inline error */}
+                        {usernameError && (
+                          <p className="text-[11px] text-rose-500 font-semibold mt-1 px-1" style={fonts.body}>{usernameError}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
