@@ -299,6 +299,42 @@ def trigger_alert(org_id, alert_key, subject, body, extra_context=None):
     return logs_created
 
 
+def run_maintenance_sweep():
+    """Fire `maintenance_unresolved` alerts for every org whose active setting
+    has unresolved maintenance logs older than its threshold (hours).
+
+    Designed to be called from a scheduler (cron / Task Scheduler) via the
+    `flask check-maintenance` CLI command. Idempotent per call; relies on the
+    org's NotificationSetting to decide whether to alert.
+    """
+    from datetime import datetime, timezone, timedelta
+    from ..models import MaintenanceLog, RVM
+
+    settings = NotificationSetting.query.filter_by(
+        alert_key='maintenance_unresolved', is_active=True,
+    ).all()
+
+    for setting in settings:
+        org_id = setting.organization_id
+        threshold_hours = setting.threshold or 48
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=threshold_hours)
+
+        # MaintenanceLog uses status='Pending' for unresolved entries
+        # (confirmed in models.py: status column, values: Resolved/Pending/Cancelled)
+        unresolved = MaintenanceLog.query.join(RVM).filter(
+            RVM.organization_id == org_id,
+            MaintenanceLog.status == 'Pending',
+            MaintenanceLog.created_at <= cutoff,
+        ).limit(5).all()
+
+        for log_entry in unresolved:
+            rvm_name = log_entry.rvm.name if log_entry.rvm else f'RVM #{log_entry.rvm_id}'
+            trigger_alert(org_id, 'maintenance_unresolved',
+                          f'Unresolved maintenance: {rvm_name}',
+                          f'Maintenance log "{log_entry.action_type}" on "{rvm_name}" '
+                          f'has been unresolved for over {threshold_hours} hour(s).')
+
+
 def ensure_default_settings(org_id):
     """
     Create default NotificationSetting rows for an org if they don't exist yet.

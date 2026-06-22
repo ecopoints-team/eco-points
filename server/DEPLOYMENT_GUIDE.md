@@ -304,3 +304,13 @@ The current setup is for Linux/Unix production servers. On Windows for developme
 - Use `python run.py` directly instead of gunicorn
 - Nginx on Windows is not recommended; use the dev servers
 - Consider using WSL2 for a Linux environment on Windows
+
+
+## Scheduled jobs
+
+Run the unresolved-maintenance sweep on a timer (e.g. hourly):
+
+    flask check-maintenance
+
+- Linux cron:  `0 * * * * cd /srv/ecopoints/server && flask check-maintenance`
+- Windows Task Scheduler: action `flask check-maintenance` in the server dir, trigger hourly.

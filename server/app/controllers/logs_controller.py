@@ -178,7 +178,8 @@ def get_access_logs(current_user):
         )
         if loc_id:
             query = query.join(CommunityGroup, User.community_group_id == CommunityGroup.id)\
-                         .filter(CommunityGroup.organization_id == loc_id)
+                         .filter(CommunityGroup.organization_id == loc_id)\
+                         .filter(User.role != 'superadmin')
                          
         if not current_user.is_admin:
             return jsonify({'success': True, 'logs': []}), 200
