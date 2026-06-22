@@ -8,6 +8,7 @@ import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';
 import { rewards as rewardsApi, rewardCategories as categoriesApi } from '../../../src/services/api';
+import RewardVariantEditor from '../../../src/components/admin/RewardVariantEditor';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import {
@@ -280,7 +281,8 @@ function RewardsInventoryPageContent() {
         pointsRequired: '',
         stockQuantity: '',
         category: 'Merchandise',
-        imageUrl: null
+        imageUrl: null,
+        variants: [],
     });
     const [imagePreview, setImagePreview] = useState(null);
     const [imageUploading, setImageUploading] = useState(false);
@@ -429,7 +431,7 @@ function RewardsInventoryPageContent() {
     // Modal handlers
     const openAddModal = () => {
         setEditingReward(null);
-        setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null });
+        setFormData({ name: '', description: '', pointsRequired: '', stockQuantity: '', category: 'Merchandise', imageUrl: null, variants: [] });
         setImagePreview(null);
         setImageUploading(false);
         setShowModal(true);
@@ -443,7 +445,16 @@ function RewardsInventoryPageContent() {
             pointsRequired: r.pointsRequired.toString(),
             stockQuantity: r.stockQuantity.toString(),
             category: r.category,
-            imageUrl: r.imageUrl || null
+            imageUrl: r.imageUrl || null,
+            variants: (r.variants || [])
+                .filter(v => v.isActive !== false && v.varietyName !== 'Default')
+                .map(v => ({
+                    id: v.id,
+                    varietyName: v.varietyName,
+                    stockQuantity: String(v.stockQuantity ?? 0),
+                    pointsRequired: v.pointsRequiredOverride != null ? String(v.pointsRequiredOverride) : null,
+                    samePrice: v.pointsRequiredOverride == null,
+                })),
         });
         setImagePreview(null);
         setImageUploading(false);
@@ -475,6 +486,14 @@ function RewardsInventoryPageContent() {
             return;
         }
         const stockQuantity = parseInt(formData.stockQuantity);
+        const variantsPayload = (formData.variants || [])
+            .filter(v => (v.varietyName || '').trim() !== '')
+            .map(v => ({
+                ...(v.id ? { id: v.id } : {}),
+                varietyName: v.varietyName.trim(),
+                stockQuantity: parseInt(v.stockQuantity) || 0,
+                pointsRequired: v.samePrice ? null : (parseInt(v.pointsRequired) || 0),
+            }));
         const label = editingReward ? 'Saving changes...' : 'Creating reward...';
         const successLabel = editingReward ? 'Reward updated' : 'Reward created';
 
@@ -487,6 +506,7 @@ function RewardsInventoryPageContent() {
                     stockQuantity,
                     category: formData.category,
                     imageUrl: formData.imageUrl,
+                    ...(variantsPayload.length ? { variants: variantsPayload } : {}),
                 });
                 setRewards(prev => prev.map(r => r.id === editingReward.id ? {
                     ...r,
@@ -503,6 +523,7 @@ function RewardsInventoryPageContent() {
                     category: formData.category,
                     imageUrl: formData.imageUrl,
                     locationId: effectiveLocationId,
+                    ...(variantsPayload.length ? { variants: variantsPayload } : {}),
                 });
                 setRewards(prev => [{
                     id: String(created.id),
@@ -867,7 +888,7 @@ function RewardsInventoryPageContent() {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
@@ -881,7 +902,8 @@ function RewardsInventoryPageContent() {
                                 <X size={20} className="text-slate-500" />
                             </button>
                         </div>
-                        <div className="p-5 space-y-3">
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-3">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Image</label>
                                 <div className="flex items-center gap-4">
@@ -925,7 +947,18 @@ function RewardsInventoryPageContent() {
                                     existingCategories={categories}
                                 />
                             </div>
-                        </div>
+                            </div>{/* end left column */}
+                            <div className="space-y-3 md:border-l md:border-slate-200 md:dark:border-slate-700 md:pl-6">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Add product variants (e.g. sizes or colors). Each variant tracks its own stock and optionally a custom price. Leave "same as main" checked to use the Points Cost above.
+                                </p>
+                                <RewardVariantEditor
+                                    variants={formData.variants}
+                                    mainPrice={formData.pointsRequired}
+                                    onChange={(next) => setFormData(p => ({ ...p, variants: next }))}
+                                />
+                            </div>
+                        </div>{/* end grid */}
                         <div className="flex gap-3 p-6 pt-0">
                             <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">Cancel</button>
                             <button type="button" onClick={handleSubmit} disabled={imageUploading} className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">{editingReward ? 'Save Changes' : 'Add Reward'}</button>
