@@ -548,3 +548,143 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
   ### 2026-06-21-admin-rbac-and-crud-fixes
   - In continuation of this fixes, here's some new issues found on the system:
     - Since the superadmin is the only one that have access on locations, when the normal admins navigate on the `Analytics Menu`, it throws a 127.0.0.1 - - [22/Jun/2026 02:02:12] "GET /api/web/org-types HTTP/1.1" 403 - and 127.0.0.1 - - [22/Jun/2026 02:02:14] "GET /api/web/org-types HTTP/1.1" 403 -. Also, it throws a notifcation permission_denied on org_types and locations (which is good) every login of those tenant admin, let's not show it connstantly and hide it on the logs only. How can we fix these issues? alongside of keeping the annalytics showinnng their own locaton's data only.
+
+
+
+
+### Rewards Menu Fixes 
+
+## Tasks
+
+- An internal server is being thrown on making / adding a rewards:
+    -  Error Type
+    Console ApiError
+
+    Error Message
+    INTERNAL SERVER ERROR
+
+
+        at <unknown> (src/services/api/client.js:224:15)
+
+    ## Code Frame
+      222 |         // back to the generic HTTP status text (e.g. "BAD REQUEST").
+      223 |         const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
+    > 224 |         throw new ApiError(
+          |               ^
+      225 |             serverError.code || `HTTP_${response.status}`,
+      226 |             serverError.message || flatStringMessage || response.statusText || `Request failed (${response.status})`,
+      227 |             response.status,
+
+    Next.js version: 16.2.7 (Turbopack)
+
+- Make sure that all the functionalities of the rewards page is working.
+
+
+
+### General Admin Dashboard Fixes
+
+## Overview
+
+- Included n this plan are some of the additional features to have inside of the admin dashboard to enhance the user experience. 
+
+## Tasks
+
+- Make sure that all the Create, Edit, and Delete actions on the admin dashboard shows a progress modal instead of static page while the action is undergoing. For instance, adding a location. Creating a location works but when the create button is clicked, the page goes stale and that's it then a new location is created. Here's some menu that have no progress shower for Create, Edit, and Delete:
+  - Locations: Add locations / Edit Location / (Add A Delete Location)
+  - Machines: Add Machine / Edit Machine / Add Maintenance / Maintenance modal loader / (Add a  delete maintenance beside the edit) / (Add A Delete Machine)
+  - Manage Users: Add User / Edit User / Points Adjustment / Deactivating User / (Add A Delete Userr)
+  - Manage Admins: Add Admin  / Edit Admin / Delete Admin / (Add a Deactivate Admin beside the delete admin)
+  - Rewards Inventory: Add Rewards  / Edit Rewards  / Deactivate Rewards  / (Add a delete rewards beisde the deactivate)
+  - Analytics: Exporting
+  - Bulk Sessions: Add Bulk Session
+  - Bottle Logs: Exporting
+  - Machine Logs: Exporting / (Remove the Create Log and its functionality. Its redundant cause we have that on the machines menu)
+  - Rewards Logs: Exporting / (Remove the Scan QR Code and its functionality. its redundant since we already have the Claim Scanner Menu)
+  - Transaction Logs: Exporting
+  - Admin Logs: Exporting
+  - Signing out
+
+
+### Notification Fixes
+
+## Overview
+
+- This plan includes the checking and testing for the notification functionality.
+
+## Tasks
+
+- Our QA tests manually tests the following and threw ann internal server error:
+  - new user registered
+  - rewards out of stock
+  - suspicious activity
+- And they tried the Undersolved Maintenance Threshold. We set it to 1 hour but it didnt threw an email notification. Can we test and check for other Notification alerts functionality.
+
+- On the notifiication bell and logs of each organization, there should not be a Super admin login or logout and any other superadmin logs.
+
+### Security Tab on Settings Fixes (Admin Dashboard)
+
+## Overview
+
+- This plan is expected to execute tests and checking for functionality of the Security settings of the admin dashboard.
+
+## Tasks
+
+- Two-Factor Authentication
+  - On default 2FA Method dropdown, there is still an SMS OTP option. Remove it and its functionality for 2FA.
+  - Make sure that the 2FA is working and give me a manual test flow to test its function other than youre smoke tests.
+- Session Management 
+  - Make sure that the timeout really works and the force logout all sessions.
+- Login Prevention
+  - Make sure that the Max login attempts and the lockout duration works.
+
+- NOTE: The security must work on multi tenant as well. Other orgs should not be able to manipulate other org's settings. For the superadmin, it should be able to manipulate the others settings but ONLY when the View as filter is filtered to the corresponding organization / Location.
+
+- Back up and Restore & Test Data
+  - These two tab should be able to manpulate its own organization. For the superadmin, it should be able to manipulate the others settings but ONLY when the View as filter is filtered to the corresponding organization / Location.
+
+- QUESTION
+  - Does each organization have their own database in this system?
+
+
+### Quick Actions Per Role
+
+## Overview
+
+- This plan must fix the quick action buttons per role
+
+## Tasks
+
+- Head Admin Quick Actions
+  - Rewards
+  - Manage Users
+  - Machines
+  - Admin Logs
+- Auditor Quick Actions
+  - User Management 
+  - Analytics
+  - System Logs
+  - Bulk Sessions
+- Inventory Officer Quick Actions
+  - Rewards Inventory 
+  - Bulk Sessions
+  - System Logs
+- Technician Quick Actions
+  - Machines
+  - Bulk Sessions
+  - Session Logs
+
+
+
+  ### Found Bugs from the 2026-06-22-admin-ux-notifications-security-fixes
+
+  - From Rewards inventory menu
+    - [browser] Uncaught ReferenceError: rewards is not defined
+      at RewardsInventoryPageContent (app/admin/rewards/page.js:352:36)
+      at RewardsInventoryPage (app/admin/rewards/page.js:1074:13)
+    350 |     };
+    351 |
+  > 352 |     const categories = [...new Set(rewards.map(r => r.category))];
+        |                                    ^
+    353 |
+    354 |     // Derived status based on stock
+    355 |     const getStatus = (stock) => {

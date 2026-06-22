@@ -343,6 +343,13 @@ def create_app():
     from .seeder import seed_cmd
     app.cli.add_command(seed_cmd)
 
+    @app.cli.command('check-maintenance')
+    def check_maintenance():
+        """Run the unresolved-maintenance notification sweep."""
+        from .services.notification_service import run_maintenance_sweep
+        run_maintenance_sweep()
+        print('Maintenance sweep complete.')
+
     # Phase 4I (task 18.1): register the token-blacklist cleanup command.
     # Validates Requirements 4I.32, 4I.33.
     from .seeder.cleanup import cleanup_tokens
