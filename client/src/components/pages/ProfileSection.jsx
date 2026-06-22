@@ -1,7 +1,7 @@
 // user client
 // Profile section
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { QRCodeCanvas } from "qrcode.react";
@@ -30,6 +30,13 @@ import {
   ZoomIn,
   CheckCircle,
   Trophy,
+  Check,
+  X,
+  ChevronRight,
+  AlertCircle,
+  ShoppingBag,
+  ScrollText,
+  Leaf,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
@@ -134,28 +141,34 @@ export default function ProfileSection() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
-  // ── Pending Claims state ──
+  // ── Redeem History / Pending Claims state ──
+  const [allRedemptions, setAllRedemptions] = useState([]);
   const [pendingItems, setPendingItems] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+  const [activeTabHistory, setActiveTabHistory] = useState('All');
+  const [activeQrTicket, setActiveQrTicket] = useState(null);
+  const [activeReceiptItem, setActiveReceiptItem] = useState(null);
 
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchPending() {
+    async function fetchRedemptions() {
       try {
         const redemptions = await rewardsApi.getMyRedemptions();
         if (cancelled) return;
-        const pending = (redemptions || []).filter(
+        const all = redemptions || [];
+        const pending = all.filter(
           (r) => r.status === 'pending' || r.status === 'PENDING'
         );
+        setAllRedemptions(all);
         setPendingItems(pending);
         setPendingCount(pending.length);
       } catch {
         // silent — card shows 0
       }
     }
-    fetchPending();
+    fetchRedemptions();
     return () => { cancelled = true; };
   }, []);
 
@@ -384,22 +397,158 @@ export default function ProfileSection() {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
+
+  // Download a branded redemption ticket card
+  const downloadTicketQR = async (item) => {
+    const qrCanvas = document.getElementById('ticket-qr-canvas');
+    if (!qrCanvas) return;
+
+    const { width: W, height: H, padding: P, bgGradientStart, bgGradientEnd, cardBg, textColor, subtextColor, cornerRadius: R } = BRANDED_CARD;
+    const qrSize = 220;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, bgGradientStart);
+    grad.addColorStop(1, bgGradientEnd);
+    drawRoundedRect(ctx, 0, 0, W, H, R);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // White card
+    const cardX = P / 2, cardY = P / 2;
+    const cardW = W - P, cardH = H - P - 60;
+    drawRoundedRect(ctx, cardX, cardY, cardW, cardH, R - 8);
+    ctx.fillStyle = cardBg;
+    ctx.fill();
+    drawRoundedRect(ctx, cardX, cardY, cardW, cardH, R - 8);
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Logo
+    let logoEndY = cardY + 50;
+    try {
+      const logo = await loadImage('/ecopoints-logo-mark.png');
+      const logoW = Math.min(200, logo.width);
+      const logoH = logo.height * (logoW / logo.width);
+      ctx.drawImage(logo, (W - logoW) / 2, cardY + 20, logoW, logoH);
+      logoEndY = cardY + 20 + logoH;
+    } catch {
+      ctx.font = '700 22px Fredoka, sans-serif';
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.fillText('EcoPoints', W / 2, cardY + 50);
+      logoEndY = cardY + 60;
+    }
+
+    // Separator
+    const sepY = logoEndY + 12;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 40, sepY);
+    ctx.lineTo(cardX + cardW - 40, sepY);
+    ctx.strokeStyle = 'rgba(16,185,129,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // QR box
+    const qrBorderPad = 14;
+    const qrBoxSize = qrSize + qrBorderPad * 2;
+    const qrBoxX = (W - qrBoxSize) / 2;
+    const qrBoxY = sepY + 18;
+    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 16);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fill();
+    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 16);
+    ctx.strokeStyle = 'rgba(16,185,129,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.drawImage(qrCanvas, qrBoxX + qrBorderPad, qrBoxY + qrBorderPad, qrSize, qrSize);
+
+    // Reward name
+    const rewardY = qrBoxY + qrBoxSize + 28;
+    const rewardLabel = item.rewardName + (item.variantName && item.variantName !== 'Default' ? ` (${item.variantName})` : '');
+    ctx.font = '800 20px Fredoka, sans-serif';
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    // Wrap if needed
+    const maxW = cardW - 60;
+    const words = rewardLabel.split(' ');
+    let line = '';
+    let lineY = rewardY;
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, W / 2, lineY);
+        line = word;
+        lineY += 26;
+      } else { line = test; }
+    }
+    ctx.fillText(line, W / 2, lineY);
+
+    // Redemption code pill
+    const codeY = lineY + 30;
+    const codeText = item.redemptionCode;
+    ctx.font = '700 13px Space Mono, monospace';
+    const codeM = ctx.measureText(codeText);
+    const pillW = codeM.width + 28;
+    const pillH = 26;
+    drawRoundedRect(ctx, (W - pillW) / 2, codeY - 17, pillW, pillH, 8);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.fillStyle = subtextColor;
+    ctx.fillText(codeText, W / 2, codeY);
+
+    // Footer
+    ctx.font = '600 11px Quicksand, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Present at the claims counter', W / 2, H - 25);
+
+    const pngUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = pngUrl;
+    a.download = `EcoPoints-Ticket-${item.redemptionCode}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   // EDIT STATE
   const [isEditing, setIsEditing] = useState(false);
   const [showUsernameConfirm, setShowUsernameConfirm] = useState(false);
 
-  // ── Hide page header whenever any modal is open ──
+  // ── Hide page header + lock body scroll whenever any modal is open ──
   useEffect(() => {
     const anyOpen =
       isPendingModalOpen || isQrModalOpen || isHowItWorksOpen ||
-      isCropModalOpen || isEditing;
+      isCropModalOpen || isEditing || !!activeQrTicket;
     if (anyOpen) {
       document.body.classList.add('profile-modal-open');
+      // Measure scrollbar width before hiding to avoid layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
     } else {
       document.body.classList.remove('profile-modal-open');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
-    return () => document.body.classList.remove('profile-modal-open');
-  }, [isPendingModalOpen, isQrModalOpen, isHowItWorksOpen, isCropModalOpen, isEditing]);
+    return () => {
+      document.body.classList.remove('profile-modal-open');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [isPendingModalOpen, isQrModalOpen, isHowItWorksOpen, isCropModalOpen, isEditing, activeQrTicket]);
 
   // FOCUS STATE (INPUT)
   const [isFocused, setIsFocused] = useState(null);
@@ -426,6 +575,15 @@ export default function ProfileSection() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Live password validation rules
+  const pwRules = useMemo(() => [
+    { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+    { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
+    { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
+    { label: 'One number', test: (p) => /[0-9]/.test(p) },
+    { label: 'No blank spaces', test: (p) => p.length > 0 && !/\s/.test(p) },
+  ], []);
 
   // Phone validation — 10 digits starting with 9, or empty (optional)
   const validatePhone = (val) => {
@@ -566,9 +724,83 @@ export default function ProfileSection() {
   };
 
   return (
-    <section className="min-h-screen p-4 sm:p-6">
+    <section className="min-h-screen p-4 sm:p-6 relative">
+      {/* ── Ambient Background ── */}
+      <div aria-hidden="true" style={{
+        position: 'fixed', inset: 0, zIndex: 0,
+        pointerEvents: 'none', overflow: 'hidden',
+        background: '#F8FAFC',
+      }}>
+        {/* Blob orbs */}
+        <div style={{
+          position: 'absolute', top: '-10%', left: '-8%',
+          width: 600, height: 600,
+          background: 'radial-gradient(circle, #6ee7b7 0%, #10b981 60%, transparent 100%)',
+          opacity: 0.07, filter: 'blur(130px)',
+          mixBlendMode: 'multiply',
+          animation: 'profileBlob1 18s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-5%', right: '-6%',
+          width: 520, height: 520,
+          background: 'radial-gradient(circle, #2dd4bf 0%, #0d9488 60%, transparent 100%)',
+          opacity: 0.08, filter: 'blur(120px)',
+          mixBlendMode: 'multiply',
+          animation: 'profileBlob2 22s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', top: '30%', right: '10%',
+          width: 380, height: 380,
+          background: 'radial-gradient(circle, #86efac 0%, #22c55e 60%, transparent 100%)',
+          opacity: 0.05, filter: 'blur(150px)',
+          mixBlendMode: 'multiply',
+          animation: 'profileBlob3 26s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '20%', left: '15%',
+          width: 340, height: 340,
+          background: 'radial-gradient(circle, #34d399 0%, #059669 60%, transparent 100%)',
+          opacity: 0.06, filter: 'blur(100px)',
+          mixBlendMode: 'multiply',
+          animation: 'profileBlob4 20s ease-in-out infinite',
+        }} />
+        {/* SVG grid texture */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.03 }} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="pgrid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#064E3B" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#pgrid)" />
+        </svg>
+        {/* Blob keyframes */}
+        <style>{`
+          @keyframes profileBlob1 {
+            0%,100% { border-radius:60% 40% 30% 70%/60% 30% 70% 40%; transform:translate(0,0) scale(1); }
+            25%      { border-radius:30% 60% 70% 40%/50% 60% 30% 60%; transform:translate(2%,4%) scale(1.04); }
+            50%      { border-radius:50% 60% 40% 70%/40% 50% 60% 50%; transform:translate(-3%,2%) scale(0.96); }
+            75%      { border-radius:40% 30% 60% 50%/70% 40% 50% 30%; transform:translate(1%,-3%) scale(1.02); }
+          }
+          @keyframes profileBlob2 {
+            0%,100% { border-radius:50% 60% 40% 60%/40% 60% 50% 70%; transform:translate(0,0) scale(1); }
+            30%      { border-radius:70% 30% 60% 40%/60% 40% 70% 30%; transform:translate(-3%,-2%) scale(1.05); }
+            60%      { border-radius:40% 70% 30% 60%/50% 30% 60% 70%; transform:translate(2%,3%) scale(0.95); }
+          }
+          @keyframes profileBlob3 {
+            0%,100% { border-radius:55% 45% 65% 35%/45% 55% 35% 65%; transform:translate(0,0) scale(1); }
+            40%      { border-radius:35% 65% 45% 55%/65% 35% 55% 45%; transform:translate(3%,-4%) scale(1.06); }
+            70%      { border-radius:65% 35% 55% 45%/35% 65% 45% 55%; transform:translate(-2%,2%) scale(0.94); }
+          }
+          @keyframes profileBlob4 {
+            0%,100% { border-radius:45% 55% 35% 65%/55% 45% 65% 35%; transform:translate(0,0) scale(1); }
+            35%      { border-radius:65% 35% 55% 45%/35% 65% 45% 55%; transform:translate(-4%,3%) scale(1.03); }
+            65%      { border-radius:35% 65% 45% 55%/65% 35% 55% 45%; transform:translate(3%,-2%) scale(0.97); }
+          }
+        `}</style>
+      </div>
+
       {/* ROOT DIV */}
-      <div className="max-w-[1600px] mx-auto grid grid-cols-4 gap-6 items-start">
+      <div className="max-w-[1600px] mx-auto grid grid-cols-4 gap-6 items-start relative z-10">
         {/* ═══ SIDEBAR — 3 stacked cards ═══ */}
         <div className="lg:col-span-1 grid gap-3 h-fit">
 
@@ -640,15 +872,17 @@ export default function ProfileSection() {
                     : (currentUser?.role ? currentUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : PLACEHOLDER)}
                 </span>
               </div>
-              {/* Community Group */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                  <Users size={13} className="text-emerald-500" />
+              {/* Community Group — hidden when name contains 'Default' */}
+              {!/default/i.test(currentUser?.communityGroup?.name || '') && (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Users size={13} className="text-emerald-500" />
+                  </div>
+                  <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
+                    {currentUser?.communityGroup?.name || PLACEHOLDER}
+                  </span>
                 </div>
-                <span className="text-xs font-semibold truncate" style={{ ...fonts.body, color: "#374151" }}>
-                  {currentUser?.communityGroup?.name || PLACEHOLDER}
-                </span>
-              </div>
+              )}
               {/* Email */}
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -688,7 +922,7 @@ export default function ProfileSection() {
               <button
                 onClick={() => setIsQrModalOpen(true)}
                 className="flex items-center justify-center gap-2 flex-1 px-3 py-2.5 rounded-xl hover:opacity-90 transition-all duration-300 shadow-sm cursor-pointer"
-                style={{ backgroundColor: "#102027" }}
+                style={{ backgroundColor: "#064E3B" }}
               >
                 <QrCodeIcon size={14} className="text-white" />
                 <span className="text-xs font-bold uppercase tracking-wider" style={{ ...fonts.body, color: "#ffffff" }}>
@@ -709,7 +943,7 @@ export default function ProfileSection() {
                 <Ticket size={25} className="text-[#10B981]" />
               </div>
               <div>
-                <p className="font-black text-[#064E3B] text-md leading-tight" style={fonts.heading}>Pending Claims</p>
+                <p className="font-black text-[#064E3B] text-md leading-tight" style={fonts.heading}>Redeem Transactions</p>
                 <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 font-bold mt-0.5" style={fonts.body}>View Tickets</p>
               </div>
             </div>
@@ -871,7 +1105,7 @@ export default function ProfileSection() {
 
       {/* EDIT MODAL */}
       {isEditing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
 
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -897,7 +1131,7 @@ export default function ProfileSection() {
             </div>
 
             {/* ── Scrollable body ── */}
-            <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6">
+            <div className="flex-1 overflow-y-auto scroll-smooth px-6 sm:px-8 py-6" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               <div className="space-y-5">
 
                 {/* ROW 1: User ID | Username */}
@@ -1090,36 +1324,104 @@ export default function ProfileSection() {
                   </button>
                 </div>
 
-                {/* CHANGE PASSWORD FIELDS */}
+                {/* CHANGE PASSWORD FIELDS — redesigned */}
                 {isChangingPassword && (
                   <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4" style={{ animation: "scaleIn 0.2s ease-out forwards" }}>
                     <h3 className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5" style={fonts.heading}>
                       <Lock size={14} className="text-emerald-600" /> Secure Password Change
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="relative">
-                        <input type={showCurrentPassword ? "text" : "password"} placeholder="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all" style={fonts.body} />
-                        <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                          {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
+
+                    {/* Row 1: Current Password (full width) */}
+                    <div className="relative">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Current Password</label>
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        placeholder="Enter your Current Password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                        style={fonts.body}
+                      />
+                      <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 bottom-3 text-slate-400 hover:text-slate-600 transition-colors">
+                        {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Separator */}
+                    <hr className="border-slate-200" />
+
+                    {/* Row 2: New Password | Confirm New Password */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* New Password + live checklist */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>New Password</label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder="New Password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                            style={fonts.body}
+                          />
+                          <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                            {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        {/* Live checklist */}
+                        {newPassword.length > 0 && (
+                          <div className="mt-2.5 space-y-1.5 px-1">
+                            {pwRules.map((rule) => {
+                              const met = rule.test(newPassword);
+                              return (
+                                <div key={rule.label} className="flex items-center gap-1.5">
+                                  {met
+                                    ? <Check size={11} className="text-[#10B981] flex-shrink-0" strokeWidth={3} />
+                                    : <X size={11} className="text-rose-500 flex-shrink-0" strokeWidth={3} />}
+                                  <span
+                                    className={`text-[10px] font-semibold transition-colors ${met ? 'text-[#10B981]' : 'text-slate-400'}`}
+                                    style={fonts.body}
+                                  >
+                                    {rule.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div className="relative">
-                        <input type={showNewPassword ? "text" : "password"} placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all" style={fonts.body} />
-                        <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                          {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm New Password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)}
-                          className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all" style={fonts.body} />
-                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
+
+                      {/* Confirm New Password + match status */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1" style={fonts.body}>Confirm New Password</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm New Password"
+                            value={confirmNewPassword}
+                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            className="w-full p-3 pr-10 text-sm font-semibold rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-400 transition-all"
+                            style={fonts.body}
+                          />
+                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        {/* Match status */}
+                        {confirmNewPassword.length > 0 && (
+                          <div className="mt-2.5 flex items-center gap-1.5 px-1">
+                            {newPassword === confirmNewPassword
+                              ? <><Check size={11} className="text-[#10B981] flex-shrink-0" strokeWidth={3} />
+                                <span className="text-[10px] font-semibold text-[#10B981]" style={fonts.body}>Passwords match</span></>
+                              : <><X size={11} className="text-rose-500 flex-shrink-0" strokeWidth={3} />
+                                <span className="text-[10px] font-semibold text-rose-500" style={fonts.body}>Passwords don&apos;t match</span></>}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-semibold" style={fonts.body}>💡 Min 8 characters — uppercase, lowercase, and a digit required.</p>
                   </div>
                 )}
               </div>
@@ -1153,7 +1455,7 @@ export default function ProfileSection() {
 
           {/* USERNAME CHANGE CONFIRMATION SUB-MODAL */}
           {showUsernameConfirm && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 overflow-hidden">
               <div className="absolute inset-0 bg-black/40" onClick={() => setShowUsernameConfirm(false)} />
               <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl z-10 text-center" style={{ animation: "scaleIn 0.2s ease-out forwards" }}>
                 <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
@@ -1180,7 +1482,7 @@ export default function ProfileSection() {
 
       {/* AVATAR CROP MODAL */}
       {isCropModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 overflow-hidden">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleCropCancel} />
 
           {/* Modal card — relative so the confirm overlay can be absolute inside it */}
@@ -1385,87 +1687,371 @@ export default function ProfileSection() {
         </div>
       )}
 
-      {/* PENDING CLAIMS MODAL */}
-      {isPendingModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsPendingModalOpen(false)}
-          />
-          <div
-            className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl z-10 overflow-hidden flex flex-col"
-            style={{ maxHeight: '80vh', animation: 'scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
-          >
-            {/* Header */}
-            <div className="flex-shrink-0 px-5 pt-5 pb-3 flex items-start justify-between border-b border-slate-100">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Ticket size={20} className="text-[#10B981]" />
-                  <h3 className="text-lg font-black" style={{ ...fonts.heading, color: '#064E3B' }}>Pending Claims</h3>
-                </div>
-                <p className="text-xs font-semibold text-slate-400 mt-0.5" style={fonts.body}>Items waiting to be picked up.</p>
-              </div>
-              <button
-                onClick={() => setIsPendingModalOpen(false)}
-                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors flex-shrink-0 ml-3"
-              >
-                <XIcon size={16} className="text-slate-500" />
-              </button>
-            </div>
-
-            {/* Scrollable list */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              {pendingItems.length === 0 ? (
-                <div className="text-center py-10">
-                  <Ticket size={36} className="text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-slate-400" style={fonts.body}>No pending claims</p>
-                  <p className="text-xs text-slate-300 mt-1" style={fonts.body}>Redeem a reward to see your tickets here.</p>
-                </div>
-              ) : (
-                pendingItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-slate-50 rounded-2xl p-4 border border-slate-100"
-                  >
-                    {/* Badge row */}
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-full border"
-                        style={{ ...fonts.data, color: '#10B981', background: '#F0FDF4', borderColor: '#BBF7D0' }}
-                      >
-                        EP-REQ-{String(item.id).padStart(6, '0')}
-                      </span>
-                      <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
-                        <Ticket size={14} className="text-[#10B981]" />
-                      </div>
-                    </div>
-                    {/* Name */}
-                    <p className="text-sm font-black text-slate-800 mb-0.5" style={fonts.heading}>
-                      {item.rewardName || 'Unknown Reward'}
-                      {item.variantName && item.variantName !== 'Default' ? ` (${item.variantName})` : ''}
-                    </p>
-                    {/* Meta */}
-                    <p className="text-xs font-semibold text-slate-400 mb-3" style={fonts.body}>
-                      Qty: 1 • {item.redeemedAt
-                        ? new Date(item.redeemedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
-                        : '—'}
-                    </p>
-                    {/* Show QR Ticket button */}
-                    <button
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700 cursor-pointer"
-                      style={fonts.body}
-                      onClick={() => {/* future: show QR for this redemption code */ }}
-                    >
-                      <QrCodeIcon size={14} className="text-[#10B981]" />
-                      Show QR Ticket
-                    </button>
+      {/* REDEEM HISTORY MODAL */}
+      {isPendingModalOpen && (() => {
+        const isPending = (r) => r.status === 'pending' || r.status === 'PENDING';
+        const isClaimed = (r) => r.status === 'claimed' || r.status === 'CLAIMED';
+        const filtered = allRedemptions.filter(r => {
+          if (activeTabHistory === 'Pending') return isPending(r);
+          if (activeTabHistory === 'Claimed') return isClaimed(r);
+          return true;
+        });
+        const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        return (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#064E3B]/60 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0" onClick={() => setIsPendingModalOpen(false)} />
+            <div
+              className="relative bg-white rounded-[2rem] w-full shadow-2xl z-10 flex flex-col md:flex-row overflow-hidden"
+              style={{ maxWidth: 780, height: '50vh', minHeight: 530, animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+            >
+              {/* Sidebar */}
+              <div className="w-full md:w-60 bg-slate-50 p-5 md:p-7 border-b md:border-b-0 md:border-r border-slate-100 flex flex-row md:flex-col shrink-0 gap-3 md:gap-0">
+                <div className="hidden md:flex items-center gap-3 mb-7">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <ShoppingBag className="text-emerald-600" size={20} />
                   </div>
-                ))
-              )}
+                  <h2 className="text-xl font-black text-[#064E3B] leading-tight" style={fonts.heading}>Redeem<br />History</h2>
+                </div>
+                <div className="flex flex-row md:flex-col gap-2 w-full">
+                  {[['All', Ticket, 'All Transactions'], ['Pending', AlertCircle, 'Pending Claims'], ['Claimed', Check, 'Claimed Rewards']].map(([tab, Icon, label]) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTabHistory(tab)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition-all text-sm cursor-pointer ${activeTabHistory === tab
+                        ? 'bg-white text-[#10B981] shadow-sm border border-slate-100'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                        }`}
+                      style={fonts.body}
+                    >
+                      <Icon size={16} /> <span className="hidden md:inline">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+                {/* Content header */}
+                <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+                  <h3 className="font-black text-[#064E3B] text-base" style={fonts.heading}>
+                    {activeTabHistory === 'All' ? 'All Transactions' : activeTabHistory === 'Pending' ? 'Pending Claims' : 'Claimed Rewards'}
+                  </h3>
+                  <button
+                    onClick={() => setIsPendingModalOpen(false)}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-full transition-colors"
+                  >
+                    <XIcon size={18} />
+                  </button>
+                </div>
+
+                {/* List */}
+                <div className="p-4 overflow-y-auto flex-1 space-y-3" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+                  {filtered.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 flex flex-col items-center">
+                      <ShoppingBag size={44} className="mb-4 opacity-20" />
+                      <p className="font-bold text-sm" style={fonts.body}>No items found.</p>
+                    </div>
+                  ) : (
+                    filtered.map((item) => {
+                      const pending = isPending(item);
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-[1.5rem] border border-slate-200 flex flex-col sm:flex-row hover:border-[#10B981]/50 hover:shadow-md transition-all group relative bg-white"
+                        >
+                          {/* Stub Design */}
+                          <div className={`w-full sm:w-[25%] sm:min-w-[100px] border-b-2 sm:border-b-0 sm:border-r-2 border-dashed flex flex-col items-center justify-center p-4 relative rounded-t-[1.5rem] sm:rounded-l-[1.5rem] sm:rounded-tr-none ${pending ? 'bg-amber-50 border-amber-200 text-amber-500 group-hover:border-[#10B981]/50' : 'bg-slate-50 border-slate-200 text-slate-400 group-hover:border-[#10B981]/50'} transition-colors`}>
+
+                            {/* Desktop Notches (Top & Bottom) */}
+                            <div className="hidden sm:block absolute -top-[1px] -right-3 w-6 h-3 bg-[#F8FAFC] border-b border-x border-slate-200 rounded-b-full group-hover:border-[#10B981]/50 transition-colors z-20"></div>
+                            <div className="hidden sm:block absolute -bottom-[1px] -right-3 w-6 h-3 bg-[#F8FAFC] border-t border-x border-slate-200 rounded-t-full group-hover:border-[#10B981]/50 transition-colors z-20"></div>
+
+                            {/* Mobile Notches (Left & Right) */}
+                            <div className="sm:hidden absolute -bottom-3 -left-[1px] w-3 h-6 bg-[#F8FAFC] border-r border-y border-slate-200 rounded-r-full group-hover:border-[#10B981]/50 transition-colors z-20"></div>
+                            <div className="sm:hidden absolute -bottom-3 -right-[1px] w-3 h-6 bg-[#F8FAFC] border-l border-y border-slate-200 rounded-l-full group-hover:border-[#10B981]/50 transition-colors z-20"></div>
+
+                            <Ticket className="mb-2 opacity-50" size={24} />
+                            <span className="font-black tracking-widest text-xs uppercase text-center">
+                              {pending ? 'REDEEMED' : 'CLAIMED'}
+                            </span>
+                          </div>
+
+                          {/* Details Area */}
+                          <div className="p-5 flex-1 flex flex-col justify-center relative rounded-b-[1.5rem] sm:rounded-r-[1.5rem] sm:rounded-bl-none">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wide ${pending ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                                }`} style={fonts.body}>
+                                {pending ? 'Pending' : 'Claimed'}
+                              </span>
+                              <span className="text-[10px] font-mono font-bold text-slate-400" style={fonts.data}>
+                                EP-{String(item.id).padStart(6, '0')}
+                              </span>
+                            </div>
+                            <p className="font-black text-[#064E3B] text-sm leading-tight mb-1" style={fonts.heading}>
+                              {item.rewardName || 'Unknown Reward'}
+                              {item.variantName && item.variantName.toLowerCase() !== 'default' ? ` · ${item.variantName}` : ''}
+                            </p>
+                            <div className="mt-auto pt-3 border-t border-slate-50 flex justify-between items-end">
+                              {pending ? (
+                                <>
+                                  <div className="text-[10px] text-slate-400 font-medium" style={fonts.body}>
+                                    Redeemed: {fmtDate(item.redeemedAt)}
+                                  </div>
+                                  <button
+                                    onClick={() => setActiveQrTicket(item)}
+                                    className="flex items-center gap-1 text-[#10B981] font-bold text-[11px] hover:text-[#064E3B] transition-colors cursor-pointer"
+                                    style={fonts.body}
+                                  >
+                                    <QrCodeIcon size={13} /> Show QR
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="flex items-end justify-between w-full gap-2">
+                                  <div className="flex flex-col gap-0.5 text-[10px] text-slate-500 font-medium" style={fonts.body}>
+                                    <span><strong className="text-slate-400">Redeemed:</strong> {fmtDate(item.redeemedAt)}</span>
+                                    <span><strong className="text-emerald-500">Claimed:</strong> {fmtDate(item.claimedAt)}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => setActiveReceiptItem(item)}
+                                    className="flex items-center gap-1 text-[#10B981] font-bold text-[11px] hover:text-[#064E3B] transition-colors cursor-pointer group/btn shrink-0 ml-auto"
+                                    style={fonts.body}
+                                  >
+                                    <ScrollText size={13} />
+                                    Show Receipt
+                                    <ChevronRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      {/* RECEIPT MODAL (Claimed items) */}
+      {activeReceiptItem && (() => {
+        const item = activeReceiptItem;
+        const shortCode = (item.redemptionCode || String(item.id)).replace(/[^A-Za-z0-9]/g, '').substring(0, 8).toUpperCase();
+        const pointsUsed = item.pointsSpent ?? 0;
+        const qty = item.qty ?? 1;
+        const claimedDate = item.claimedAt
+          ? new Date(item.claimedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : '—';
+        const claimedTime = item.claimedAt
+          ? new Date(item.claimedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          : '—';
+        const charCodeSum = shortCode.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0);
+        const verificationCode = `ECO-${(charCodeSum * 123 % 90000) + 10000}`;
+        const orgRaw = item.organizationName ?? currentUser?.organization;
+        const organization = typeof orgRaw === 'string'
+          ? orgRaw
+          : (orgRaw?.fullName ?? orgRaw?.name ?? 'EcoPoints');
+        return (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0" onClick={() => setActiveReceiptItem(null)} />
+            <div
+              className="relative z-10 w-full flex flex-col items-center"
+              style={{ maxWidth: 340, maxHeight: '92vh', overflowY: 'auto', overscrollBehavior: 'contain', animation: 'scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+            >
+              {/* Close — outside receipt */}
+              <button
+                onClick={() => setActiveReceiptItem(null)}
+                className="self-end mb-3 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-colors"
+              >
+                <XIcon size={18} />
+              </button>
+
+              {/* Serrated top edge */}
+              <div
+                className="w-full h-4 flex-shrink-0"
+                style={{ background: "radial-gradient(circle at 6px 0, transparent 4px, white 5px) repeat-x", backgroundSize: "12px 16px" }}
+              />
+
+              {/* Receipt body */}
+              <div className="bg-white w-full px-7 pb-8 pt-4 flex flex-col items-center flex-shrink-0">
+                {/* EcoPoints Logo */}
+                <img
+                  src="/ecopoints-logo-mark.png"
+                  alt="EcoPoints"
+                  className="h-15 w-auto mb-2 object-contain"
+                />
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-5 text-center" style={fonts.data}>Official Transaction Receipt</p>
+
+                <div className="w-full border-t border-dashed border-slate-300 mb-5" />
+
+                {/* Details grid */}
+                <div className="w-full flex flex-col gap-3 text-[11px]" style={fonts.data}>
+                  {[
+                    ['Description', 'Reward Claimed'],
+                    ['Redeemed Item', item.rewardName || '—'],
+                    ...(item.variantName && item.variantName.toLowerCase() !== 'default'
+                      ? [['Variation', item.variantName]] : []),
+                    ['Quantity', `${qty} ${qty > 1 ? 'pcs' : 'pc'}`],
+                    ['Date Claimed', claimedDate],
+                    ['Time Claimed', claimedTime],
+                    ['Location', organization],
+                    ['Reference No.', shortCode],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between items-start gap-4">
+                      <span className="text-slate-400 uppercase tracking-wider shrink-0">{label}</span>
+                      <span className="text-right text-slate-800 font-medium">{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="w-full border-t border-dashed border-slate-300 my-5" />
+
+                {/* Points Used stamp */}
+                <div className="w-full bg-[#F0FDF4] border-2 border-dashed border-[#34D399] rounded-xl p-4 flex justify-between items-center mb-6 shadow-sm">
+                  <span className="font-bold text-[#064E3B] uppercase tracking-widest text-xs" style={fonts.body}>Points Used</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-black text-[#10B981] text-2xl leading-none" style={fonts.data}>{pointsUsed.toLocaleString()}</span>
+                    <span className="font-black text-[#064E3B] text-sm" style={fonts.heading}>EP</span>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold text-center mb-2 px-2 leading-relaxed" style={fonts.body}>
+                  Thank you for helping us keep the environment green!
+                </p>
+                <p className="text-[10px] text-[#10B981] font-bold" style={fonts.data}>
+                  Verification Code: {verificationCode}
+                </p>
+              </div>
+
+              {/* Serrated bottom edge */}
+              <div
+                className="w-full h-4 flex-shrink-0"
+                style={{ background: "radial-gradient(circle at 6px 100%, transparent 4px, white 5px) repeat-x", backgroundSize: "12px 16px" }}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* PENDING CLAIMS — QR TICKET MODAL (Claim Receipt) */}
+      {activeQrTicket && (() => {
+        const shortCode = activeQrTicket.redemptionCode.replace(/[^A-Za-z0-9]/g, '').substring(0, 8).toUpperCase();
+        const qty = activeQrTicket.qty ?? 1;
+        const dateStr = activeQrTicket.redeemedAt
+          ? new Date(activeQrTicket.redeemedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—';
+        return (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-hidden">
+            {/* Backdrop */}
+            <div className="absolute inset-0" onClick={() => setActiveQrTicket(null)} />
+
+            {/* Card */}
+            <div
+              className="relative w-full max-w-[340px] flex flex-col shadow-2xl rounded-[2.5rem] bg-white overflow-hidden z-10"
+              style={{ animation: 'scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards', maxHeight: '92vh', overscrollBehavior: 'contain' }}
+            >
+              {/* Scrollable receipt area */}
+              <div className="overflow-y-auto scroll-smooth" style={{ overscrollBehavior: 'contain' }}>
+                {/* Close button */}
+                <button
+                  onClick={() => setActiveQrTicket(null)}
+                  className="absolute top-4 right-4 p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-full transition-colors z-20 shadow-sm"
+                >
+                  <XIcon size={20} />
+                </button>
+
+                {/* Receipt capture area */}
+                <div className="bg-white flex flex-col pt-8">
+
+                  {/* Top Half */}
+                  <div className="px-6 flex flex-col items-center relative">
+                    {/* EcoPoints Logo */}
+                    <img
+                      src="/ecopoints-logo-mark.png"
+                      alt="EcoPoints"
+                      className="h-12 w-auto mb-2 object-contain"
+                    />
+                    <div className="w-full border-t border-slate-300 mb-2" />
+                    <h2 className="text-xl font-black text-[#064E3B] uppercase tracking-widest" style={fonts.heading}>
+                      Claim Receipt
+                    </h2>
+                    <p className="text-[11px] text-slate-500 font-bold text-center mt-1 mb-6 uppercase" style={fonts.body}>
+                      Present at the claiming area
+                    </p>
+                    {/* QR Code */}
+                    <div className="w-44 h-44 bg-white border-2 border-slate-100 p-3 rounded-xl shadow-sm flex items-center justify-center">
+                      <QRCodeCanvas
+                        id="ticket-qr-canvas"
+                        value={`REDEEM:${activeQrTicket.redemptionCode}`}
+                        size={152}
+                        bgColor="#ffffff"
+                        fgColor="#0f172a"
+                        level="H"
+                        includeMargin={false}
+                      />
+                    </div>
+                    {/* Reward name + variant */}
+                    <h3 className="font-black text-[#064E3B] text-lg leading-tight mt-2 mb-2" style={fonts.heading}>
+                      {activeQrTicket.rewardName}
+                      {activeQrTicket.variantName && activeQrTicket.variantName.toLowerCase() !== 'default'
+                        ? ` | ${activeQrTicket.variantName}` : ''}
+                    </h3>
+
+                    {/* Qty pill */}
+                    <div className="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1 rounded-md border border-slate-100" style={fonts.body}>
+                      Qty: {qty} <span className="text-[#10B981]">{qty > 1 ? 'pcs' : 'pc'}</span>
+                    </div>
+                  </div>
+
+                  {/* Perforation */}
+                  <div className="w-full h-8 relative flex items-center overflow-hidden mt-6">
+                    <div className="absolute -left-4 w-8 h-8 bg-slate-900/40 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]" />
+                    <div className="absolute -right-4 w-8 h-8 bg-slate-900/40 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]" />
+                    <div className="w-full border-t-2 border-dashed border-slate-300 mx-6" />
+                  </div>
+
+                  {/* Bottom Half */}
+                  <div className="pb-4 pt-4 px-6 flex flex-col items-center text-center">
+
+                    {/* Redemption Code Block */}
+                    <div className="w-full bg-[#F8FAFC] border border-[#F0FDF4] rounded-xl p-3 mt-1 mb-5 shadow-inner flex flex-col items-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1" style={fonts.body}>
+                        Redemption Code
+                      </p>
+                      <p className="text-3xl font-black text-[#10B981] tracking-widest" style={fonts.data}>
+                        {shortCode}
+                      </p>
+                    </div>
+
+                    {/* User + date separator */}
+                    <div className="w-full border-t border-slate-100 pt-4 mb-2">
+                      <p className="font-bold text-[#064E3B]" style={fonts.body}>{userName}</p>
+                      <p className="text-xs font-bold font-mono text-slate-400 mt-0.5">{dateStr}</p>
+                    </div>
+
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1" style={fonts.body}>
+                      Thank you for using EcoPoints!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Download button — outside capture area */}
+              <div className="px-6 pb-6 pt-2 bg-white flex-shrink-0">
+                <button
+                  onClick={() => downloadTicketQR(activeQrTicket)}
+                  className="w-full py-3.5 text-white rounded-xl font-black text-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ background: 'linear-gradient(to right, #10B981, #059669)', ...fonts.heading }}
+                >
+                  <DownloadIcon size={20} /> Download Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* FOOTER PADDING */}
       <div className="h-12" />
