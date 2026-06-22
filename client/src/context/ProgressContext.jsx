@@ -6,7 +6,17 @@ const ProgressContext = createContext(null);
 
 export function useProgress() {
     const ctx = useContext(ProgressContext);
-    if (!ctx) throw new Error('useProgress must be used within ProgressProvider');
+    // Resilient fallback: if no ProgressProvider is mounted (e.g. in unit
+    // tests that render a page in isolation, or a non-admin tree), return a
+    // pass-through that simply runs the work without an overlay. This keeps
+    // components that call useProgress from crashing when the provider is
+    // absent, while still showing the overlay whenever the provider IS present.
+    if (!ctx) {
+        return {
+            runWithProgress: async (_label, fn) => (typeof fn === 'function' ? fn() : undefined),
+            isBusy: false,
+        };
+    }
     return ctx;
 }
 
