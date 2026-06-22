@@ -100,12 +100,14 @@ export default function AddRegularUserModal({ isOpen, onClose, onUserAdded }) {
     // Effective location for fetching groups
     const effectiveLocationId = isSuperAdmin ? locationId : currentLocation?.id;
 
-    // Derive org type from selected location
+    // Derive org type. Superadmin picks a location (looked up in allLocations);
+    // tenant admins use their own org's type carried on currentLocation.
     const selectedOrgType = useMemo(() => {
         if (!effectiveLocationId) return null;
+        if (!isSuperAdmin) return currentLocation?.orgType || null;
         const loc = allLocations?.find(l => String(l.id) === String(effectiveLocationId));
         return loc?.orgType || null;
-    }, [effectiveLocationId, allLocations]);
+    }, [effectiveLocationId, allLocations, isSuperAdmin, currentLocation]);
 
     // Get available user types based on org type
     const availableUserTypes = useMemo(() => {

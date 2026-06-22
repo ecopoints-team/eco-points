@@ -19,7 +19,7 @@ import {
 
 
 // Add Machine Modal
-const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
+const AddMachineModal = ({ isOpen, onClose, onSubmit, locations, isSuperAdmin, defaultLocationId }) => {
     const [formData, setFormData] = useState({
         name: '',
         locationId: '',
@@ -33,9 +33,9 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
     const validateForm = () => {
         const scoped = { name: VALIDATION_RULES.machine.name };
         const { errors: fieldErrors, isValid } = validateAll(scoped, formData);
-        if (!formData.locationId) fieldErrors.locationId = 'Location is required';
+        if (isSuperAdmin && !formData.locationId) fieldErrors.locationId = 'Location is required';
         setErrors(fieldErrors);
-        return isValid && !fieldErrors.locationId;
+        return isValid && (!isSuperAdmin || !fieldErrors.locationId);
     };
 
     const handleSubmit = (e) => {
@@ -45,7 +45,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
             onSubmit({
                 name: formData.name.trim(),
                 machineUuid,
-                locationId: formData.locationId,
+                locationId: isSuperAdmin ? formData.locationId : (defaultLocationId || ''),
                 locationName: formData.locationName.trim(),
                 isOnline: formData.isOnline,
             });
@@ -82,6 +82,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
+                    {isSuperAdmin && (
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Organization (Location) *</label>
                         <CustomDropdown
@@ -94,6 +95,7 @@ const AddMachineModal = ({ isOpen, onClose, onSubmit, locations }) => {
                         />
                         {errors.locationId && <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>}
                     </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area Placement</label>
                         <input
@@ -947,6 +949,8 @@ function MachinesPageContent() {
                 onClose={() => setShowAddModal(false)}
                 onSubmit={handleAddMachine}
                 locations={allLocations}
+                isSuperAdmin={isSuperAdmin}
+                defaultLocationId={effectiveLocationId}
             />
 
             {/* Edit Machine Modal */}

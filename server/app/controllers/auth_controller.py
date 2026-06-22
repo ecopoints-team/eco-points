@@ -245,10 +245,12 @@ def _serialize_auth_user(u):
     if u.community_group:
         location_id = u.community_group.organization_id
         if u.community_group.organization:
+            _org_model = u.community_group.organization
             org = {
-                'id': u.community_group.organization.id,
-                'name': u.community_group.organization.name,
-                'fullName': u.community_group.organization.full_name,
+                'id': _org_model.id,
+                'name': _org_model.name,
+                'fullName': _org_model.full_name,
+                'orgType': _org_model.org_type_ref.name if _org_model.org_type_ref else None,
             }
 
     # 2FA info from UserSecurity

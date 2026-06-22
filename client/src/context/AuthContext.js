@@ -57,12 +57,15 @@ export function AuthProvider({ children }) {
             try {
                 const user = await authApi.me();
                 if (cancelled) return;
-                setCurrentUser(enrichUser(user));
-                try {
-                    const locs = await locationsApi.getAll();
-                    if (!cancelled) setAllLocations(locs);
-                } catch {
-                    /* non-critical — locations may be reloaded later */
+                const enriched = enrichUser(user);
+                setCurrentUser(enriched);
+                if (enriched?.role === 'superadmin') {
+                    try {
+                        const locs = await locationsApi.getAll();
+                        if (!cancelled) setAllLocations(locs);
+                    } catch {
+                        /* non-critical — locations may be reloaded later */
+                    }
                 }
             } catch {
                 /* not signed in (or expired session) — render logged out */
@@ -114,9 +117,19 @@ export function AuthProvider({ children }) {
     }, [currentUser, viewAsLocationId, isSuperAdminUser]);
 
     const currentLocation = useMemo(() => {
-        if (!effectiveLocationId) return null;
-        return allLocations.find(loc => loc.id === effectiveLocationId);
-    }, [effectiveLocationId, allLocations]);
+        // Superadmin: resolve from the loaded locations list (respects "View as").
+        if (isSuperAdminUser) {
+            if (!effectiveLocationId) return null;
+            return allLocations.find(loc => loc.id === effectiveLocationId) || null;
+        }
+        // Tenant admins don't fetch the locations list — use their own org
+        // from /auth/me (includes id, name, fullName, orgType).
+        const org = currentUser?.organization;
+        if (org) {
+            return { id: org.id, name: org.name, fullName: org.fullName, orgType: org.orgType };
+        }
+        return null;
+    }, [isSuperAdminUser, effectiveLocationId, allLocations, currentUser]);
 
     // ── Actions ─────────────────────────────────────────────────────────
     const login = useCallback(async (identifier, password, captchaToken) => {
@@ -124,11 +137,14 @@ export function AuthProvider({ children }) {
         // Skip the post-login load on 2FA challenges — the cookie is only
         // issued after `verifyOtp`, so `/locations` would 401 here.
         if (data && data.user) {
-            setCurrentUser(enrichUser(data.user));
-            try {
-                const locs = await locationsApi.getAll();
-                setAllLocations(locs);
-            } catch { /* non-critical */ }
+            const enriched = enrichUser(data.user);
+            setCurrentUser(enriched);
+            if (enriched?.role === 'superadmin') {
+                try {
+                    const locs = await locationsApi.getAll();
+                    setAllLocations(locs);
+                } catch { /* non-critical */ }
+            }
         }
         return data;
     }, []);
