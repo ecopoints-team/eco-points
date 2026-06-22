@@ -31,7 +31,7 @@ const ToggleSwitch = ({ enabled, onChange, label, description }) => (
 );
 
 function SettingsPageContent() {
-    const { effectiveLocationId } = useAuth();
+    const { effectiveLocationId, isSuperAdmin } = useAuth();
 
     // ── Tab state ──
     const [activeSection, setActiveSection] = useState('appearance');
@@ -341,8 +341,8 @@ function SettingsPageContent() {
         { id: 'appearance', label: 'Appearance', icon: Palette },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
-        { id: 'backup', label: 'Backup & Restore', icon: HardDrive },
-        { id: 'testdata', label: 'Test Data', icon: FlaskConical },
+        { id: 'backup', label: isSuperAdmin ? 'Backup & Restore' : 'Backup', icon: HardDrive },
+        ...(isSuperAdmin ? [{ id: 'testdata', label: 'Test Data', icon: FlaskConical }] : []),
     ];
 
     return (
@@ -748,7 +748,7 @@ function SettingsPageContent() {
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-slate-800 dark:text-white">Create Backup</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Download a full JSON backup of all database tables</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{isSuperAdmin ? 'Download a full JSON backup of all database tables' : 'Download a JSON backup of your organization\u2019s data'}</p>
                                         </div>
                                     </div>
                                     <button onClick={handleBackupDownload} disabled={backupLoading}
@@ -757,7 +757,8 @@ function SettingsPageContent() {
                                     </button>
                                 </div>
 
-                                {/* Restore from Backup */}
+                                {/* Restore from Backup — superadmin only (destructive) */}
+                                {isSuperAdmin && (<>
                                 <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                                     <div className="flex items-center gap-3 mb-3">
                                         <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
@@ -817,6 +818,7 @@ function SettingsPageContent() {
                                         </div>
                                     </div>
                                 )}
+                                </>)}
                             </div>
                         </>)}
 

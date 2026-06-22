@@ -577,25 +577,108 @@ def _get_model_for_table(table_name):
     return mapping.get(table_name)
 
 
+def _org_scoped_rows(loc_id):
+    """Return {table_name: [serialized_row, ...]} containing ONLY the data
+    belonging to organization `loc_id`. Read-only — used for per-tenant backup.
+
+    Tables are filtered by their relationship to the org. Global lookup tables
+    (org_types) are included in full so the backup is self-contained.
+    token_blacklist is omitted (not org-scoped, transient).
+    """
+    from ..models import (
+        OrgType, Organization, OrgAddress, OrgContact, CommunityGroup,
+        User, Wallet, UserSecurity, OtpCode, RVM,
+        RecyclingSession, RecyclingItem, MaintenanceLog, Transaction,
+        RewardCategory, Reward, RewardOrgAssignment, RewardVariant,
+        RewardRedemption, BulkDeposit, AdminLog,
+        NotificationSetting, NotificationLog, LoginAttempt,
+    )
+    from .. import db as _db
+
+    # ── Resolve the org's id-sets (subqueries kept small & explicit) ──
+    group_ids = [g.id for g in CommunityGroup.query.filter_by(organization_id=loc_id).all()]
+    user_ids = [u.id for u in User.query.filter(User.community_group_id.in_(group_ids)).all()] if group_ids else []
+    wallet_ids = [w.id for w in Wallet.query.filter(Wallet.user_id.in_(user_ids)).all()] if user_ids else []
+    rvm_ids = [r.id for r in RVM.query.filter_by(organization_id=loc_id).all()]
+    reward_ids = [r.id for r in Reward.query.filter_by(organization_id=loc_id).all()]
+    variant_ids = [v.id for v in RewardVariant.query.filter(RewardVariant.reward_id.in_(reward_ids)).all()] if reward_ids else []
+    session_ids = []
+    if rvm_ids or wallet_ids:
+        sq = RecyclingSession.query
+        from sqlalchemy import or_ as _or
+        conds = []
+        if rvm_ids:
+            conds.append(RecyclingSession.rvm_id.in_(rvm_ids))
+        if wallet_ids:
+            conds.append(RecyclingSession.wallet_id.in_(wallet_ids))
+        session_ids = [s.id for s in sq.filter(_or(*conds)).all()]
+
+    def rows(model, query):
+        return [_serialize_row(r) for r in query.all()]
+
+    data = {}
+    # Global lookup — include all so restore can resolve FKs.
+    data['org_types'] = rows(OrgType, OrgType.query)
+    data['organizations'] = rows(Organization, Organization.query.filter(Organization.id == loc_id))
+    data['org_addresses'] = rows(OrgAddress, OrgAddress.query.filter_by(organization_id=loc_id))
+    data['org_contacts'] = rows(OrgContact, OrgContact.query.filter_by(organization_id=loc_id))
+    data['community_groups'] = rows(CommunityGroup, CommunityGroup.query.filter_by(organization_id=loc_id))
+    data['users'] = rows(User, User.query.filter(User.id.in_(user_ids))) if user_ids else []
+    data['wallets'] = rows(Wallet, Wallet.query.filter(Wallet.id.in_(wallet_ids))) if wallet_ids else []
+    data['user_securities'] = rows(UserSecurity, UserSecurity.query.filter(UserSecurity.user_id.in_(user_ids))) if user_ids else []
+    data['rvms'] = rows(RVM, RVM.query.filter_by(organization_id=loc_id))
+    data['reward_categories'] = rows(RewardCategory, RewardCategory.query.filter_by(organization_id=loc_id))
+    data['rewards'] = rows(Reward, Reward.query.filter_by(organization_id=loc_id))
+    data['reward_org_assignments'] = rows(RewardOrgAssignment, RewardOrgAssignment.query.filter(RewardOrgAssignment.reward_id.in_(reward_ids))) if reward_ids else []
+    data['reward_variants'] = rows(RewardVariant, RewardVariant.query.filter(RewardVariant.reward_id.in_(reward_ids))) if reward_ids else []
+    data['recycling_sessions'] = rows(RecyclingSession, RecyclingSession.query.filter(RecyclingSession.id.in_(session_ids))) if session_ids else []
+    data['recycling_items'] = rows(RecyclingItem, RecyclingItem.query.filter(RecyclingItem.session_id.in_(session_ids))) if session_ids else []
+    data['reward_redemptions'] = rows(RewardRedemption, RewardRedemption.query.filter(RewardRedemption.wallet_id.in_(wallet_ids))) if wallet_ids else []
+    data['transactions'] = rows(Transaction, Transaction.query.filter(Transaction.wallet_id.in_(wallet_ids))) if wallet_ids else []
+    data['bulk_deposits'] = rows(BulkDeposit, BulkDeposit.query.filter(BulkDeposit.wallet_id.in_(wallet_ids))) if wallet_ids else []
+    data['admin_logs'] = rows(AdminLog, AdminLog.query.filter(AdminLog.admin_user_id.in_(user_ids))) if user_ids else []
+    data['maintenance_logs'] = rows(MaintenanceLog, MaintenanceLog.query.filter(MaintenanceLog.rvm_id.in_(rvm_ids))) if rvm_ids else []
+    data['notification_settings'] = rows(NotificationSetting, NotificationSetting.query.filter_by(organization_id=loc_id))
+    data['notification_logs'] = rows(NotificationLog, NotificationLog.query.filter_by(organization_id=loc_id))
+    data['otp_codes'] = rows(OtpCode, OtpCode.query.filter(OtpCode.user_id.in_(user_ids))) if user_ids else []
+    data['login_attempts'] = rows(LoginAttempt, LoginAttempt.query.filter(LoginAttempt.user_id.in_(user_ids))) if user_ids else []
+    return data
+
+
 @settings_bp.route('/backup', methods=['GET'])
 @token_required
 @permission_required('settings')
 def download_backup(current_user):
-    """Export all tables as a JSON backup file. Superadmin only."""
+    """Export a JSON backup.
+
+    - superadmin: full database backup (all tables, all orgs).
+    - head_admin / auditor: backup scoped to their own organization only.
+    """
     import json as _json
     try:
-        if current_user.role != 'superadmin':
-            return jsonify({'success': False, 'error': 'Only Super Admin can create backups'}), 403
-
-        tables_data = {}
-        total_rows = 0
-        for table_name in _BACKUP_TABLES:
-            Model = _get_model_for_table(table_name)
-            if not Model:
-                continue
-            rows = Model.query.all()
-            tables_data[table_name] = [_serialize_row(r) for r in rows]
-            total_rows += len(rows)
+        role = current_user.role
+        if role == 'superadmin':
+            tables_data = {}
+            total_rows = 0
+            for table_name in _BACKUP_TABLES:
+                Model = _get_model_for_table(table_name)
+                if not Model:
+                    continue
+                rows = Model.query.all()
+                tables_data[table_name] = [_serialize_row(r) for r in rows]
+                total_rows += len(rows)
+            scope = 'global'
+            scoped_org_id = None
+        elif role in ('head_admin', 'auditor'):
+            loc_id = _scope_location_id(current_user)
+            if not loc_id:
+                return jsonify({'success': False, 'error': 'No organization in scope for backup'}), 400
+            tables_data = _org_scoped_rows(loc_id)
+            total_rows = sum(len(v) for v in tables_data.values())
+            scope = 'organization'
+            scoped_org_id = loc_id
+        else:
+            return jsonify({'success': False, 'error': 'You do not have permission to create backups'}), 403
 
         backup = {
             'meta': {
@@ -603,6 +686,8 @@ def download_backup(current_user):
                 'created_at': datetime.now(timezone.utc).isoformat(),
                 'table_count': len(tables_data),
                 'total_rows': total_rows,
+                'scope': scope,
+                'organization_id': scoped_org_id,
             },
             'tables': tables_data,
         }
@@ -613,9 +698,8 @@ def download_backup(current_user):
         response.headers['Content-Type'] = 'application/json'
 
         log_action(current_user, 'settings.backup.create', target='backup',
-                   before=None, after={'total_rows': total_rows}, category='settings')
+                   before=None, after={'total_rows': total_rows, 'scope': scope}, category='settings')
         db.session.commit()
-
         return response, 200
     except Exception as e:
         print(f'BACKUP ERROR: {e}')
