@@ -400,16 +400,15 @@ This plan tracks bug fixes and issues found in the admin dashboard during QA and
 
 - Some of these might be already fixed so thoroughly check if it does so we dont duplicate fixes. Make a phased analysis for these issues and get back to me for a comprehensive analysis report.
 
-
 ### Notification Fixes, Security and Adjustments Past 1
 
-## Tasks 
+## Tasks
 
 - Remove the pop up card inside the Notification Alerts under Settings "Email & SMS Credentials Required
 
 To send notifications, configure your SMTP (email) or Twilio (SMS) credentials in the server .env file. See .env.example for setup instructions."
 
-- Since we will be using  email only for our notification, remove the phonne icon and the phone number placeholder under recepients on each alerts.
+- Since we will be using email only for our notification, remove the phonne icon and the phone number placeholder under recepients on each alerts.
 
 - Also, on the test notification, remove the channel dropdown, the only option should be email
 
@@ -419,7 +418,7 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 
 ## Tasks
 
-- Under Settings Menu, add a new tab for Back Up and Restore. There should be a back up button and a restore button. Look at the given photo for a reference. The photo is from an asset management called "Snipe IT", if you're familiar with it. 
+- Under Settings Menu, add a new tab for Back Up and Restore. There should be a back up button and a restore button. Look at the given photo for a reference. The photo is from an asset management called "Snipe IT", if you're familiar with it.
 
 - Add a new tab again called Test Data, under settings tab. Inside, it should have a button to generate fake data which we have in our seeder now. When clicked, it should generate fake data for all the tables in the database. A button for generating test data and a button for truncating the tables.
 
@@ -429,7 +428,6 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 
 - On the login modal, we have the forget password but its not currently working. Make a functionality about it. It should work like a normal forget password. Make sure that the UI that you will be doing is a responsive one.
 
-
 ### Admin Dashboard Fixes - Machine Menu
 
 ## Tasks
@@ -437,20 +435,20 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 - The superadmin cant add a machine. The add machine is not working.
 - The edit machine is not working properly as well like it has no functionality.
 - The Maintenance is not working as well. The admin can't add a maintenance on a machine.
-- The search function of the machine throws a  GET /admin/machines 200 in 195ms (next.js: 85ms, application-code: 110ms)
-[browser] Uncaught TypeError: getLocationName is not a function
-    at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:660:13)
-    at Array.filter (<anonymous>)
-    at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:657:25)
-    at MachinesPageContent (app/admin/machines/page.js:654:38)
-    at MachinesPage (app/admin/machines/page.js:962:13)
-  658 |             m.name.toLowerCase().includes(q) ||
-  659 |             (m.locationName || '').toLowerCase().includes(q) ||
-> 660 |             getLocationName(m.locationId).toLowerCase().includes(q) ||
-      |             ^
-  661 |             m.id.toLowerCase().includes(q)
-  662 |         );
-  663 |     }, [machines, searchQuery]);
+- The search function of the machine throws a GET /admin/machines 200 in 195ms (next.js: 85ms, application-code: 110ms)
+  [browser] Uncaught TypeError: getLocationName is not a function
+  at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:660:13)
+  at Array.filter (<anonymous>)
+  at MachinesPageContent.useMemo[displayedMachines] (app/admin/machines/page.js:657:25)
+  at MachinesPageContent (app/admin/machines/page.js:654:38)
+  at MachinesPage (app/admin/machines/page.js:962:13)
+  658 | m.name.toLowerCase().includes(q) ||
+  659 | (m.locationName || '').toLowerCase().includes(q) ||
+  > 660 | getLocationName(m.locationId).toLowerCase().includes(q) ||
+        |             ^
+  661 | m.id.toLowerCase().includes(q)
+  662 | );
+  663 | }, [machines, searchQuery]);
 
 ### Admin Dashboard Fixes - View All Location filter alongside with Manage Users Menu (and might be manage admin as well)
 
@@ -459,10 +457,6 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 ### Admin Dashboard Fixes - Manage User Menu
 
 - Just like the bad request error we've encountered on the sign up page, where I we cant create a user. It happened on the Add User on the Manage User Menu as well. We can make them same functionality so that we can avoid that bad request error.
-
-
-
-
 
 ### General Admin Dashboar Fixes (Failed From SQA)
 
@@ -473,75 +467,76 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 ## Tasks
 
 ### From our QA
+
 - This following iinformation if from our QA. On my POV it looks detailed and nice but you can re-read them for better understanding on the issue:
+  - head admin
+    dashboard - view and edit
+    user management - view, edit, create, delete
+    machine - view- delete
+    rewards inventory - view-delete
+    analytics - view
+    bulk - view and create
+    system logs - view and export
+    system settings - view and edit
 
-  - head admin 
-      dashboard - view and edit
-      user management - view, edit, create, delete
-      machine - view- delete
-      rewards inventory - view-delete
-      analytics - view
-      bulk - view and create
-      system logs - view and export
-      system settings - view and edit
-
-      analytics  - based on the permission it is only allowed to view and yet it can export on the test
-
-
+    analytics - based on the permission it is only allowed to view and yet it can export on the test
 
   - Auditor
-      dashboard - view, x edit
-      user management - rewards inventory - view, x edit to delete
-      analytics - view
-      bulk session- view and create
-      system logs - view and export
-      setting - view, x edit
+    dashboard - view, x edit
+    user management - rewards inventory - view, x edit to delete
+    analytics - view
+    bulk session- view and create
+    system logs - view and export
+    setting - view, x edit
 
-      user management, machine, and rewards inventory - should be on the sidebar menu so auditor can view just as permmited to. It is on the quick actions on the dashboard tab, but only leads to the dashboard still when clicked.
+    user management, machine, and rewards inventory - should be on the sidebar menu so auditor can view just as permmited to. It is on the quick actions on the dashboard tab, but only leads to the dashboard still when clicked.
 
-      bulk session - based on the permission, the auditor is supposedly allowed to both view and create in the bulk session. and yet it said it can only view.
+    bulk session - based on the permission, the auditor is supposedly allowed to both view and create in the bulk session. and yet it said it can only view.
 
   - Inventory Officer
-      dashboard - view, 
-      user management and machine - x from view to delete
-      rewards inventory - view - delete
-      analytics - x view
-      bulk session - view and create
-      system logs - view, x export
-      settings - view, x edit
+    dashboard - view,
+    user management and machine - x from view to delete
+    rewards inventory - view - delete
+    analytics - x view
+    bulk session - view and create
+    system logs - view, x export
+    settings - view, x edit
 
-      user management and machine is on the quick action on the dashboard even though it is not on the side bar, and based on the permission it is x.
+    user management and machine is on the quick action on the dashboard even though it is not on the side bar, and based on the permission it is x.
 
-      rewards inventory - permission based it can view, create, edit, delete, but on the testing it can only view the rewards inventory
+    rewards inventory - permission based it can view, create, edit, delete, but on the testing it can only view the rewards inventory
 
-      analytics and bulk session- not on the sidebar menu
+    analytics and bulk session- not on the sidebar menu
 
-      system logs - it should only view but on testing it can also export files even though it should denied
+    system logs - it should only view but on testing it can also export files even though it should denied
 
   - technician
-      dashboard - view, x edit
-      use management, rewards inventory - x from view to delete
-      machine - view to edit
-      analytics - x view
-      bulk session - view , create
-      sysem log - view
-      setting - view, x edit
+    dashboard - view, x edit
+    use management, rewards inventory - x from view to delete
+    machine - view to edit
+    analytics - x view
+    bulk session - view , create
+    sysem log - view
+    setting - view, x edit
 
-      machine - based on permission it is allowed to view, and edit, and yet on testing it is only view.
+    machine - based on permission it is allowed to view, and edit, and yet on testing it is only view.
 
-      system log - is permitted to view only and yet it can export file
+    system log - is permitted to view only and yet it can export file
 
 ### From my end
 
 - Bulk Sessions Error and bad request:
   - [browser] Failed to load modal data: ApiError: INTERNAL SERVER ERROR
     at <unknown> (src/services/api/client.js:224:15)
-  222 |         // back to the generic HTTP status text (e.g. "BAD REQUEST").
-  223 |         const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
-> 224 |         throw new ApiError(
-      |               ^
-  225 |             serverError.code || `HTTP_${response.status}`,
-  226 |             serverError.message || flatStringMessage || response.statusText || `Request failed ($ {response.stat...  227 |             response.status, (app/admin/bulk-sessions/page.js:120:33)
+    222 | // back to the generic HTTP status text (e.g. "BAD REQUEST").
+    223 | const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
+
+    > 224 | throw new ApiError(
+
+          |               ^
+
+    225 | serverError.code || `HTTP_${response.status}`,
+    226 | serverError.message || flatStringMessage || response.statusText || `Request failed ($ {response.stat... 227 | response.status, (app/admin/bulk-sessions/page.js:120:33)
 
   - 127.0.0.1 - - [21/Jun/2026 23:27:56] "GET /api/web/users?per_page=200 HTTP/1.1" 500 -
     127.0.0.1 - - [21/Jun/2026 23:34:32] "OPTIONS /api/web/sessions/bulk HTTP/1.1" 200 -
@@ -550,12 +545,6 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 - System Logs(Admin Logs) Query Optimization:
   - Currently, the Admin logs takes pretty long time to render. I found out that we used joiined query in there. Can we do some optimizatoin there? Maybe a different query for different tables? Give me your best solution.
 
-
-
   ### 2026-06-21-admin-rbac-and-crud-fixes
-
   - In continuation of this fixes, here's some new issues found on the system:
-
     - Since the superadmin is the only one that have access on locations, when the normal admins navigate on the `Analytics Menu`, it throws a 127.0.0.1 - - [22/Jun/2026 02:02:12] "GET /api/web/org-types HTTP/1.1" 403 - and 127.0.0.1 - - [22/Jun/2026 02:02:14] "GET /api/web/org-types HTTP/1.1" 403 -. Also, it throws a notifcation permission_denied on org_types and locations (which is good) every login of those tenant admin, let's not show it connstantly and hide it on the logs only. How can we fix these issues? alongside of keeping the annalytics showinnng their own locaton's data only.
-
-  
