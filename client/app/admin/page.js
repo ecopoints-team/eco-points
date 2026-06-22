@@ -6,10 +6,13 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useDashboardCache } from '../../src/context/DashboardCacheContext';
 import { formatDate } from '../../src/utils/formatDate';
 import { detectedClassLabel } from '../../src/lib/enumLabels';
-import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
+import { Activity, Zap, TrendingUp, Box, Users, FileText, Package, Settings, User, MapPin, Clock, Trophy, Building2, BarChart3, PieChart as PieChartIcon, RefreshCw, Boxes } from 'lucide-react';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { analytics as analyticsApi } from '../../src/services/api';
+import { QUICK_ACTIONS } from '../../src/data/quickActions';
+
+const QUICK_ACTION_ICONS = { Trophy, Users, Package, FileText, BarChart3, Boxes };
 
 
 
@@ -667,22 +670,17 @@ export default function AdminDashboard() {
                     Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Permission-based Shortcuts */}
-                    {(isSuperAdmin || hasPermission('rewards', 'view')) && (
-                        <ShortcutBtn label="Rewards" icon={Trophy} color="purple" href="/admin/rewards" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('users', 'view')) && (
-                        <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('logs', 'view')) && (
-                        <ShortcutBtn label="Admin Logs" icon={FileText} color="blue" href="/admin/logs/access" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('machines', 'view')) && (
-                        <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
-                    )}
+                    {(QUICK_ACTIONS[isSuperAdmin ? 'head_admin' : currentUser?.role] || [])
+                        .filter(a => isSuperAdmin || hasPermission(a.permission[0], a.permission[1]))
+                        .map(a => (
+                            <ShortcutBtn
+                                key={a.href + a.label}
+                                label={a.label}
+                                icon={QUICK_ACTION_ICONS[a.icon]}
+                                color={a.color}
+                                href={a.href}
+                            />
+                        ))}
                 </div>
             </div>
 
