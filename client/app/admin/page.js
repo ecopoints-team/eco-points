@@ -692,7 +692,6 @@ export default function AdminDashboard() {
                     Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-<<<<<<< HEAD
                     {(QUICK_ACTIONS[isSuperAdmin ? 'head_admin' : currentUser?.role] || [])
                         .filter(a => isSuperAdmin || hasPermission(a.permission[0], a.permission[1]))
                         .map(a => (
@@ -704,28 +703,9 @@ export default function AdminDashboard() {
                                 href={a.href}
                             />
                         ))}
-=======
-                    {/* Permission-based Shortcuts */}
-                    {(isSuperAdmin || hasPermission('rewards', 'view')) && (
-                        <ShortcutBtn label="Rewards" icon={Trophy} color="purple" href="/admin/rewards" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('users', 'view')) && (
-                        <ShortcutBtn label="Manage Users" icon={Users} color="emerald" href="/admin/users" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('logs', 'view')) && (
-                        <ShortcutBtn label="Admin Logs" icon={FileText} color="blue" href="/admin/logs/access" />
-                    )}
-
-                    {(isSuperAdmin || hasPermission('machines', 'view')) && (
-                        <ShortcutBtn label="Machines" icon={Package} color="amber" href="/admin/machines" />
-                    )}
-
-                    {(isSuperAdmin || currentUser?.role === 'technician' || hasPermission('machines', 'write')) && (
+                    {currentUser?.role === 'technician' && (
                         <ShortcutActionBtn label="Technician Actions" icon={Wrench} color="emerald" onClick={() => setShowTechnicianModal(true)} />
                     )}
->>>>>>> d14f288ca0847cdf14e369636fde9534d2ed9da0
                 </div>
             </div>
 
