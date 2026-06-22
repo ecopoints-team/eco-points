@@ -675,16 +675,28 @@ To send notifications, configure your SMTP (email) or Twilio (SMS) credentials i
 
 
 
-  ### Found Bugs from the 2026-06-22-admin-ux-notifications-security-fixes
+### Rewards Variant Implementation
 
-  - From Rewards inventory menu
-    - [browser] Uncaught ReferenceError: rewards is not defined
-      at RewardsInventoryPageContent (app/admin/rewards/page.js:352:36)
-      at RewardsInventoryPage (app/admin/rewards/page.js:1074:13)
-    350 |     };
-    351 |
-  > 352 |     const categories = [...new Set(rewards.map(r => r.category))];
-        |                                    ^
-    353 |
-    354 |     // Derived status based on stock
-    355 |     const getStatus = (stock) => {
+## Overview
+
+- In this task, we wil implement the forgotten rewards variant to the rewards inventory.
+
+## Tasks
+
+- In the ERD and models, we have a rewards variant column that is being called but we have not functon on it and UI on the rewards inventory:
+
+        REWARD_VARIANTS {
+        int id PK
+        int reward_id FK "Reference -> REWARDS"
+        string variety_name "e.g. Red - Medium, Blue - Large"
+        int stock_quantity "inventory for item"
+        string image_url "Nullable - Variant-specific product image"
+        boolean is_active
+        datetime created_at
+    }
+
+
+- Our task is now to create an implementation plan on making it alive
+- On the add rewards modal, add fields for rewards variant which the admin can input the variants and its prices.
+- For the variant price, on its field, the admin can input a price different from the main variant's price (the main product). The admin can input a different price but they should also have an option where they can just make the price same as the main variant.
+- If the modal is too narrow for this additional feature, make the modal landscape and expand it sideways
