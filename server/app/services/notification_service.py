@@ -6,6 +6,7 @@ SMS has been removed — all notifications are email-only via the Resend API.
 import html
 import json
 import os
+import re
 import base64
 from datetime import datetime, timezone
 
@@ -118,12 +119,18 @@ def get_alert_types():
 # BRANDED HTML EMAIL TEMPLATE
 # ══════════════════════════════════════════════════════════════════════════
 
-def _build_email_html(subject, body, org_name=None):
-    """Wrap notification content in a branded EcoPoints HTML email template."""
+def _build_email_html(subject, body, org_name=None, body_is_html=False):
+    """Wrap notification content in a branded EcoPoints HTML email template.
+
+    ``body_is_html`` MUST only be True for trusted, fully system-generated
+    content (e.g. the OTP code box). When False (the default), ``body`` is
+    HTML-escaped so user-supplied values (reward names, user names, etc.)
+    cannot inject markup.
+    """
     year = datetime.now().year
     org_line = f' — {_escape(org_name)}' if org_name else ''
     safe_subject = _escape(subject)
-    safe_body = _escape(body)
+    safe_body = body if body_is_html else _escape(body)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -188,10 +195,15 @@ def _build_email_html(subject, body, org_name=None):
 # EMAIL SENDER
 # ══════════════════════════════════════════════════════════════════════════
 
-def _send_email(to_email, subject, body, org_name=None):
+def _send_email(to_email, subject, body, org_name=None, body_is_html=False):
     """Send a branded HTML email via the Resend API with inline logo.
 
     Returns (success: bool, error: str|None).
+
+    ``body_is_html`` — when True, ``body`` is treated as trusted HTML and
+    rendered without escaping (use ONLY for system-generated content like
+    the OTP code box). When False, ``body`` is escaped (default — safe for
+    notification alerts that may embed user-supplied values).
 
     Configuration (environment):
       RESEND_API_KEY  — required; API key from https://resend.com/api-keys
@@ -208,8 +220,11 @@ def _send_email(to_email, subject, body, org_name=None):
     try:
         resend.api_key = api_key
 
-        html_content = _build_email_html(subject, body, org_name)
-        plain_text = f"{subject}\n\n{body}\n\n— EcoPoints Notification System"
+        html_content = _build_email_html(subject, body, org_name, body_is_html=body_is_html)
+        # Plain-text fallback: strip tags from HTML bodies so text-only mail
+        # clients show a clean message instead of raw markup.
+        plain_body = re.sub(r'<[^>]+>', '', body).strip() if body_is_html else body
+        plain_text = f"{subject}\n\n{plain_body}\n\n— EcoPoints Notification System"
 
         payload = {
             'from': email_from,

@@ -982,7 +982,7 @@ def forgot_password(payload):
 
         # Send OTP via existing otp_service
         from ..services.otp_service import send_otp
-        _code, success, error = send_otp(user, method='email')
+        _code, success, error = send_otp(user, method='email', purpose='reset')
 
         if not success:
             print(f'FORGOT-PASSWORD OTP send failed for {email}: {error}')

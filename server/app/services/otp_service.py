@@ -73,12 +73,14 @@ def revoke_otp(user_id):
     db.session.commit()
 
 
-def send_otp(user, method='email'):
+def send_otp(user, method='email', purpose='login'):
     """Generate and send an OTP to the user via email.
 
     The ``method`` parameter is kept for API compatibility but SMS has been
     removed — all OTPs are sent by email regardless of the value passed.
-    Returns (code, success, error)
+
+    ``purpose`` controls the wording: ``'login'`` (2FA verification) or
+    ``'reset'`` (forgot-password). Returns (code, success, error).
     """
     code = generate_otp(user.id)
 
@@ -88,22 +90,29 @@ def send_otp(user, method='email'):
         OtpCode.is_used == False,
     ).order_by(OtpCode.created_at.desc()).first()
 
-    subject = 'EcoPoints — Your Login Verification Code'
+    if purpose == 'reset':
+        subject = 'EcoPoints — Your Password Reset Code'
+        intro = 'Use the code below to reset your password:'
+    else:
+        subject = 'EcoPoints — Your Login Verification Code'
+        intro = 'Your login verification code is:'
+
+    # Trusted, fully system-generated HTML (only the 6-digit code is
+    # interpolated). The branded email template supplies the header + footer,
+    # so the body is just the intro line + the code box. Sent with
+    # body_is_html=True so it renders as styled HTML rather than escaped text.
     body = (
-        f'<div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto;">'
-        f'<h2 style="color: #059669;">EcoPoints Verification</h2>'
-        f'<p>Your login verification code is:</p>'
-        f'<div style="background: #f0fdf4; border: 2px solid #059669; border-radius: 12px; '
-        f'padding: 20px; text-align: center; margin: 20px 0;">'
-        f'<span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #059669;">{code}</span>'
+        f'<p style="font-size:15px;color:#374151;margin:0 0 8px;">{intro}</p>'
+        f'<div style="background:#f0fdf4;border:2px solid #059669;border-radius:12px;'
+        f'padding:20px;text-align:center;margin:20px 0;">'
+        f'<span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#059669;">{code}</span>'
         f'</div>'
-        f'<p style="color: #64748b; font-size: 14px;">This code expires in 5 minutes. '
+        f'<p style="color:#64748b;font-size:14px;margin:0;">This code expires in 5 minutes. '
         f'Do not share it with anyone.</p>'
-        f'</div>'
     )
 
     if user.email:
-        success, error = _send_email(user.email, subject, body)
+        success, error = _send_email(user.email, subject, body, body_is_html=True)
         if otp:
             otp.sent_to = user.email
             otp.channel = 'email'
