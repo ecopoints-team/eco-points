@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Leaf, Calendar, ChevronDown, Info,
+  Leaf, Calendar, ChevronDown,
   X, Zap, Recycle
 } from 'lucide-react';
 import api from '../../services/api';
@@ -198,6 +199,17 @@ export default function ProfileHeatmap({ activityData = {} }) {
     }
   }, [modalPhase]);
 
+  // Hide the page header while the tile detail modal is open
+  useEffect(() => {
+    const isOpen = modalPhase !== 'closed';
+    if (isOpen) {
+      document.body.classList.add('profile-modal-open');
+    } else {
+      document.body.classList.remove('profile-modal-open');
+    }
+    return () => document.body.classList.remove('profile-modal-open');
+  }, [modalPhase]);
+
   const closeTileModal = () => {
     setModalPhase('closing');
     setTimeout(() => {
@@ -210,9 +222,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
   useEffect(() => {
     if (!isYearDropdownOpen) return;
     const handleClick = (e) => {
-      if (!e.target.closest('[data-year-dropdown]')) {
-        setIsYearDropdownOpen(false);
-      }
+      if (!e.target.closest('[data-year-dropdown]')) setIsYearDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -223,125 +233,160 @@ export default function ProfileHeatmap({ activityData = {} }) {
       {/* HEATMAP CARD */}
       <div
         ref={containerRef}
-        className="relative bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-xl shadow-black/5 p-5 md:p-8 overflow-hidden"
+        className="relative bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-xl shadow-black/5 overflow-hidden"
       >
-        {/* Card Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
+        {/* ── Card Header ── */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-stone-100">
+          {/* Left: title + sub-text */}
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2">
               <Leaf className="w-4 h-4 text-[#10b981]" />
-              <h2 className="text-lg font-black text-[#064e3b]" style={fonts.heading}>
+              <h2 className="text-base font-black text-[#064e3b]" style={fonts.heading}>
                 Recycling Activity
               </h2>
               {isLoading && (
-                <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin ml-2"></div>
+                <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               )}
             </div>
-            <div className="text-slate-500 text-sm flex items-center gap-2" style={fonts.body}>
-              <span className="font-bold text-base text-[#10b981]" style={fonts.data}>{totalDeposits}</span>
-              bottles recycled
-            </div>
+            <p className="text-xs text-slate-400 mt-0.5 pl-6" style={fonts.body}>
+              <span className="font-black text-[#10b981]" style={fonts.data}>{totalDeposits}</span>
+              {' '}bottles recycled
+            </p>
           </div>
 
-          {/* Year Selector */}
-          <div className="relative z-20" data-year-dropdown>
+          {/* Right: animated custom year dropdown — matches LeaderboardPodium style */}
+          <div className="relative shrink-0" data-year-dropdown>
+            {/* Trigger button */}
             <button
-              onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 web-web-rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none"
-              style={fonts.body}
+              type="button"
+              onClick={() => setIsYearDropdownOpen(v => !v)}
+              className={`flex items-center gap-2 bg-white border border-emerald-200 px-4 py-2 font-bold text-sm text-emerald-900 whitespace-nowrap transition-all
+                ${isYearDropdownOpen
+                  ? 'rounded-t-lg rounded-b-none border-b-white z-[51] shadow-none'
+                  : 'rounded-lg shadow-sm hover:border-emerald-400'}`}
+              style={fonts.data}
             >
-              <Calendar size={14} className="text-[#10b981]" />
+              <Calendar size={14} className="text-emerald-500 flex-shrink-0" />
               {selectedYear}
-              <ChevronDown size={14} className={`transition-transform duration-300 ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                size={14}
+                className={`text-emerald-500 transition-transform duration-200 flex-shrink-0 ${isYearDropdownOpen ? 'rotate-180' : ''}`}
+              />
             </button>
 
-            {isYearDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-28 bg-white border border-slate-100 shadow-xl rounded overflow-hidden flex flex-col py-1">
-                {availableYears.map(year => (
-                  <button
-                    key={year}
-                    onClick={() => { setSelectedYear(year); setIsYearDropdownOpen(false); }}
-                    className={` flex items-center justify-center px-4 py-2 text-left font-bold text-sm transition-colors hover:bg-emerald-50 ${selectedYear === year ? 'text-[#10b981] bg-emerald-50/50' : 'text-slate-600'}`}
-                    style={fonts.body}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Animated panel */}
+            <AnimatePresence>
+              {isYearDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scaleY: 0.92 }}
+                  animate={{ opacity: 1, scaleY: 1 }}
+                  exit={{ opacity: 0, scaleY: 0.92 }}
+                  transition={{ duration: 0.14, ease: 'easeOut' }}
+                  style={{ transformOrigin: 'top' }}
+                  className="absolute right-0 top-[calc(100%-1px)] z-50 bg-white border border-emerald-200 border-t-0 rounded-b-lg shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-hidden min-w-full"
+                >
+                  {availableYears.map(year => (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => { setSelectedYear(year); setIsYearDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors whitespace-nowrap
+                        ${selectedYear === year
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700'}`}
+                      style={fonts.data}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* HEATMAP GRID */}
-        <div className="w-full overflow-x-auto pb-4 -mx-2 px-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="min-w-max">
-            {/* Month Labels */}
-            <div className="flex relative h-5 mb-2 text-[10px] font-bold text-slate-400" style={fonts.body}>
+        {/* ── Heatmap Grid ── */}
+        <div className="px-6 py-5">
+
+          {/* Month labels row */}
+          <div className="flex mb-1.5">
+            {/* Spacer matching the day-label column */}
+            <div className="w-8 flex-shrink-0" />
+            {/* Months stretched across the remaining width */}
+            <div className="relative flex-1 h-4 text-[10px] font-bold text-slate-400" style={fonts.body}>
               {monthLabels.map((month, i) => (
-                <div
+                <span
                   key={i}
                   className="absolute"
-                  style={{ left: `calc(${month.index} * (1rem + 6px))` }}
+                  style={{ left: `calc(${month.index} / ${weeks.length} * 100%)` }}
                 >
                   {month.label}
-                </div>
-              ))}
-            </div>
-
-            {/* Grid */}
-            <div className="flex gap-1.5">
-              {/* Day Labels */}
-              <div className="flex flex-col justify-between gap-1.5 mr-2 text-[10px] font-bold text-slate-400 h-[118px] py-1" style={fonts.body}>
-                <span>Sun</span>
-                <span>Tue</span>
-                <span>Thu</span>
-                <span>Sat</span>
-              </div>
-
-              {/* Weeks */}
-              {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1.5">
-                  {week.map((day, dayIndex) => {
-                    if (!day) {
-                      return <div key={`empty-${dayIndex}`} className="w-4 h-4 rounded-md" />;
-                    }
-
-                    const isMorphing = selectedTile?.dateStr === day.dateStr && modalPhase !== 'closed';
-
-                    return (
-                      <div
-                        key={day.dateStr}
-                        onClick={(e) => handleTileClick(e, day.dateStr, day.count)}
-                        onMouseEnter={(e) => handleTooltipOpen(e, day.dateStr, day.count)}
-                        onMouseLeave={handleTooltipClose}
-                        className={`w-4 h-4 rounded-[4px] border transition-all duration-300 ease-out hover:scale-125 hover:z-10 ${day.count > 0 ? 'cursor-pointer' : ''} ${getColorClass(day.count)} ${isMorphing ? 'opacity-0' : 'opacity-100'}`}
-                      />
-                    );
-                  })}
-                </div>
+                </span>
               ))}
             </div>
           </div>
+
+          {/* Day labels + grid — unified 7-row × (1+N-week) CSS grid */}
+          <div
+            className="grid gap-[3px]"
+            style={{ gridTemplateColumns: `2rem repeat(${weeks.length}, minmax(0, 1fr))` }}
+          >
+            {/* Row 0-6: day labels in column 1 */}
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, rowIdx) => (
+              <span
+                key={d}
+                className="text-[10px] font-bold text-slate-400 flex items-center"
+                style={{ ...fonts.body, gridColumn: 1, gridRow: rowIdx + 1 }}
+              >
+                {d}
+              </span>
+            ))}
+
+            {/* Weeks: each week column starts at gridColumn 2 */}
+            {weeks.map((week, weekIndex) => (
+              week.map((day, dayIndex) => {
+                const col = weekIndex + 2;
+                const row = dayIndex + 1;
+
+                if (!day) {
+                  return (
+                    <div
+                      key={`empty-${weekIndex}-${dayIndex}`}
+                      className="aspect-square rounded-[3px]"
+                      style={{ gridColumn: col, gridRow: row }}
+                    />
+                  );
+                }
+
+                const isMorphing = selectedTile?.dateStr === day.dateStr && modalPhase !== 'closed';
+
+                return (
+                  <div
+                    key={day.dateStr}
+                    onClick={(e) => handleTileClick(e, day.dateStr, day.count)}
+                    onMouseEnter={(e) => handleTooltipOpen(e, day.dateStr, day.count)}
+                    onMouseLeave={handleTooltipClose}
+                    style={{ gridColumn: col, gridRow: row }}
+                    className={`aspect-square rounded-[3px] border transition-all duration-300 ease-out hover:scale-110 hover:z-10 hover:ring-2 hover:ring-offset-1 hover:ring-[#10B981] ${day.count > 0 ? 'cursor-pointer' : ''} ${getColorClass(day.count)} ${isMorphing ? 'opacity-0' : 'opacity-100'}`}
+                  />
+                );
+              })
+            ))}
+          </div>
+
         </div>
 
-        {/* Footer / Legend */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mt-5 pt-5 border-t border-stone-100 gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium" style={fonts.body}>
-            <Info size={14} className="text-[#10b981]" />
-            Learn how we calculate your <a href="#" className="text-[#10b981] font-bold hover:underline">environmental impact</a>.
+        {/* ── Legend (bottom) ── */}
+        <div className="flex justify-end items-center gap-2 px-6 py-3 border-t border-stone-100">
+          <span className="text-[10px] font-bold text-slate-400" style={fonts.data}>Less</span>
+          <div className="flex gap-1">
+            <div className="w-3 h-3 rounded-[3px] bg-slate-100 border border-slate-200" />
+            <div className="w-3 h-3 rounded-[3px] bg-emerald-200 border border-emerald-300" />
+            <div className="w-3 h-3 rounded-[3px] bg-emerald-400 border border-emerald-500" />
+            <div className="w-3 h-3 rounded-[3px] bg-emerald-600 border border-emerald-700" />
+            <div className="w-3 h-3 rounded-[3px] bg-[#064e3b] border border-[#022c22]" />
           </div>
-
-          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400" style={fonts.body}>
-            <span>Less</span>
-            <div className="flex gap-1">
-              <div className="w-3 h-3 rounded-[3px] bg-slate-100 border border-slate-200" />
-              <div className="w-3 h-3 rounded-[3px] bg-emerald-200 border border-emerald-300" />
-              <div className="w-3 h-3 rounded-[3px] bg-emerald-400 border border-emerald-500" />
-              <div className="w-3 h-3 rounded-[3px] bg-emerald-600 border border-emerald-700" />
-              <div className="w-3 h-3 rounded-[3px] bg-[#064e3b] border border-[#022c22]" />
-            </div>
-            <span>More</span>
-          </div>
+          <span className="text-[10px] font-bold text-slate-400" style={fonts.data}>More</span>
         </div>
 
         {/* FLOATING TOOLTIP */}
@@ -350,7 +395,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
             className="absolute z-50 pointer-events-none animate-heatmap-popup"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <div className="bg-slate-800 text-white px-4 py-2.5 web-web-rounded-xl shadow-2xl text-sm flex flex-col items-center border border-slate-700/50" style={fonts.body}>
+            <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-2xl text-sm flex flex-col items-center border border-slate-700/50" style={fonts.body}>
               <span className="font-bold whitespace-nowrap mb-0.5">
                 {tooltip.count === 0 ? "No bottles" : `${tooltip.count} bottles`} deposited
               </span>

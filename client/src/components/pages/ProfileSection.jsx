@@ -37,6 +37,7 @@ import {
   ShoppingBag,
   ScrollText,
   Leaf,
+  Zap,
 } from "lucide-react";
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
@@ -109,6 +110,23 @@ const fmtPhone = (v) => {
   if (local.length !== 10) return v; // unrecognised format — show as-is
   return `+63 ${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
 };
+
+// ─────────────────────────────────────────────
+// Pure helper: format a point balance for display
+// Returns '—' for null/undefined; otherwise locale string (e.g. 1250 → "1,250")
+// Requirements: 1.1, 1.2, 1.3, 1.4, 6.3
+// ─────────────────────────────────────────────
+const formatBalance = (value) => {
+  if (value === null || value === undefined) return '—';
+  return value.toLocaleString();
+};
+
+// ─────────────────────────────────────────────
+// Pure helper: sum pointsSpent across all redemptions
+// Missing pointsSpent fields contribute 0 (Requirements 2.2, 2.3, 6.5)
+// ─────────────────────────────────────────────
+const computePointsSpent = (redemptions) =>
+  redemptions.reduce((sum, r) => sum + (r.pointsSpent ?? 0), 0);
 
 // ─────────────────────────────────────────────
 // Crop helper: extract pixel region from canvas
@@ -866,43 +884,55 @@ export default function ProfileSection() {
         background: '#F8FAFC',
       }}>
         {/* Blob orbs */}
+        {/* Blob 1 — top-left, emerald (#10B981) */}
         <div style={{
           position: 'absolute', top: '-10%', left: '-8%',
           width: 600, height: 600,
-          background: 'radial-gradient(circle, #6ee7b7 0%, #10b981 60%, transparent 100%)',
-          opacity: 0.07, filter: 'blur(130px)',
+          background: 'radial-gradient(circle, #6ee7b7 0%, #10B981 60%, transparent 100%)',
+          borderRadius: '50%',
+          filter: 'blur(130px)',
+          opacity: 0.07,
+          animation: 'profileBlob1 22s ease-in-out infinite',
           mixBlendMode: 'multiply',
-          animation: 'profileBlob1 18s ease-in-out infinite',
         }} />
+        {/* Blob 2 — bottom-right, teal (#00838F) */}
         <div style={{
           position: 'absolute', bottom: '-5%', right: '-6%',
           width: 520, height: 520,
-          background: 'radial-gradient(circle, #2dd4bf 0%, #0d9488 60%, transparent 100%)',
-          opacity: 0.08, filter: 'blur(120px)',
+          background: 'radial-gradient(circle, #00838F 0%, #005f6b 60%, transparent 100%)',
+          borderRadius: '50%',
+          filter: 'blur(120px)',
+          opacity: 0.08,
+          animation: 'profileBlob2 26s ease-in-out infinite',
           mixBlendMode: 'multiply',
-          animation: 'profileBlob2 22s ease-in-out infinite',
         }} />
+        {/* Blob 3 — middle-right, forest green (#065F46) */}
         <div style={{
           position: 'absolute', top: '30%', right: '10%',
           width: 380, height: 380,
-          background: 'radial-gradient(circle, #86efac 0%, #22c55e 60%, transparent 100%)',
-          opacity: 0.05, filter: 'blur(150px)',
+          background: 'radial-gradient(circle, #065F46 0%, #064e3b 60%, transparent 100%)',
+          borderRadius: '50%',
+          filter: 'blur(150px)',
+          opacity: 0.05,
+          animation: 'profileBlob3 20s ease-in-out infinite',
           mixBlendMode: 'multiply',
-          animation: 'profileBlob3 26s ease-in-out infinite',
         }} />
+        {/* Blob 4 — bottom-left, dark emerald (#064E3B) */}
         <div style={{
           position: 'absolute', bottom: '20%', left: '15%',
           width: 340, height: 340,
-          background: 'radial-gradient(circle, #34d399 0%, #059669 60%, transparent 100%)',
-          opacity: 0.06, filter: 'blur(100px)',
+          background: 'radial-gradient(circle, #064E3B 0%, #022c22 60%, transparent 100%)',
+          borderRadius: '50%',
+          filter: 'blur(100px)',
+          opacity: 0.06,
+          animation: 'profileBlob4 18s ease-in-out infinite',
           mixBlendMode: 'multiply',
-          animation: 'profileBlob4 20s ease-in-out infinite',
         }} />
         {/* SVG grid texture */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.03 }} xmlns="http://www.w3.org/2000/svg">
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.03 }}>
           <defs>
             <pattern id="pgrid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#064E3B" strokeWidth="0.5" />
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#10B981" strokeWidth="0.5" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#pgrid)" />
@@ -1237,6 +1267,81 @@ export default function ProfileSection() {
 
         {/*  RECENT ACTIVITY  */}
         <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-[580px]">
+
+          {/* ── Summary Cards Row ── */}
+          {/* Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Card 1: Current Balance */}
+            {/* Requirements: 1.1–1.13 */}
+            <div className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between min-h-[160px]"
+                 style={{ background: '#064E3B' }}>
+              {/* Lighting circles */}
+              <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-emerald-500/20 blur-2xl" />
+              <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-teal-400/20 blur-2xl" />
+              {/* Zap watermark */}
+              <Zap className="absolute top-3 right-3 text-emerald-300/10" size={80} />
+              {/* Label */}
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                <Zap size={12} className="text-emerald-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300"
+                      style={fonts.body}>Current Balance</span>
+              </div>
+              {/* Main value */}
+              <div className="flex items-end gap-1.5 relative z-10 my-2">
+                <span className="text-5xl font-black text-white leading-none" style={fonts.data}>
+                  {(currentUser?.pointsBalance ?? 0).toLocaleString()}
+                </span>
+                <span className="text-sm font-bold text-emerald-300 mb-1" style={fonts.body}>EP</span>
+              </div>
+              {/* Footer */}
+              <div className="relative z-10 bg-black/20 backdrop-blur-sm rounded-xl px-4 py-2 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider" style={fonts.body}>
+                  Total Accumulated
+                </span>
+                <span className="text-sm font-black text-white" style={fonts.data}>
+                  {(currentUser?.lifetimePoints ?? 0).toLocaleString()} EP
+                </span>
+              </div>
+            </div>
+
+            {/* Card 2: Rewards Redeemed */}
+            {/* Requirements: 2.1–2.14 */}
+            <div className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between min-h-[160px]"
+                 style={{ background: 'linear-gradient(135deg, #10B981, #00838F)' }}>
+              {/* ShoppingBag watermark */}
+              <ShoppingBag className="absolute -top-2 -right-2 text-white/20 rotate-12" size={100} />
+              {/* Lighting circle */}
+              <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
+              {/* Label */}
+              <div className="flex items-center gap-2 relative z-10">
+                <div className="w-5 h-5 rounded-md bg-white/20 backdrop-blur-md flex items-center justify-center">
+                  <ShoppingBag size={11} className="text-white" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/80"
+                      style={fonts.body}>Rewards Redeemed</span>
+              </div>
+              {/* Main value */}
+              <div className="flex items-end gap-1.5 relative z-10 my-2">
+                <span className="text-5xl font-black text-white leading-none" style={fonts.data}>
+                  {allRedemptions.length}
+                </span>
+                <span className="text-sm font-bold text-white/70 mb-1" style={fonts.body}>Items</span>
+              </div>
+              {/* Footer */}
+              <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider" style={fonts.body}>
+                  Points Spent
+                </span>
+                <span className="text-sm font-black text-white" style={fonts.data}>
+                  {computePointsSpent(allRedemptions).toLocaleString()} EP
+                </span>
+              </div>
+            </div>
+
+          </div>{/* end SummaryCardsRow */}
+
           {/* RECYCLING HEATMAP */}
           <ProfileHeatmap />
 
