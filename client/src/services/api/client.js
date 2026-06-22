@@ -221,9 +221,15 @@ export async function request(method, path, { body, headers } = {}) {
         // use that string directly as the error message rather than falling
         // back to the generic HTTP status text (e.g. "BAD REQUEST").
         const flatStringMessage = rawBodyText && rawBodyText.trim() ? rawBodyText.trim() : null;
+        // Build a human-readable message from the server's error envelope.
+        // Pydantic validation errors use { error: { code, errors: [{field, message}] } }
+        // with no top-level message — so we fall back to the first errors[] entry.
+        const validationMsg = Array.isArray(serverError.errors) && serverError.errors.length
+            ? `${serverError.errors[0].field}: ${serverError.errors[0].message}`
+            : null;
         throw new ApiError(
             serverError.code || `HTTP_${response.status}`,
-            serverError.message || flatStringMessage || response.statusText || `Request failed (${response.status})`,
+            serverError.message || validationMsg || flatStringMessage || response.statusText || `Request failed (${response.status})`,
             response.status,
             data,
         );
@@ -231,9 +237,12 @@ export async function request(method, path, { body, headers } = {}) {
 
     if (data && typeof data === 'object' && data.success === false) {
         const serverError = data.error || {};
+        const validationMsg = Array.isArray(serverError.errors) && serverError.errors.length
+            ? `${serverError.errors[0].field}: ${serverError.errors[0].message}`
+            : null;
         throw new ApiError(
             serverError.code || 'REQUEST_FAILED',
-            serverError.message || 'Request failed',
+            serverError.message || validationMsg || 'Request failed',
             response.status,
             data,
         );
