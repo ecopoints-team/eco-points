@@ -44,8 +44,7 @@ import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
-import * as authApi from "../../services/api/auth";
-import * as rewardsApi from "../../services/api/rewards";
+import { auth as authApi, rewards as rewardsApi } from "../../services/api";
 
 
 // ─────────────────────────────────────────────
@@ -675,6 +674,34 @@ export default function ProfileSection() {
     setIsEditing(true);
   };
 
+  // ── Username lockout derived values (Requirements 7.1, 7.7, 7.8, 7.13) ──
+  // Computed once at render time from the server-supplied usernameChangedAt field.
+  // Both values are plain const — NOT useState — so they are stable for the
+  // lifetime of a single modal session and require no effect.
+  // IMPORTANT: declared HERE (before the useEffect below) to avoid a TDZ
+  // (Temporal Dead Zone) crash in the production build. The dev build tolerates
+  // the forward reference; the minified prod bundle does not.
+
+  /**
+   * Returns true when the username is currently within the 30-day lockout window.
+   * Treats null, undefined, and malformed timestamps as "not locked" (Requirement 7.13).
+   */
+  const isUsernameLocked = (() => {
+    if (!currentUser?.usernameChangedAt) return false;
+    const changedAt = new Date(currentUser.usernameChangedAt);
+    if (isNaN(changedAt.getTime())) return false;   // malformed → treat as null (Req 7.13)
+    const elapsedDays = (Date.now() - changedAt.getTime()) / 86_400_000;
+    return elapsedDays < 30;
+  })();
+
+  /**
+   * Whole days remaining in the lockout period, clamped to a minimum of 1.
+   * Only meaningful when isUsernameLocked is true; evaluates to 0 otherwise.
+   */
+  const lockoutRemainingDays = isUsernameLocked
+    ? Math.max(1, 30 - Math.floor((Date.now() - new Date(currentUser.usernameChangedAt).getTime()) / 86_400_000))
+    : 0;
+
   // ── Debounced username availability check ──
   // Runs synchronous format validation first; if that passes, debounces the
   // backend uniqueness check. A `cancelled` flag + clearTimeout ensure stale
@@ -836,32 +863,6 @@ export default function ProfileSection() {
       setIsSubmitting(false);
     }
   };
-
-  // ── Username lockout derived values (Requirements 7.1, 7.7, 7.8, 7.13) ──
-  // Computed once at render time from the server-supplied usernameChangedAt field.
-  // Both values are plain const — NOT useState — so they are stable for the
-  // lifetime of a single modal session and require no effect.
-  // NOTE: must be declared before usernameBlocksSave so the guard below can reference it.
-
-  /**
-   * Returns true when the username is currently within the 30-day lockout window.
-   * Treats null, undefined, and malformed timestamps as "not locked" (Requirement 7.13).
-   */
-  const isUsernameLocked = (() => {
-    if (!currentUser?.usernameChangedAt) return false;
-    const changedAt = new Date(currentUser.usernameChangedAt);
-    if (isNaN(changedAt.getTime())) return false;   // malformed → treat as null (Req 7.13)
-    const elapsedDays = (Date.now() - changedAt.getTime()) / 86_400_000;
-    return elapsedDays < 30;
-  })();
-
-  /**
-   * Whole days remaining in the lockout period, clamped to a minimum of 1.
-   * Only meaningful when isUsernameLocked is true; evaluates to 0 otherwise.
-   */
-  const lockoutRemainingDays = isUsernameLocked
-    ? Math.max(1, 30 - Math.floor((Date.now() - new Date(currentUser.usernameChangedAt).getTime()) / 86_400_000))
-    : 0;
 
   // Derived: should the save button be blocked due to username validation state?
   // Empty username → optional, don't block. Format error or taken → block.
