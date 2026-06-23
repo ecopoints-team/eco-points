@@ -1,6 +1,0 @@
-# Cloudflare Pages SPA routing for Next.js static export.
-# Each route is exported as its own HTML file, so we tell Cloudflare
-# to serve the matching file (200 splat) rather than a 404 on direct
-# navigation or page refresh.
-/* /:splat.html 200
-/  /index.html  200
