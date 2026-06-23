@@ -39,6 +39,7 @@ import {
   Leaf,
   Zap,
 } from "lucide-react";
+// Force rebuild cache invalidation
 import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
