@@ -6,6 +6,7 @@ import {
   UserIcon, ChevronDown, LogOut, Gift, Home, Trophy,
   Menu, AlertTriangle, Loader2,
 } from "lucide-react";
+// Force rebuild cache invalidation
 import ProfileSkeleton from "../../src/components/shared/skeletons/ProfileSkeleton";
 import { useAuth } from "../../src/context/AuthContext";
 import ProfileSection from "../../src/components/pages/ProfileSection";
@@ -292,3 +293,4 @@ export default function ProfilePage() {
     </RequireAuth>
   );
 }
+
