@@ -1,7 +1,8 @@
 'use client';
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth as authApi, locations as locationsApi } from '../services/api';
+import * as authApi from '../services/api/auth';
+import * as locationsApi from '../services/api/locations';
 
 // ============================================================================
 // AUTH CONTEXT — JWT-Based Auth, Location Scoping, Permissions

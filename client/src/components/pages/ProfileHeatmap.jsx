@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿"use client";
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Leaf, Calendar, ChevronDown,
   X, Zap, Recycle
 } from 'lucide-react';
-import api from '../../services/api';
+import * as logsApi from '../../services/api/logs';
 
 // ─────────────────────────────────────────────
 // Font styles (consistent with ProfileSection)
@@ -48,7 +49,7 @@ export default function ProfileHeatmap({ activityData = {} }) {
     async function loadRecyclingActivity() {
       try {
         setIsLoading(true);
-        const logs = await api.logs.getBottles();
+        const logs = await logsApi.getBottles();
         if (!active) return;
 
         // Group bottles by date (YYYY-MM-DD)

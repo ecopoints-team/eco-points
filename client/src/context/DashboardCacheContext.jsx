@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { dashboard as dashboardApi, logs as logsApi } from '../services/api';
+import * as dashboardApi from '../services/api/dashboard';
+import * as logsApi from '../services/api/logs';
 
 /**
  * DashboardCacheContext — keeps dashboard stats and bottle logs in memory

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/AdminLayout';
 import { useAuth } from '../../../src/context/AuthContext';
-import api from '../../../src/services/api';
+import * as logsApi from '../../../src/services/api/logs';
 import { QrCode, Loader2, X, CheckCircle2, AlertCircle, Camera, CameraOff, Keyboard } from 'lucide-react';
 
 export default function ClaimScannerPage() {
@@ -72,7 +72,7 @@ export default function ClaimScannerPage() {
 
         try {
             // Fetch latest rewards logs
-            const logsList = await api.logs.getRewards(effectiveLocationId);
+            const logsList = await logsApi.getRewards(effectiveLocationId);
             const matchedLog = (logsList || []).find(
                 log => (log.redemptionCode && log.redemptionCode.toUpperCase() === parsedCode.toUpperCase())
             );
@@ -137,7 +137,7 @@ export default function ClaimScannerPage() {
             }
 
             // Claim redemption code through backend
-            const updated = await api.logs.updateRedemptionStatus(matchedLog.id, 'claimed');
+            const updated = await logsApi.updateRedemptionStatus(matchedLog.id, 'claimed');
             
             playBeep('success');
             setScanStatus('success');

@@ -1,4 +1,4 @@
-"use client" ;
+"use client";
 // Profile section
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -44,7 +44,8 @@ import RecentActivity from "./RecentActivity";
 import ProfileHeatmap from "./ProfileHeatmap";
 import { useAuth } from "../../context/AuthContext";
 import HowItWorksModal from "../shared/HowItWorksModal";
-import { auth as authApi, rewards as rewardsApi } from "../../services/api";
+import * as authApi from "../../services/api/auth";
+import * as rewardsApi from "../../services/api/rewards";
 
 
 // ─────────────────────────────────────────────

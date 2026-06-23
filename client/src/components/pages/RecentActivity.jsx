@@ -14,7 +14,7 @@ import {
   Filter,
   X,
 } from "lucide-react";
-import api from "../../services/api";
+import * as logsApi from "../../services/api/logs";
 
 // ─────────────────────────────────────────────
 // Font styles
@@ -479,7 +479,7 @@ export default function RecentActivity() {
     async function load() {
       try {
         setIsLoading(true);
-        const data = await api.logs.getTransactions();
+        const data = await logsApi.getTransactions();
         if (!active) return;
         const mapped = data.map((txn) => {
           const status = resolveStatus(txn.transactionType);

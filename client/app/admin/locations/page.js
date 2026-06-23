@@ -6,7 +6,7 @@ import { SkeletonCard, SkeletonMachineCard } from '../../../src/components/admin
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';
-import { locations as locationsApi } from '../../../src/services/api';
+import * as locationsApi from '../../../src/services/api/locations';
 import { formatField } from '../../../src/lib/formatField';
 import { validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
 import { parseSpreadsheet } from '../../../src/lib/importFile';

@@ -10,7 +10,7 @@ import { Activity, Zap, TrendingUp, Box, Boxes, Users, FileText, Package, Settin
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../src/components/admin/SkeletonLoaders';
 import TechnicianActionModal from '../../src/components/admin/TechnicianActionModal';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { analytics as analyticsApi } from '../../src/services/api';
+import * as analyticsApi from '../../src/services/api/analytics';
 import { QUICK_ACTIONS } from '../../src/data/quickActions';
 
 const QUICK_ACTION_ICONS = { Trophy, Users, Package, FileText, BarChart3, Boxes };

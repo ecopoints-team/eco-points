@@ -6,7 +6,8 @@ import { SkeletonMachineCard, SkeletonCard } from '../../../src/components/admin
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';
-import { machines as machinesApi, logs } from '../../../src/services/api';
+import * as machinesApi from '../../../src/services/api/machines';
+import * as logsApi from '../../../src/services/api/logs';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
 import { validateField, validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';
@@ -708,7 +709,7 @@ function MachinesPageContent() {
     const handleAddMaintenanceLog = async (machineId, newLog) => {
         try {
             await runWithProgress('Logging maintenance...', async () => {
-                await logs.createMachineLog({
+                await logsApi.createMachineLog({
                     rvmId: parseInt(machineId, 10),
                     actionType: newLog.actionType || newLog.action_type || newLog.type,
                     status: newLog.resolved ? 'Resolved' : 'Pending',

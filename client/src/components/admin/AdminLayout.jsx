@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useProgress } from '../../context/ProgressContext';
 import { ROLES } from '../../data/roleConfig';
-import { logs as logsApi } from '../../services/api';
+import * as logsApi from '../../services/api/logs';
 import { formatDate } from '../../utils/formatDate';
 
 // View-Only Banner for non-admin roles

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Camera, Save, Key, Eye, EyeOff } from 'lucide-react';
-import { auth as authApi } from '../../services/api';
+import * as authApi from '../../services/api/auth';
 
 export default function AdminProfile() {
     const { currentUser, allLocations } = useAuth();

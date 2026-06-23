@@ -9,7 +9,8 @@ import AddRegularUserModal from '../../../src/components/admin/AddRegularUserMod
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';
 // getDepartmentName replaced — server returns groupName directly
-import { users as usersApi, groups as groupsApi } from '../../../src/services/api';
+import * as usersApi from '../../../src/services/api/users';
+import * as groupsApi from '../../../src/services/api/groups';
 import { formatField } from '../../../src/lib/formatField';
 import { userRoleLabel, userTypeLabel } from '../../../src/lib/enumLabels';
 import { Search, Filter, ChevronLeft, ChevronRight, User, Mail, Calendar, Shield, Edit2, Trash2, UserPlus, X, Building2, RefreshCw, Eye, EyeOff, Wifi, WifiOff, ChevronDown, ChevronsUpDown, ChevronUp, AlertTriangle, Coins } from 'lucide-react';

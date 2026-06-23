@@ -16,6 +16,16 @@ const withPWA = require("@ducanh2912/next-pwa").default({
     // 404 after a redeploy and cause "This page couldn't load" /
     // ChunkLoadError) are purged instead of served from cache.
     cleanupOutdatedCaches: true,
+    runtimeCaching: [
+      {
+        urlPattern: /^\/profile$/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'profile-page',
+          networkTimeoutSeconds: 10,
+        },
+      },
+    ],
   },
 });
 

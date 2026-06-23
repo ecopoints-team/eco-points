@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';import RequirePermission from '../../../src/components/admin/RequirePermission';
 import { SkeletonCard, SkeletonChart } from '../../../src/components/admin/SkeletonLoaders';
-import { analytics as analyticsApi, orgTypes as orgTypesApi } from '../../../src/services/api';
+import * as analyticsApi from '../../../src/services/api/analytics';
+import * as locationsApi from '../../../src/services/api/locations';
 import { formatField } from '../../../src/lib/formatField';
 import SlotCounter from '../../../src/components/shared/SlotCounter';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
@@ -232,7 +233,7 @@ function AnalyticsPageContent() {
     useEffect(() => {
         const fetchOrgTypes = async () => {
             try {
-                const types = await orgTypesApi.getAll();
+                const types = await locationsApi.getOrgTypes();
                 setOrgTypesList(types || []);
             } catch (err) {
                 console.error('Failed to fetch org types:', err);

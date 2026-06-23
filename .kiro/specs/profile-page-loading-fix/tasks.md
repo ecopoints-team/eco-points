@@ -38,7 +38,7 @@
 
 - [ ] 3. Fix for profile page loading ReferenceError and circular dependencies
 
-  - [ ] 3.1 Eliminate circular dependencies in API barrel file
+  - [x] 3.1 Eliminate circular dependencies in API barrel file
     - Replace barrel file imports in AuthContext with direct module imports
     - Change `import { auth as authApi, locations as locationsApi } from '../services/api'` in `client/src/context/AuthContext.js`
     - To `import * as authApi from '../services/api/auth'` and `import * as locationsApi from '../services/api/locations'`
@@ -49,7 +49,7 @@
     - _Preservation: Other pages continue to load successfully (Requirements 3.1-3.5)_
     - _Requirements: 1.1, 1.4, 2.1, 2.4, 3.1, 3.4_
 
-  - [ ] 3.2 Add "use client" directive to ProfileSection
+  - [x] 3.2 Add "use client" directive to ProfileSection
     - Add `"use client";` as the first line of `client/src/components/pages/ProfileSection.jsx` (before all imports)
     - Verify all components imported by profile page that use React hooks have correct "use client" directives
     - Check ProfileHeader, ProfileSection, and any nested components for proper client/server component designation
@@ -58,7 +58,7 @@
     - _Preservation: Server-side components without hooks continue to render server-side (Requirement 3.3)_
     - _Requirements: 1.1, 1.5, 2.1, 2.5, 3.3_
 
-  - [ ] 3.3 Configure service worker NetworkFirst strategy for /profile
+  - [x] 3.3 Configure service worker NetworkFirst strategy for /profile
     - Modify `client/next.config.js` workboxOptions to include runtimeCaching configuration
     - Add NetworkFirst handler for /profile route:
       ```javascript

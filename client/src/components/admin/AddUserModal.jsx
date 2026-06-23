@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Check, Shield, ChevronRight, Phone, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
-import { users as usersApi } from '../../services/api';
+import * as usersApi from '../../services/api/users';
 import { validateField, VALIDATION_RULES } from '../../lib/validateField';
 
 // Admin duty roles (not user types like Student/Faculty)

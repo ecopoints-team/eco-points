@@ -37,7 +37,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
+import * as rewardsApi from "../../services/api/rewards";
 
 const ITEMS_PER_PAGE = 9;
 const BRANDED = {
@@ -434,7 +434,7 @@ export default function Rewards() {
   useEffect(() => {
     let cancelled = false;
     setIsProductsLoading(true);
-    api.rewards
+    rewardsApi
       .getAll()
       .then((fetched) => {
         if (cancelled) return;
@@ -454,7 +454,7 @@ export default function Rewards() {
     if (!isLoggedIn) return;
     setIsPendingLoading(true);
     try {
-      const all = await api.rewards.getMyRedemptions();
+      const all = await rewardsApi.getMyRedemptions();
       setPendingItems(
         (all || []).filter(
           (r) => r.status === "pending" || r.status === "PENDING"
@@ -590,7 +590,7 @@ export default function Rewards() {
     setIsRedeeming(true);
     setRedeemError("");
     try {
-      const result = await api.rewards.redeem(checkoutData.product.id, {
+      const result = await rewardsApi.redeem(checkoutData.product.id, {
         variantId: checkoutData.variant.id,
         quantity: checkoutData.quantity,
       });

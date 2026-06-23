@@ -6,7 +6,10 @@ import { SkeletonTableRow, SkeletonCard } from '../../../src/components/admin/Sk
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import PageSizeSelector from '../../../src/components/admin/PageSizeSelector';
 import { useAuth } from '../../../src/context/AuthContext';
-import { useProgress } from '../../../src/context/ProgressContext';import { bulkSessions as bulkApi, machines as machinesApi, users as usersApi } from '../../../src/services/api';
+import { useProgress } from '../../../src/context/ProgressContext';
+import * as bulkApi from '../../../src/services/api/sessions';
+import * as machinesApi from '../../../src/services/api/machines';
+import * as usersApi from '../../../src/services/api/users';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
 import { sessionStatusLabel } from '../../../src/lib/enumLabels';

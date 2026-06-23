@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { logs as logsApi } from '../../../../src/services/api';
+import * as logsApi from '../../../../src/services/api/logs';
 import { formatDate } from '../../../../src/utils/formatDate';
 import { formatField } from '../../../../src/lib/formatField';
 import { userRoleLabel } from '../../../../src/lib/enumLabels';

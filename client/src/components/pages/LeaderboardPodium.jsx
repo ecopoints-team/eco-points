@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
+import * as leaderboardApi from "../../services/api/leaderboard";
 
 // ─────────────────────────────────────────────
 // Font styles
@@ -228,7 +228,7 @@ export default function LeaderboardPodium() {
     setLoading(true);
     setError(null);
 
-    api.leaderboard.get()
+    leaderboardApi.get()
       .then(({ topUsers }) => {
         if (cancelled) return;
         // Map API shape → internal shape

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Ticket, Calendar, Eye, EyeOff, QrCode, Loader2, Search, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
+import * as rewardsApi from "../../services/api/rewards";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function RedeemHistory() {
@@ -23,7 +23,7 @@ export default function RedeemHistory() {
 
   const fetchRedemptions = async () => {
     try {
-      const data = await api.rewards.getMyRedemptions();
+      const data = await rewardsApi.getMyRedemptions();
       setRedemptions(data);
     } catch (err) {
       console.error("Failed to fetch redemptions:", err);

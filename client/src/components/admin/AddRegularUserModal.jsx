@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Building2, Loader2, Users, GraduationCap, BookOpen, AtSign } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useAuth } from '../../context/AuthContext';
-import { users as usersApi, groups as groupsApi } from '../../services/api';
+import * as usersApi from '../../services/api/users';
+import * as groupsApi from '../../services/api/groups';
 import { validateField, VALIDATION_RULES } from '../../lib/validateField';
 
 const InputField = ({ type, placeholder, icon: Icon, showToggle, value, onChange, label, error, disabled }) => {

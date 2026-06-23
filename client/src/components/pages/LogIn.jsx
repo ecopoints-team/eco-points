@@ -118,7 +118,7 @@ import {
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../context/AuthContext";
-import { auth as authApi } from "../../services/api";
+import * as authApi from "../../services/api/auth";
 
 // ============================================================================
 // AUTHORIZATION — Admin role set (mirrors server-side Admin_Role_Set)

@@ -9,7 +9,7 @@ import AddUserModal from '../../../../src/components/admin/AddUserModal';
 import { useAuth } from '../../../../src/context/AuthContext';
 import { useProgress } from '../../../../src/context/ProgressContext';
 import { ROLES } from '../../../../src/data/roleConfig';
-import { users as usersApi } from '../../../../src/services/api';
+import * as usersApi from '../../../../src/services/api/users';
 import { formatField } from '../../../../src/lib/formatField';
 import { userRoleLabel } from '../../../../src/lib/enumLabels';
 import { Shield, Check, X, Users, Settings, FileText, Package, Activity, LayoutDashboard, Eye, Edit2, Trash2, Download, Plus, Building2, ChevronDown, Wrench, Search, Filter, RefreshCw, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, AlertTriangle, BarChart3, Layers } from 'lucide-react';

@@ -4,7 +4,7 @@ import { ViewOnlyBanner, ViewOnlyWrapper } from '../../../src/components/admin/A
 import RequirePermission from '../../../src/components/admin/RequirePermission';
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
-import { settings as settingsApi } from '../../../src/services/api';
+import * as settingsApi from '../../../src/services/api/settings';
 import { formatField } from '../../../src/lib/formatField';
 import { notificationChannelLabel } from '../../../src/lib/enumLabels';
 import {
