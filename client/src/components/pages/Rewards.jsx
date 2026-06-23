@@ -1,54 +1,166 @@
 ﻿"use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useDebounce } from "../../utils/useDebounce";
 import Link from "next/link";
+import { QRCodeCanvas } from "qrcode.react";
 import HowItWorksModal from "../shared/HowItWorksModal";
 import {
-  Search, Filter, ArrowRight, ArrowLeft, Sparkles, X, UserCircle,
-  ShoppingBag, Zap, Cpu, Leaf, Droplet, Coffee, Tag, ChevronLeft, ChevronRight,
-  CheckCircle2, Lock, HelpCircle, Settings, Loader2, Ticket
+  Search,
+  ArrowLeft,
+  Sparkles,
+  X,
+  ShoppingBag,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Lock,
+  HelpCircle,
+  Loader2,
+  Ticket,
+  AlertCircle,
+  ArrowRight,
+  Plus,
+  Minus,
+  QrCode,
+  Download,
+  Info,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 
-// --- PRODUCT DATA (30 Products) ---
-// Images from /Rewards/ folder for 5 products; Lucide icons for the rest
-// --- PRODUCT DATA ---
-// Mock data removed in favor of API fetching
+const ITEMS_PER_PAGE = 9;
+const BRANDED = {
+  width: 500,
+  height: 720,
+  padding: 40,
+  qrSize: 260,
+  bgStart: "#064E3B",
+  bgEnd: "#059669",
+  cardBg: "#ffffff",
+  textColor: "#064E3B",
+  subtextColor: "#6B7280",
+  cornerRadius: 32,
+};
 
-const ITEMS_PER_PAGE = 20;
+// ── Helpers ──────────────────────────────────────────────────────────────
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 
-// --- REWARDS HEADER ---
+const loadImg = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+
+// API origin for server-hosted uploads (reward images live at
+// `<origin>/uploads/rewards/...`, served from the server root — NOT under /api/web).
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+
+// Does this URL point to a real image we can render?
+function isImageUrl(url) {
+  if (!url) return false;
+  return (
+    url.startsWith("/uploads") ||
+    url.startsWith("http") ||
+    /\.(jpg|jpeg|png|webp|gif)$/i.test(url)
+  );
+}
+
+// Resolve a reward imageUrl to a browser-loadable src.
+// Absolute http(s) URLs pass through; server-relative /uploads paths get the
+// API origin prefix; anything else (e.g. a /public client asset) is returned as-is.
+function resolveImageUrl(url) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/uploads")) return `${API_ORIGIN}${url}`;
+  return url;
+}
+
+// Reward image with graceful fallback: renders the product image, and if it
+// is missing or fails to load (404, broken file), falls back to a floating
+// ShoppingBag icon instead of the browser's broken-image glyph.
+function ProductImage({ url, alt, iconSize = 64, imgClassName = "", bareFallback = false }) {
+  const [failed, setFailed] = useState(false);
+  const src = resolveImageUrl(url);
+  const showImg = isImageUrl(url) && src && !failed;
+
+  if (showImg) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        onError={() => setFailed(true)}
+        className={imgClassName}
+      />
+    );
+  }
+  if (bareFallback) {
+    return (
+      <ShoppingBag
+        size={iconSize}
+        strokeWidth={1.5}
+        className="text-emerald-600/50"
+      />
+    );
+  }
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-100 to-teal-50 rounded-full">
+      <ShoppingBag
+        size={iconSize}
+        strokeWidth={1.5}
+        className="text-emerald-600/50"
+      />
+    </div>
+  );
+}
+
+// ── Header ────────────────────────────────────────────────────────────────
 function RewardsHeader() {
-  const { currentUser } = useAuth();
-  const isLoggedIn = !!currentUser;
-
   return (
     <header className="fixed top-0 left-0 right-0 z-[999] bg-white/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border-b border-[#10b981]/10">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center gap-4">
-
-        {/* Left: Back to Home */}
         <div className="flex-1">
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 px-3 py-1.5 web-web-rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#064e3b] hover:bg-[#10b981]/5 transition-all duration-300"
           >
-            <ArrowLeft size={18} className="transition-transform duration-300 group-hover:-translate-x-1" />
-            <span className="text-xs font-bold tracking-widest uppercase hidden sm:inline" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+            <ArrowLeft
+              size={18}
+              className="transition-transform duration-300 group-hover:-translate-x-1"
+            />
+            <span
+              className="text-xs font-bold tracking-widest uppercase hidden sm:inline"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
               Back to Home
             </span>
           </Link>
         </div>
-
-        {/* Center: Page Title */}
         <div className="flex-1 flex items-center justify-center gap-2">
-          <h1 className="text-[#064e3b] text-lg sm:text-xl font-black tracking-widest uppercase" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+          <h1
+            className="text-[#064e3b] text-lg sm:text-xl font-black tracking-widest uppercase"
+            style={{ fontFamily: "'Fredoka', sans-serif" }}
+          >
             Rewards
           </h1>
         </div>
-
-        {/* Right: EcoPoints Logo */}
         <div className="flex-1 flex justify-end items-center gap-3 sm:gap-4">
           <img
             src="/ecopoints-logo-mark.png"
@@ -57,1175 +169,1285 @@ function RewardsHeader() {
           />
         </div>
       </div>
-
-      {/* Accent line */}
       <div className="h-[2px] bg-gradient-to-r from-transparent via-[#10b981]/40 to-transparent" />
     </header>
   );
 }
 
-
-// --- MAIN REWARDS COMPONENT ---
+// ── Main component ────────────────────────────────────────────────────────
 export default function Rewards() {
-  // --- STATE ---
+  const { currentUser, isLoading: isAuthLoading, refreshUser } = useAuth();
+  const isLoggedIn = !!currentUser;
+  const userPoints = currentUser?.pointsBalance ?? 0;
+
+  // ── Product list ──
+  const [products, setProducts] = useState([]);
+  const [isProductsLoading, setIsProductsLoading] = useState(true);
+
+  // ── Filter / search / pagination ──
   const [rawSearch, setRawSearch] = useState("");
   const searchQuery = useDebounce(rawSearch, 300);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Refs
-  const filterContainerRef = useRef(null);
-  const statsContainerRef = useRef(null);
+  // ── Checkout flow (0=closed | 1=config | 2=confirm | 3=QR success) ──
+  const [checkoutStep, setCheckoutStep] = useState(0);
+  const [activeProduct, setActiveProduct] = useState(null);
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [checkoutData, setCheckoutData] = useState(null);
+  const [redemptionResult, setRedemptionResult] = useState(null);
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [redeemError, setRedeemError] = useState("");
 
-  const { currentUser, isLoading: isAuthLoading, refreshUser } = useAuth();
-  const isLoggedIn = !!currentUser;
-  const userPoints = currentUser?.pointsBalance ?? 0;
+  // ── Auth modal ──
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // ── Pending claims pill ──
+  const [pendingItems, setPendingItems] = useState([]);
+  const [isPendingOpen, setIsPendingOpen] = useState(false);
+  const [isPendingLoading, setIsPendingLoading] = useState(false);
+  const [pendingQrItem, setPendingQrItem] = useState(null);
+
+  // ── How it works ──
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showFloatingBalance, setShowFloatingBalance] = useState(false);
 
-  // Rewards Data
-  const [products, setProducts] = useState([]);
-  const [isProductsLoading, setIsProductsLoading] = useState(true);
-
-  // Card Pop-Out (FLIP) Animation
-  const [detailedProduct, setDetailedProduct] = useState(null);
-  const [detailedModalState, setDetailedModalState] = useState("closed");
-  const [cardRect, setCardRect] = useState(null);
-  const [insufficientAnimId, setInsufficientAnimId] = useState(null);
-
-  // --- L-SHAPE ANIMATION TIMINGS ---
-  const bounceEase = "cubic-bezier(0.34, 1.56, 0.64, 1)";
-  const smoothEase = "cubic-bezier(0.4, 0, 0.2, 1)";
-
-  const stemTransition = isFilterOpen
-    ? `height 400ms ${bounceEase} 0ms`
-    : `height 300ms ${smoothEase} 200ms`;
-
-  const barTransition = isFilterOpen
-    ? `top 400ms ${bounceEase} 0ms, width 600ms ${bounceEase} 150ms`
-    : `width 300ms ${smoothEase} 0ms, top 300ms ${smoothEase} 200ms`;
-
-  // Fetch rewards from API
+  // ── Fetch rewards ──
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsProductsLoading(true);
-      try {
-        const fetched = await api.rewards.getAll();
-        // Assign colors/icons to API products based on their ID or category
-        const COLORS = [
-          "from-amber-100 to-orange-50",
-          "from-emerald-100 to-teal-50",
-          "from-blue-100 to-indigo-50",
-          "from-rose-100 to-pink-50",
-          "from-purple-100 to-fuchsia-50",
-          "from-cyan-100 to-blue-50",
-          "from-green-100 to-emerald-50"
-        ];
-        const ICONS = [Tag, Leaf, ShoppingBag, Zap, Cpu, Droplet, Coffee];
-        
-        const mapped = fetched.map((p, idx) => ({
-          ...p,
-          desc: p.description,
-          points: p.pointsRequired,
-          image: p.imageUrl,
-          color: COLORS[idx % COLORS.length],
-          icon: ICONS[idx % ICONS.length]
-        }));
-        setProducts(mapped);
-      } catch (err) {
-        console.error("Failed to fetch rewards:", err);
-      } finally {
-        setIsProductsLoading(false);
-      }
+    let cancelled = false;
+    setIsProductsLoading(true);
+    api.rewards
+      .getAll()
+      .then((fetched) => {
+        if (cancelled) return;
+        setProducts(fetched || []);
+      })
+      .catch((err) => console.error("Failed to fetch rewards:", err))
+      .finally(() => {
+        if (!cancelled) setIsProductsLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchProducts();
   }, []);
 
+  // ── Fetch pending redemptions ──
+  const loadPendingItems = useCallback(async () => {
+    if (!isLoggedIn) return;
+    setIsPendingLoading(true);
+    try {
+      const all = await api.rewards.getMyRedemptions();
+      setPendingItems(
+        (all || []).filter(
+          (r) => r.status === "pending" || r.status === "PENDING"
+        )
+      );
+    } catch (err) {
+      console.error("Failed to fetch redemptions:", err);
+    } finally {
+      setIsPendingLoading(false);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshUser();
+      loadPendingItems();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
+
+  // ── Search debounce tracking ──
+  useEffect(() => {
+    setIsSearching(rawSearch !== searchQuery);
+  }, [rawSearch, searchQuery]);
+
+  // ── Reset page on filter change ──
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  // ── Derived: categories ──
   const categories = useMemo(() => {
-    const unique = Array.from(new Set(products.map(p => p.category))).filter(Boolean);
+    const unique = [
+      ...new Set(products.map((p) => p.category).filter(Boolean)),
+    ];
     return ["All", ...unique];
   }, [products]);
 
-  // --- FILTERING & PAGINATION ---
+  // ── Derived: filtered + paginated ──
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.desc || "").toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "All" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+    return products.filter((p) => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch =
+        p.name.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q);
+      const matchCat =
+        selectedCategory === "All" || p.category === selectedCategory;
+      return matchSearch && matchCat;
     });
   }, [products, searchQuery, selectedCategory]);
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
+  );
   const currentProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory]);
-
-  // Refresh user balance on mount
-  useEffect(() => {
-    if (isLoggedIn) {
-      refreshUser();
-    }
-  }, [isLoggedIn, refreshUser]);
-
-  // Intersection Observer for floating user balance relative to stats cards visibility
-  useEffect(() => {
-    const el = statsContainerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowFloatingBalance(!entry.isIntersecting);
-      },
-      { threshold: 0 }
+  // ── Derived: selected variant ──
+  const selectedVariant = useMemo(() => {
+    if (!activeProduct) return null;
+    if (!selectedVariantId)
+      return activeProduct.variants?.[0] ?? null;
+    return (
+      activeProduct.variants?.find((v) => v.id === selectedVariantId) ?? null
     );
+  }, [activeProduct, selectedVariantId]);
 
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-    };
-  }, [isLoggedIn]);
+  // Unit price = variant override if set, else reward base price
+  const unitPrice = useMemo(() => {
+    if (!activeProduct) return 0;
+    if (selectedVariant?.pointsRequired != null)
+      return selectedVariant.pointsRequired;
+    return activeProduct.pointsRequired ?? 0;
+  }, [activeProduct, selectedVariant]);
 
-  // Track typing/debouncing state
-  useEffect(() => {
-    setIsSearching(rawSearch !== searchQuery);
-  }, [rawSearch, searchQuery]);
+  const maxQty = useMemo(() => {
+    if (!selectedVariant) return 1;
+    const byStock = selectedVariant.stockQuantity ?? 0;
+    const byPoints =
+      unitPrice > 0 ? Math.floor(userPoints / unitPrice) : byStock;
+    return Math.max(1, Math.min(byStock, byPoints));
+  }, [selectedVariant, unitPrice, userPoints]);
 
-  // Click-Outside Listener for Filter
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        filterContainerRef.current &&
-        !filterContainerRef.current.contains(event.target)
-      ) {
-        if (isFilterOpen) {
-          setIsFilterOpen(false);
-          setSelectedCategory("All");
-        }
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isFilterOpen]);
+  // ── Handlers ─────────────────────────────────────────────────────────────
 
-  // Handle FLIP Animation opening frame delay
-  useEffect(() => {
-    if (detailedModalState === "opening") {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setDetailedModalState("open");
-        });
-      });
-    }
-  }, [detailedModalState]);
-
-  // --- HANDLERS ---
-  const toggleFilter = () => {
-    if (isFilterOpen) {
-      setSelectedCategory("All");
-    }
-    setIsFilterOpen(!isFilterOpen);
-  };
-
-  const handleCardClick = (product, element) => {
+  const handleCardClick = (product) => {
     if (!isLoggedIn) {
-      setSelectedProduct(product);
-      setShowAuthModal(true);
-    } else {
-      const rect = element.getBoundingClientRect();
-      setCardRect({
-        top: rect.top + rect.height / 2,
-        left: rect.left + rect.width / 2,
-        width: rect.width,
-        height: rect.height,
-      });
-      setDetailedProduct(product);
-      setDetailedModalState("opening");
-    }
-  };
-
-  const handleDirectRedeem = (product, e) => {
-    e.stopPropagation();
-    if (!isLoggedIn) {
-      setSelectedProduct(product);
       setShowAuthModal(true);
       return;
     }
-    if (userPoints < product.points) {
-      setInsufficientAnimId(product.id);
-      setTimeout(() => setInsufficientAnimId(null), 500);
-      return;
-    }
+    const firstActive =
+      product.variants?.find((v) => v.isActive !== false) ??
+      product.variants?.[0] ??
+      null;
+    setActiveProduct(product);
+    setSelectedVariantId(firstActive?.id ?? null);
+    setSelectedQuantity(1);
+    setRedeemError("");
+    setCheckoutStep(1);
+  };
 
-    // Call real API
-    api.rewards.redeem(product.id).then(() => {
-      refreshUser();
-      setSelectedProduct(product);
-      setShowSuccessModal(true);
-    }).catch(err => {
-      console.error("Redemption failed:", err);
-      // Optional: show error toast
+  const handleInitiateCheckout = () => {
+    if (!activeProduct || !selectedVariant) return;
+    if ((selectedVariant.stockQuantity ?? 0) <= 0) return;
+    const totalCost = unitPrice * selectedQuantity;
+    setCheckoutData({
+      product: activeProduct,
+      variant: selectedVariant,
+      quantity: selectedQuantity,
+      unitPrice,
+      totalCost,
     });
+    setCheckoutStep(2);
   };
 
-  const handleDetailedRedeem = () => {
-    if (userPoints < detailedProduct.points) {
-      setInsufficientAnimId("detailed-" + detailedProduct.id);
-      setTimeout(() => setInsufficientAnimId(null), 500);
-      return;
-    }
-    
-    // Call real API
-    api.rewards.redeem(detailedProduct.id).then(() => {
-      refreshUser();
-      setSelectedProduct(detailedProduct);
-      closeDetailedModal();
-      setTimeout(() => setShowSuccessModal(true), 500);
-    }).catch(err => {
-      console.error("Redemption failed:", err);
-    });
-  };
-
-  const closeDetailedModal = () => {
-    setDetailedModalState("closing");
-    setTimeout(() => {
-      setDetailedProduct(null);
-      setDetailedModalState("closed");
-    }, 500);
-  };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setIsLoggedIn(true);
-    setShowAuthModal(false);
-    if (selectedProduct) {
-      const cardElements = document.querySelectorAll(
-        `[data-product-id="${selectedProduct.id}"]`
-      );
-      if (cardElements.length > 0) {
-        handleCardClick(selectedProduct, cardElements[0]);
-      }
+  const handleConfirmPurchase = async () => {
+    if (!checkoutData) return;
+    setIsRedeeming(true);
+    setRedeemError("");
+    try {
+      const result = await api.rewards.redeem(checkoutData.product.id, {
+        variantId: checkoutData.variant.id,
+        quantity: checkoutData.quantity,
+      });
+      setRedemptionResult(result);
+      await refreshUser();
+      await loadPendingItems();
+      setCheckoutStep(3);
+    } catch (err) {
+      setRedeemError(err?.message || "Redemption failed. Please try again.");
+    } finally {
+      setIsRedeeming(false);
     }
   };
 
+  const handleCloseCheckout = () => {
+    setCheckoutStep(0);
+    setActiveProduct(null);
+    setCheckoutData(null);
+    setRedemptionResult(null);
+    setRedeemError("");
+  };
+
+  // Download QR ticket using canvas (mirrors ProfileSection.downloadTicketQR)
+  const downloadTicket = useCallback(async (item) => {
+    const qrCanvas = document.getElementById("checkout-qr-canvas");
+    if (!qrCanvas) return;
+    const {
+      width: W,
+      height: H,
+      padding: P,
+      qrSize,
+      bgStart,
+      bgEnd,
+      cardBg,
+      textColor,
+      subtextColor,
+      cornerRadius: R,
+    } = BRANDED;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, bgStart);
+    grad.addColorStop(1, bgEnd);
+    drawRoundedRect(ctx, 0, 0, W, H, R);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    const cX = P / 2,
+      cY = P / 2,
+      cW = W - P,
+      cH = H - P - 60;
+    drawRoundedRect(ctx, cX, cY, cW, cH, R - 8);
+    ctx.fillStyle = cardBg;
+    ctx.fill();
+    drawRoundedRect(ctx, cX, cY, cW, cH, R - 8);
+    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    let logoEndY = cY + 50;
+    try {
+      const logo = await loadImg("/ecopoints-logo-mark.png");
+      const lW = Math.min(200, logo.width),
+        lH = logo.height * (lW / logo.width);
+      ctx.drawImage(logo, (W - lW) / 2, cY + 20, lW, lH);
+      logoEndY = cY + 20 + lH;
+    } catch {
+      ctx.font = "700 22px Fredoka, sans-serif";
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.fillText("EcoPoints", W / 2, cY + 50);
+      logoEndY = cY + 60;
+    }
+
+    const sepY = logoEndY + 12;
+    ctx.beginPath();
+    ctx.moveTo(cX + 40, sepY);
+    ctx.lineTo(cX + cW - 40, sepY);
+    ctx.strokeStyle = "rgba(16,185,129,0.2)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const pad = 14,
+      box = qrSize + pad * 2;
+    const bX = (W - box) / 2,
+      bY = sepY + 18;
+    drawRoundedRect(ctx, bX, bY, box, box, 16);
+    ctx.fillStyle = "#f8fafc";
+    ctx.fill();
+    drawRoundedRect(ctx, bX, bY, box, box, 16);
+    ctx.strokeStyle = "rgba(16,185,129,0.15)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.drawImage(qrCanvas, bX + pad, bY + pad, qrSize, qrSize);
+
+    const nameLabel =
+      item.rewardName +
+      (item.variantName && item.variantName !== "Default"
+        ? ` (${item.variantName})`
+        : "");
+    const rY = bY + box + 28;
+    ctx.font = "800 20px Fredoka, sans-serif";
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.fillText(nameLabel, W / 2, rY);
+
+    const codeY = rY + 30;
+    ctx.font = "700 13px Space Mono, monospace";
+    const cm = ctx.measureText(item.redemptionCode);
+    const pW = cm.width + 28,
+      pH = 26;
+    drawRoundedRect(ctx, (W - pW) / 2, codeY - 17, pW, pH, 8);
+    ctx.fillStyle = "#f1f5f9";
+    ctx.fill();
+    ctx.fillStyle = subtextColor;
+    ctx.fillText(item.redemptionCode, W / 2, codeY);
+
+    ctx.font = "600 11px Quicksand, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.textAlign = "center";
+    ctx.fillText("Present at the claims counter", W / 2, H - 25);
+
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `EcoPoints-Ticket-${item.redemptionCode}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, []);
+
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f0fdf4]/80 to-white/80 text-[#064e3b] selection:bg-[#34d399] selection:text-white relative pb-32 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#f0fdf4]/80 to-white/80 text-[#064e3b] selection:bg-[#34d399] selection:text-white relative pb-32 overflow-x-hidden">
 
+      <style>{`
+        .font-fredoka  { font-family: 'Fredoka', sans-serif; }
+        .font-quicksand { font-family: 'Quicksand', sans-serif; }
+        .font-space-mono { font-family: 'Space Mono', monospace; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
 
-
-      {/* PARALLAX FLOATING SHAPES BACKGROUND (from landing page) */}
-      <div className="parallax-bg">
-        <div className="parallax-layer">
-          <div className="floating-shape shape-1">
-            <div className="shape-inner"></div>
-          </div>
-          <div className="floating-shape shape-2">
-            <div className="shape-inner"></div>
-          </div>
-          <div className="floating-shape shape-3">
-            <div className="shape-inner"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* DECORATIVE SVG CIRCLE (from landing page) */}
-      <div
-        className="absolute top-0 right-0 w-1/2 h-full bg-cover opacity-50 pointer-events-none z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1200'%3E%3Ccircle cx='600' cy='600' r='500' fill='%2310b981' opacity='0.05'/%3E%3Ccircle cx='700' cy='400' r='300' fill='%2334d399' opacity='0.05'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* REWARDS HEADER */}
       <RewardsHeader />
 
+      {/* ═══ PENDING CLAIMS PILL — fixed right, logged-in only ═══ */}
+      {isLoggedIn && (
+        <div
+          className={`fixed top-[20%] right-0 z-40 transition-transform duration-500 ease-in-out ${
+            isPendingOpen
+              ? "translate-x-0"
+              : "translate-x-[calc(100%-48px)]"
+          }`}
+        >
+          <div className="bg-white shadow-[-10px_0_30px_rgba(0,0,0,0.15)] border border-slate-100 rounded-l-3xl flex h-[60vh] max-h-[600px] min-h-[400px]">
+            {/* Tab */}
+            <button
+              onClick={() => setIsPendingOpen(!isPendingOpen)}
+              className="w-12 bg-[#FBBF24] text-[#064E3B] rounded-l-3xl flex flex-col items-center justify-center gap-4 hover:bg-[#FDE68A] transition-colors relative z-10"
+            >
+              <Ticket size={20} className="-rotate-90" />
+              <span
+                style={{
+                  writingMode: "vertical-rl",
+                  fontFamily: "'Fredoka', sans-serif",
+                }}
+                className="font-bold tracking-wider rotate-180 py-4 text-sm"
+              >
+                Pending Claims
+              </span>
+              {pendingItems.length > 0 && (
+                <div
+                  className="w-6 h-6 bg-[#064E3B] rounded-full flex items-center justify-center text-white font-black text-xs mt-2 shadow-md"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  {pendingItems.length}
+                </div>
+              )}
+            </button>
 
-
-      {/* FLOATING USER BALANCE (Only visible when logged in and stats cards are out of view) */}
-      {isLoggedIn && showFloatingBalance && (
-        <div className="fixed top-20 left-4 sm:left-8 z-40 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.15)] rounded-full px-4 py-2 border border-emerald-100 flex items-center gap-3 animate-slide-up pointer-events-auto">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center shadow-inner">
-            <Zap size={18} className="text-white fill-white" />
-          </div>
-          <div className="pr-2">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 font-body">
-              My Balance
-            </div>
-            {isAuthLoading ? (
-              <div className="h-5 w-16 bg-slate-200 animate-pulse rounded-md" />
-            ) : (
-              <div className="text-xl font-black leading-none flex items-baseline gap-1 font-data text-[#064e3b]">
-                {userPoints.toLocaleString()}{" "}
-                <span className="text-xs text-emerald-500 font-bold font-body">EP</span>
+            {/* Panel */}
+            <div className="w-80 p-6 bg-white overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-6 shrink-0">
+                <h3
+                  className="font-black text-xl text-[#064E3B] flex items-center gap-2"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  <Ticket size={20} className="text-[#10B981]" /> Pending Items
+                </h3>
+                <button
+                  onClick={() => setIsPendingOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
+
+              <div className="flex-grow overflow-y-auto hide-scrollbar">
+                {isPendingLoading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Loader2
+                      size={28}
+                      className="animate-spin text-emerald-400"
+                    />
+                  </div>
+                ) : pendingItems.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center pb-10">
+                    <ShoppingBag size={40} className="mb-3 opacity-30" />
+                    <p
+                      className="font-medium text-sm"
+                      style={{ fontFamily: "'Quicksand', sans-serif" }}
+                    >
+                      No items waiting to be claimed.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4 pb-4">
+                    {pendingItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-[#F8FAFC] p-4 rounded-2xl border border-[#F0FDF4] shadow-sm"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div
+                            className="text-[10px] font-bold text-[#10B981] bg-[#F0FDF4] px-2 py-1 rounded-md border border-[#10B981]/20 truncate max-w-[120px]"
+                            style={{ fontFamily: "'Space Mono', monospace" }}
+                          >
+                            {item.redemptionCode}
+                          </div>
+                          <div
+                            className="text-xs text-slate-500 font-medium"
+                            style={{ fontFamily: "'Quicksand', sans-serif" }}
+                          >
+                            {new Date(item.redeemedAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "2-digit",
+                                year: "numeric",
+                              }
+                            )}
+                          </div>
+                        </div>
+                        <h4
+                          className="font-bold text-[#064E3B] leading-tight mb-3"
+                          style={{ fontFamily: "'Fredoka', sans-serif" }}
+                        >
+                          {item.rewardName}
+                          {item.variantName && item.variantName !== "Default"
+                            ? ` · ${item.variantName}`
+                            : ""}
+                        </h4>
+                        <button
+                          onClick={() => setPendingQrItem(item)}
+                          className="w-full py-2.5 bg-white border border-[#34D399] text-[#059669] text-sm font-bold rounded-xl hover:bg-[#F0FDF4] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                          style={{ fontFamily: "'Fredoka', sans-serif" }}
+                        >
+                          <QrCode size={16} /> View QR Ticket
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MAIN CONTENT ═══ */}
+      <div className="max-w-[1200px] mx-auto px-6 pt-24 pb-16">
+
+        {/* User summary + hero */}
+        <div className="mt-4 mb-10 bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#10b981]/10 rounded-full mb-4 border border-[#10b981]/20">
+                <Sparkles className="w-4 h-4 text-[#10b981]" />
+                <span
+                  className="text-[#10b981] text-sm font-bold uppercase tracking-widest"
+                  style={{ fontFamily: "'Quicksand', sans-serif" }}
+                >
+                  Rewards Catalog
+                </span>
+              </div>
+              <h2
+                className="text-4xl md:text-5xl font-black text-[#064e3b] mb-2 tracking-tight"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                Exchange Impact for{" "}
+                <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">
+                  Rewards
+                </span>
+              </h2>
+              <p
+                className="text-slate-600 max-w-xl"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                Browse our curated collection of eco-friendly goods and campus
+                perks. Redeem your EcoPoints today!
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row xl:flex-col gap-4 items-start xl:items-end shrink-0">
+              {isLoggedIn && (
+                <div className="bg-white/90 p-4 rounded-2xl border border-[#F0FDF4] shadow-sm flex flex-wrap items-center gap-4">
+                  <div
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-lg border-2 border-white shadow"
+                    style={{ fontFamily: "'Fredoka', sans-serif" }}
+                  >
+                    {currentUser?.name?.substring(0, 2).toUpperCase() || "EP"}
+                  </div>
+                  <div>
+                    <p
+                      className="font-bold text-[#064e3b] leading-none text-sm"
+                      style={{ fontFamily: "'Fredoka', sans-serif" }}
+                    >
+                      {currentUser?.name || "User"}
+                    </p>
+                    <p
+                      className="text-xs text-slate-400"
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                    >
+                      @{currentUser?.username || "user"}
+                    </p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200 hidden sm:block" />
+                  <div>
+                    <p
+                      className="text-[10px] font-black text-[#10b981] uppercase tracking-wide"
+                      style={{ fontFamily: "'Quicksand', sans-serif" }}
+                    >
+                      Balance
+                    </p>
+                    {isAuthLoading ? (
+                      <div className="h-5 w-16 bg-slate-200 animate-pulse rounded" />
+                    ) : (
+                      <p
+                        className="font-black text-[#064e3b] text-sm"
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                      >
+                        {userPoints.toLocaleString()} EP
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => setIsHowItWorksOpen(true)}
+                className="flex items-center gap-2 px-5 py-3 bg-white border border-[#F0FDF4] text-[#064e3b] font-bold rounded-2xl hover:border-[#34D399] hover:bg-[#F0FDF4]/50 transition-all shadow-sm text-sm"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                <Info size={18} className="text-[#10b981]" /> How to Redeem?
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search + category filter */}
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-[#F0FDF4] mb-10">
+          <div className="flex w-full lg:w-auto overflow-x-auto hide-scrollbar gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-5 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
+                  selectedCategory === cat
+                    ? "bg-[#10B981] text-white shadow-md"
+                    : "bg-[#F8FAFC] text-[#6B7280] hover:bg-[#F0FDF4] hover:text-[#059669]"
+                }`}
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full lg:w-72 shrink-0">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none">
+              {isSearching ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Search size={18} />
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="Search rewards..."
+              value={rawSearch}
+              onChange={(e) => setRawSearch(e.target.value)}
+              className="w-full bg-[#F8FAFC] border border-slate-200 text-[#064E3B] pl-11 pr-4 py-2.5 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-[#10B981]/50 focus:border-[#10B981] transition-all"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            />
+            {rawSearch && (
+              <button
+                onClick={() => setRawSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-500"
+              >
+                <X size={16} />
+              </button>
             )}
           </div>
         </div>
-      )}
 
-      {/* MAIN CONTENT */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-24 relative z-10">
-
-        {/* USER SUMMARY SECTION (inlined) */}
-        <div className="mt-4 animate-slide-up">
-          <section className="mb-12">
-            <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-
-                {/* Left: User Avatar & Info */}
-                <div className="lg:col-span-4 flex flex-col md:flex-row lg:flex-col items-center md:items-start gap-6">
-                  <div className="relative">
-                    {isAuthLoading ? (
-                      <div className="w-24 h-24 rounded-full bg-slate-200 animate-pulse border-4 border-white shadow-md" />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#10b981] to-[#34d399] text-white flex items-center justify-center font-black text-3xl border-4 border-white shadow-[0_8px_24px_rgba(16,185,129,0.25)]" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-                        {currentUser?.name?.substring(0, 2).toUpperCase() || "EP"}
-                      </div>
-                    )}
-                    <button className="absolute bottom-0 right-0 p-2 rounded-full bg-white text-slate-400 hover:text-[#10b981] transition-colors shadow-md border border-slate-100">
-                      <Settings size={14} />
-                    </button>
-                  </div>
-                  <div className="text-center md:text-left">
-                    {isAuthLoading ? (
-                      <>
-                        <div className="h-8 w-48 bg-slate-200 animate-pulse web-web-rounded-lg mb-2" />
-                        <div className="h-4 w-32 bg-slate-100 animate-pulse rounded-md" />
-                      </>
-                    ) : (
-                      <>
-                        <h2 className="text-3xl font-black text-[#064e3b] tracking-tight mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-                          {currentUser?.name || "Guest User"}
-                        </h2>
-                        <p className="text-sm font-bold text-slate-400 mb-4" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          @{currentUser?.username || "guest"}
-                        </p>
-                      </>
-                    )}
-                    <div className="flex gap-2 justify-center md:justify-start flex-wrap items-center">
-                      <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#10b981]/20">
-                        Active Member
-                      </span>
-                      <button
-                        onClick={() => setIsHowItWorksOpen(true)}
-                        className="flex items-center gap-1.5 text-[#10b981] font-bold text-xs hover:underline transition-colors"
-                        style={{ fontFamily: "'Quicksand', sans-serif" }}
-                      >
-                        <HelpCircle size={14} />
-                        How It Works
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right: Stats Cards */}
-                <div ref={statsContainerRef} className="lg:col-span-8 space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Available Balance */}
-                    <div className="bg-gradient-to-br from-[#10b981]/5 to-[#34d399]/10 rounded-[1.5rem] p-6 border border-[#10b981]/10 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#10b981]/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#10b981] mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                        Available Balance
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        {isAuthLoading ? (
-                          <div className="h-12 w-24 bg-slate-200 animate-pulse web-web-rounded-xl" />
-                        ) : (
-                          <>
-                            <span className="text-5xl font-black text-[#064e3b]" style={{ fontFamily: "'Space Mono', monospace" }}>
-                              {userPoints.toLocaleString()}
-                            </span>
-                            <span className="text-lg font-bold text-[#10b981]" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                              EP
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <Zap size={14} className="text-[#10b981] fill-[#10b981]" />
-                        <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                          Ready to redeem
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Total Redeemed */}
-                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-[1.5rem] p-6 border border-amber-100/50 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/30 rounded-full -mr-6 -mt-6 pointer-events-none" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                        Total Redeemed
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        {isAuthLoading ? (
-                          <div className="h-10 w-20 bg-amber-200/50 animate-pulse web-web-rounded-xl" />
-                        ) : (
-                          <>
-                            <span className="text-4xl font-black text-amber-700" style={{ fontFamily: "'Space Mono', monospace" }}>
-                              {((currentUser?.lifetimePoints ?? 0) - userPoints).toLocaleString()}
-                            </span>
-                            <span className="text-lg font-bold text-amber-500" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                              EP
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <div className="mt-3">
-                        {isLoggedIn ? (
-                          <Link 
-                            href="/redeem-history"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white web-web-rounded-xl text-xs font-black uppercase tracking-wider hover:from-amber-600 hover:to-orange-600 transition-all duration-300 group shadow-md shadow-orange-500/10 hover:shadow-lg hover:-translate-y-0.5"
-                            style={{ fontFamily: "'Quicksand', sans-serif" }}
-                          >
-                            <Ticket size={14} className="text-amber-100 transition-transform duration-300 group-hover:scale-110" />
-                            <span>View Redeem History</span>
-                          </Link>
-                        ) : (
-                          <span className="text-xs font-bold text-slate-400" style={{ fontFamily: "'Quicksand', sans-serif" }}>
-                            No redemptions yet
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-          </section>
-        </div>
-
-        {/* HERO SECTION */}
-        <div className="text-center mb-12 animate-slide-up">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#10b981]/10 rounded-full mb-6 border border-[#10b981]/20">
-            <Sparkles className="w-4 h-4 text-[#10b981]" />
-            <span className="text-[#10b981] text-sm font-bold uppercase tracking-widest font-body">
-              Rewards Showcase
-            </span>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-black text-[#064e3b] mb-4 font-heading tracking-tight">
-            Exchange Impact for{" "}
-            <span className="bg-gradient-to-r from-[#10b981] to-[#34d399] bg-clip-text text-transparent">
-              Rewards
-            </span>
-          </h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto font-body">
-            Browse our curated collection of sustainable goods, tech
-            accessories, and everyday essentials. Redeem your EcoPoints today!
-          </p>
-        </div>
-
-        {/* SEARCH & L-SHAPE MECHANICAL FILTER */}
-        <div
-          className="mb-12 animate-slide-up relative z-50"
-          style={{ animationDelay: "0.1s" }}
-          ref={filterContainerRef}
-        >
-          <div className="relative w-full max-w-3xl mx-auto px-2 sm:px-4 z-50 overflow-hidden">
-            {/* Animated "L" Shape Background */}
-            <div
-              className="absolute top-0 left-2 sm:left-4 right-2 sm:right-4 z-10 pointer-events-none"
-              style={{
-                filter:
-                  "drop-shadow(0 12px 24px rgba(0,0,0,0.06)) drop-shadow(0 4px 8px rgba(16,185,129,0.1))",
-              }}
-            >
-              <div
-                className="absolute left-0 top-0 bg-white/90 backdrop-blur-xl rounded-full origin-top pointer-events-auto"
-                style={{
-                  width: "var(--filter-btn-size)",
-                  height: isFilterOpen
-                    ? "var(--filter-stem-open)"
-                    : "var(--filter-btn-size)",
-                  transition: stemTransition,
-                }}
-              />
-
-              <div
-                className="absolute left-0 bg-white/90 backdrop-blur-xl rounded-full overflow-hidden no-scrollbar pointer-events-auto flex justify-start"
-                style={{
-                  top: isFilterOpen ? "var(--filter-bar-top)" : "0px",
-                  width: isFilterOpen ? "100%" : "var(--filter-btn-size)",
-                  height: "var(--filter-btn-size)",
-                  transition: barTransition,
-                }}
-              >
-                <div
-                  className="flex items-center h-full w-full pr-3 sm:pr-4 overflow-x-auto no-scrollbar [-webkit-overflow-scrolling:touch]"
-                  style={{
-                    paddingLeft: isFilterOpen
-                      ? "calc(var(--filter-btn-size) - 8px)"
-                      : "16px",
-                    opacity: isFilterOpen ? 1 : 0,
-                    transform: isFilterOpen
-                      ? "translateX(0)"
-                      : "translateX(-16px)",
-                    transition: `all 400ms ${smoothEase} ${isFilterOpen ? "300ms" : "0ms"
-                      }`,
-                  }}
-                >
-                  <div className="flex gap-2 w-max">
-                    {categories.map((category) => {
-                      const isActive = selectedCategory === category;
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
-                          className={`relative shrink-0 px-6 py-2.5 sm:py-3 rounded-[2rem] font-bold font-body text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden outline-none ${isActive
-                            ? "text-white shadow-[0_5px_15px_rgba(16,185,129,0.4)] scale-105"
-                            : "text-slate-500 hover:text-[#064e3b] bg-white/50 hover:bg-slate-100"
-                            }`}
-                        >
-                          <div className="absolute inset-0 flex justify-center items-center z-0 pointer-events-none">
-                            <div
-                              className={`absolute w-[150px] h-[150px] bg-[#34d399]/90 rounded-[43%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] wave-back ${isActive
-                                ? "top-[-20px] opacity-100"
-                                : "top-[80px] opacity-0"
-                                }`}
-                            />
-                            <div
-                              className={`absolute w-[160px] h-[160px] bg-gradient-to-t from-[#064e3b] to-[#10b981] rounded-[40%] transition-all duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] delay-75 wave-front ${isActive
-                                ? "top-[-10px] opacity-100"
-                                : "top-[80px] opacity-0"
-                                }`}
-                            />
-                          </div>
-
-                          <div
-                            className={`absolute top-0 left-1/4 right-1/4 h-[2px] bg-white/60 rounded-b-full z-10 transition-opacity duration-500 delay-300 ${isActive ? "opacity-100" : "opacity-0"
-                              }`}
-                          />
-                          <span className="relative z-10 tracking-wide">
-                            {category}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative z-20 flex gap-3 h-[var(--filter-btn-size)]">
-              <button
-                onClick={toggleFilter}
-                className="relative w-[var(--filter-btn-size)] h-[var(--filter-btn-size)] flex items-center justify-center shrink-0 rounded-full text-[#10b981] hover:text-[#064e3b] transition-colors focus:outline-none"
-                aria-label={isFilterOpen ? "Close filters" : "Open filters"}
-              >
-                <div
-                  className={`absolute transition-all duration-500 ease-in-out ${isFilterOpen
-                    ? "rotate-90 scale-0 opacity-0"
-                    : "rotate-0 scale-100 opacity-100"
-                    }`}
-                >
-                  <Filter size={24} strokeWidth={2.5} />
-                </div>
-                <div
-                  className={`absolute transition-all duration-500 ease-in-out ${isFilterOpen
-                    ? "rotate-0 scale-100 opacity-100"
-                    : "-rotate-90 scale-0 opacity-0"
-                    }`}
-                >
-                  <X size={24} strokeWidth={2.5} />
-                </div>
-                {selectedCategory !== "All" && !isFilterOpen && (
-                  <span className="absolute top-1 sm:top-2 right-1 sm:right-2 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white animate-scale-in z-20"></span>
-                )}
-              </button>
-
-              <div className="relative group flex-grow h-full">
-                <div className="relative h-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 flex items-center shadow-sm overflow-hidden no-scrollbar">
-                  <div className="pl-4 pr-2 text-emerald-500">
-                    {isSearching ? (
-                      <Loader2 size={22} className="animate-spin" />
-                    ) : (
-                      <Search size={22} />
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={rawSearch}
-                    onChange={(e) => setRawSearch(e.target.value)}
-                    className="w-full bg-transparent border-none outline-none text-[#064e3b] font-body text-base sm:text-lg placeholder-slate-400"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setRawSearch("")}
-                      className="p-2 text-slate-400 hover:text-emerald-500 transition-colors mr-2 hidden sm:block z-30"
-                    >
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                height: isFilterOpen
-                  ? "calc(var(--filter-stem-open) - var(--filter-btn-size) + 16px)"
-                  : "0px",
-                transition: stemTransition,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* RESULTS METADATA */}
-        <div
-          className="flex justify-between items-center mb-6 px-2 animate-slide-up relative z-10"
-          style={{ animationDelay: "0.2s" }}
-        >
-          <div className="text-slate-500 font-body font-semibold">
-            Showing{" "}
-            <span className="text-[#064e3b]">{filteredProducts.length}</span>{" "}
-            items{" "}
-            {selectedCategory !== "All" && `in ${selectedCategory}`}
-          </div>
-          <div className="flex items-center gap-2 text-sm font-body font-bold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full transition-all duration-300">
-            <Filter size={14} />{" "}
-            {selectedCategory === "All"
-              ? "All Categories"
-              : `${selectedCategory} Only`}
-          </div>
-        </div>
-
+        {/* ═══ PRODUCT GRID ═══ */}
         {isProductsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 mb-20 relative z-10">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 h-[420px] animate-pulse border border-white">
-                <div className="flex justify-between mb-4">
-                  <div className="h-6 w-20 bg-slate-200 rounded-full" />
-                  <div className="h-8 w-16 bg-slate-200 web-web-rounded-xl" />
-                </div>
-                <div className="w-full h-44 bg-slate-100 rounded-[1.5rem] mb-6" />
-                <div className="h-8 w-3/4 bg-slate-200 web-web-rounded-lg mb-4" />
-                <div className="h-4 w-full bg-slate-100 rounded-md mb-2" />
-                <div className="h-4 w-2/3 bg-slate-100 rounded-md" />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-20 mb-20">
+            {[...Array(9)].map((_, i) => (
+              <div
+                key={i}
+                className="mt-12 bg-white rounded-[2rem] p-6 pt-20 border border-[#F0FDF4] h-64 animate-pulse"
+              />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-[2rem] p-16 text-center animate-scale-in relative z-10">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
-              <Search size={32} />
-            </div>
-            <h3 className="text-2xl font-black font-heading text-[#064e3b] mb-2">
-              No products found
-            </h3>
-            <p className="text-slate-500 font-body">
-              Try adjusting your search or category filters to find what
-              you&apos;re looking for.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("All");
-              }}
-              className="mt-6 text-[#10b981] font-bold font-body hover:underline"
+          <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-300">
+            <ShoppingBag size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3
+              className="font-bold text-xl text-[#064E3B]"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
             >
-              Clear all filters
-            </button>
+              {products.length === 0
+                ? "No rewards available yet"
+                : "No rewards found"}
+            </h3>
+            <p
+              className="text-[#6B7280] mb-4"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              {products.length === 0
+                ? "Check back later — new items will be added soon."
+                : "Try adjusting your search or category filter."}
+            </p>
+            {products.length > 0 && (rawSearch || selectedCategory !== "All") && (
+              <button
+                onClick={() => {
+                  setRawSearch("");
+                  setSelectedCategory("All");
+                }}
+                className="text-[#10B981] font-bold hover:underline"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 mb-20 relative z-10">
-            {currentProducts.map((product, index) => {
-              const isImageFile =
-                product.image &&
-                (product.image.includes(".jpg") ||
-                  product.image.includes(".png"));
-              const IconComp = product.icon || ShoppingBag;
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-20 mb-16">
+              {currentProducts.map((product) => {
+                const isAffordable =
+                  !isLoggedIn || userPoints >= (product.pointsRequired ?? 0);
+                const isOutOfStock = (product.stockQuantity ?? 0) <= 0;
 
-              const isAffordable = userPoints >= product.points;
-              const isOutOfStock = product.stockQuantity <= 0;
-              const isShaking = insufficientAnimId === product.id;
+                return (
+                  <div key={product.id} className="relative group mt-12 w-full">
+                    <div className="bg-white rounded-[2rem] p-6 pt-20 border border-[#F0FDF4] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.1)] hover:border-[#34D399]/50 transition-all duration-500 flex flex-col h-full">
 
-              return (
-                <div
-                  key={product.id}
-                  data-product-id={product.id}
-                  onClick={(e) => handleCardClick(product, e.currentTarget)}
-                  className={`group relative bg-white/80 backdrop-blur-xl border border-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] flex flex-col h-auto min-h-[420px] transition-all duration-300 ease-out cursor-pointer ${detailedProduct?.id === product.id
-                    ? "opacity-0 pointer-events-none"
-                    : "hover:shadow-[0_20px_60px_rgba(16,185,129,0.15)] hover:-translate-y-2 animate-scale-in"
-                    }`}
-                  style={{
-                    animationDelay:
-                      detailedProduct?.id === product.id
-                        ? "0s"
-                        : `${index * 0.05}s`,
-                  }}
-                >
-                  {/* Card Top: Category & Cost */}
-                  <div className="flex justify-between items-start mb-4 relative z-20">
-                    <span className="bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full font-body">
-                      {product.category}
-                    </span>
-                    <div
-                      className={`p-[2px] rounded-2xl shadow-sm transition-all duration-300 ${isLoggedIn && !isAffordable
-                        ? "bg-slate-200"
-                        : "bg-gradient-to-r from-[#10b981] to-[#34d399] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]"
-                        }`}
-                    >
-                      <div className="bg-white px-3 py-1.5 rounded-[14px] flex items-center gap-1.5">
-                        {isLoggedIn && !isAffordable ? (
-                          <Lock size={14} className="text-slate-400" />
-                        ) : (
-                          <Zap
-                            size={14}
-                            className="text-[#10b981] fill-[#10b981]"
-                          />
-                        )}
-                        <span
-                          className={`font-black font-data text-lg leading-none ${isLoggedIn && !isAffordable
-                            ? "text-slate-400"
-                            : "text-[#064e3b]"
-                            }`}
+                      {/* Floating image */}
+                      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-36 h-36 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-6 group-hover:scale-110 z-20 pointer-events-none">
+                        <div className="absolute inset-0 bg-[#34D399] rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                        <ProductImage
+                          url={product.imageUrl}
+                          alt={product.name}
+                          iconSize={64}
+                          imgClassName="w-full h-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_20px_25px_rgba(0,0,0,0.25)] transition-all duration-500"
+                        />
+                      </div>
+
+                      {/* Card body */}
+                      <div className="text-center mb-4 flex-grow pointer-events-none">
+                        <div
+                          className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider mb-2"
+                          style={{ fontFamily: "'Quicksand', sans-serif" }}
                         >
-                          {product.points}
-                        </span>
-                        <span
-                          className={`font-bold text-xs leading-none font-body ${isLoggedIn && !isAffordable
-                            ? "text-slate-400"
-                            : "text-[#10b981]"
-                            }`}
+                          {product.category}
+                        </div>
+                        <h3
+                          className="font-bold text-xl text-[#064E3B] mb-2"
+                          style={{ fontFamily: "'Fredoka', sans-serif" }}
                         >
-                          EP
-                        </span>
+                          {product.name}
+                        </h3>
+                        <p
+                          className="text-sm text-[#6B7280] leading-relaxed line-clamp-2"
+                          style={{ fontFamily: "'Quicksand', sans-serif" }}
+                        >
+                          {product.description}
+                        </p>
+                      </div>
+
+                      {/* Price + button */}
+                      <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                        <div className="flex justify-between items-center pointer-events-none">
+                          <span
+                            className="font-semibold text-slate-500 text-sm"
+                            style={{ fontFamily: "'Quicksand', sans-serif" }}
+                          >
+                            Cost
+                          </span>
+                          <div
+                            className="font-bold text-xl text-[#10B981] flex items-center gap-1"
+                            style={{ fontFamily: "'Space Mono', monospace" }}
+                          >
+                            <Zap size={16} fill="#10B981" />
+                            {(product.pointsRequired ?? 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleCardClick(product)}
+                          disabled={isLoggedIn && (isOutOfStock || !isAffordable)}
+                          className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                            !isLoggedIn
+                              ? "bg-[#F8FAFC] text-[#064E3B] border border-slate-200 hover:bg-[#F0FDF4] hover:border-[#10B981]"
+                              : isOutOfStock
+                                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                : isAffordable
+                                  ? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          }`}
+                          style={{ fontFamily: "'Fredoka', sans-serif" }}
+                        >
+                          {!isLoggedIn ? (
+                            <>
+                              <LogIn size={16} /> Sign in to Redeem
+                            </>
+                          ) : isOutOfStock ? (
+                            <>
+                              <X size={16} /> Out of Stock
+                            </>
+                          ) : isAffordable ? (
+                            <>Redeem Item</>
+                          ) : (
+                            <>
+                              <Lock size={16} /> Need{" "}
+                              {(
+                                (product.pointsRequired ?? 0) - userPoints
+                              ).toLocaleString()}{" "}
+                              more EP
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Image Staging Area */}
-                  <div
-                    className={`w-full h-44 rounded-[1.5rem] relative overflow-hidden mb-6 flex-shrink-0 group-hover:scale-[1.03] transition-transform duration-500 ${isLoggedIn && !isAffordable
-                      ? "bg-slate-100 grayscale-[50%]"
-                      : `bg-gradient-to-br ${product.color}`
-                      }`}
-                  >
-                    <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-40 transition-opacity duration-700 pointer-events-none">
-                      <div className="w-32 h-32 bg-white rounded-full blur-3xl animate-glow"></div>
-                    </div>
-
-                    <div className="absolute inset-0 flex items-center justify-center p-6 animate-float">
-                      {isImageFile ? (
-                        <img
-                          src={encodeURI(product.image)}
-                          alt={product.name}
-                          className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="text-emerald-700/40 drop-shadow-md group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500">
-                          <IconComp size={80} strokeWidth={1.5} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="flex flex-col flex-grow relative overflow-hidden pb-1">
-                    <h3 className="text-2xl font-black text-[#064e3b] mb-2 font-heading truncate">
-                      {product.name}
-                    </h3>
-
-                    <p className="text-slate-500 text-sm font-body leading-relaxed line-clamp-2 group-hover:opacity-20 transition-opacity duration-300">
-                      {product.desc}
-                    </p>
-
-                    {/* Dynamic Action Button (Direct Redeem) */}
-                    <div className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] pb-1">
-                      <button
-                        onClick={(e) => !isOutOfStock && handleDirectRedeem(product, e)}
-                        disabled={isOutOfStock}
-                        className={`w-full py-3.5 web-web-rounded-xl font-bold font-body text-[15px] flex items-center justify-center gap-2 transition-all shadow-md ${isShaking
-                          ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                          : isOutOfStock
-                            ? "bg-slate-50 text-slate-400 border-2 border-slate-100 cursor-not-allowed"
-                            : !isLoggedIn
-                              ? "bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white"
-                              : isAffordable
-                                ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[#064e3b]/30"
-                                : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200 hover:bg-slate-200"
-                          }`}
-                      >
-                        {isOutOfStock ? (
-                          <>
-                            Out of Stock <X size={18} />
-                          </>
-                        ) : !isLoggedIn ? (
-                          <>
-                            Sign In to Redeem <ArrowRight size={18} />
-                          </>
-                        ) : isAffordable ? (
-                          <>
-                            Redeem Now <ArrowRight size={18} />
-                          </>
-                        ) : isShaking ? (
-                          <>
-                            Insufficient Points <X size={18} />
-                          </>
-                        ) : (
-                          <>
-                            Not Enough EP <Lock size={18} />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* PAGINATION */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 pb-20 animate-slide-up relative z-10">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm"
-            >
-              <ChevronLeft size={20} />
-            </button>
-
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }).map((_, i) => (
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-6">
                 <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-12 h-12 rounded-full font-bold font-body text-sm transition-all shadow-sm ${currentPage === i + 1
-                    ? "bg-gradient-to-r from-[#10b981] to-[#34d399] text-white shadow-[0_5px_15px_rgba(16,185,129,0.3)] scale-110"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-600"
-                    }`}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-3 rounded-xl bg-white border border-slate-200 text-[#064E3B] hover:border-[#10B981] hover:bg-[#F0FDF4] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  {i + 1}
+                  <ChevronLeft size={20} />
                 </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* --- MODALS --- */}
-
-      {/* 1. DETAILED PRODUCT MODAL (FLIP ANIMATION) */}
-      {detailedProduct && isLoggedIn && !showSuccessModal && (
-        <div className="fixed inset-0 z-[120] pointer-events-none">
-          {/* Blurred Background Overlay */}
-          <div
-            className={`absolute inset-0 bg-[#064e3b]/30 backdrop-blur-sm pointer-events-auto transition-opacity duration-500 ease-in-out ${detailedModalState === "open" ? "opacity-100" : "opacity-0"
-              }`}
-            onClick={closeDetailedModal}
-          />
-
-          {/* Floating / Morphing Card Container */}
-          <div
-            className="absolute bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.3)] flex flex-col md:flex-row overflow-hidden pointer-events-auto border border-white"
-            style={{
-              top:
-                detailedModalState === "open"
-                  ? "50%"
-                  : `${cardRect?.top}px`,
-              left:
-                detailedModalState === "open"
-                  ? "50%"
-                  : `${cardRect?.left}px`,
-              width:
-                detailedModalState === "open"
-                  ? "min(calc(100vw - 2rem), 56rem)"
-                  : `${cardRect?.width}px`,
-              height:
-                detailedModalState === "open"
-                  ? "min(calc(100vh - 2rem), 32rem)"
-                  : `${cardRect?.height}px`,
-              transform: "translate(-50%, -50%)",
-              transition:
-                "all 500ms cubic-bezier(0.34, 1.08, 0.64, 1)",
-              padding: "1.5rem",
-              gap:
-                detailedModalState === "open" ? "2.5rem" : "0rem",
-            }}
-          >
-            <button
-              onClick={closeDetailedModal}
-              className={`absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-all duration-500 z-20 bg-white/50 rounded-full p-1 backdrop-blur-sm ${detailedModalState === "open"
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-50 pointer-events-none"
-                }`}
-            >
-              <X size={28} />
-            </button>
-
-            {/* Left: Enhanced Product Display */}
-            <div
-              className={`w-full h-full rounded-[1.5rem] md:rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-shrink-0 transition-all duration-500 ${userPoints < detailedProduct.points || detailedProduct.stockQuantity <= 0
-                ? "bg-slate-100 grayscale-[50%]"
-                : `bg-gradient-to-br ${detailedProduct.color}`
-                } ${detailedModalState === "open"
-                  ? "md:w-1/2"
-                  : "md:w-full"
-                }`}
-            >
-              <div className="absolute inset-0 flex justify-center items-center opacity-60 pointer-events-none">
-                <div className="w-64 h-64 bg-white rounded-full blur-3xl animate-glow"></div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center p-8 animate-float">
-                {detailedProduct.image &&
-                  (detailedProduct.image.includes(".jpg") ||
-                    detailedProduct.image.includes(".png")) ? (
-                  <img
-                    src={encodeURI(detailedProduct.image)}
-                    alt={detailedProduct.name}
-                    className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl hover:scale-110 transition-transform duration-700"
-                  />
-                ) : (
-                  <div className="text-emerald-700/40 drop-shadow-xl hover:scale-110 transition-transform duration-700">
-                    {React.createElement(
-                      detailedProduct.icon || ShoppingBag,
-                      {
-                        size:
-                          detailedModalState === "open" ? 140 : 80,
-                        strokeWidth: 1.5,
-                      }
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right: Rich Details & CTA */}
-            <div
-              className={`w-full md:w-1/2 flex-col justify-center py-4 md:py-8 pr-2 md:pr-6 transition-opacity duration-300 ${detailedModalState === "open"
-                ? "opacity-100 flex delay-200"
-                : "opacity-0 hidden"
-                }`}
-            >
-              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 font-bold tracking-widest uppercase text-xs rounded-full mb-4 w-max font-body">
-                {detailedProduct.category}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-black font-heading text-[#064e3b] mb-4 leading-tight">
-                {detailedProduct.name}
-              </h2>
-
-              <div className="flex-grow overflow-y-auto no-scrollbar">
-                <p className="text-slate-600 font-body text-lg leading-relaxed mb-6">
-                  {detailedProduct.desc}
-                  <br />
-                  <br />
-                  This premium eco-friendly reward is carefully sourced to
-                  ensure minimal environmental impact. Redeem it using your
-                  hard-earned EcoPoints and take another step towards a
-                  sustainable future!
-                </p>
-              </div>
-
-              <div className="border-t border-slate-100 pt-6 mt-2">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-slate-500 font-bold uppercase tracking-wider text-sm font-body">
-                    Required Points
-                  </span>
-                  <div
-                    className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${userPoints < detailedProduct.points || detailedProduct.stockQuantity <= 0
-                      ? "bg-slate-100 border-slate-200"
-                      : "bg-emerald-50 border-emerald-100"
-                      }`}
-                  >
-                    {userPoints >= detailedProduct.points && detailedProduct.stockQuantity > 0 ? (
-                      <Zap
-                        className="text-[#10b981] fill-[#10b981]"
-                        size={24}
-                      />
-                    ) : (
-                      <Lock className="text-slate-400" size={24} />
-                    )}
-                    <span
-                      className={`text-3xl font-black font-data ${userPoints < detailedProduct.points
-                        ? "text-slate-400"
-                        : "text-[#064e3b]"
-                        }`}
-                    >
-                      {detailedProduct.points}
-                    </span>
-                    <span
-                      className={`text-lg font-bold font-body ${userPoints < detailedProduct.points
-                        ? "text-slate-400"
-                        : "text-[#10b981]"
-                        }`}
-                    >
-                      EP
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleDetailedRedeem}
-                  disabled={detailedProduct.stockQuantity <= 0}
-                  className={`w-full py-4 web-web-rounded-xl font-bold font-body text-[17px] flex items-center justify-center gap-2 transition-all duration-300 ${insufficientAnimId ===
-                    "detailed-" + detailedProduct.id
-                    ? "bg-red-50 text-red-500 border-2 border-red-200 animate-error-shake"
-                    : detailedProduct.stockQuantity <= 0
-                      ? "bg-slate-50 text-slate-400 border-2 border-slate-100 cursor-not-allowed"
-                      : userPoints >= detailedProduct.points
-                        ? "bg-[#064e3b] text-white hover:bg-[#0a6c53] shadow-[0_10px_20px_rgba(6,78,59,0.25)] hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(6,78,59,0.35)]"
-                        : "bg-slate-100 text-slate-400 cursor-not-allowed border-2 border-slate-200"
-                    }`}
+                <div
+                  className="font-bold text-[#6B7280]"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
                 >
-                  {detailedProduct.stockQuantity <= 0 ? (
-                    <>
-                      Out of Stock <X size={20} className="ml-1" />
-                    </>
-                  ) : userPoints >= detailedProduct.points ? (
-                    <>
-                      Confirm Redemption{" "}
-                      <CheckCircle2 size={20} className="ml-1" />
-                    </>
-                  ) : insufficientAnimId ===
-                    "detailed-" + detailedProduct.id ? (
-                    <>
-                      Insufficient Points{" "}
-                      <X size={20} className="ml-1" />
-                    </>
-                  ) : (
-                    <>
-                      Not Enough EP{" "}
-                      <Lock size={20} className="ml-1" />
-                    </>
-                  )}
+                  Page{" "}
+                  <span className="text-[#10B981]">{currentPage}</span> of{" "}
+                  {totalPages}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="p-3 rounded-xl bg-white border border-slate-200 text-[#064E3B] hover:border-[#10B981] hover:bg-[#F0FDF4] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  <ChevronRight size={20} />
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>{/* end max-w container */}
 
-      {/* 2. AUTH MODAL */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-[#064e3b]/40 backdrop-blur-sm"
-            onClick={() => setShowAuthModal(false)}
-          />
-          <div className="relative bg-white w-full max-w-md rounded-[2.5rem] p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.2)] animate-scale-in overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-100 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-
+      {/* ═══ MODAL 1: Product configuration ═══ */}
+      {checkoutStep === 1 && activeProduct && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#064E3B]/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 max-w-lg w-full shadow-2xl relative border border-[#F0FDF4]">
             <button
-              onClick={() => setShowAuthModal(false)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors z-10"
+              onClick={handleCloseCheckout}
+              className="absolute top-6 right-6 p-2 text-[#6B7280] hover:bg-[#F0FDF4] rounded-full transition-colors"
             >
               <X size={24} />
             </button>
 
-            <div className="text-center relative z-10 mb-8">
-              <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-100">
-                <UserCircle className="w-8 h-8 text-emerald-500" />
+            {/* Product image */}
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="w-32 h-32 mb-4 flex items-center justify-center">
+                <ProductImage
+                  url={activeProduct.imageUrl}
+                  alt={activeProduct.name}
+                  iconSize={64}
+                  imgClassName="w-full h-full object-contain drop-shadow-xl"
+                />
               </div>
-              <h2 className="text-3xl font-black font-heading text-[#064e3b] mb-2">
-                Sign In Required
+              <h2
+                className="text-3xl font-black text-[#064E3B] mb-2"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                {activeProduct.name}
               </h2>
-              <p className="text-slate-500 font-body leading-relaxed">
-                Please sign in to your EcoPoints account to redeem the{" "}
-                <strong className="text-[#064e3b]">
-                  {selectedProduct?.name}
-                </strong>
-                .
+              <p
+                className="text-[#6B7280] font-medium text-sm"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                {activeProduct.description}
               </p>
             </div>
 
-            <form
-              onSubmit={handleLogin}
-              className="relative z-10 flex flex-col gap-4"
-            >
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-slate-600 font-body ml-1">
-                  Student ID / Email
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 2020-12345-MN-0"
-                  className="w-full bg-slate-50 border border-slate-200 web-web-rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
-                  required
-                />
+            <div className="space-y-6">
+              {/* Variant selector — only if variants exist beyond the Default one */}
+              {activeProduct.variants &&
+                activeProduct.variants.filter(
+                  (v) => v.isActive !== false && v.varietyName !== "Default"
+                ).length > 0 && (
+                  <div>
+                    <h4
+                      className="font-bold text-[#064E3B] mb-3"
+                      style={{ fontFamily: "'Fredoka', sans-serif" }}
+                    >
+                      Select Variation
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {activeProduct.variants
+                        .filter(
+                          (v) =>
+                            v.isActive !== false && v.varietyName !== "Default"
+                        )
+                        .map((v) => {
+                          const outOfStock = (v.stockQuantity ?? 0) <= 0;
+                          const isSelected = selectedVariantId === v.id;
+                          return (
+                            <button
+                              key={v.id}
+                              onClick={() => {
+                                setSelectedVariantId(v.id);
+                                setSelectedQuantity(1);
+                              }}
+                              disabled={outOfStock}
+                              title={outOfStock ? "Out of stock" : ""}
+                              className={`relative px-4 py-2 rounded-xl font-medium text-sm border-2 transition-all ${
+                                outOfStock
+                                  ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                                  : isSelected
+                                    ? "border-[#10B981] bg-[#F0FDF4] text-[#059669]"
+                                    : "border-slate-100 bg-white text-[#6B7280] hover:border-slate-300"
+                              }`}
+                              style={{ fontFamily: "'Quicksand', sans-serif" }}
+                            >
+                              {v.varietyName}
+                              {outOfStock && (
+                                <span className="absolute -top-2 -right-2 text-[9px] bg-slate-400 text-white px-1 rounded-full leading-tight">
+                                  sold out
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+              {/* Quantity stepper */}
+              <div>
+                <h4
+                  className="font-bold text-[#064E3B] mb-3"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  Quantity
+                </h4>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() =>
+                      setSelectedQuantity((q) => Math.max(1, q - 1))
+                    }
+                    className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-slate-200 flex items-center justify-center text-[#064E3B] hover:bg-slate-100 transition-colors"
+                  >
+                    <Minus size={18} />
+                  </button>
+                  <span
+                    className="font-bold text-xl w-8 text-center text-[#064E3B]"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    {selectedQuantity}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setSelectedQuantity((q) => Math.min(maxQty, q + 1))
+                    }
+                    disabled={selectedQuantity >= maxQty}
+                    className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-slate-200 flex items-center justify-center text-[#064E3B] hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+                {selectedQuantity >= maxQty && maxQty > 0 && (
+                  <p
+                    className="text-xs text-amber-500 font-bold mt-2"
+                    style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  >
+                    Maximum quantity reached for your balance.
+                  </p>
+                )}
               </div>
-              <div className="space-y-1 mb-2">
-                <label className="text-sm font-bold text-slate-600 font-body ml-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 web-web-rounded-xl px-4 py-3.5 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all font-body text-slate-700"
-                  required
-                />
+
+              {/* Subtotal + proceed */}
+              <div className="pt-6 border-t border-slate-100">
+                <div className="flex justify-between items-center mb-4">
+                  <span
+                    className="font-bold text-slate-500"
+                    style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  >
+                    Subtotal:
+                  </span>
+                  <span
+                    className="font-bold text-2xl text-[#10B981]"
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                  >
+                    {(unitPrice * selectedQuantity).toLocaleString()} EP
+                  </span>
+                </div>
+                <button
+                  onClick={handleInitiateCheckout}
+                  disabled={
+                    !selectedVariant ||
+                    (selectedVariant.stockQuantity ?? 0) <= 0
+                  }
+                  className="w-full py-4 bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-lg flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  Proceed to Checkout <ArrowRight size={20} />
+                </button>
               </div>
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-[#10b981] to-[#34d399] text-white font-bold font-body text-lg py-4 web-web-rounded-xl shadow-[0_10px_20px_rgba(16,185,129,0.3)] hover:-translate-y-1 transition-transform"
-              >
-                Sign In to Continue
-              </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 3. SUCCESS MODAL */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-[#064e3b]/60 backdrop-blur-md"
-            onClick={() => setShowSuccessModal(false)}
-          />
-          <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.4)] animate-scale-in text-center overflow-hidden">
-            <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-full h-40 bg-emerald-400 rounded-full blur-3xl opacity-20 pointer-events-none" />
+      {/* ═══ MODAL 2: Order summary / confirmation ═══ */}
+      {checkoutStep === 2 && checkoutData && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-[#064E3B]/80 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl relative border border-[#F0FDF4] flex flex-col">
+            <button
+              onClick={handleCloseCheckout}
+              className="absolute top-6 right-6 p-2 text-[#6B7280] hover:bg-[#F0FDF4] rounded-full transition-colors"
+            >
+              <X size={24} />
+            </button>
 
-            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 shadow-inner">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-            </div>
-
-            <h2 className="text-3xl font-black font-heading text-[#064e3b] mb-3 relative z-10">
-              Redemption Successful!
+            <h2
+              className="text-3xl font-black text-[#064E3B] mb-2 pr-8"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              Order Summary
             </h2>
-            <p className="text-slate-600 font-body mb-8 relative z-10 leading-relaxed">
-              You have successfully claimed the{" "}
-              <strong>{selectedProduct?.name}</strong>. Please check your
-              email for pickup instructions!
+            <p
+              className="text-[#6B7280] font-medium text-sm mb-6"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Please review your redemption details below.
             </p>
 
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              className="w-full bg-slate-900 text-white font-bold font-body py-4 web-web-rounded-xl hover:bg-slate-800 transition-colors relative z-10 shadow-lg"
+            {/* Item detail */}
+            <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 flex gap-4 items-center mb-6">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-100 to-teal-50 flex items-center justify-center shrink-0">
+                <ProductImage
+                  url={checkoutData.product.imageUrl}
+                  alt={checkoutData.product.name}
+                  iconSize={32}
+                  bareFallback
+                  imgClassName="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <h4
+                  className="font-bold text-[#064E3B] leading-tight mb-1"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  {checkoutData.product.name}
+                </h4>
+                {checkoutData.variant.varietyName !== "Default" && (
+                  <p
+                    className="text-xs text-slate-500 font-medium mb-1"
+                    style={{ fontFamily: "'Quicksand', sans-serif" }}
+                  >
+                    Variation: {checkoutData.variant.varietyName}
+                  </p>
+                )}
+                <p
+                  className="text-xs text-[#10B981] font-bold"
+                  style={{ fontFamily: "'Space Mono', monospace" }}
+                >
+                  Qty: {checkoutData.quantity}
+                </p>
+              </div>
+            </div>
+
+            {/* Ledger */}
+            <div
+              className="space-y-3 border-y border-slate-100 py-5 mb-6"
+              style={{ fontFamily: "'Space Mono', monospace" }}
             >
-              Got it, thanks!
+              <div className="flex justify-between items-center text-sm font-medium text-slate-500">
+                <span>Current Balance</span>
+                <span>{userPoints.toLocaleString()} EP</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-bold text-rose-500">
+                <span>Order Cost</span>
+                <span>−{checkoutData.totalCost.toLocaleString()} EP</span>
+              </div>
+              <div className="h-px w-full bg-slate-100" />
+              <div className="flex justify-between items-center font-bold text-lg text-[#064E3B]">
+                <span style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                  Remaining Balance
+                </span>
+                <span>
+                  {(userPoints - checkoutData.totalCost).toLocaleString()} EP
+                </span>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div
+              className="flex gap-3 items-start bg-amber-50 text-amber-700 p-4 rounded-xl border border-amber-200/50 mb-6 text-sm font-medium leading-relaxed"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              <AlertCircle
+                size={20}
+                className="shrink-0 mt-0.5 text-amber-500"
+              />
+              <p>
+                Please review carefully. Once confirmed,{" "}
+                <strong>transactions cannot be cancelled or refunded.</strong>
+              </p>
+            </div>
+
+            {redeemError && (
+              <p
+                className="text-sm text-rose-500 font-bold mb-4"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                {redeemError}
+              </p>
+            )}
+
+            <div className="flex gap-3 mt-auto">
+              <button
+                onClick={() => setCheckoutStep(1)}
+                className="flex-1 py-4 bg-slate-100 text-[#6B7280] font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                Back
+              </button>
+              <button
+                onClick={handleConfirmPurchase}
+                disabled={isRedeeming || userPoints < checkoutData.totalCost}
+                className="flex-[2] py-4 bg-[#10B981] text-white font-bold rounded-xl shadow-md hover:bg-[#059669] hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                {isRedeeming && <Loader2 size={18} className="animate-spin" />}
+                {isRedeeming ? "Processing..." : "Confirm Redemption"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL 3: QR Success ═══ */}
+      {checkoutStep === 3 && redemptionResult && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-[#064E3B]/90 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl relative text-center overflow-y-auto max-h-[90vh]">
+            <button
+              onClick={handleCloseCheckout}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Animated success icon */}
+            <div className="w-20 h-20 bg-[#F0FDF4] rounded-full mx-auto flex items-center justify-center text-[#10B981] mb-6 relative">
+              <div className="absolute inset-0 border-4 border-[#10B981] rounded-full animate-ping opacity-20" />
+              <CheckCircle2 size={40} />
+            </div>
+
+            <h2
+              className="text-3xl font-black text-[#064E3B] mb-2"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              Redemption Successful!
+            </h2>
+
+            <div className="bg-[#F8FAFC] border border-[#F0FDF4] px-6 py-2 rounded-xl mb-4 inline-block">
+              <span
+                className="text-slate-500 text-xs uppercase font-bold tracking-wider block mb-1"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                Redemption Code
+              </span>
+              <span
+                className="font-bold text-[#064E3B] text-xl"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {redemptionResult.redemptionCode}
+              </span>
+            </div>
+
+            <p
+              className="text-[#6B7280] font-medium mb-8"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Present this QR code to the EcoPoints Admin Desk to claim your
+              items.
+            </p>
+
+            {/* Real QR code */}
+            <div className="bg-white p-4 border-2 border-dashed border-[#34D399] rounded-2xl inline-block mb-8">
+              <QRCodeCanvas
+                id="checkout-qr-canvas"
+                value={`REDEEM:${redemptionResult.redemptionCode}`}
+                size={200}
+                bgColor="#ffffff"
+                fgColor="#064e3b"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => downloadTicket(redemptionResult)}
+                className="w-full py-4 bg-[#F0FDF4] text-[#059669] border border-[#34D399]/30 font-bold rounded-xl hover:bg-[#34D399]/20 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                <Download size={20} /> Download Ticket
+              </button>
+              <button
+                onClick={handleCloseCheckout}
+                className="w-full py-4 bg-[#064E3B] text-white font-bold rounded-xl hover:bg-[#065F46] shadow-md transition-colors"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                Return to Catalog
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL: Pending item QR ticket ═══ */}
+      {pendingQrItem && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#064E3B]/80 backdrop-blur-md">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl relative text-center overflow-y-auto max-h-[90vh]">
+            <button
+              onClick={() => setPendingQrItem(null)}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <h2
+              className="text-3xl font-black text-[#064E3B] mb-2 mt-4"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              Claim Ticket
+            </h2>
+
+            <div className="bg-[#F8FAFC] border border-[#F0FDF4] px-6 py-2 rounded-xl mb-6 inline-block mt-2">
+              <span
+                className="text-slate-500 text-xs uppercase font-bold tracking-wider block mb-1"
+                style={{ fontFamily: "'Quicksand', sans-serif" }}
+              >
+                Redemption Code
+              </span>
+              <span
+                className="font-bold text-[#064E3B] text-xl"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {pendingQrItem.redemptionCode}
+              </span>
+            </div>
+
+            <div className="bg-white p-4 border-2 border-dashed border-[#34D399] rounded-2xl inline-block mb-6">
+              <QRCodeCanvas
+                id="checkout-qr-canvas"
+                value={`REDEEM:${pendingQrItem.redemptionCode}`}
+                size={200}
+                bgColor="#ffffff"
+                fgColor="#064e3b"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            <div
+              className="text-left bg-[#F0FDF4] p-5 rounded-2xl mb-8 border border-[#34D399]/30"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              <h4
+                className="font-bold text-[#064E3B] text-lg leading-tight mb-2"
+                style={{ fontFamily: "'Fredoka', sans-serif" }}
+              >
+                {pendingQrItem.rewardName}
+                {pendingQrItem.variantName &&
+                pendingQrItem.variantName !== "Default"
+                  ? ` · ${pendingQrItem.variantName}`
+                  : ""}
+              </h4>
+              <div className="flex justify-between items-center text-sm font-medium text-slate-600 border-t border-[#10B981]/20 pt-2 mt-2">
+                <span>Status: Pending</span>
+                <span>
+                  {new Date(pendingQrItem.redeemedAt).toLocaleDateString(
+                    "en-US",
+                    { month: "short", day: "2-digit", year: "numeric" }
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => downloadTicket(pendingQrItem)}
+              className="w-full py-4 bg-[#064E3B] text-white font-bold rounded-xl hover:bg-[#065F46] shadow-md transition-colors flex justify-center items-center gap-2"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              <Download size={20} /> Save QR Ticket
             </button>
           </div>
         </div>
       )}
-      {isHowItWorksOpen && <HowItWorksModal onClose={() => setIsHowItWorksOpen(false)} />}
+
+      {/* ═══ MODAL: Auth required ═══ */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#064E3B]/60 backdrop-blur-md">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowAuthModal(false)}
+          />
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative text-center z-10">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 p-2 text-[#6B7280] hover:bg-slate-100 rounded-full"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-20 h-20 bg-gradient-to-br from-[#10B981] to-[#059669] rounded-full mx-auto flex items-center justify-center text-white mb-6 shadow-lg shadow-[#10B981]/30">
+              <LogIn size={32} />
+            </div>
+            <h2
+              className="text-2xl font-black text-[#064E3B] mb-2"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+            >
+              Sign In Required
+            </h2>
+            <p
+              className="text-[#6B7280] font-medium mb-8"
+              style={{ fontFamily: "'Quicksand', sans-serif" }}
+            >
+              You need an active EcoPoints account to redeem rewards.
+            </p>
+            <Link
+              href="/login"
+              className="block w-full py-4 bg-[#064E3B] text-white font-bold rounded-xl hover:bg-[#065F46] transition-colors shadow-md text-center"
+              style={{ fontFamily: "'Fredoka', sans-serif" }}
+              onClick={() => setShowAuthModal(false)}
+            >
+              Log In
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ How It Works ═══ */}
+      {isHowItWorksOpen && (
+        <HowItWorksModal
+          onClose={() => setIsHowItWorksOpen(false)}
+          mode="redeem"
+        />
+      )}
     </div>
   );
 }
