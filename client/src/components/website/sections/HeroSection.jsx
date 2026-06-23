@@ -201,7 +201,7 @@ export default function HeroSection() {
             {/* Machine card with scale hover — only wraps the image */}
             <div className="hero-machine-card">
               <img
-                src="/Updated Machine Design.png"
+                src="/updated-machine-design.png"
                 alt="EcoPoints Smart Reverse Vending Machine"
                 className="hero-machine-img w-full h-auto max-h-[450px] object-contain drop-shadow-[0_25px_40px_rgba(6,78,59,0.18)]"
               />
