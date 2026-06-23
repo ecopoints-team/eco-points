@@ -124,16 +124,22 @@ def db_starting_states(draw):
     roles to pre-seed (a non-empty proper subset of the 7 seed roles)
     so Hypothesis explores partial-user populations.
     """
-    label = draw(st.sampled_from([
+    # ``partial_some_users`` requires at least 2 roles so Hypothesis can
+    # draw a non-empty *proper* subset.  When SEED_ROLES contains only
+    # one role the label is excluded from the pool entirely.
+    _labels = [
         'empty',
         'partial_org_type_only',
         'partial_org_only',
         'partial_org_chain',
         'partial_org_chain_with_rvm',
         'partial_org_chain_with_reward',
-        'partial_some_users',
         'fully_seeded',
-    ]))
+    ]
+    if len(SEED_ROLE_NAMES) >= 2:
+        _labels.append('partial_some_users')
+
+    label = draw(st.sampled_from(_labels))
 
     if label == 'partial_some_users':
         role_subset = draw(
