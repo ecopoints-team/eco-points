@@ -17,8 +17,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
-import { ADMIN_ROLES } from '../../context/AuthContext';
+import { useAuth, ADMIN_ROLES } from '../../context/AuthContext';
 
 export default function RequireAuth({ children }) {
     const { currentUser, isInitialized, logout } = useAuth();
