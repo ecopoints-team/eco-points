@@ -20,6 +20,9 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig = {
+  // Enable source maps in production to debug the Turbopack TDZ crash on /profile.
+  // Remove after the bug is identified and fixed.
+  productionBrowserSourceMaps: true,
   turbopack: {
     root: __dirname,
   },
