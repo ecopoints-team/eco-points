@@ -92,12 +92,6 @@ REWARD_VARIANT_STOCK = 100
 # Per-role users. Role -> (first_name, last_name).
 SEED_ROLES: tuple[tuple[str, str, str], ...] = (
     ('superadmin', 'Super', 'Admin'),
-    ('head_admin', 'Head', 'Admin'),
-    ('auditor', 'Audit', 'Officer'),
-    ('technician', 'Tech', 'Nician'),
-    ('inventory_officer', 'Inventory', 'Officer'),
-    ('user', 'Regular', 'User'),
-    ('dependent', 'Dependent', 'User'),
 )
 
 DEFAULT_SEED_PASSWORD = 'SeedPass!23'
@@ -460,9 +454,7 @@ def run_seed(fresh: bool = False, skip_wipe: bool = False) -> None:
     print(f'  Users reused ....... {reused_count}')
     print(f'  Total user rows .... {User.query.count()}')
     print()
-    print('  Login emails: <role>@ecopoints.local for role in')
-    print('    {superadmin, head_admin, auditor, technician,')
-    print('     inventory_officer, user, dependent}')
+    print('  Login email:  superadmin@ecopoints.local')
     print(f'  Password: from $SEED_PASSWORD (default {DEFAULT_SEED_PASSWORD!r})')
     print()
 
