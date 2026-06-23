@@ -20,7 +20,6 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig = {
-  // No output:'export' — @opennextjs/cloudflare runs a real Workers server.
   turbopack: {
     root: __dirname,
   },
