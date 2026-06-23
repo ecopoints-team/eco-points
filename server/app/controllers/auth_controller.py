@@ -190,12 +190,23 @@ def _attach_auth_cookies(response, jwt_token, expiry_hours, is_admin=False):
     secure_env = os.environ.get('COOKIE_SECURE', 'true' if samesite_policy.lower() == 'none' else 'false')
     secure_flag = secure_env.lower() == 'true'
 
+    # Cross-subdomain cookie scope. When the Client (e.g. www.ecopoints.org)
+    # and the API (e.g. api.ecopoints.org) live on different subdomains of the
+    # same registrable domain, the cookies MUST carry a parent ``Domain`` (e.g.
+    # ``.ecopoints.org``) so that (a) the HttpOnly token cookie is shared across
+    # subdomains and (b) the *readable* ``csrf_token`` cookie is visible to the
+    # Client's ``document.cookie`` for the double-submit header. Left unset in
+    # local dev (host-only cookies on ``localhost``). An empty/whitespace value
+    # is treated as "no domain" so a blank env var behaves like unset.
+    cookie_domain = (os.environ.get('COOKIE_DOMAIN') or '').strip() or None
+
     cookie_name = ADMIN_COOKIE_NAME if is_admin else USER_COOKIE_NAME
     response.set_cookie(
         cookie_name,
         jwt_token,
         max_age=max_age,
         path='/',
+        domain=cookie_domain,
         secure=secure_flag,
         httponly=True,
         samesite=samesite_policy,
@@ -205,6 +216,7 @@ def _attach_auth_cookies(response, jwt_token, expiry_hours, is_admin=False):
         secrets.token_urlsafe(32),
         max_age=max_age,
         path='/',
+        domain=cookie_domain,
         secure=secure_flag,
         httponly=False,  # Client must read it from document.cookie
         samesite=samesite_policy,
@@ -632,9 +644,12 @@ def logout(current_user, payload):
         _ss = _os.environ.get('COOKIE_SAMESITE', 'Lax')
         _sec_env = _os.environ.get('COOKIE_SECURE', 'true' if _ss.lower() == 'none' else 'false')
         _sec = _sec_env.lower() == 'true'
-        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
-        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', samesite=_ss, secure=_sec, httponly=True)
-        resp.set_cookie('csrf_token', '', max_age=0, path='/', samesite=_ss, secure=_sec)
+        # Must match the Domain used when the cookies were set, otherwise the
+        # browser treats this as a different cookie and won't delete the live one.
+        _dom = (_os.environ.get('COOKIE_DOMAIN') or '').strip() or None
+        resp.set_cookie(ADMIN_COOKIE_NAME, '', max_age=0, path='/', domain=_dom, samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie(USER_COOKIE_NAME, '', max_age=0, path='/', domain=_dom, samesite=_ss, secure=_sec, httponly=True)
+        resp.set_cookie('csrf_token', '', max_age=0, path='/', domain=_dom, samesite=_ss, secure=_sec)
         return resp, 200
     except Exception as e:
         db.session.rollback()
