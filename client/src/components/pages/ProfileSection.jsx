@@ -1,4 +1,4 @@
-// user client
+"use client" ;
 // Profile section
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
