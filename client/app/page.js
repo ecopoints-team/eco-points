@@ -1,5 +1,5 @@
-﻿"use client";
-import { useEffect, Suspense } from "react";
+"use client";
+import { useEffect, Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -8,7 +8,6 @@ import HeroSection from "../src/components/website/sections/HeroSection";
 import Footer from "../src/components/website/Footer";
 import ScrollToTop from "../src/components/website/ScrollToTop";
 import EcoLoadingScreen from "../src/components/shared/EcoLoadingScreen";
-import { useState } from "react";
 import { useUI } from "../src/context/UIContext";
 
 // Lazy-load below-fold sections for faster initial paint
