@@ -21,6 +21,11 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig = {
   output: "export",
+  // Static export requires unoptimized images (Next's built-in
+  // image optimization needs a server; with output:'export' there is none).
+  images: {
+    unoptimized: true,
+  },
   turbopack: {
     root: __dirname,
   },
