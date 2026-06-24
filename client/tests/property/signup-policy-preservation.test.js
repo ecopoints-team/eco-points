@@ -143,8 +143,7 @@ async function renderSignup() {
 
 /**
  * Fill Phase 1 of the signup form (credentials panel) and submit it via the
- * "Continue" button (not document.querySelector('form') which picks the login
- * form first).
+ * "Next Step" button (SignUp_Wizard) or the legacy "Continue" button.
  *
  * @param {{ password: string, confirmPassword?: string }} opts
  */
@@ -168,22 +167,44 @@ async function fillPhase1AndSubmit({ password, confirmPassword }) {
     // Password inputs — the signup side has two password inputs (password + confirmPassword).
     // The login side has one. querySelectorAll returns them in DOM order; the signup
     // panel is rendered second (right side), so we pick ALL and use [0]/[1] from the
-    // signup panel. Safest: find the "Continue" button's containing form, then query within it.
-    const continueBtn = screen.queryByRole('button', { name: /continue/i });
+    // signup panel.
+    //
+    // SignUp_Wizard: find the "Next Step" button; legacy: find "Continue" button.
+    const nextStepBtn = screen.queryByRole('button', { name: /next step/i })
+                     || screen.queryByRole('button', { name: /continue/i });
     let pwInputs;
-    if (continueBtn && continueBtn.form) {
-        pwInputs = continueBtn.form.querySelectorAll('input[type="password"]');
+    if (nextStepBtn && nextStepBtn.closest('div')) {
+        // Find all password inputs in the page (wizard renders them all in the right panel)
+        pwInputs = document.querySelectorAll('input[type="password"]');
     } else {
         // Fallback: all password inputs on page (signup has 2, login has 1)
         pwInputs = document.querySelectorAll('input[type="password"]');
     }
-    if (pwInputs[0]) fireEvent.change(pwInputs[0], { target: { value: password } });
-    if (pwInputs[1]) fireEvent.change(pwInputs[1], { target: { value: confirm } });
 
-    // Submit by clicking Continue (type=submit inside the phase-1 form), not via
-    // document.querySelector('form') which picks the login form first.
-    if (continueBtn) {
-        fireEvent.click(continueBtn);
+    // SignUp_Wizard uses id="signup-password" and id="signup-confirm-password".
+    // These are the last two password inputs in the page (login has one at the top).
+    const signupPwInputs = document.querySelectorAll('input[id^="signup-"]');
+    const pwField = document.getElementById('signup-password') || pwInputs[0];
+    const confirmField = document.getElementById('signup-confirm-password') || pwInputs[1];
+
+    if (pwField) {
+        fireEvent.change(pwField, { target: { value: password } });
+        fireEvent.blur(pwField);
+    }
+    if (confirmField) {
+        fireEvent.change(confirmField, { target: { value: confirm } });
+        fireEvent.blur(confirmField);
+    }
+
+    // Also fill the legacy phase-1 inputs (if the wizard is not mounted, fallback to old form)
+    if (!document.getElementById('signup-password')) {
+        if (pwInputs[0]) fireEvent.change(pwInputs[0], { target: { value: password } });
+        if (pwInputs[1]) fireEvent.change(pwInputs[1], { target: { value: confirm } });
+    }
+
+    // Submit by clicking "Next Step" (SignUp_Wizard) or "Continue" (legacy form).
+    if (nextStepBtn) {
+        fireEvent.click(nextStepBtn);
     } else {
         // Last resort: submit the form that contains the Continue button text.
         const allForms = document.querySelectorAll('form');
@@ -488,13 +509,14 @@ describe('Property 10d: Preservation — password mismatch blocked before policy
                             `advancing to phase 2.`,
                         ).toBe(0);
 
-                        // "do not match" message must be shown.
+                        // "mismatch" message must be shown (SignUp_Wizard shows "Mismatch"
+                        // as a live match indicator; legacy form showed "do not match").
                         const bodyText = document.body.textContent || '';
                         expect(
                             bodyText.toLowerCase(),
                             `P10d FAILED: no mismatch error shown for ${ctx}. ` +
                             `Rendered body: ${JSON.stringify(bodyText.slice(0, 400))}`,
-                        ).toContain('do not match');
+                        ).toContain('mismatch');
 
                         return true;
                     },

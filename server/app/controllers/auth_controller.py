@@ -967,7 +967,15 @@ def public_locations():
     try:
         from ..models import Organization
         orgs = Organization.query.filter_by(status='Active').order_by(Organization.name).all()
-        result = [{'id': o.id, 'name': o.name, 'fullName': o.full_name} for o in orgs]
+        result = [
+            {
+                'id': o.id,
+                'name': o.name,
+                'fullName': o.full_name,
+                'orgType': o.org_type_ref.name if o.org_type_ref else None,
+            }
+            for o in orgs
+        ]
         return jsonify({'success': True, 'locations': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': 'An internal error occurred'}), 500

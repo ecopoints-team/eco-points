@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // ADMIN ACCOUNT CREDENTIALS (All passwords: SeedPass!23)
 // Sign in with: email + password
 // Total: 50 accounts across 2 organizations (multi-tenant)
@@ -91,7 +91,8 @@
 //   User login:   user@ecopoints.local / SeedPass!23 → /rewards
 // ============================================================================
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -102,6 +103,7 @@ import {
   Loader2,
   X,
   ChevronDown,
+  Check,
   Building2,
   Users,
   Zap,
@@ -115,10 +117,12 @@ import {
   AtSign,
   ArrowLeft,
   KeyRound,
+  Phone,
 } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../context/AuthContext";
 import * as authApi from "../../services/api/auth";
+import { TC_Modal, PP_Modal } from "./LegalModals";
 
 // ============================================================================
 // AUTHORIZATION — Admin role set (mirrors server-side Admin_Role_Set)
@@ -133,6 +137,18 @@ const ADMIN_ROLES = new Set([
   "technician",
   "inventory_officer",
 ]);
+
+// ============================================================================
+// YEAR_LEVEL_OPTIONS — Static options for the Year Level dropdown
+// Declared once at module level so it is never reallocated on re-render.
+// ============================================================================
+const YEAR_LEVEL_OPTIONS = [
+  { id: 1, name: '1st Year', abbreviation: 'Y1' },
+  { id: 2, name: '2nd Year', abbreviation: 'Y2' },
+  { id: 3, name: '3rd Year', abbreviation: 'Y3' },
+  { id: 4, name: '4th Year', abbreviation: 'Y4' },
+  { id: 5, name: '5th Year', abbreviation: 'Y5' },
+];
 
 // ============================================================================
 // Floating Input Field — Sign In fields (replaces ElasticInput in login form)
@@ -368,6 +384,42 @@ const InputField = ({
 };
 
 // ============================================================================
+// filterOptions — pure filter utility for FloatingSearchableDropdown
+// Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+// ============================================================================
+/**
+ * Returns a filtered slice of `options` matching `query`.
+ *
+ * @param {string} query        - The search string typed by the user (may be empty).
+ * @param {Array}  options      - Full list of DropdownOption objects.
+ * @param {string} searchKey    - Primary field to match against (e.g. "name").
+ * @param {string} subtitleKey  - Secondary field to match against (e.g. "abbreviation").
+ * @param {number} maxItems     - Maximum number of items to return.
+ * @returns {Array} Filtered array of length ≤ maxItems. Input array is never mutated.
+ */
+function filterOptions(query, options, searchKey, subtitleKey, maxItems) {
+  if (query === "") {
+    return options.slice(0, maxItems);
+  }
+
+  const result = [];
+  const q = query.toLowerCase();
+
+  for (const option of options) {
+    const primary = option[searchKey]?.toLowerCase() ?? "";
+    const secondary = option[subtitleKey]?.toLowerCase() ?? "";
+    if (primary.includes(q) || secondary.includes(q)) {
+      result.push(option);
+    }
+    if (result.length === maxItems) {
+      break;
+    }
+  }
+
+  return result;
+}
+
+// ============================================================================
 // Floating Searchable Dropdown Component (Shows UPWARD)
 // ============================================================================
 const FloatingSearchDropdown = ({
@@ -443,7 +495,7 @@ const FloatingSearchDropdown = ({
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 bottom-full mb-2 left-0
+          className="absolute z-50 bottom-full mb-1 left-0
                         w-full bg-white border border-gray-200 web-web-rounded-xl shadow-2xl 
                         max-h-[210px] overflow-y-auto"
         >
@@ -499,6 +551,1430 @@ const FloatingSearchDropdown = ({
 };
 
 // ============================================================================
+// Progress_Bar — 3-step wizard indicator (local to LogIn.jsx)
+// ============================================================================
+function Progress_Bar({ currentStep }) {
+  return (
+    <div className="flex items-center justify-center w-full mb-6">
+      {[1, 2, 3].map((n, i) => (
+        <Fragment key={n}>
+          {/* Connector — dashed gray line between steps */}
+          {i > 0 && (
+            <div className="flex-1 border-t-2 border-dashed border-gray-300 mx-1" />
+          )}
+          {/* Step indicator circle */}
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+                transition-all duration-300
+                ${n === currentStep
+                  ? 'bg-lime-500 text-white shadow-md'
+                  : n < currentStep
+                    ? 'bg-lime-400 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                }`}
+          >
+            {n}
+          </div>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// FloatingSelectField — custom dropdown in the FloatingInputField visual shell.
+// Replaces the native <select> with a styled panel matching the login modal theme.
+// Local to LogIn.jsx — do not export.
+// Props: id, label, icon, value, onChange, options, onBlur, error, disabled
+// ============================================================================
+function FloatingSelectField({
+  id,
+  label,
+  icon,
+  value,
+  onChange,
+  options,
+  onBlur,
+  error = false,
+  disabled = false,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const wrapperRef = useRef(null);
+  const hasIcon = Boolean(icon);
+
+  const isFloated = isFocused || isOpen || value.length > 0;
+
+  const borderColor = error
+    ? 'border-rose-500'
+    : isOpen || isFocused
+      ? 'border-emerald-500'
+      : 'border-slate-200';
+
+  const iconColor = error
+    ? 'text-rose-500'
+    : isOpen || isFocused
+      ? 'text-emerald-500'
+      : value.length > 0
+        ? 'text-emerald-400'
+        : 'text-slate-400';
+
+  const separatorColor = error ? 'bg-rose-200' : 'bg-slate-300';
+  const separatorOpacity = isFloated ? 'opacity-100' : 'opacity-0';
+
+  const labelColor = error
+    ? 'text-rose-500'
+    : isFloated
+      ? 'text-emerald-600'
+      : 'text-slate-400';
+
+  const labelStyle = isFloated
+    ? { top: '24px', transform: 'translateY(-50%)' }
+    : { top: '48px', transform: 'translateY(-50%)' };
+
+  const labelXClass = hasIcon ? 'translate-x-10' : 'translate-x-3';
+
+  // Close on outside click
+  useEffect(() => {
+    const handleMouseDown = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setIsFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, []);
+
+  const handleToggle = () => {
+    if (disabled) return;
+    const next = !isOpen;
+    setIsOpen(next);
+    setIsFocused(next);
+    if (!next) onBlur?.();
+  };
+
+  const handleSelect = (opt) => {
+    onChange(opt);
+    setIsOpen(false);
+    setIsFocused(false);
+    onBlur?.();
+  };
+
+  return (
+    <div ref={wrapperRef} className={`relative w-full pt-6 ${disabled ? 'opacity-50' : ''}`}>
+      {/* Floating label */}
+      <label
+        htmlFor={id}
+        style={labelStyle}
+        className={`pointer-events-none absolute left-0 z-10 font-medium
+          transition-all duration-200 ease-in-out
+          ${labelXClass}
+          ${isFloated ? 'text-xs font-bold bg-white px-1' : 'text-sm bg-transparent'}
+          ${labelColor}
+        `}
+      >
+        {label}
+      </label>
+
+      {/* Field shell — matches FloatingInputField dimensions */}
+      <button
+        id={id}
+        type="button"
+        onClick={handleToggle}
+        disabled={disabled}
+        className={`flex items-center w-full h-12 border rounded-lg px-3 transition-colors duration-200 cursor-pointer ${borderColor} bg-transparent`}
+      >
+        {hasIcon && (
+          <div
+            data-testid="select-icon-wrapper"
+            className={`flex items-center justify-center transition-colors duration-300 mr-0 ${iconColor}`}
+          >
+            {icon}
+          </div>
+        )}
+
+        {hasIcon && (
+          <div
+            data-testid="select-separator"
+            className={`w-px h-5 mx-3 transition-opacity duration-200 ${separatorColor} ${separatorOpacity}`}
+          />
+        )}
+
+        <span className={`flex-1 text-left text-sm ${value ? 'text-slate-700' : 'text-slate-400'}`}>
+          {value || ''}
+        </span>
+
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Custom dropdown panel — opens downward */}
+      {isOpen && !disabled && (
+        <div className="absolute z-50 top-full mt-0.5 left-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+          <div className="max-h-[200px] overflow-y-auto py-1">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onMouseDown={() => handleSelect(opt)}
+                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors
+                  ${value === opt
+                    ? 'bg-emerald-50 text-emerald-700 font-medium'
+                    : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+              >
+                <span>{opt}</span>
+                {value === opt && <Check size={14} className="text-emerald-600 flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Step1_AccountCredentials — purely presentational; all validation logic and
+// derived values (emailValid, usernameValid, passwordRules, passwordValid,
+// step1Valid, showMatchIndicator, passwordsMatch) are computed in SignUp_Wizard
+// and passed as props.
+// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7
+// ============================================================================
+function Step1_AccountCredentials({
+  email, setEmail,
+  username, setUsername,
+  password, setPassword,
+  confirmPassword, setConfirmPassword,
+  touched, setTouched,
+  passwordRules,
+  showMatchIndicator, passwordsMatch,
+  step1Valid,
+  onNext,
+  onSwitchToSignIn,
+}) {
+  // Derive per-field validity from passwordRules and values for error display.
+  // emailValid / usernameValid / passwordValid are not passed as separate props
+  // so we derive them locally for rendering only — the canonical source remains
+  // in SignUp_Wizard.
+  const emailValid     = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/.test(email) && email.length <= 254;
+  const usernameValid  = /^[a-zA-Z0-9._]{3,30}$/.test(username);
+  const passwordValid  = passwordRules && Object.values(passwordRules).every(Boolean);
+
+  // Track password field focus so criteria show immediately on click
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const showPasswordCriteria = (passwordFocused || touched.password) && !passwordValid && passwordRules;
+
+  return (
+    <div className="w-full space-y-1">
+      {/* Email */}
+      <FloatingInputField
+        id="signup-email"
+        type="email"
+        label="Email"
+        icon={<Mail size={18} />}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, email: true }))}
+        error={touched.email && !emailValid}
+      />
+      {touched.email && !emailValid && (
+        <p className="text-xs text-rose-500 pl-3">
+          Enter a valid email address.
+        </p>
+      )}
+
+      {/* Username */}
+      <FloatingInputField
+        id="signup-username"
+        type="text"
+        label="Username"
+        icon={<AtSign size={18} />}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, username: true }))}
+        error={touched.username && !usernameValid}
+      />
+      {touched.username && !usernameValid && (
+        <p className="text-xs text-rose-500 pl-3">
+          3–30 characters: letters, numbers, dots, underscores only.
+        </p>
+      )}
+
+      {/* Password */}
+      <FloatingInputField
+        id="signup-password"
+        type="password"
+        label="Password"
+        icon={<Lock size={18} />}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        onFocus={() => setPasswordFocused(true)}
+        onBlur={() => { setPasswordFocused(false); setTouched(t => ({ ...t, password: true })); }}
+        error={touched.password && !passwordValid}
+      />
+      {showPasswordCriteria && (
+        <ul className="text-xs pl-3 list-disc list-inside space-y-0.5">
+          <li className={passwordRules.minLength ? 'text-emerald-600' : 'text-rose-500'}>At least 8 characters</li>
+          <li className={passwordRules.hasUpper  ? 'text-emerald-600' : 'text-rose-500'}>At least one uppercase letter (A–Z)</li>
+          <li className={passwordRules.hasLower  ? 'text-emerald-600' : 'text-rose-500'}>At least one lowercase letter (a–z)</li>
+          <li className={passwordRules.hasDigit  ? 'text-emerald-600' : 'text-rose-500'}>At least one digit (0–9)</li>
+          <li className={passwordRules.noSpace   ? 'text-emerald-600' : 'text-rose-500'}>Must not contain spaces</li>
+        </ul>
+      )}
+
+      {/* Confirm Password */}
+      <FloatingInputField
+        id="signup-confirm-password"
+        type="password"
+        label="Confirm Password"
+        icon={<Lock size={18} />}
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, confirmPassword: true }))}
+        error={false}
+      />
+      {showMatchIndicator && (
+        <p className={`text-xs font-semibold pl-3 ${passwordsMatch ? 'text-emerald-600' : 'text-rose-500'}`}>
+          {passwordsMatch ? 'Match' : 'Mismatch'}
+        </p>
+      )}
+
+      {/* Next Step button */}
+      <button
+        type="button"
+        disabled={!step1Valid}
+        onClick={onNext}
+        className="w-full mt-4 py-2.5 bg-emerald-600 text-white rounded-lg font-bold
+          hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed
+          flex items-center justify-center gap-2"
+      >
+        Next Step <ArrowRight size={16} />
+      </button>
+
+      {/* Sign In link */}
+      <p className="text-center text-xs text-slate-500 mt-2">
+        Already have an account?{' '}
+        <button
+          type="button"
+          onClick={onSwitchToSignIn}
+          className="text-emerald-600 font-semibold hover:underline"
+        >
+          Sign In
+        </button>
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// PhoneInputField — FloatingInputField shell with a fixed +63 prefix box.
+// "Phone Number" label rests inside the field and floats to the top border
+// on focus/fill. The +63 prefix box is only visible once the label has floated.
+// Props: value, onChange(rawDigits), onBlur, error
+// ============================================================================
+function PhoneInputField({ value, onChange, onBlur, error = false }) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const isFloated = isFocused || value.length > 0;
+
+  const borderColor = error
+    ? 'border-rose-500'
+    : isFocused
+      ? 'border-emerald-500'
+      : 'border-slate-200';
+
+  const labelColor = error
+    ? 'text-rose-500'
+    : isFloated
+      ? 'text-emerald-600'
+      : 'text-slate-400';
+
+  const prefixBorderColor = error
+    ? 'border-rose-300 bg-rose-50 text-rose-400'
+    : isFocused
+      ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
+      : 'border-slate-200 bg-slate-100 text-slate-500';
+
+  // Same label positioning math as FloatingInputField
+  const labelStyle = isFloated
+    ? { top: '24px', transform: 'translateY(-50%)' }
+    : { top: '48px', transform: 'translateY(-50%)' };
+
+  // When label is resting, it sits at the normal left edge (no prefix visible).
+  // When floated, prefix is visible so label shifts right past it.
+  const labelLeft = isFloated ? '0' : '0';
+  const labelX = isFloated ? 'translate-x-3' : 'translate-x-3';
+
+  return (
+    <div className="relative w-full pt-6">
+      {/* Floating label */}
+      <label
+        htmlFor="signup-phone"
+        style={labelStyle}
+        className={`pointer-events-none absolute left-0 z-10 font-medium
+          transition-all duration-200 ease-in-out ${labelX}
+          ${isFloated ? 'text-xs font-bold bg-white px-1' : 'text-sm bg-transparent'}
+          ${labelColor}`}
+      >
+        Phone Number (optional)
+      </label>
+
+      {/* Field shell */}
+      <div className={`flex items-center w-full h-12 border rounded-lg overflow-hidden transition-colors duration-200 ${borderColor}`}>
+        {/* +63 prefix — only visible after label floats */}
+        {isFloated && (
+          <span className={`px-3 text-sm font-semibold h-full flex items-center border-r select-none whitespace-nowrap transition-colors duration-200 ${prefixBorderColor}`}>
+            +63
+          </span>
+        )}
+        {/* Digit input */}
+        <input
+          id="signup-phone"
+          type="tel"
+          inputMode="numeric"
+          placeholder=""
+          value={value}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          onFocus={() => setIsFocused(true)}
+          onBlur={(e) => { setIsFocused(false); onBlur?.(e); }}
+          className="flex-1 h-full bg-transparent px-3 text-sm text-slate-700 outline-none"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Step2_PersonalDetails — Step 2 of SignUp_Wizard (Personal Details)
+// Purely presentational: receives all state and derived validity booleans
+// from SignUp_Wizard via props.
+// Props: firstName, setFirstName, middleName, setMiddleName, lastName,
+//        setLastName, phone, setPhone, touched, setTouched,
+//        firstNameValid, lastNameValid, phoneValid, step2Valid,
+//        onNext, onBack
+// Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8
+// ============================================================================
+function Step2_PersonalDetails({
+  firstName, setFirstName,
+  middleName, setMiddleName,
+  lastName, setLastName,
+  phone, setPhone,
+  touched, setTouched,
+  firstNameValid, lastNameValid, phoneValid,
+  step2Valid,
+  onNext,
+  onBack,
+}) {
+  return (
+    <div className="w-full space-y-1">
+      {/* First Name */}
+      <FloatingInputField
+        id="signup-firstname"
+        type="text"
+        label="First Name"
+        icon={<User size={18} />}
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, firstName: true }))}
+        error={touched.firstName && !firstNameValid}
+      />
+      {touched.firstName && !firstNameValid && (
+        <p className="text-xs text-rose-500 pl-3">
+          1–50 characters; letters, spaces, hyphens, apostrophes only.
+        </p>
+      )}
+
+      {/* Middle Name (optional) */}
+      <FloatingInputField
+        id="signup-middlename"
+        type="text"
+        label="Middle Name (optional)"
+        icon={<User size={18} />}
+        value={middleName}
+        onChange={(e) => setMiddleName(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, middleName: true }))}
+        error={false}
+      />
+
+      {/* Last Name */}
+      <FloatingInputField
+        id="signup-lastname"
+        type="text"
+        label="Last Name"
+        icon={<User size={18} />}
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, lastName: true }))}
+        error={touched.lastName && !lastNameValid}
+      />
+      {touched.lastName && !lastNameValid && (
+        <p className="text-xs text-rose-500 pl-3">
+          1–50 characters; letters, spaces, hyphens, apostrophes only.
+        </p>
+      )}
+
+      {/* Phone Number — FloatingInputField shell with inline +63 prefix */}
+      <PhoneInputField
+        value={phone}
+        onChange={(v) => setPhone(v)}
+        onBlur={() => setTouched(t => ({ ...t, phone: true }))}
+        error={touched.phone && phone.length > 0 && !phoneValid}
+      />
+      {touched.phone && phone.length > 0 && !phoneValid && (
+        <p className="text-xs text-rose-500 pl-1">
+          Enter 10-digit PH mobile number starting with 9 (e.g. 9171234567).
+        </p>
+      )}
+
+      {/* Navigation buttons */}
+      <div className="flex gap-3 mt-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-lg font-medium
+            hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <button
+          type="button"
+          disabled={!step2Valid}
+          onClick={onNext}
+          className="flex-1 py-2.5 bg-emerald-600 text-white rounded-lg font-bold
+            hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed
+            flex items-center justify-center gap-2"
+        >
+          Next Step <ArrowRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// FloatingSearchableDropdown — Unified searchable dropdown with floating label
+// Replaces FloatingSearchDropdown, FloatingDatalistField, and plain
+// FloatingInputField for the three Step 3 fields. Opens upward, shows up to 5
+// items, debounces filter by 300 ms.
+// Requirements: 1.1–1.9, 2.1–2.7, 3.1–3.3, 4.1–4.3
+// ============================================================================
+
+/**
+ * useDebounce — delays propagating `value` by `delayMs` milliseconds.
+ * Uses useRef for the timer ID to avoid triggering extra renders.
+ *
+ * @param {string} value    - The current string to debounce.
+ * @param {number} delayMs  - Delay in milliseconds.
+ * @returns {string} debouncedValue — trails `value` by `delayMs` ms.
+ */
+function useDebounce(value, delayMs) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    // Clear any existing timer before setting a new one
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    // Cleanup: clear timer on unmount or before next effect run
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [value, delayMs]);
+
+  return debouncedValue;
+}
+
+/**
+ * FloatingSearchableDropdown — controlled searchable dropdown with floating label.
+ *
+ * Props:
+ *   id           {string}          — Used for label htmlFor
+ *   label        {string}          — Floating label text
+ *   icon         {React.ReactNode} — Left icon (Lucide element)
+ *   value        {string}          — Current display text in the input (controlled)
+ *   onChange     {Function}        — Called on every keystroke: (text: string) => void
+ *   options      {Array}           — Full DropdownOption[] list (filtered internally)
+ *   onSelect     {Function}        — Called when user clicks an item: (option) => void
+ *   onClear      {Function}        — Called when input is cleared to ''
+ *   searchKey    {string}          — Field to match against (default: "name")
+ *   displayKey   {string}          — Field for primary item text (default: "name")
+ *   subtitleKey  {string}          — Field for subtitle / avatar initials (default: "abbreviation")
+ *   emptyMessage {string}          — Text when no matches (default: "No results found")
+ *   disabled     {boolean}         — Disables input and prevents dropdown from opening
+ *   error        {boolean}         — Triggers rose colour state
+ *   onBlur       {Function}        — Forwarded blur handler
+ */
+function FloatingSearchableDropdown({
+  id,
+  label,
+  icon,
+  value,
+  onChange,
+  options = [],
+  onSelect,
+  onClear,
+  searchKey = 'name',
+  displayKey = 'name',
+  subtitleKey = 'abbreviation',
+  emptyMessage = 'No results found',
+  disabled = false,
+  error = false,
+  onBlur,
+  direction = 'up',  // 'up' | 'down'
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Debounce the typed value so filter only re-runs 300 ms after the last keystroke
+  const debouncedQuery = useDebounce(value, 300);
+
+  // Ref for outside-click detection
+  const wrapperRef = useRef(null);
+
+  // Close on mousedown outside the wrapper
+  useEffect(() => {
+    const handleMouseDown = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, []);
+
+  // ── Task 2.3: Event handlers ──────────────────────────────────────────────
+
+  const handleFocus = () => {
+    if (disabled) return;
+    setIsFocused(true);
+    setIsOpen(true);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    // Do NOT close here — closing on blur eats the item mousedown click
+    onBlur?.(e);
+  };
+
+  const handleChange = (e) => {
+    onChange(e.target.value);
+    if (e.target.value === '') {
+      onClear?.();
+    }
+    if (!disabled) setIsOpen(true);
+  };
+
+  const handleSelect = (option) => {
+    onSelect(option);
+    onChange(option[displayKey]);
+    setIsOpen(false);
+  };
+
+  // ── Task 2.2: Colour derivation (same logic as FloatingInputField) ────────
+
+  const isFloated = isFocused || value.length > 0;
+
+  const borderColor = error
+    ? 'border-rose-500'
+    : isFocused
+      ? 'border-emerald-500'
+      : 'border-slate-200';
+
+  const iconColor = error
+    ? 'text-rose-500'
+    : isFocused
+      ? 'text-emerald-500'
+      : value.length > 0
+        ? 'text-emerald-400'
+        : 'text-slate-400';
+
+  const separatorColor = error ? 'bg-rose-200' : 'bg-slate-300';
+  const separatorOpacity = isFloated ? 'opacity-100' : 'opacity-0';
+
+  const labelColor = error
+    ? 'text-rose-500'
+    : isFloated
+      ? 'text-emerald-600'
+      : 'text-slate-400';
+
+  const labelStyle = isFloated
+    ? { top: '24px', transform: 'translateY(-50%)' }
+    : { top: '48px', transform: 'translateY(-50%)' };
+
+  // Compute the displayed list from the debounced query
+  const displayed = filterOptions(debouncedQuery, options, searchKey, subtitleKey, 5);
+
+  // ── Task 2.2: Render ──────────────────────────────────────────────────────
+
+  return (
+    <div ref={wrapperRef} className={`relative w-full pt-6 ${disabled ? 'opacity-50' : ''}`}>
+      {/* Floating label */}
+      <label
+        htmlFor={id}
+        style={labelStyle}
+        className={`pointer-events-none absolute left-0 z-10 font-medium
+          transition-all duration-200 ease-in-out translate-x-10
+          ${isFloated ? 'text-xs font-bold bg-white px-1' : 'text-sm bg-transparent'}
+          ${labelColor}`}
+      >
+        {label}
+      </label>
+
+      {/* Field container */}
+      <div className={`flex items-center w-full h-12 border rounded-lg px-3 transition-colors duration-200 ${borderColor}`}>
+        {/* Left icon */}
+        <div className={`flex items-center justify-center transition-colors duration-300 mr-0 ${iconColor}`}>
+          {icon}
+        </div>
+
+        {/* Vertical separator */}
+        <div className={`w-px h-5 mx-3 transition-opacity duration-200 ${separatorColor} ${separatorOpacity}`} />
+
+        {/* Text input */}
+        <input
+          id={id}
+          type="text"
+          value={value}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          disabled={disabled}
+          placeholder=""
+          className={`flex-1 bg-transparent outline-none text-sm text-slate-700 ${disabled ? 'cursor-not-allowed' : ''}`}
+        />
+      </div>
+
+      {/* Dropdown list — direction-aware */}
+      {isOpen && !disabled && (
+        <div className={`absolute z-50 left-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl max-h-[210px] overflow-y-auto ${direction === 'down' ? 'top-full mt-0.5' : 'bottom-full mb-0.5'}`}>
+          {/* Header row */}
+          <div className="sticky top-0 px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 bg-white">
+            <BookOpen size={12} />
+            {displayed.length} Result{displayed.length !== 1 ? 's' : ''}
+          </div>
+
+          {/* Item rows */}
+          {displayed.length > 0 ? (
+            displayed.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onMouseDown={() => handleSelect(option)}
+                className="w-full text-left px-3 py-2 hover:bg-emerald-50 text-sm text-slate-700 hover:text-emerald-700 transition-all flex items-center gap-2 group border-b border-slate-50 last:border-0"
+              >
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-200 transition-colors text-xs font-bold flex-shrink-0">
+                  {option[subtitleKey]?.slice(0, 2) || option[displayKey]?.slice(0, 2)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-slate-800 group-hover:text-emerald-800 truncate text-xs">
+                    {option[displayKey]}
+                  </p>
+                  {option[subtitleKey] && (
+                    <p className="text-[10px] text-slate-400">{option[subtitleKey]}</p>
+                  )}
+                </div>
+              </button>
+            ))
+          ) : (
+            /* Empty state */
+            <div className="px-4 py-4 text-center flex flex-col items-center justify-center text-slate-400 gap-1">
+              <Search size={16} />
+              <span className="text-xs">{emptyMessage}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Step3_InstitutionalDetails — Step 3 of SignUp_Wizard (Institutional Details)
+// Purely presentational: all state lives in SignUp_Wizard and is passed as props.
+// API wiring (getPublicLocations + getPublicGroups) lives here via useEffect hooks.
+// Requirements: 4.1–4.14, 5.7, 5.8
+// ============================================================================
+function Step3_InstitutionalDetails({
+  orgInput, setOrgInput,
+  locationId, setLocationId,
+  locationsList, setLocationsList,
+  locationsError, setLocationsError,
+  userType, setUserType,
+  groupInput, setGroupInput,
+  groupId, setGroupId,
+  communityGroups, setCommunityGroups,
+  groupsError, setGroupsError,
+  yearLevel, setYearLevel,
+  tcChecked, setTcChecked,
+  ppChecked, setPpChecked,
+  touched, setTouched,
+  step3Valid,
+  isSubmitting,
+  submitError,
+  onSubmit,
+  onBack,
+  onOpenTC,
+  onOpenPP,
+}) {
+  // ── Task 5.2: Fetch locations once on first mount ──────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLocations = async () => {
+      try {
+        const data = await authApi.getPublicLocations();
+        if (!cancelled) setLocationsList(data);
+      } catch {
+        if (!cancelled) setLocationsError('Could not load institutions. ');
+      }
+    };
+    fetchLocations();
+    return () => { cancelled = true; };
+  }, []); // empty deps — fires once on first mount of Step3
+
+  // Retry affordance for locations
+  const retryLoadLocations = () => {
+    setLocationsError('');
+    let cancelled = false;
+    const fetchLocations = async () => {
+      try {
+        const data = await authApi.getPublicLocations();
+        if (!cancelled) setLocationsList(data);
+      } catch {
+        if (!cancelled) setLocationsError('Could not load institutions. ');
+      }
+    };
+    fetchLocations();
+    return () => { cancelled = true; };
+  };
+
+  // ── Task 5.3: Fetch groups when locationId changes ─────────────────────────
+  useEffect(() => {
+    if (locationId === null) return;
+    let cancelled = false;
+    setGroupsError('');
+    const fetchGroups = async () => {
+      try {
+        const data = await authApi.getPublicGroups(locationId);
+        if (!cancelled) setCommunityGroups(data);
+      } catch {
+        if (!cancelled) setGroupsError('Could not load groups. ');
+      }
+    };
+    fetchGroups();
+    return () => { cancelled = true; };
+  }, [locationId]);
+
+  // Retry affordance for groups
+  const retryLoadGroups = () => {
+    if (locationId === null) return;
+    setGroupsError('');
+    let cancelled = false;
+    const fetchGroups = async () => {
+      try {
+        const data = await authApi.getPublicGroups(locationId);
+        if (!cancelled) setCommunityGroups(data);
+      } catch {
+        if (!cancelled) setGroupsError('Could not load groups. ');
+      }
+    };
+    fetchGroups();
+    return () => { cancelled = true; };
+  };
+
+  // ── Derive org-type-aware user type list ────────────────────────────────────
+  // Mirrors the USER_TYPES_MAP from the admin edit-user modal so both
+  // the sign-up form and admin panel enforce the same constraints.
+  const USER_TYPES_MAP = {
+    University: ['Student', 'Alumni', 'Faculty', 'Staff'],
+    Community:  ['Resident', 'Community Official', 'Community Worker', 'Business Owner'],
+    Corporate:  ['Employee', 'Manager', 'Executive', 'Contractor', 'Guest'],
+  };
+
+  const selectedLocation = locationsList.find(l => l.id === locationId) || null;
+  const orgType = selectedLocation?.orgType || null;
+  const isUniversity = orgType?.toLowerCase() === 'university';
+
+  const availableUserTypes = (() => {
+    if (!orgType) return [];
+    const key = Object.keys(USER_TYPES_MAP).find(k => k.toLowerCase() === orgType.toLowerCase());
+    return key ? USER_TYPES_MAP[key] : [];
+  })();
+
+  // Reset userType + downstream when org changes and current type is no longer valid
+  useEffect(() => {
+    if (!userType) return;
+    if (availableUserTypes.length === 0) return;
+    const lc = userType.toLowerCase();
+    const valid = availableUserTypes.some(t => t.toLowerCase() === lc);
+    if (!valid) {
+      setUserType('');
+      setYearLevel('');
+      setGroupInput('');
+      setGroupId(null);
+    }
+  }, [orgType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Year level logic (mirrors admin modal) ──────────────────────────────────
+  const YEAR_MAP = {
+    Kindergarten: [],
+    Elementary: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
+    JHS: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
+    SHS: ['Grade 11', 'Grade 12'],
+    College: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+  };
+
+  // University alumni/faculty/staff → auto-assigned on backend, skip group picker
+  const NON_STUDENT_AUTO = new Set(['alumni', 'faculty', 'staff']);
+  const userTypeLc = userType?.toLowerCase() || '';
+  const isStudent = userTypeLc === 'student';
+  const showGroupPicker = (() => {
+    if (!userType) return false;
+    if (isUniversity && NON_STUDENT_AUTO.has(userTypeLc)) return false;
+    return true;
+  })();
+
+  const selectedGroup = communityGroups.find(g => g.id === groupId) || null;
+  const yearOptions = (isUniversity && isStudent && selectedGroup?.educationalLevel)
+    ? (YEAR_MAP[selectedGroup.educationalLevel] || [])
+    : [];
+  const showYearLevel = yearOptions.length > 0;
+
+  // Convert year options to the shape FloatingSearchableDropdown expects
+  const yearLevelOptions = yearOptions.map((y, i) => ({ id: i + 1, name: y, abbreviation: '' }));
+
+  return (
+    <div className="w-full space-y-1">
+      {/* Organization — FloatingSearchableDropdown */}
+      <FloatingSearchableDropdown
+        id="signup-org"
+        label="Organization"
+        icon={<Building2 size={18} />}
+        value={orgInput}
+        onChange={(text) => {
+          setOrgInput(text);
+          if (!text) { setLocationId(null); setGroupInput(''); setGroupId(null); setUserType(''); setYearLevel(''); }
+        }}
+        onClear={() => { setLocationId(null); setGroupInput(''); setGroupId(null); setUserType(''); setYearLevel(''); }}
+        options={locationsList}
+        onSelect={(opt) => {
+          setOrgInput(opt.name);
+          setLocationId(opt.id);
+          setGroupInput('');
+          setGroupId(null);
+          setUserType('');
+          setYearLevel('');
+          setTouched(t => ({ ...t, orgInput: true }));
+        }}
+        searchKey="name"
+        displayKey="name"
+        subtitleKey="abbreviation"
+        emptyMessage="No institutions found"
+        error={touched.orgInput && !locationId}
+        onBlur={() => setTouched(t => ({ ...t, orgInput: true }))}
+        disabled={isSubmitting}
+        direction="down"
+      />
+      {touched.orgInput && !locationId && (
+        <p className="text-xs text-rose-500 pl-3 mt-1">Please select a valid organization.</p>
+      )}
+      {locationsError && (
+        <p className="text-xs text-rose-500 pl-3">
+          {locationsError}
+          <button type="button" className="underline ml-1 cursor-pointer" onClick={retryLoadLocations}>Retry</button>
+        </p>
+      )}
+
+      {/* User Type — shown only once an org is selected */}
+      {locationId && availableUserTypes.length > 0 && (
+        <FloatingSelectField
+          id="signup-usertype"
+          label="User Type"
+          icon={<Users size={18} />}
+          value={userType}
+          onChange={(v) => {
+            setUserType(v);
+            setYearLevel('');
+            setGroupInput('');
+            setGroupId(null);
+          }}
+          options={availableUserTypes}
+          onBlur={() => setTouched(t => ({ ...t, userType: true }))}
+          error={touched.userType && !userType}
+          disabled={isSubmitting}
+        />
+      )}
+
+      {/* Community Group — shown based on org type + user type rules */}
+      {locationId && userType && showGroupPicker && (
+        <FloatingSearchableDropdown
+          id="signup-group"
+          label="Community Group"
+          icon={<Users size={18} />}
+          value={groupInput}
+          onChange={setGroupInput}
+          onClear={() => { setGroupId(null); setYearLevel(''); }}
+          options={communityGroups}
+          onSelect={(opt) => {
+            setGroupInput(opt.name);
+            setGroupId(opt.id);
+            setYearLevel('');
+            setTouched(t => ({ ...t, groupInput: true }));
+          }}
+          searchKey="name"
+          displayKey="name"
+          subtitleKey="abbreviation"
+          emptyMessage="No groups found"
+          disabled={!locationId || isSubmitting}
+          error={touched.groupInput && !groupId}
+          onBlur={() => setTouched(t => ({ ...t, groupInput: true }))}
+        />
+      )}
+      {groupsError && (
+        <p className="text-xs text-rose-500 pl-3">
+          {groupsError}
+          <button
+            type="button"
+            className="underline ml-1"
+            onClick={retryLoadGroups}
+          >
+            Retry
+          </button>
+        </p>
+      )}
+
+      {/* Year Level — shown only for university students whose group has an educational level */}
+      {showYearLevel && (
+        <>
+          <FloatingSearchableDropdown
+            id="signup-yearlevel"
+            label="Year / Grade Level"
+            icon={<BookOpen size={18} />}
+            value={yearLevel}
+            onChange={setYearLevel}
+            onClear={() => setYearLevel('')}
+            options={yearLevelOptions}
+            onSelect={(opt) => {
+              setYearLevel(opt.name);
+              setTouched(t => ({ ...t, yearLevel: true }));
+            }}
+            searchKey="name"
+            displayKey="name"
+            subtitleKey="abbreviation"
+            emptyMessage="No year levels found"
+            error={touched.yearLevel && !yearLevel.trim()}
+            onBlur={() => setTouched(t => ({ ...t, yearLevel: true }))}
+            disabled={isSubmitting}
+          />
+          {touched.yearLevel && !yearLevel.trim() && (
+            <p className="text-xs text-rose-500 pl-3">
+              Year Level is required.
+            </p>
+          )}
+        </>
+      )}
+
+      {/* Single combined agreement checkbox */}
+      <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer mt-3">
+        <input
+          type="checkbox"
+          checked={tcChecked && ppChecked}
+          onChange={(e) => { setTcChecked(e.target.checked); setPpChecked(e.target.checked); }}
+          disabled={isSubmitting}
+          className="mt-0.5 accent-emerald-600 flex-shrink-0 cursor-pointer"
+        />
+        <span>
+          I acknowledge that I have read, understand, and agree to the{' '}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onOpenTC(); }}
+            className="text-emerald-600 underline hover:text-emerald-700 cursor-pointer"
+          >
+            Terms &amp; Conditions
+          </button>
+          {' '}and{' '}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onOpenPP(); }}
+            className="text-emerald-600 underline hover:text-emerald-700 cursor-pointer"
+          >
+            Privacy Policy
+          </button>
+          .
+        </span>
+      </label>
+
+      {/* Submit error */}
+      {submitError && (
+        <p className="text-xs text-rose-500 text-center font-medium mt-2">
+          {submitError}
+        </p>
+      )}
+
+      {/* Navigation buttons */}
+      <div className="flex gap-3 mt-4">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={isSubmitting}
+          className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-lg font-medium
+            hover:bg-slate-50 transition-all flex items-center justify-center gap-2
+            disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <button
+          type="button"
+          disabled={!step3Valid || isSubmitting}
+          onClick={onSubmit}
+          className="flex-1 py-2.5 bg-emerald-600 text-white rounded-lg font-bold
+            hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed
+            flex items-center justify-center gap-2"
+        >
+          {isSubmitting
+            ? <><Loader2 size={16} className="animate-spin" /> Creating...</>
+            : 'Create Account'
+          }
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// SignUp_Wizard — top-level 3-step sign-up orchestrator.
+// Owns all wizard state and derived values; delegates rendering to the three
+// Step sub-components. Defined as a named function (not exported).
+// Requirements: 1.1, 1.3, 1.4, 2.8, 3.7, 4.1, 5.1–5.8
+// ============================================================================
+function SignUp_Wizard({ onSwitchToSignIn, onSaveSnapshot, savedSnapshot, onSnapshotConsumed, onAccountCreated }) {
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  const [step, setStep] = useState(1);
+
+  // ── Step 1 — Account Credentials ───────────────────────────────────────────
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // ── Step 2 — Personal Details ───────────────────────────────────────────────
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+
+  // ── Step 3 — Institutional Details ─────────────────────────────────────────
+  const [orgInput, setOrgInput] = useState('');
+  const [locationId, setLocationId] = useState(null);
+  const [locationsList, setLocationsList] = useState([]);
+  const [locationsError, setLocationsError] = useState('');
+  const [userType, setUserType] = useState('');
+  const [groupInput, setGroupInput] = useState('');
+  const [groupId, setGroupId] = useState(null);
+  const [communityGroups, setCommunityGroups] = useState([]);
+  const [groupsError, setGroupsError] = useState('');
+  const [yearLevel, setYearLevel] = useState('');
+  const [tcChecked, setTcChecked] = useState(false);
+  const [ppChecked, setPpChecked] = useState(false);
+
+  // ── Touched state — becomes true on first onBlur ────────────────────────────
+  const [touched, setTouched] = useState({
+    email: false, username: false, password: false, confirmPassword: false,
+    firstName: false, middleName: false, lastName: false, phone: false,
+    orgInput: false, userType: false, groupInput: false, yearLevel: false,
+  });
+
+  // ── Submission ───────────────────────────────────────────────────────────────
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  // ── Modals ───────────────────────────────────────────────────────────────────
+  const [showTCModal, setShowTCModal] = useState(false);
+  const [showPPModal, setShowPPModal] = useState(false);
+
+  // ── Restore snapshot when parent passes one in ──────────────────────────────
+  useEffect(() => {
+    if (!savedSnapshot) return;
+    setStep(savedSnapshot.step ?? 1);
+    setEmail(savedSnapshot.email ?? '');
+    setUsername(savedSnapshot.username ?? '');
+    setPassword(savedSnapshot.password ?? '');
+    setConfirmPassword(savedSnapshot.confirmPassword ?? '');
+    setFirstName(savedSnapshot.firstName ?? '');
+    setMiddleName(savedSnapshot.middleName ?? '');
+    setLastName(savedSnapshot.lastName ?? '');
+    setPhone(savedSnapshot.phone ?? '');
+    setOrgInput(savedSnapshot.orgInput ?? '');
+    setLocationId(savedSnapshot.locationId ?? null);
+    setUserType(savedSnapshot.userType ?? '');
+    setGroupInput(savedSnapshot.groupInput ?? '');
+    setGroupId(savedSnapshot.groupId ?? null);
+    setYearLevel(savedSnapshot.yearLevel ?? '');
+    setTcChecked(savedSnapshot.tcChecked ?? false);
+    setPpChecked(savedSnapshot.ppChecked ?? false);
+    onSnapshotConsumed?.();
+  }, [savedSnapshot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Derived validation values ────────────────────────────────────────────────
+  const emailValid    = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/.test(email) && email.length <= 254;
+  const usernameValid = /^[a-zA-Z0-9._]{3,30}$/.test(username);
+  const passwordRules = {
+    minLength: password.length >= 8,
+    maxLength: password.length <= 128,
+    hasUpper:  /[A-Z]/.test(password),
+    hasLower:  /[a-z]/.test(password),
+    hasDigit:  /[0-9]/.test(password),
+    noSpace:   !/\s/.test(password),
+  };
+  const passwordValid     = Object.values(passwordRules).every(Boolean);
+  const confirmMatchValid = confirmPassword.length > 0 && confirmPassword === password;
+
+  const nameRegex      = /^[a-zA-Z\s\-']{1,50}$/;
+  const firstNameValid = nameRegex.test(firstName);
+  const lastNameValid  = nameRegex.test(lastName);
+  // Phone is optional — only validate format if the user typed something
+  const phoneValid     = phone.length === 0 || /^9\d{9}$/.test(phone);
+
+  const step1Valid = emailValid && usernameValid && passwordValid && confirmMatchValid;
+  // Phone no longer gates step 2 — it's optional
+  const step2Valid = firstNameValid && lastNameValid && phoneValid;
+
+  // Derive org-type for step3 validation (mirrors Step3_InstitutionalDetails logic)
+  const _selectedLoc = locationsList.find(l => l.id === locationId) || null;
+  const _orgType = _selectedLoc?.orgType?.toLowerCase() || null;
+  const _isUniversity = _orgType === 'university';
+  const _NON_STUDENT_AUTO = new Set(['alumni', 'faculty', 'staff']);
+  const _userTypeLc = userType?.toLowerCase() || '';
+  const _autoAssigned = _isUniversity && _NON_STUDENT_AUTO.has(_userTypeLc);
+  // University students need a group AND year level (if their group has one);
+  // non-auto-assigned non-university users always need a group.
+  // University alumni/faculty/staff are auto-assigned — no group needed.
+  const step3Valid =
+    locationId !== null &&
+    userType !== '' &&
+    tcChecked &&
+    ppChecked &&
+    (_autoAssigned || groupId !== null);
+
+  const showMatchIndicator = password.length > 0 && confirmPassword.length > 0;
+  const passwordsMatch     = password === confirmPassword;
+
+  // ── Payload builder ──────────────────────────────────────────────────────────
+  // toTitleCase: capitalises the first letter of every word regardless of input casing
+  const toTitleCase = (str) =>
+    str.trim().replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  const buildPayload = () => {
+    const fn = toTitleCase(firstName);
+    const mn = middleName.trim() ? toTitleCase(middleName) : undefined;
+    const ln = toTitleCase(lastName);
+    return {
+      firstName: fn,
+      middleName: mn,
+      lastName: ln,
+      name: `${fn}${mn ? ' ' + mn : ''} ${ln}`.trim(),
+      username,
+      email,
+      phone: phone.trim() ? `+63${phone}` : undefined,
+      password,
+      userType: userType.toLowerCase().replace(/ /g, '_'),
+      locationId,
+      groupId: groupId ?? undefined,
+      yearLevel: (userType === 'Student' && yearLevel.trim()) ? yearLevel.trim() : undefined,
+    };
+  };
+
+  // ── captureSnapshot — called by LogIn before closing to persist state ────────
+  const captureSnapshot = () => {
+    const hasAnyData = email || username || password || firstName || lastName ||
+      orgInput || groupInput || yearLevel || phone || userType || locationId;
+    if (!hasAnyData) return null;
+    return {
+      step, email, username, password, confirmPassword,
+      firstName, middleName, lastName, phone,
+      orgInput, locationId, userType, groupInput, groupId, yearLevel,
+      tcChecked, ppChecked,
+    };
+  };
+
+  // Expose captureSnapshot via the ref passed from LogIn
+  useEffect(() => {
+    if (onSaveSnapshot && typeof onSaveSnapshot === 'object' && 'current' in onSaveSnapshot) {
+      onSaveSnapshot.current = captureSnapshot;
+    }
+  }); // run every render so the closure is always fresh
+
+  // Also auto-save to sessionStorage on every meaningful change so
+  // switching to the login side (which unmounts the wizard) preserves state.
+  useEffect(() => {
+    const snap = captureSnapshot();
+    if (snap) {
+      try { sessionStorage.setItem('signupSnapshot', JSON.stringify(snap)); } catch {}
+    }
+  }); // run every render — cheap and keeps sessionStorage in sync
+
+  // ── handleSubmit — Task 7.2 ──────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
+    try {
+      await authApi.register(buildPayload());
+      // Reset all fields on success
+      setStep(1);
+      setEmail(''); setUsername(''); setPassword(''); setConfirmPassword('');
+      setFirstName(''); setMiddleName(''); setLastName(''); setPhone('');
+      setOrgInput(''); setLocationId(null); setLocationsList([]); setLocationsError('');
+      setUserType(''); setGroupInput(''); setGroupId(null); setCommunityGroups([]); setGroupsError('');
+      setYearLevel(''); setTcChecked(false); setPpChecked(false);
+      setTouched({
+        email: false, username: false, password: false, confirmPassword: false,
+        firstName: false, middleName: false, lastName: false, phone: false,
+        orgInput: false, userType: false, groupInput: false, yearLevel: false,
+      });
+      setIsSubmitting(false);
+      try { sessionStorage.removeItem('signupSnapshot'); } catch {}
+      onAccountCreated?.();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.body?.error ||
+        err?.message ||
+        'Registration failed. Please try again.';
+      setSubmitError(msg);
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  return (
+    <div className="w-full flex flex-col items-center">
+      {/* Header — mirrors the login side's "Welcome Back" block */}
+      <h1 className="text-2xl font-extrabold text-gray-800 mb-1">Create Account</h1>
+      <p className="text-gray-400 text-xs mb-4">Join the EcoPoints community today</p>
+
+      <Progress_Bar currentStep={step} />
+
+      {step === 1 && (
+        <Step1_AccountCredentials
+          email={email} setEmail={setEmail}
+          username={username} setUsername={setUsername}
+          password={password} setPassword={setPassword}
+          confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword}
+          touched={touched} setTouched={setTouched}
+          passwordRules={passwordRules}
+          showMatchIndicator={showMatchIndicator} passwordsMatch={passwordsMatch}
+          step1Valid={step1Valid}
+          onNext={() => setStep(2)}
+          onSwitchToSignIn={onSwitchToSignIn}
+        />
+      )}
+
+      {step === 2 && (
+        <Step2_PersonalDetails
+          firstName={firstName} setFirstName={setFirstName}
+          middleName={middleName} setMiddleName={setMiddleName}
+          lastName={lastName} setLastName={setLastName}
+          phone={phone} setPhone={setPhone}
+          touched={touched} setTouched={setTouched}
+          firstNameValid={firstNameValid}
+          lastNameValid={lastNameValid}
+          phoneValid={phoneValid}
+          step2Valid={step2Valid}
+          onNext={() => setStep(3)}
+          onBack={() => setStep(1)}
+        />
+      )}
+
+      {step === 3 && (
+        <Step3_InstitutionalDetails
+          orgInput={orgInput} setOrgInput={setOrgInput}
+          locationId={locationId} setLocationId={setLocationId}
+          locationsList={locationsList} setLocationsList={setLocationsList}
+          locationsError={locationsError} setLocationsError={setLocationsError}
+          userType={userType} setUserType={setUserType}
+          groupInput={groupInput} setGroupInput={setGroupInput}
+          groupId={groupId} setGroupId={setGroupId}
+          communityGroups={communityGroups} setCommunityGroups={setCommunityGroups}
+          groupsError={groupsError} setGroupsError={setGroupsError}
+          yearLevel={yearLevel} setYearLevel={setYearLevel}
+          tcChecked={tcChecked} setTcChecked={setTcChecked}
+          ppChecked={ppChecked} setPpChecked={setPpChecked}
+          touched={touched} setTouched={setTouched}
+          step3Valid={step3Valid}
+          isSubmitting={isSubmitting}
+          submitError={submitError}
+          onSubmit={handleSubmit}
+          onBack={() => setStep(2)}
+          onOpenTC={() => setShowTCModal(true)}
+          onOpenPP={() => setShowPPModal(true)}
+        />
+      )}
+
+      {showTCModal && <TC_Modal onClose={() => setShowTCModal(false)} />}
+      {showPPModal && <PP_Modal onClose={() => setShowPPModal(false)} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// RestoreDialog — Save/Restore overlay (Task 9.2)
+// Shown when the user returns to Sign Up mode and a saved wizard snapshot exists.
+// Two actions: "Start Fresh" (discard snapshot) and "Restore" (repopulate wizard).
+// Clicking the backdrop behaves as "Start Fresh" per Requirements 6.5.
+// Requirements: 6.2, 6.3, 6.4, 6.5
+// ============================================================================
+function RestoreDialog({ onRestore, onStartFresh }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onStartFresh}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center">
+          <h2 className="text-base font-bold text-slate-800 mb-1">
+            Continue where you left off?
+          </h2>
+          <p className="text-sm text-slate-500">
+            You have a saved sign-up in progress.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onStartFresh}
+            className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-lg font-medium
+              hover:bg-slate-50 transition-all"
+          >
+            Start Fresh
+          </button>
+          <button
+            type="button"
+            onClick={onRestore}
+            className="flex-1 py-2.5 bg-emerald-600 text-white rounded-lg font-bold
+              hover:bg-emerald-700 transition-all"
+          >
+            Restore
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Main LogIn Component
 // ============================================================================
 export default function LogIn({ onClose, initialSignUp = false }) {
@@ -543,10 +2019,24 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   // Password mismatch shake
   const [passwordMismatchShake, setPasswordMismatchShake] = useState(false);
 
-  // Saved signup data for restore functionality
+  // Saved signup data for restore functionality (legacy — wizard fields stored in LogIn state)
   const [savedSignUpData, setSavedSignUpData] = useState(null);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [pendingModeSwitch, setPendingModeSwitch] = useState(false);
+
+  // ── Task 9.1: New wizard snapshot (SignUp_Wizard-owned fields) ───────────
+  // savedSnapshot holds a SignUpSnapshot captured by SignUp_Wizard via onSaveSnapshot.
+  // showSignUpRestoreDialog controls the new RestoreDialog overlay (emerald theme).
+  // On mount, restore any snapshot from sessionStorage (persists across close/reopen).
+  const [savedSnapshot, setSavedSnapshot] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('signupSnapshot');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [showSignUpRestoreDialog, setShowSignUpRestoreDialog] = useState(false);
+  const captureWizardSnapshot = useRef(null);
+  const [showAccountCreated, setShowAccountCreated] = useState(false);
 
   // Forgot password states
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -759,15 +2249,31 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   const toggleMode = () => {
     if (isExpanding) return;
 
-    // If switching FROM signup TO login and has signup data, save it
+    // If switching FROM signup TO login and has signup data, save it (legacy wizard)
     if (isSignUp && hasSignUpData()) {
       setSavedSignUpData(saveSignUpData());
     }
 
-    // If switching FROM login TO signup and has saved data, ask to restore
+    // If switching FROM login TO signup and has saved data, ask to restore (legacy)
     if (!isSignUp && savedSignUpData) {
       setPendingModeSwitch(true);
       setShowRestoreDialog(true);
+      return;
+    }
+
+    // Task 9.1/9.2: If switching FROM login TO signup and a wizard snapshot exists,
+    // show the new RestoreDialog instead of performing the switch immediately.
+    if (!isSignUp && savedSnapshot !== null) {
+      setIsExpanding(true);
+      setTimeout(() => {
+        setIsSignUp(true);
+        setError('');
+        resetLoginForm();
+        setTimeout(() => {
+          setIsExpanding(false);
+          setShowSignUpRestoreDialog(true);
+        }, 100);
+      }, 800);
       return;
     }
 
@@ -941,6 +2447,14 @@ export default function LogIn({ onClose, initialSignUp = false }) {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
+    // Save wizard state before closing so it can be restored on next open
+    if (isSignUp && captureWizardSnapshot.current) {
+      const snap = captureWizardSnapshot.current();
+      if (snap) {
+        setSavedSnapshot(snap);
+        try { sessionStorage.setItem('signupSnapshot', JSON.stringify(snap)); } catch {}
+      }
+    }
     setIsClosing(true);
     setTimeout(() => {
       if (onClose) {
@@ -997,6 +2511,20 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     html.classList.remove('dark', 'neutral', 'system');
     if (!html.classList.contains('light')) html.classList.add('light');
   }, []);
+
+  // When modal opens in sign-up mode with a saved snapshot, prompt to restore
+  useEffect(() => {
+    if (isSignUp && savedSnapshot !== null && !showSignUpRestoreDialog) {
+      setShowSignUpRestoreDialog(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When the user slides back to sign-up and there's a snapshot, show restore dialog
+  useEffect(() => {
+    if (isSignUp && savedSnapshot !== null && !showSignUpRestoreDialog) {
+      setShowSignUpRestoreDialog(true);
+    }
+  }, [isSignUp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-hidden">
@@ -1080,6 +2608,22 @@ export default function LogIn({ onClose, initialSignUp = false }) {
         </div>
       )}
 
+      {/* Task 9.2: New wizard RestoreDialog — shown when returning to Sign Up with a saved snapshot */}
+      {showSignUpRestoreDialog && savedSnapshot !== null && (
+        <RestoreDialog
+          onRestore={() => {
+            // Restore: keep savedSnapshot so SignUp_Wizard can consume it (Task 10.1 wires the prop).
+            // Closing the dialog without clearing the snapshot lets the wizard pick it up.
+            setShowSignUpRestoreDialog(false);
+          }}
+          onStartFresh={() => {
+            // Start Fresh: discard snapshot so wizard initialises with empty state.
+            setSavedSnapshot(null);
+            setShowSignUpRestoreDialog(false);
+          }}
+        />
+      )}
+
       {/* CAPTCHA Popup (all devices) */}
       {showCaptchaPopup && showCaptcha && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300">
@@ -1123,6 +2667,39 @@ export default function LogIn({ onClose, initialSignUp = false }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* Account Created — portalled to document.body so it escapes all stacking contexts */}
+      {showAccountCreated && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-xs w-full flex flex-col items-center gap-4 animate-scale-in">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center">
+              <CheckCircle size={32} className="text-emerald-600" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-800 text-center">Account Created!</h2>
+            <p className="text-sm text-slate-500 text-center">Your account has been successfully created. You can now sign in.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAccountCreated(false);
+                if (!isExpanding) {
+                  setIsExpanding(true);
+                  setTimeout(() => {
+                    setIsSignUp(false);
+                    setError('');
+                    resetLoginForm();
+                    setTimeout(() => setIsExpanding(false), 100);
+                  }, 800);
+                }
+              }}
+              className="w-full py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+            >
+              Sign In Now
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Main Card */}
@@ -1447,7 +3024,7 @@ export default function LogIn({ onClose, initialSignUp = false }) {
           </div>
         </div>
 
-        {/* --- RIGHT SIDE: SIGN UP FORM --- */}
+        {/* --- RIGHT SIDE: SIGN UP FORM (SignUp_Wizard, Task 10.1) --- */}
         <div
           className={`
           absolute top-0 right-0 h-full w-full md:w-1/2 
@@ -1465,360 +3042,34 @@ export default function LogIn({ onClose, initialSignUp = false }) {
           <div
             className={`w-full max-w-xs md:max-w-sm flex flex-col items-center transition-opacity duration-500 ${isSignUp ? "opacity-100" : "opacity-0 md:opacity-100"}`}
           >
-            {/* Phase Indicator */}
+            {/* Task 10.1: Mount SignUp_Wizard only when isSignUp is true.
+                This prevents the wizard from interfering with the Sign In form
+                layout, tab order, or form submission when in login mode.
+                Requirements: 7.4, 7.5 */}
             {isSignUp && (
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                                    ${signUpPhase >= 1 ? "bg-lime-500 text-white" : "bg-gray-200 text-gray-500"}`}
-                >
-                  1
-                </div>
-                <div
-                  className={`w-10 h-1 rounded-full transition-all ${signUpPhase >= 2 ? "bg-lime-500" : "bg-gray-200"}`}
-                ></div>
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                                    ${signUpPhase >= 2 ? "bg-lime-500 text-white" : "bg-gray-200 text-gray-500"}`}
-                >
-                  2
-                </div>
-              </div>
-            )}
-
-            <h1
-              className={`${isMobile ? "text-xl" : "text-2xl"} font-extrabold text-gray-800 mb-1`}
-            >
-              {signUpPhase === 1 ? "Create Account" : "Complete Your Profile"}
-            </h1>
-            <p className="text-gray-400 text-xs mb-3 text-center">
-              {signUpPhase === 1
-                ? "Join EcoPoints community today"
-                : "Help us personalize your experience"}
-            </p>
-
-            {/* PHASE 1: Basic Credentials ONLY (Name, Email, Passwords) */}
-            {signUpPhase === 1 && (
-              <form onSubmit={handleSignUpPhase1} className={`w-full space-y-2.5 ${passwordMismatchShake ? "animate-shake" : ""}`}>
-                {/* Row 1: First Name / Middle Name / Last Name */}
-                <div className="flex gap-2">
-                  <InputField
-                    type="text"
-                    placeholder="First Name"
-                    icon={<User size={16} />}
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                  <InputField
-                    type="text"
-                    placeholder="Middle Name"
-                    icon={<User size={16} />}
-                    value={middleName}
-                    onChange={(e) => setMiddleName(e.target.value)}
-                  />
-                  <InputField
-                    type="text"
-                    placeholder="Last Name"
-                    icon={<User size={16} />}
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                {/* Row 2: Username full-width */}
-                <InputField
-                  type="text"
-                  placeholder="Username"
-                  icon={<AtSign size={16} />}
-                  value={signUpUsername}
-                  onChange={(e) => setSignUpUsername(e.target.value)}
-                  required
-                />
-
-                {/* Row 3: Email full-width */}
-                <InputField
-                  type="email"
-                  placeholder="Email"
-                  icon={<Mail size={16} />}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                {/* Row 4: Password + Confirm Password side-by-side */}
-                <div className="flex gap-2">
-                  <InputField
-                    type="password"
-                    placeholder="Password"
-                    icon={<Lock size={16} />}
-                    showToggle={true}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <InputField
-                    type="password"
-                    placeholder="Confirm Password"
-                    icon={<Lock size={16} />}
-                    showToggle={true}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-
-                {error && isSignUp && signUpPhase === 1 && (
-                  <div className="p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
-                    <AlertCircle size={14} />
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="w-1/2 mx-auto py-2.5 md:py-3 bg-lime-600 text-white web-web-rounded-lg font-bold shadow-lg 
-                                        hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5 
-                                        transition-all duration-300 flex items-center justify-center gap-2 mt-2"
-                >
-                  Continue
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            {/* PHASE 2: User Information (User Type, Organization, Phone, Department/Strand) */}
-            {signUpPhase === 2 && (
-              <form onSubmit={handleSignUpPhase2} className="w-full space-y-2">
-                {/* USER TYPE DROPDOWN */}
-                <div className="relative w-full group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
-                    <Users size={18} />
-                  </div>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    required
-                    className={`w-full bg-gray-50 border border-gray-200 text-sm web-web-rounded-lg 
-                                            focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                            block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
-                                            ${role === "" ? "text-gray-400" : "text-gray-800"}`}
-                  >
-                    <option value="" disabled>
-                      Select User Type
-                    </option>
-                    <option value="Student">Student</option>
-                    <option value="Faculty">Faculty</option>
-                    <option value="Staff">Staff</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
-
-                {/* PHONE NUMBER */}
-                <div className="relative w-full group">
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-100 text-gray-500 text-sm font-medium">+63</span>
-                    <input
-                      type="tel"
-                      placeholder="9XX XXX XXXX"
-                      value={phone}
-                      onChange={(e) => { let d = e.target.value.replace(/[^\d]/g, ''); if (d.startsWith('0')) d = d.slice(1); setPhone(d.slice(0, 10)); }}
-                      maxLength={10}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-r-lg 
-                                  focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                  block px-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* ORGANIZATION / LOCATION SEARCHABLE DROPDOWN */}
-                <div className="relative w-full group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300 z-10">
-                    <Building2 size={18} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Select Organization / Campus"
-                    value={locationSearch}
-                    required={!locationId}
-                    onChange={(e) => {
-                      setLocationSearch(e.target.value);
-                      setShowLocationDropdown(true);
-                      if (!e.target.value) { setLocationId(""); setCommunityGroups([]); }
-                    }}
-                    onFocus={() => setShowLocationDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm web-web-rounded-lg 
-                                    focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                    block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white"
-                  />
-                  {showLocationDropdown && (
-                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white border border-gray-200 web-web-rounded-xl shadow-2xl max-h-[210px] overflow-y-auto z-50 p-1">
-                      <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 mb-1">
-                        <Building2 size={12} />
-                        Organizations
-                      </div>
-                      {locationsList
-                        .filter(l => l.name.toLowerCase().includes(locationSearch.toLowerCase()) || (l.fullName || '').toLowerCase().includes(locationSearch.toLowerCase()))
-                        .slice(0, 20)
-                        .map((loc) => (
-                          <button
-                            key={loc.id}
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => {
-                              setLocationId(String(loc.id));
-                              setLocationSearch(loc.fullName || loc.name);
-                              setShowLocationDropdown(false);
-                              // Reset cascade fields when org changes
-                              setRole(""); setCommunityGroupId(""); setGroupSearch(""); setYearLevel("");
-                            }}
-                            className="w-full text-left px-3 py-2 hover:bg-lime-50 web-web-rounded-lg text-sm text-gray-700 hover:text-lime-700 transition-all flex items-center gap-2 group"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-lime-100 flex items-center justify-center text-lime-600 group-hover:bg-lime-200 transition-colors flex-shrink-0">
-                              <Building2 size={14} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-gray-800 group-hover:text-lime-800 text-xs truncate">{loc.fullName || loc.name}</p>
-                              <p className="text-[10px] text-gray-400 truncate">{loc.name}</p>
-                            </div>
-                          </button>
-                        ))}
-                      {locationsList.filter(l => l.name.toLowerCase().includes(locationSearch.toLowerCase()) || (l.fullName || '').toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
-                        <div className="px-4 py-4 text-center flex flex-col items-center justify-center text-gray-400 gap-1">
-                          <Search size={16} />
-                          <span className="text-xs">No organizations found</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* CONDITIONAL FIELDS BASED ON ROLE
-                    Cascade simplified per ERD relocation: educational_level lives on
-                    the community_group. Students pick a group; year-level options derive
-                    from the selected group's educationalLevel. Faculty/Staff are
-                    auto-assigned to the org's default group on the backend. */}
-                {role === "Student" && locationId && (() => {
-                  // Year-level options keyed by the selected group's educational_level.
-                  const YEAR_LEVELS_BY_LEVEL = {
-                    Kindergarten: [],
-                    Elementary: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"],
-                    JHS: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"],
-                    SHS: ["Grade 11", "Grade 12"],
-                    College: ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"],
-                  };
-                  const selectedGroup = communityGroups.find(g => String(g.id) === String(communityGroupId)) || null;
-                  const yearOptions = (selectedGroup && selectedGroup.educationalLevel)
-                    ? (YEAR_LEVELS_BY_LEVEL[selectedGroup.educationalLevel] || [])
-                    : [];
-                  return (
-                    <>
-                      <FloatingSearchDropdown
-                        placeholder="Select Community Group"
-                        icon={<BookOpen size={18} />}
-                        value={groupSearch}
-                        onChange={setGroupSearch}
-                        options={communityGroups.map(g => ({
-                          id: String(g.id),
-                          name: g.abbreviation
-                            ? `${g.abbreviation} — ${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ""}`
-                            : `${g.name}${g.educationalLevel ? ` (${g.educationalLevel})` : ""}`,
-                          fullName: g.name,
-                        }))}
-                        onSelect={(option) => {
-                          setCommunityGroupId(option.id);
-                          setGroupSearch(option.name);
-                        }}
-                        searchKey="name"
-                        displayKey="name"
-                        subtitleKey="fullName"
-                        emptyMessage="No group found"
-                      />
-
-                      {yearOptions.length > 0 && (
-                        <div className="relative w-full group">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-lime-500 transition-colors duration-300">
-                            <Zap size={18} />
-                          </div>
-                          <select
-                            value={yearLevel}
-                            onChange={(e) => setYearLevel(e.target.value)}
-                            required
-                            className={`w-full bg-gray-50 border border-gray-200 text-sm rounded-lg 
-                                          focus:ring-2 focus:ring-lime-500 focus:border-transparent 
-                                          block pl-10 pr-3 py-2.5 md:py-3 transition-all duration-300 outline-none hover:bg-white appearance-none cursor-pointer
-                                          ${yearLevel === "" ? "text-gray-400" : "text-gray-800"}`}
-                          >
-                            <option value="" disabled>
-                              Select Year Level
-                            </option>
-                            {yearOptions.map(y => (
-                              <option key={y} value={y}>{y}</option>
-                            ))}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <ChevronDown size={16} />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-
-                {/* Faculty / Staff: backend auto-assigns to the org's default group */}
-                {(role === "Faculty" || role === "Staff") && locationId && (
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs text-center">
-                    <Briefcase
-                      size={20}
-                      className="mx-auto mb-1 text-gray-400"
-                    />
-                    No additional information required
-                  </div>
-                )}
-
-                {error && isSignUp && signUpPhase === 2 && (
-                  <div className="p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1">
-                    <AlertCircle size={14} />
-                    {error}
-                  </div>
-                )}
-
-                {/* Action Button */}
-                <div className="mt-2">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-2.5 bg-lime-600 text-white web-web-rounded-lg font-bold shadow-lg text-sm
-                                            hover:bg-lime-700 hover:shadow-xl hover:-translate-y-0.5
-                                            transition-all duration-300 flex items-center justify-center gap-1
-                                            disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={14} />
-                        Complete
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Back button */}
-                <button
-                  type="button"
-                  onClick={() => setSignUpPhase(1)}
-                  className="w-full text-center text-xs text-gray-500 hover:text-lime-600 transition-colors mt-1"
-                >
-                  ← Back to credentials
-                </button>
-              </form>
+              <SignUp_Wizard
+                onSwitchToSignIn={() => {
+                  // Mirror the existing toggleMode logic: guard the isExpanding
+                  // re-entry check, then perform the animated mode switch.
+                  if (isExpanding) return;
+                  setIsExpanding(true);
+                  setTimeout(() => {
+                    setIsSignUp(false);
+                    setError('');
+                    resetLoginForm();
+                    setTimeout(() => {
+                      setIsExpanding(false);
+                    }, 100);
+                  }, 800);
+                }}
+                onSaveSnapshot={captureWizardSnapshot}
+                savedSnapshot={savedSnapshot}
+                onSnapshotConsumed={() => {
+                  setSavedSnapshot(null);
+                  try { sessionStorage.removeItem('signupSnapshot'); } catch {}
+                }}
+                onAccountCreated={() => setShowAccountCreated(true)}
+              />
             )}
           </div>
         </div>
