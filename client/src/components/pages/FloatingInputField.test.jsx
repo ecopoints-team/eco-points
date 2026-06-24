@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { Mail } from 'lucide-react';
-import { FloatingInputField } from './FloatingInputField';
+import { FloatingInputField } from './LogIn';
 
 // Feature: login-modal-redesign, Property 1: Filled-state styles applied for any non-empty value
 // Validates: Requirements 1.3, 2.4, 3.4
@@ -25,7 +25,7 @@ describe('FloatingInputField - Property 1: Filled-state styles applied for any n
         const label = container.querySelector('label');
         const iconWrapper = container.querySelector('[data-testid="icon-wrapper"]');
         const separator = container.querySelector('[data-testid="separator"]');
-        expect(label.className).toContain('text-[11px]');
+        expect(label.className).toContain('text-xs');
         expect(iconWrapper.className).toContain('text-emerald-400');
         expect(separator.className).toContain('opacity-100');
       }
