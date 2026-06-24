@@ -6,8 +6,7 @@ import { SkeletonMachineCard, SkeletonCard } from '../../../src/components/admin
 import CustomDropdown from '../../../src/components/admin/CustomDropdown';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useProgress } from '../../../src/context/ProgressContext';
-import * as machinesApi from '../../../src/services/api/machines';
-import * as logsApi from '../../../src/services/api/logs';
+import { machines as machinesApi, logs as logsApi } from '../../../src/services/api';
 import { formatDate } from '../../../src/utils/formatDate';
 import { formatField } from '../../../src/lib/formatField';
 import { validateField, validateAll, VALIDATION_RULES } from '../../../src/lib/validateField';

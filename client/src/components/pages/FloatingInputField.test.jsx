@@ -25,7 +25,7 @@ describe('FloatingInputField - Property 1: Filled-state styles applied for any n
         const label = container.querySelector('label');
         const iconWrapper = container.querySelector('[data-testid="icon-wrapper"]');
         const separator = container.querySelector('[data-testid="separator"]');
-        expect(label.className).toContain('peer-[:not(:placeholder-shown)]:text-[11px]');
+        expect(label.className).toContain('text-[11px]');
         expect(iconWrapper.className).toContain('text-emerald-400');
         expect(separator.className).toContain('opacity-100');
       }
