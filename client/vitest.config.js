@@ -49,8 +49,10 @@ export default defineConfig({
         environmentMatchGlobs: [
             ['tests/property/**', 'jsdom'],
             ['tests/property/**/*.jsx', 'jsdom'],
+            ['src/**/*.test.jsx', 'jsdom'],
+            ['src/**/*.test.js', 'jsdom'],
         ],
-        include: ['tests/**/*.test.js', 'tests/**/*.test.jsx'],
+        include: ['tests/**/*.test.js', 'tests/**/*.test.jsx', 'src/**/*.test.jsx', 'src/**/*.test.js'],
         exclude: [
             '**/node_modules/**',
             '**/.next/**',

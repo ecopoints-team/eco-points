@@ -10,6 +10,7 @@ preserved byte-for-byte. The `@admin_required` → `@permission_required`
 substitution is the work of Phase 2.
 """
 from flask import Blueprint, request, jsonify, current_app
+from sqlalchemy import func
 
 from ..models import (
     Organization,
@@ -170,11 +171,11 @@ def create_user(current_user, payload):
                 },
             }), 400
 
-        if email and User.query.filter_by(email=email).first():
+        if email and User.query.filter(func.lower(User.email) == email.strip().lower()).first():
             return jsonify({'success': False, 'error': 'Email already exists'}), 409
 
         username = data.get('username')
-        if username and User.query.filter_by(username=username).first():
+        if username and User.query.filter(func.lower(User.username) == username.strip().lower()).first():
             return jsonify({'success': False, 'error': 'Username already taken'}), 409
 
         if current_user.role != 'superadmin':
@@ -278,11 +279,11 @@ def update_user(current_user, user_id, payload):
 
         # Uniqueness checks for email and username
         if 'email' in data and data['email']:
-            existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
+            existing = User.query.filter(func.lower(User.email) == data['email'].strip().lower(), User.id != user_id).first()
             if existing:
                 return jsonify({'success': False, 'error': 'Email already in use'}), 409
         if 'username' in data and data['username']:
-            existing = User.query.filter(User.username == data['username'], User.id != user_id).first()
+            existing = User.query.filter(func.lower(User.username) == data['username'].strip().lower(), User.id != user_id).first()
             if existing:
                 return jsonify({'success': False, 'error': 'Username already in use'}), 409
 

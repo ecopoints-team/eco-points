@@ -425,14 +425,16 @@ def login(payload):
         if not identifier or not password:
             return jsonify({'success': False, 'error': 'Email/username and password are required'}), 400
 
-        user = User.query.filter_by(email=identifier).first()
+        # Normalize identifier: strip whitespace and lowercase for case-insensitive lookup
+        identifier_normalized = identifier.strip().lower()
+        user = User.query.filter(func.lower(User.email) == identifier_normalized).first()
         if not user:
-            user = User.query.filter_by(username=identifier).first()
+            user = User.query.filter(func.lower(User.username) == identifier_normalized).first()
 
         org_id = get_user_org_id(user) if user else None
 
-        # Check lockout
-        is_locked, remaining = _check_lockout(identifier, org_id)
+        # Check lockout using normalized identifier so "Luwieoo" and "luwieoo" share the same counter
+        is_locked, remaining = _check_lockout(identifier_normalized, org_id)
         if is_locked:
             _log_attempt(identifier, ip, user.id if user else None, False, 'locked_out')
             return jsonify({'success': False, 'error': f'Account is temporarily locked. Try again in {remaining} minute(s).'}), 429
@@ -445,26 +447,26 @@ def login(payload):
         from ..services.captcha_service import verify_captcha
         _captcha_cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
         _recent_failures = LoginAttempt.query.filter(
-            LoginAttempt.identifier == identifier,
+            LoginAttempt.identifier == identifier_normalized,
             LoginAttempt.is_success == False,  # noqa: E712
             LoginAttempt.attempted_at >= _captcha_cutoff,
         ).count()
         if _recent_failures > 0:
             _ok, _captcha_err = verify_captcha(payload.captchaToken, ip)
             if not _ok:
-                _log_attempt(identifier, ip, user.id if user else None, False, 'captcha_failed')
+                _log_attempt(identifier_normalized, ip, user.id if user else None, False, 'captcha_failed')
                 return jsonify({'success': False, 'error': _captcha_err}), 400
 
         if not user:
-            _log_attempt(identifier, ip, None, False, 'user_not_found')
+            _log_attempt(identifier_normalized, ip, None, False, 'user_not_found')
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
 
         if not user.check_password(password):
-            _log_attempt(identifier, ip, user.id, False, 'invalid_password')
+            _log_attempt(identifier_normalized, ip, user.id, False, 'invalid_password')
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
 
         if not user.is_active:
-            _log_attempt(identifier, ip, user.id, False, 'deactivated')
+            _log_attempt(identifier_normalized, ip, user.id, False, 'deactivated')
             return jsonify({'success': False, 'error': 'Account is deactivated'}), 403
 
         # Check if 2FA is required (per-user via UserSecurity or per-org)
@@ -497,7 +499,7 @@ def login(payload):
             }), 200
 
         # No 2FA — complete login
-        _log_attempt(identifier, ip, user.id, True)
+        _log_attempt(identifier_normalized, ip, user.id, True)
         user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
@@ -710,8 +712,11 @@ def update_profile(current_user, payload):
                             'success': False,
                             'error': f'You can change your username again in {remaining} day(s).'
                         }), 400
-                # Check uniqueness
-                existing = User.query.filter(User.username == new_username, User.id != current_user.id).first()
+                # Check uniqueness (case-insensitive)
+                existing = User.query.filter(
+                    func.lower(User.username) == new_username.strip().lower(),
+                    User.id != current_user.id
+                ).first()
                 if existing:
                     return jsonify({'success': False, 'error': 'Username already taken'}), 409
                 current_user.username = new_username
@@ -894,9 +899,9 @@ def register(payload):
         if not location_id:
             return jsonify({'success': False, 'error': 'Organization/location is required'}), 400
 
-        if email and User.query.filter_by(email=email).first():
+        if email and User.query.filter(func.lower(User.email) == email.strip().lower()).first():
             return jsonify({'success': False, 'error': 'Email already exists'}), 409
-        if username and User.query.filter_by(username=username).first():
+        if username and User.query.filter(func.lower(User.username) == username.strip().lower()).first():
             return jsonify({'success': False, 'error': 'Username already taken'}), 409
 
         # Resolve community group

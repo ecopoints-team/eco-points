@@ -135,9 +135,139 @@ const ADMIN_ROLES = new Set([
 ]);
 
 // ============================================================================
+// Floating Input Field — Sign In fields (replaces ElasticInput in login form)
+// ============================================================================
+export const FloatingInputField = ({
+  id,
+  type,
+  label,
+  icon,
+  value,
+  onChange,
+  required = false,
+  error = false,
+  onFocus,
+  onBlur,
+}) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+  const hasIcon = Boolean(icon);
+
+  // Label floats when focused OR has a value
+  const isFloated = isFocused || value.length > 0;
+
+  const borderColor = error
+    ? 'border-rose-500'
+    : isFocused
+      ? 'border-emerald-500'
+      : 'border-slate-200';
+
+  const iconColor = error
+    ? 'text-rose-500'
+    : isFocused
+      ? 'text-emerald-500'
+      : value.length > 0
+        ? 'text-emerald-400'
+        : 'text-slate-400';
+
+  const separatorColor = error ? 'bg-rose-200' : 'bg-slate-300';
+  const separatorOpacity = isFloated ? 'opacity-100' : 'opacity-0';
+
+  const labelColor = error
+    ? 'text-rose-500'
+    : isFloated
+      ? 'text-emerald-600'
+      : 'text-slate-400';
+
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    onBlur?.(e);
+  };
+
+  // Resting: centered in the field (field top = 24px, field height = 48px → center = 48px from wrapper top)
+  // Floated: centered on the top border line (border is at top=24px from wrapper top)
+  const labelStyle = isFloated
+    ? { top: '24px', transform: 'translateY(-50%)' }
+    : { top: '48px', transform: 'translateY(-50%)' };
+
+  const labelXClass = hasIcon ? 'translate-x-10' : 'translate-x-3';
+
+  return (
+    // pt-6 reserves space so the floated label doesn't get clipped
+    <div className="relative w-full pt-6">
+      {/* Label — resting: placeholder-style inside the field; floated: centered on the top border */}
+      <label
+        htmlFor={id}
+        style={labelStyle}
+        className={`pointer-events-none absolute left-0 z-10 font-medium
+          transition-all duration-200 ease-in-out
+          ${labelXClass}
+          ${isFloated ? 'text-xs font-bold bg-white px-1' : 'text-sm bg-transparent'}
+          ${labelColor}
+        `}
+      >
+        {label}
+      </label>
+
+      {/* Field container */}
+      <div
+        className={`flex items-center w-full h-12 border rounded-lg px-3 transition-colors duration-200 ${borderColor}`}
+      >
+        {hasIcon && (
+          <div
+            data-testid="icon-wrapper"
+            className={`flex items-center justify-center transition-colors duration-300 mr-0 ${iconColor}`}
+          >
+            {icon}
+          </div>
+        )}
+
+        {hasIcon && (
+          <div
+            data-testid="separator"
+            className={`w-px h-5 mx-3 transition-opacity duration-200 ${separatorColor} ${separatorOpacity}`}
+          />
+        )}
+
+        <input
+          id={id}
+          type={inputType}
+          value={value}
+          onChange={onChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          required={required}
+          placeholder=""
+          className="flex-1 bg-transparent outline-none text-sm text-slate-700"
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={() => setShowPassword(p => !p)}
+            className="ml-2 p-1 rounded text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // Elastic Float Input — Sign In fields only
 // ============================================================================
-const ElasticInput = ({ id, type, label, icon, value, onChange, required = false, showToggle = false }) => {
+export const ElasticInput = ({ id, type, label, icon, value, onChange, required = false, showToggle = false }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const isActive = isFocused || (value && value.length > 0);
@@ -683,7 +813,6 @@ export default function LogIn({ onClose, initialSignUp = false }) {
     if (value) {
       setCaptchaVerified(true);
       setCaptchaToken(value);
-      setError(""); // Clear any previous error
       // Fade out the CAPTCHA popup after a short delay
       setTimeout(() => {
         setShowCaptchaPopup(false);
@@ -1032,38 +1161,34 @@ export default function LogIn({ onClose, initialSignUp = false }) {
               Sign in to access your dashboard
             </p>
 
-            <form onSubmit={handleLogin} className="w-full space-y-2">
+            <form onSubmit={handleLogin} className="w-full space-y-3 mt-1">
               {/* Username or Email Field */}
-              <ElasticInput
+              <FloatingInputField
                 id="login-credential"
                 type="text"
                 label="Username or Email"
-                icon={<AtSign size={16} />}
+                icon={<Mail size={18} />}
                 value={loginCredential}
-                onChange={(e) => setLoginCredential(e.target.value)}
+                onChange={(e) => { setLoginCredential(e.target.value.replace(/\s/g, "")); setError(""); }}
                 required
               />
 
               {/* Password Field */}
-              <ElasticInput
+              <FloatingInputField
                 id="login-password"
                 type="password"
                 label="Password"
-                icon={<Lock size={16} />}
-                showToggle={true}
+                icon={<Lock size={18} />}
                 value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
+                onChange={(e) => { setLoginPassword(e.target.value.replace(/\s/g, "")); setError(""); }}
                 required
               />
 
-              {/* Error message */}
-              {error && !isSignUp && !showCaptchaPopup && (
-                <div
-                  className={`p-2 web-web-rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium flex items-center justify-center gap-1 ${passwordMismatchShake ? "animate-shake" : ""}`}
-                >
-                  <AlertCircle size={14} />
-                  <span>{error}</span>
-                </div>
+              {/* Error message — always shown below password, above Verified */}
+              {error && !isSignUp && (
+                <p className={`text-xs text-red-500 text-center font-medium ${passwordMismatchShake ? "animate-shake" : ""}`}>
+                  {error}
+                </p>
               )}
 
               {/* CAPTCHA verified indicator (all devices) */}
