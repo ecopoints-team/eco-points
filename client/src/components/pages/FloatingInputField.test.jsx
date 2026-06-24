@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { Mail } from 'lucide-react';
-import { FloatingInputField } from './LogIn';
+import { FloatingInputField } from './FloatingInputField';
 
 // Feature: login-modal-redesign, Property 1: Filled-state styles applied for any non-empty value
 // Validates: Requirements 1.3, 2.4, 3.4

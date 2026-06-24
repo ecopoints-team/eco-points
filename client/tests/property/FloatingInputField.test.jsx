@@ -7,7 +7,8 @@ import { render, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { Mail, Lock } from 'lucide-react';
-import { FloatingInputField, ElasticInput } from '../../src/components/pages/LogIn';
+import { FloatingInputField } from '../../src/components/pages/FloatingInputField';
+import { ElasticInput } from '../../src/components/pages/LogIn';
 
 describe('FloatingInputField', () => {
   /**
