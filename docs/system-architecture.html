@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoPoints — System Architecture</title>
+<style>
+  :root {
+    --green-900: #14532d; --green-700: #15803d; --green-500: #22c55e;
+    --green-400: #4ade80; --green-100: #dcfce7; --green-50: #f0fdf4;
+    --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
+    --slate-600: #475569; --slate-400: #94a3b8; --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9; --white: #ffffff;
+    --amber-500: #f59e0b; --amber-100: #fef3c7; --amber-800: #92400e;
+    --sky-500: #0ea5e9; --sky-100: #e0f2fe; --sky-800: #075985;
+    --purple-500: #a855f7; --purple-100: #f3e8ff; --purple-800: #6b21a8;
+    --rose-500: #f43f5e; --rose-100: #ffe4e6; --rose-800: #9f1239;
+    --teal-500: #14b8a6; --teal-100: #ccfbf1; --teal-800: #134e4a;
+    --orange-500: #f97316; --orange-100: #ffedd5; --orange-800: #7c2d12;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--slate-900);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--white);
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+  .page-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .page-header .badge {
+    display: inline-block;
+    background: var(--green-700);
+    color: var(--green-100);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .page-header h1 {
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--white);
+  }
+  .page-header h1 span { color: var(--green-400); }
+  .page-header p {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--slate-400);
+  }
+  .diagram { max-width: 1200px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="badge">♻️ Capstone Project — Architecture</div>
+  <h1>EcoPoints <span>System Architecture</span></h1>
+  <p>Multi-tenant SaaS · Flask REST · Next.js 16 · Raspberry Pi 5 · Supabase PostgreSQL</p>
+</div>
+<div class="diagram" id="diagram">
+<!-- LEGEND -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:36px;">
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--green-700);display:inline-block;"></span>Edge / Hardware
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--sky-800);display:inline-block;"></span>Client Layer
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--slate-700);display:inline-block;"></span>Gateway
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--purple-800);display:inline-block;"></span>API / Backend
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--teal-800);display:inline-block;"></span>Persistence
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-400);">
+    <span style="width:12px;height:12px;border-radius:3px;background:var(--amber-800);display:inline-block;"></span>External Services
+  </div>
+</div>
+<!-- ROW 1: Actors + Edge -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
+
+  <!-- Actors -->
+  <div style="background:var(--slate-800);border:1px solid var(--slate-700);border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;">👤 User Actors</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#1e3a2f;border:1px solid #166534;border-radius:8px;padding:8px 12px;font-size:13px;">
+        <span style="color:var(--green-400);font-weight:700;">Superadmin</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:6px;">Platform owner · all orgs</span>
+      </div>
+      <div style="background:#1e2a3a;border:1px solid #1e40af;border-radius:8px;padding:8px 12px;font-size:13px;">
+        <span style="color:#60a5fa;font-weight:600;">Head Admin</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:6px;">Org-scoped full access</span>
+      </div>
+      <div style="background:#2a1e3a;border:1px solid #6b21a8;border-radius:8px;padding:8px 12px;font-size:13px;">
+        <span style="color:#c084fc;font-weight:600;">Auditor / Inv. Officer</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:6px;">Category-scoped</span>
+      </div>
+      <div style="background:#2a2a1e;border:1px solid #854d0e;border-radius:8px;padding:8px 12px;font-size:13px;">
+        <span style="color:#fbbf24;font-weight:600;">Technician</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:6px;">Machines + locations</span>
+      </div>
+      <div style="background:#1a2a2a;border:1px solid #134e4a;border-radius:8px;padding:8px 12px;font-size:13px;">
+        <span style="color:#2dd4bf;font-weight:600;">End User / Dependent</span>
+        <span style="color:var(--slate-400);font-size:11px;margin-left:6px;">Points · rewards · QR</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edge / Hardware -->
+  <div style="background:#0f2417;border:2px solid var(--green-700);border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--green-400);margin-bottom:14px;">⚙️ Edge Layer — Raspberry Pi 5 · eco-points-rpi/</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#0a1f10;border:1px solid #166534;border-radius:8px;padding:8px 12px;font-size:12px;color:#86efac;">
+        🧠 <strong>Firmware Daemon</strong> — rvm_edge_client/main.py<br>
+        <span style="color:var(--slate-400);">State machine: IDLE→QR_SCAN→SESSION→DEPOSIT→END<br>UIBridge WebSocket server (ws://localhost:8765)<br>Heartbeat thread (30s) · DISABLE_GPIO fallback</span>
+      </div>
+      <div style="background:#0a1f10;border:1px solid #166534;border-radius:8px;padding:8px 12px;font-size:12px;color:#86efac;">
+        📷 <strong>YOLOv11 Vision</strong> — models/best.pt · HardwareInterface<br>
+        <span style="color:var(--slate-400);">picamera2 (CSI) or cv2.VideoCapture(0) (USB)<br>10-frame majority vote · conf ≥ 0.55<br>Returns (is_valid, brand, size, confidence)</span>
+      </div>
+      <div style="background:#0a1f10;border:1px solid #166534;border-radius:8px;padding:8px 12px;font-size:12px;color:#86efac;">
+        � <strong>GPIO — BCM pins (RPi.GPIO)</strong><br>
+        <span style="color:var(--slate-400);">Motor pulse/dir/enable (12,16,17) · Homing (6)<br>Bin-full curtain sensor (5) · Door open (11)<br>In-Progress indicator (26) · Fault LED active-LOW (27)</span>
+      </div>
+      <div style="background:#0a1f10;border:1px solid #166534;border-radius:8px;padding:8px 12px;font-size:12px;color:#86efac;">
+        � <strong>Kiosk UI</strong> — rvm_edge_client/ui/ (React Native / Expo Web)<br>
+        <span style="color:var(--slate-400);">Touch screen · QR scan via camera · WebSocket client<br>Served at http://localhost:8081 → Chromium kiosk mode</span>
+      </div>
+      <div style="background:#0a1f10;border:1px solid var(--green-700);border-radius:8px;padding:8px 12px;font-size:12px;color:#86efac;">
+        � <strong>systemd auto-start</strong> — deploy/ecopoints-kiosk.service<br>
+        <span style="color:var(--slate-400);">Firmware daemon + UI + backend services on boot<br>deploy/install.sh · MACHINE_ID + API_KEY in .env</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CI/CD Pipeline -->
+  <div style="background:#1a1a2e;border:1px solid #3730a3;border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#818cf8;margin-bottom:14px;">🚀 CI/CD Pipeline</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#12122a;border:1px solid #3730a3;border-radius:8px;padding:8px 12px;font-size:12px;color:#a5b4fc;">
+        <strong>GitHub Actions</strong> — .github/workflows/ci.yml<br>
+        <span style="color:var(--slate-400);">Runs on every push / PR to main</span>
+      </div>
+      <div style="background:#12122a;border:1px solid #3730a3;border-radius:8px;padding:8px 12px;font-size:12px;color:#a5b4fc;">
+        🧪 pytest 221+ tests · Hypothesis PBT<br>
+        🔒 Secret hygiene (tools/tests) 45 tests<br>
+        ⚛️ vitest + next build (client)
+      </div>
+      <div style="background:#12122a;border:1px solid #3730a3;border-radius:8px;padding:8px 12px;font-size:12px;color:#a5b4fc;">
+        <strong>CD:</strong> merge to main →<br>
+        📦 Render (Flask auto-deploy)<br>
+        ▲ Vercel (Next.js auto-deploy)
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ARROWS ROW 1 → 2 -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:4px;text-align:center;">
+  <div style="color:var(--slate-600);font-size:18px;">↓</div>
+  <div style="color:var(--green-700);font-size:18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <span style="font-size:18px;">↓</span>
+    <span style="font-size:10px;color:var(--slate-500);">REST/HTTPS + X-API-Key</span>
+    <span style="font-size:10px;color:var(--slate-500);">HMAC-SHA256 signed body</span>
+  </div>
+  <div style="color:var(--slate-600);font-size:18px;">↓</div>
+</div>
+
+<!-- ROW 2: Gateway (full width) -->
+<div style="background:var(--slate-800);border:1px solid var(--slate-600);border-radius:12px;padding:20px;margin-bottom:4px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;">🌐 Gateway Layer</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+    <div style="background:var(--slate-700);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#f97316;font-weight:700;margin-bottom:4px;">☁️ Cloudflare</div>
+      <div style="color:var(--slate-300);">DNS + TLS (Flexible) — DNS only</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:4px;">ecopoints.org → Vercel<br>api.ecopoints.org → Render<br>CDN delegated to Vercel Edge</div>
+    </div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;">🔀 Nginx Reverse Proxy</div>
+      <div style="color:var(--slate-300);">nginx/default.conf</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:4px;">api.ecopoints.org → Flask:8000<br>ecopoints.org → Next.js:3000</div>
+    </div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#a78bfa;font-weight:700;margin-bottom:4px;">🛡️ Security Headers</div>
+      <div style="color:var(--slate-300);">nginx/default.conf (Phase 4D)</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:4px;">HSTS · X-Frame-Options: DENY<br>CSP-Report-Only · Referrer-Policy</div>
+    </div>
+  </div>
+</div>
+
+<!-- ARROWS ROW 2 → 3 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px;text-align:center;">
+  <div style="color:var(--sky-500);font-size:18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <span>↓</span><span style="font-size:10px;color:var(--slate-500);">REST/HTTPS · HttpOnly JWT cookies · CSRF</span>
+  </div>
+  <div style="color:var(--sky-500);font-size:18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <span>↓</span><span style="font-size:10px;color:var(--slate-500);">@rpi_auth_required · BCrypt key verify</span>
+  </div>
+</div>
+<!-- ROW 3: Client Layer + API Layer side by side -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px;">
+
+  <!-- Client Layer -->
+  <div style="background:#0c1a2e;border:2px solid var(--sky-800);border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#38bdf8;margin-bottom:14px;">⚛️ Client Layer — Next.js 16 App Router</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:#071829;border:1px solid #075985;border-radius:8px;padding:8px 10px;font-size:12px;color:#7dd3fc;">
+        <strong>App Router</strong><br>
+        <span style="color:var(--slate-400);font-size:11px;">app/admin/* · app/leaderboard<br>app/rewards · app/qr · app/login</span>
+      </div>
+      <div style="background:#071829;border:1px solid #075985;border-radius:8px;padding:8px 10px;font-size:12px;color:#7dd3fc;">
+        <strong>Auth Context</strong><br>
+        <span style="color:var(--slate-400);font-size:11px;">src/context/AuthContext.js<br>permission_categories · JWT cookie</span>
+      </div>
+      <div style="background:#071829;border:1px solid #075985;border-radius:8px;padding:8px 10px;font-size:12px;color:#7dd3fc;">
+        <strong>API Services (14)</strong><br>
+        <span style="color:var(--slate-400);font-size:11px;">src/services/api/ · client.js<br>Single request() layer · index.js barrel</span>
+      </div>
+      <div style="background:#071829;border:1px solid #075985;border-radius:8px;padding:8px 10px;font-size:12px;color:#7dd3fc;">
+        <strong>Admin Guard</strong><br>
+        <span style="color:var(--slate-400);font-size:11px;">RequirePermission.jsx<br>Server-enforced RBAC mirror</span>
+      </div>
+    </div>
+    <div style="background:#071829;border:1px solid #075985;border-radius:8px;padding:8px 10px;font-size:11px;color:var(--slate-400);">
+      PWA: @ducanh2912/next-pwa · Tailwind CSS 4 · Framer Motion · Recharts<br>
+      Deploy: <strong style="color:#38bdf8;">Vercel</strong> — auto on push to main · Edge Network
+    </div>
+  </div>
+
+  <!-- API Layer -->
+  <div style="background:#1a0d2e;border:2px solid var(--purple-800);border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#c084fc;margin-bottom:14px;">🔧 API Layer — Flask + Gunicorn:8000</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px 10px;font-size:12px;">
+        <div style="color:#c084fc;font-weight:700;margin-bottom:2px;">Middleware Stack</div>
+        <span style="color:var(--slate-400);font-size:11px;">@token_required → @permission_required → controller fn<br>@rpi_auth_required → rpi controller fn · ROLE_PERMISSIONS map</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;">
+          auth_bp<br><span style="color:var(--slate-500);">/api/auth/*</span>
+        </div>
+        <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;">
+          web_bp<br><span style="color:var(--slate-500);">/api/web/*</span>
+        </div>
+        <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;">
+          rpi_bp<br><span style="color:var(--slate-500);">/api/rpi/*</span>
+        </div>
+      </div>
+      <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px 10px;font-size:11px;color:var(--slate-400);">
+        <strong style="color:#d8b4fe;">11 Domain Controllers:</strong> dashboard · users · locations · machines · rewards · logs · leaderboard · groups · analytics · settings · sessions
+      </div>
+      <div style="background:#0f0720;border:1px solid #6b21a8;border-radius:8px;padding:8px 10px;font-size:11px;color:var(--slate-400);">
+        <strong style="color:#d8b4fe;">Services:</strong> captcha_service · notification_service (Resend) · otp_service · password_policy<br>
+        Deploy: <strong style="color:#c084fc;">Render</strong> — Gunicorn · auto on push to main
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ARROWS ROW 3 → 4 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px;text-align:center;">
+  <div style="color:var(--slate-600);font-size:14px;">↓ <span style="font-size:10px;color:var(--slate-600);">Direct Supabase (future SSR)</span></div>
+  <div style="color:var(--teal-500);font-size:18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <span>↓</span><span style="font-size:10px;color:var(--slate-500);">psycopg3 over TLS · SQLAlchemy 2.0 ORM</span>
+  </div>
+</div>
+
+<!-- ROW 4: Persistence Layer (full width) -->
+<div style="background:#0a1f1e;border:2px solid var(--teal-800);border-radius:12px;padding:20px;margin-bottom:4px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#2dd4bf;margin-bottom:14px;">🗄️ Persistence Layer</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <div style="background:#061413;border:1px solid var(--teal-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#2dd4bf;font-weight:700;margin-bottom:4px;">🐘 Supabase PostgreSQL</div>
+      <div style="color:var(--slate-300);">Primary data store · 14-table schema</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:6px;">
+        Session pooler :6543 (runtime)<br>
+        Direct :5432 (flask db upgrade)<br>
+        aws-1-ap-northeast-1<br>
+        org-scoped queries · qr_hmac_secret_enc (Fernet)
+      </div>
+    </div>
+    <div style="background:#061413;border:1px solid var(--teal-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#34d399;font-weight:700;margin-bottom:4px;">⚡ Redis Cache</div>
+      <div style="color:var(--slate-300);">Optional — server/app/cache.py</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:6px;">
+        Leaderboard · analytics · dashboard stats<br>
+        Invalidated on write<br>
+        Fallback: direct DB query on ConnectionError<br>
+        REDIS_URL (Render add-on or local)
+      </div>
+    </div>
+    <div style="background:#061413;border:1px solid var(--teal-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#6ee7b7;font-weight:700;margin-bottom:4px;">📁 RVM Local State</div>
+      <div style="color:var(--slate-300);">eco-points-rpi/rvm_edge_client/</div>
+      <div style="color:var(--slate-400);font-size:11px;margin-top:6px;">
+        No SQLite offline buffer (current impl)<br>
+        Firmware makes direct REST calls per event<br>
+        models/best.pt — YOLOv11 weights on-device<br>
+        Fallback: POINTS_DEFAULT dict on config fail
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARROWS ROW 4 → 5 -->
+<div style="text-align:center;margin-bottom:4px;">
+  <span style="color:var(--amber-500);font-size:18px;">↓</span>
+  <span style="font-size:10px;color:var(--slate-500);margin-left:6px;">HTTPS API calls at runtime</span>
+</div>
+<!-- ROW 5: External Services (full width) -->
+<div style="background:#1f1200;border:1px solid var(--amber-800);border-radius:12px;padding:20px;margin-bottom:32px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fbbf24;margin-bottom:14px;">🔌 External Services</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+    <div style="background:#120c00;border:1px solid var(--amber-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">✉️ Resend API</div>
+      <div style="color:var(--slate-400);font-size:11px;">Email notifications · OTP · password reset<br>notification_service.py</div>
+    </div>
+    <div style="background:#120c00;border:1px solid var(--amber-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">🤖 Google reCAPTCHA v2</div>
+      <div style="color:var(--slate-400);font-size:11px;">Registration + login<br>captcha_service.py · skipped if FLASK_ENV != production</div>
+    </div>
+    <div style="background:#120c00;border:1px solid var(--amber-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">▲ Vercel</div>
+      <div style="color:var(--slate-400);font-size:11px;">Next.js frontend hosting<br>Auto-deploy from main · Edge Network<br>DNS via Cloudflare</div>
+    </div>
+    <div style="background:#120c00;border:1px solid var(--amber-800);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">🚀 Render</div>
+      <div style="color:var(--slate-400);font-size:11px;">Flask backend hosting<br>Auto-deploy from main · Gunicorn workers</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECURITY + RESILIENCY PANELS -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;">
+
+  <!-- Security Architecture -->
+  <div style="background:var(--slate-800);border:1px solid #991b1b;border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#f87171;margin-bottom:14px;">🔐 Security Architecture</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">JWT Auth</strong> <span style="color:var(--slate-400);">— HttpOnly cookies, @token_required decorator on every web route</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">RBAC</strong> <span style="color:var(--slate-400);">— @permission_required + ROLE_PERMISSIONS map; GET-bypass closed (Phase 0)</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">RVM Auth</strong> <span style="color:var(--slate-400);">— X-API-Key BCrypt-hashed server-side; rotate-api-key endpoint</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">QR HMAC</strong> <span style="color:var(--slate-400);">— HMAC-SHA256(org_secret, display_id)[:6]; Fernet-encrypted per org</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">Multi-tenant isolation</strong> <span style="color:var(--slate-400);">— org-scoped queries; cross-tenant leakage prevented at ORM layer</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">CSRF</strong> <span style="color:var(--slate-400);">— double-submit cookie; AUTH_CSRF_DISABLED=true in local dev only</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">Rate limiting</strong> <span style="color:var(--slate-400);">— Flask-Limiter on auth endpoints</span></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span style="color:#f87171;margin-top:1px;">▸</span>
+        <span><strong style="color:var(--white);">Secret hygiene</strong> <span style="color:var(--slate-400);">— tools/tests/test_secret_hygiene.py; 45 tests run in CI</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resiliency -->
+  <div style="background:var(--slate-800);border:1px solid #065f46;border-radius:12px;padding:20px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#34d399;margin-bottom:14px;">⚡ Resiliency & Failure Modes</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;">
+      <div style="background:#052e16;border-left:3px solid #16a34a;border-radius:0 6px 6px 0;padding:8px 12px;">
+        <div style="color:#4ade80;font-weight:700;margin-bottom:2px;">1. RVM Network Loss ⚠️ Open Gap</div>
+        <div style="color:var(--slate-400);">Current firmware makes direct API calls per event — no SQLite offline buffer implemented yet. Network loss during a session will fail the deposit. Mitigation needed: add offline queue + replay to main.py before production Pi deployment.</div>
+      </div>
+      <div style="background:#052e16;border-left:3px solid #16a34a;border-radius:0 6px 6px 0;padding:8px 12px;">
+        <div style="color:#4ade80;font-weight:700;margin-bottom:2px;">2. Redis Unavailable</div>
+        <div style="color:var(--slate-400);">cache.py catches redis.exceptions.ConnectionError → falls back to direct Supabase query · zero data loss · ~200–500ms latency spike only</div>
+      </div>
+      <div style="background:#052e16;border-left:3px solid #16a34a;border-radius:0 6px 6px 0;padding:8px 12px;">
+        <div style="color:#4ade80;font-weight:700;margin-bottom:2px;">3. Supabase Pool Exhaustion (Most Severe)</div>
+        <div style="color:var(--slate-400);">Session pooler :6543 multiplexes connections · Gunicorn sync workers each hold 1 conn · RVM SQLite absorbs outage window · /api/health for readiness probing</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- DATA FLOW TIMELINE -->
+<div style="background:var(--slate-800);border:1px solid var(--slate-700);border-radius:12px;padding:20px;margin-bottom:32px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-400);margin-bottom:20px;">📊 Critical Data Flow — Recycling Session (Online)</div>
+  <div style="display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:8px;">
+
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:110px;">
+      <div style="background:#0f2417;border:2px solid var(--green-700);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#86efac;width:100px;">
+        User taps<br>Kiosk screen<br>→ QR scan
+      </div>
+      <div style="color:var(--green-700);font-size:18px;margin:4px 0;">↓</div>
+      <div style="background:#0f2417;border:1px solid var(--green-700);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#86efac;width:100px;">
+        UI→WS:8765<br>QR_SCANNED<br>→ HMAC verify
+      </div>
+    </div>
+
+    <div style="color:var(--slate-600);font-size:18px;align-self:center;padding:0 6px;">→</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:110px;">
+      <div style="background:#1a0d2e;border:2px solid var(--purple-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;width:100px;">
+        POST /api/rpi<br>/session/start<br>rpi_controller
+      </div>
+      <div style="color:var(--purple-800);font-size:18px;margin:4px 0;">↓</div>
+      <div style="background:#1a0d2e;border:1px solid var(--purple-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;width:100px;">
+        POST /deposit<br>per item<br>YOLOv11 class
+      </div>
+    </div>
+
+    <div style="color:var(--slate-600);font-size:18px;align-self:center;padding:0 6px;">→</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:110px;">
+      <div style="background:#1a0d2e;border:2px solid var(--purple-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;width:100px;">
+        POST /session<br>/end · status:<br>completed
+      </div>
+      <div style="color:var(--purple-800);font-size:18px;margin:4px 0;">↓</div>
+      <div style="background:#1a0d2e;border:1px solid var(--purple-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#d8b4fe;width:100px;">
+        Wallet credited<br>+ AdminLog<br>row written
+      </div>
+    </div>
+
+    <div style="color:var(--slate-600);font-size:18px;align-self:center;padding:0 6px;">→</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:110px;">
+      <div style="background:#0a1f1e;border:2px solid var(--teal-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#5eead4;width:100px;">
+        Supabase<br>PostgreSQL<br>write
+      </div>
+      <div style="color:var(--teal-800);font-size:18px;margin:4px 0;">↓</div>
+      <div style="background:#0a1f1e;border:1px solid var(--teal-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#5eead4;width:100px;">
+        Redis cache<br>invalidated<br>(leaderboard)
+      </div>
+    </div>
+
+    <div style="color:var(--slate-600);font-size:18px;align-self:center;padding:0 6px;">→</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:110px;">
+      <div style="background:#0c1a2e;border:2px solid var(--sky-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#7dd3fc;width:100px;">
+        Dashboard<br>polls /api/web<br>/dashboard
+      </div>
+      <div style="color:var(--sky-800);font-size:18px;margin:4px 0;">↓</div>
+      <div style="background:#0c1a2e;border:1px solid var(--sky-800);border-radius:8px;padding:8px;font-size:11px;text-align:center;color:#7dd3fc;width:100px;">
+        Leaderboard +<br>points balance<br>updated UI
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TECH STACK FOOTER -->
+<div style="background:var(--slate-800);border:1px solid var(--slate-700);border-radius:12px;padding:20px;margin-bottom:32px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;">📦 Tech Stack at a Glance</div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;text-align:center;font-size:11px;">
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#60a5fa;"><strong>Next.js 16</strong><br><span style="color:var(--slate-500);">App Router</span></div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#fb923c;"><strong>Flask 3.1.3</strong><br><span style="color:var(--slate-500);">Python 3.14</span></div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#34d399;"><strong>Supabase</strong><br><span style="color:var(--slate-500);">PostgreSQL</span></div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#f87171;"><strong>Redis</strong><br><span style="color:var(--slate-500);">Cache layer</span></div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#a78bfa;"><strong>YOLOv11</strong><br><span style="color:var(--slate-500);">Vision AI</span></div>
+    <div style="background:var(--slate-700);border-radius:8px;padding:10px 6px;color:#fbbf24;"><strong>Gunicorn</strong><br><span style="color:var(--slate-500);">+ Nginx</span></div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:11px;color:var(--slate-600);">
+  EcoPoints Capstone · Architecture v1 · Generated 2026 · All phases 0–5 + 4A closed · docs/phase-status.md
+</div>
+
+</div><!-- end .diagram -->
+</body>
+</html>
